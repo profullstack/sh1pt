@@ -266,3 +266,75 @@ outreachCmd
     if (opts.json) { console.log(JSON.stringify({ podcasts: [], email: [], launches: [] }, null, 2)); return; }
     console.log(kleur.dim('[stub] outreach status'));
   });
+
+// Communications bridge — relay messages between Slack / Discord /
+// IRC / Signal / Matrix / Mastodon / Nostr / Telegram.
+const bridgeCmd = promoteCmd
+  .command('bridge')
+  .description('Bridge chat networks — Slack ↔ Discord ↔ IRC ↔ Signal ↔ Matrix ↔ Mastodon ↔ Nostr ↔ Telegram');
+
+bridgeCmd
+  .command('setup')
+  .description('Connect a chat network (bot token / app password / nsec / IRC nick)')
+  .option('--network <id...>', 'e.g. bridge-discord bridge-matrix bridge-irc')
+  .action((opts: { network?: string[] }) => {
+    console.log(kleur.cyan(`[stub] bridge setup · ${opts.network?.join(', ') ?? 'all declared'}`));
+  });
+
+bridgeCmd
+  .command('connect <from> <to...>')
+  .description('Define a relay route. Format: "<network>:<channel>". Repeatable destinations.')
+  .option('--filter <rule...>', 'no-bots | no-pings | no-links | no-emojis')
+  .action((from: string, to: string[], opts: { filter?: string[] }) => {
+    console.log(kleur.green(`[stub] bridge connect ${from} → ${to.join(', ')}${opts.filter ? ` · filters=${opts.filter}` : ''}`));
+  });
+
+bridgeCmd
+  .command('start')
+  .description('Run the bridge daemon (persistent process — pair with deploy-fly for HA)')
+  .option('--detach', 'background mode')
+  .action((opts: { detach?: boolean }) => {
+    console.log(kleur.green(`[stub] bridge start${opts.detach ? ' (detached)' : ' (foreground)'}`));
+  });
+
+bridgeCmd
+  .command('stop')
+  .description('Stop the bridge daemon')
+  .action(() => { console.log(kleur.yellow('[stub] bridge stop')); });
+
+bridgeCmd
+  .command('status')
+  .description('Active routes + message counts + last-seen per network')
+  .option('--json')
+  .action((opts: { json?: boolean }) => {
+    if (opts.json) { console.log(JSON.stringify({ routes: [], networks: [] }, null, 2)); return; }
+    console.log(kleur.dim('[stub] bridge status'));
+  });
+
+// Document generation — pitch decks, one-pagers, press kits, memos.
+const docsCmd = promoteCmd
+  .command('docs')
+  .description('Generate pitch decks / one-pagers / press kits via Marp, Google Slides, pandoc, LuminPDF');
+
+docsCmd
+  .command('generate')
+  .description('Produce a document from markdown + a template')
+  .requiredOption('--kind <kind>', 'pitch-deck | one-pager | sales-deck | case-study | press-kit | whitepaper | proposal')
+  .requiredOption('--format <fmt>', 'pdf | pptx | docx | html | md')
+  .option('--markdown <path>', 'path to the source markdown', './deck.md')
+  .option('--template <id>', 'Google Slides template presentation id, or Marp theme name, or pandoc reference doc path')
+  .option('--provider <id>', 'docs-marp | docs-gslides | docs-pandoc | docs-lumin', 'docs-marp')
+  .option('--out <path>', 'where to write the result', './.sh1pt/docs/')
+  .option('--upload-to-lumin', 'after generation, upload the PDF to LuminPDF for a shareable viewer link')
+  .action((opts) => {
+    console.log(kleur.green(`[stub] docs generate ${JSON.stringify(opts)}`));
+  });
+
+docsCmd
+  .command('list')
+  .description('Recently generated docs')
+  .option('--json')
+  .action((opts: { json?: boolean }) => {
+    if (opts.json) { console.log(JSON.stringify({ docs: [] }, null, 2)); return; }
+    console.log(kleur.dim('[stub] docs list'));
+  });

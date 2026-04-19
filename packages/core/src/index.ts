@@ -12,4 +12,6 @@ export * from './social.js';
 export * from './payments.js';
 export * from './vcs.js';
 export * from './webhook.js';
+export * from './bridge.js';
+export * from './docs.js';
 export * from './exec.js';

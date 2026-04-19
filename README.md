@@ -190,6 +190,22 @@
 ![Teams](https://img.shields.io/badge/Teams_connector-6264A7?logo=microsoftteams&logoColor=white)
 ![Generic HTTP](https://img.shields.io/badge/Generic_HTTP-475569?logoColor=white)
 
+**Chat bridges (`sh1pt promote bridge`) — relay messages between networks**
+![Discord](https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white)
+![Slack](https://img.shields.io/badge/Slack-4A154B?logo=slack&logoColor=white)
+![IRC](https://img.shields.io/badge/IRC-000?logoColor=white)
+![Signal](https://img.shields.io/badge/Signal-3A76F0?logo=signal&logoColor=white)
+![Matrix](https://img.shields.io/badge/Matrix-000?logo=matrix&logoColor=white)
+![Mastodon](https://img.shields.io/badge/Mastodon-6364FF?logo=mastodon&logoColor=white)
+![Nostr](https://img.shields.io/badge/Nostr-CA077C?logo=nostr&logoColor=white)
+![Telegram](https://img.shields.io/badge/Telegram-26A5E4?logo=telegram&logoColor=white)
+
+**Document generation (`sh1pt promote docs`)**
+![Marp](https://img.shields.io/badge/Marp-000?logoColor=white)
+![Google Slides](https://img.shields.io/badge/Google_Slides-FBBC04?logo=googleslides&logoColor=black)
+![Pandoc](https://img.shields.io/badge/Pandoc-1F2A37?logoColor=white)
+![LuminPDF](https://img.shields.io/badge/LuminPDF-FF6B35?logoColor=white)
+
 **CAPTCHA solvers (last-resort, browser-mode fallback only)**
 ![2Captcha](https://img.shields.io/badge/2Captcha-0078D4?logo=2captcha&logoColor=white)
 ![CaptchaSolver](https://img.shields.io/badge/CaptchaSolver-374151?logo=captchasolver&logoColor=white)
@@ -370,6 +386,37 @@ sh1pt promote merch payout
 ```
 
 Providers: Printful (widest catalog, auto-fulfillment) and Printify (multi-supplier, often lower base cost). The `--budget-cap` flag on `merch giveaway` prevents a typo in the CSV from rattling through $5k of free hoodies.
+
+### promote bridge
+
+Relay messages between chat networks. Slack ↔ Discord ↔ IRC ↔ Signal ↔ Matrix ↔ Mastodon ↔ Nostr ↔ Telegram. Matterbridge-style but adapter-per-network and vault-first.
+
+```bash
+sh1pt promote bridge setup --network bridge-discord bridge-matrix bridge-irc
+sh1pt promote bridge connect discord:123456789012 matrix:!room:example.org irc:libera.chat/#myproj
+sh1pt promote bridge start                     # foreground daemon
+sh1pt promote bridge status                    # active routes + message counts
+```
+
+Each relay shows `"<username> [<network>]: <text>"` on the destination so lurkers see who's actually talking. Filter flags (`--filter no-bots no-pings no-links`) drop patterns you don't want cross-posted.
+
+### promote docs
+
+Generate pitch decks, one-pagers, press kits, whitepapers. Keep source markdown in git, regenerate on change.
+
+```bash
+# open-source, local, version-controlled (markdown → .pptx / .pdf / .html)
+sh1pt promote docs generate --kind pitch-deck --format pptx --markdown ./deck.md --provider docs-marp
+
+# Google Slides — copies a hosted template + substitutes {{vars}}
+sh1pt promote docs generate --kind pitch-deck --format pdf --provider docs-gslides --template <slides-doc-id>
+
+# upload the finished PDF to LuminPDF for a sharable viewer link
+sh1pt promote docs generate --kind pitch-deck --format pdf --provider docs-marp --upload-to-lumin
+
+# long-form (whitepapers, proposals) via pandoc
+sh1pt promote docs generate --kind whitepaper --format docx --markdown ./whitepaper.md --provider docs-pandoc
+```
 
 ### promote investors
 
@@ -654,6 +701,8 @@ sh1pt/
 │   ├── payments/         Payment providers (coinpay default; stripe, paypal, worldremit)
 │   ├── vcs/              VCS providers (github, gitlab, gitea)
 │   ├── webhooks/         Paste-URL webhook targets (discord, slack, telegram, teams, generic)
+│   ├── bridges/          Chat-network bridges (discord, slack, irc, signal, matrix, mastodon, nostr, telegram)
+│   ├── docs/             Document generators (marp, gslides, pandoc, lumin)
 │   ├── web/              Dashboard (stub)
 │   └── targets/          One adapter per distribution surface
 │       ├── pkg-npm/

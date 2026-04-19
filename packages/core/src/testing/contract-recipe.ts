@@ -30,8 +30,10 @@ export function contractTestRecipe(r: Recipe): void {
 
     if (r.prompts) {
       it('prompt keys match known boilerplates (or future ones)', () => {
-        for (const key of Object.keys(r.prompts!)) {
-          expect(r.prompts![key].length).toBeGreaterThan(50);
+        const prompts = r.prompts!;
+        for (const key of Object.keys(prompts)) {
+          const prompt = prompts[key];
+          if (prompt) expect(prompt.length).toBeGreaterThan(50);
         }
       });
     }

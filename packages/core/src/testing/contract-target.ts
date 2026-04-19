@@ -32,9 +32,10 @@ export function contractTestTarget(target: Target<any>, opts: TargetContractOpti
       await expect(target.ship(ctx as any, opts.sampleConfig)).resolves.toBeDefined();
     });
 
-    if (target.status) {
+    const statusFn = target.status;
+    if (statusFn) {
       it('status() returns a valid state', async () => {
-        const status = await target.status('stub-id', opts.sampleConfig);
+        const status = await statusFn('stub-id', opts.sampleConfig);
         expect(['pending', 'building', 'shipping', 'in-review', 'live', 'failed', 'rolled-back']).toContain(status.state);
       });
     }

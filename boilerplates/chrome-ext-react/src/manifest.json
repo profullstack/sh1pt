@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "sh1pt chrome ext",
+  "version": "0.1.0",
+  "description": "sh1pt boilerplate: React + Vite + Supabase Chrome extension.",
+  "action": { "default_popup": "src/popup/index.html" },
+  "background": { "service_worker": "src/background.ts", "type": "module" },
+  "permissions": ["storage", "identity"],
+  "host_permissions": ["https://*.supabase.co/*"]
+}

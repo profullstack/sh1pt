@@ -1,0 +1,28 @@
+{
+  "name": "sh1pt-expo-supabase",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "ios": "expo start --ios",
+    "android": "expo start --android",
+    "ship": "sh1pt ship",
+    "ship:beta": "sh1pt ship --channel beta"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "expo": "~52.0.0",
+    "expo-router": "~4.0.0",
+    "expo-secure-store": "~14.0.0",
+    "react": "18.3.1",
+    "react-native": "0.76.0",
+    "react-native-url-polyfill": "^2.0.0"
+  },
+  "devDependencies": {
+    "@sh1pt/cli": "^0.0.0",
+    "@sh1pt/core": "^0.0.0",
+    "@types/react": "~18.3.0",
+    "typescript": "^5.6.0"
+  }
+}

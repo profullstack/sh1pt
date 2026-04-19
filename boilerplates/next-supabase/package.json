@@ -1,0 +1,28 @@
+{
+  "name": "sh1pt-next-supabase",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Next.js + Supabase boilerplate for sh1pt — web/PWA/API in one app.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "ship": "sh1pt ship",
+    "ship:beta": "sh1pt ship --channel beta"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.5.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@sh1pt/cli": "^0.0.0",
+    "@sh1pt/core": "^0.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.6.0"
+  }
+}

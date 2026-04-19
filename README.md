@@ -2,7 +2,97 @@
 
 **Ship one codebase to every platform, store, and registry.**
 
-`sh1pt` is Expo for *everywhere*: web, mobile (iOS/Android), desktop (macOS/Windows/Linux), wearables, TV, browser extensions, CLIs, SDKs, package managers, voice assistants, chatbots, IoT — all driven by one manifest, one CLI, and one cloud.
+[![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![cloud](https://img.shields.io/badge/cloud-%24499%2Fyr-blueviolet)](#pricing)
+[![status](https://img.shields.io/badge/status-alpha-orange)](#)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](#)
+[![pnpm](https://img.shields.io/badge/pnpm-F69220?logo=pnpm&logoColor=white)](#)
+[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)](#)
+
+### Ships to
+
+**Web / hosting**
+![Cloudflare Pages](https://img.shields.io/badge/Cloudflare_Pages-F38020?logo=cloudflare&logoColor=white)
+![Workers](https://img.shields.io/badge/Cloudflare_Workers-F38020?logo=cloudflare&logoColor=white)
+![Netlify](https://img.shields.io/badge/Netlify-00C7B7?logo=netlify&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-000?logo=vercel&logoColor=white)
+![Fly.io](https://img.shields.io/badge/Fly.io-7B3FE4?logo=fly.io&logoColor=white)
+![Railway](https://img.shields.io/badge/Railway-0B0D0E?logo=railway&logoColor=white)
+![Deno Deploy](https://img.shields.io/badge/Deno_Deploy-000?logo=deno&logoColor=white)
+
+**Mobile**
+![App Store](https://img.shields.io/badge/App_Store-0D96F6?logo=appstore&logoColor=white)
+![Google Play](https://img.shields.io/badge/Google_Play-414141?logo=googleplay&logoColor=white)
+![F-Droid](https://img.shields.io/badge/F--Droid-1976D2?logo=fdroid&logoColor=white)
+![Amazon Appstore](https://img.shields.io/badge/Amazon_Appstore-FF9900?logo=amazon&logoColor=white)
+
+**Desktop**
+![Mac App Store](https://img.shields.io/badge/Mac_App_Store-000?logo=apple&logoColor=white)
+![Microsoft Store](https://img.shields.io/badge/Microsoft_Store-0078D4?logo=microsoftstore&logoColor=white)
+![Snap](https://img.shields.io/badge/Snap-82BEA0?logo=snapcraft&logoColor=white)
+![Flathub](https://img.shields.io/badge/Flathub-4A90D9?logo=flathub&logoColor=white)
+![AppImage](https://img.shields.io/badge/AppImage-000?logo=appimage&logoColor=white)
+![Steam Deck](https://img.shields.io/badge/Steam_Deck-1B2838?logo=steamdeck&logoColor=white)
+
+**TV**
+![Apple TV](https://img.shields.io/badge/Apple_TV-000?logo=appletv&logoColor=white)
+![Android TV](https://img.shields.io/badge/Android_TV-3DDC84?logo=androidtv&logoColor=white)
+![Fire TV](https://img.shields.io/badge/Fire_TV-FF9900?logo=amazonfiretv&logoColor=white)
+![Roku](https://img.shields.io/badge/Roku-662D91?logo=roku&logoColor=white)
+![webOS](https://img.shields.io/badge/webOS-A50034?logo=lg&logoColor=white)
+
+**XR / VR / AR**
+![WebXR](https://img.shields.io/badge/WebXR-005A9C?logo=webxr&logoColor=white)
+![Meta Quest](https://img.shields.io/badge/Meta_Quest-0668E1?logo=meta&logoColor=white)
+![SideQuest](https://img.shields.io/badge/SideQuest-FF4F8A?logo=sidequest&logoColor=white)
+![Vision Pro](https://img.shields.io/badge/Vision_Pro-000?logo=apple&logoColor=white)
+![Pico](https://img.shields.io/badge/Pico-000?logo=pico&logoColor=white)
+![SteamVR](https://img.shields.io/badge/SteamVR-1B2838?logo=steam&logoColor=white)
+
+**Console / game**
+![Steam](https://img.shields.io/badge/Steam-1B2838?logo=steam&logoColor=white)
+![Xbox](https://img.shields.io/badge/Xbox-107C10?logo=xbox&logoColor=white)
+![PlayStation](https://img.shields.io/badge/PlayStation-003791?logo=playstation&logoColor=white)
+![Nintendo Switch](https://img.shields.io/badge/Switch-E60012?logo=nintendoswitch&logoColor=white)
+
+**Browser extensions**
+![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-4285F4?logo=googlechrome&logoColor=white)
+![Firefox Add-ons](https://img.shields.io/badge/Firefox_Addons-FF7139?logo=firefoxbrowser&logoColor=white)
+![Edge Add-ons](https://img.shields.io/badge/Edge_Addons-0078D7?logo=microsoftedge&logoColor=white)
+![Safari Extensions](https://img.shields.io/badge/Safari_Extensions-000?logo=safari&logoColor=white)
+
+**Package managers**
+![npm](https://img.shields.io/badge/npm-CB3837?logo=npm&logoColor=white)
+![JSR](https://img.shields.io/badge/JSR-F7DF1E?logo=javascript&logoColor=black)
+![Deno Land](https://img.shields.io/badge/deno.land%2Fx-000?logo=deno&logoColor=white)
+![GitHub Packages](https://img.shields.io/badge/GitHub_Packages-181717?logo=github&logoColor=white)
+![Homebrew](https://img.shields.io/badge/Homebrew-FBB040?logo=homebrew&logoColor=white)
+![winget](https://img.shields.io/badge/winget-0078D4?logo=windows&logoColor=white)
+![Scoop](https://img.shields.io/badge/Scoop-555?logo=scoop&logoColor=white)
+![Chocolatey](https://img.shields.io/badge/Chocolatey-80B5E3?logo=chocolatey&logoColor=white)
+![apt](https://img.shields.io/badge/apt-A81D33?logo=debian&logoColor=white)
+![dnf](https://img.shields.io/badge/dnf-51A2DA?logo=fedora&logoColor=white)
+![pacman](https://img.shields.io/badge/pacman-1793D1?logo=archlinux&logoColor=white)
+![AUR](https://img.shields.io/badge/AUR-1793D1?logo=archlinux&logoColor=white)
+![Nix](https://img.shields.io/badge/nixpkgs-5277C3?logo=nixos&logoColor=white)
+
+**CDN**
+![jsDelivr](https://img.shields.io/badge/jsDelivr-E84D3D?logo=jsdelivr&logoColor=white)
+![unpkg](https://img.shields.io/badge/unpkg-000?logo=npm&logoColor=white)
+![esm.sh](https://img.shields.io/badge/esm.sh-F7DF1E?logo=javascript&logoColor=black)
+![cdnjs](https://img.shields.io/badge/cdnjs-E66F00?logo=cloudflare&logoColor=white)
+
+**Container registries**
+![Docker Hub](https://img.shields.io/badge/Docker_Hub-2496ED?logo=docker&logoColor=white)
+![GHCR](https://img.shields.io/badge/GHCR-181717?logo=github&logoColor=white)
+![Quay](https://img.shields.io/badge/Quay-EE0000?logo=redhat&logoColor=white)
+![ECR](https://img.shields.io/badge/AWS_ECR-FF9900?logo=amazonaws&logoColor=white)
+![GCR](https://img.shields.io/badge/GCR-4285F4?logo=googlecloud&logoColor=white)
+![ACR](https://img.shields.io/badge/Azure_ACR-0078D4?logo=microsoftazure&logoColor=white)
+
+---
+
+`sh1pt` is Expo for *everywhere*: web, mobile (iOS/Android), desktop (macOS/Windows/Linux/SteamOS), wearables, TV, XR, browser extensions, CLIs, SDKs, package managers, CDNs, container registries, app-hosting platforms — all driven by one manifest, one CLI, and one cloud.
 
 ## Who it's for
 
@@ -74,7 +164,11 @@ sh1pt/
 │       ├── deploy-fly/        Fly.io
 │       └── deploy-railway/    Railway
 ├── boilerplates/         Standalone starter projects (NOT workspace members).
-│   └── hello-world/      Customers copy this and edit sh1pt.config.ts.
+│   ├── hello-world/          Bare manifest — no framework
+│   ├── next-supabase/        Next.js 15 + React 19 + Supabase (web/PWA)
+│   ├── expo-supabase/        Expo + Supabase (iOS + Android + F-Droid)
+│   ├── tauri-supabase/       Tauri 2 + React + Supabase (desktop)
+│   └── chrome-ext-react/     React + Vite + Supabase (Chrome MV3)
 └── TARGETS.md            Full matrix of ~40 planned surfaces, stores, and registries
 ```
 

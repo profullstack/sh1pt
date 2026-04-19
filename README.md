@@ -1,14 +1,17 @@
 <!--
-  sh1pt · Build. Promote. Scale.
+  sh1pt · Build. Promote. Scale. Iterate…
   HTML meta for preview cards:
-  <meta name="description" content="sh1pt — Build. Promote. Scale. Ship any app to every store, registry, and channel. Run ads everywhere. Provision cloud infra. Drive Claude / Codex / Qwen to build the rest.">
-  <meta property="og:title" content="sh1pt · Build. Promote. Scale.">
-  <meta property="og:description" content="One codebase → every store, registry, and channel. Ads on every network. Cloud infra on demand. AI agents build the rest.">
+  <meta name="description" content="sh1pt — Build. Promote. Scale. Iterate. One codebase → every store, registry, CDN, and channel. Run ads everywhere. Provision cloud infra. AI agents tighten the loop.">
+  <meta property="og:title" content="sh1pt · Build. Promote. Scale. Iterate…">
+  <meta property="og:description" content="One codebase → every store. Ads on every network. Cloud infra on demand. AI agents iterate on the metrics.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="sh1pt · Build. Promote. Scale. Iterate…">
+  <meta name="twitter:description" content="One codebase → every store. Ads on every network. Cloud infra on demand. AI agents iterate on the metrics.">
 -->
 
-# sh1pt — Build. Promote. Scale.
+# sh1pt — Build. Promote. Scale. Iterate…
 
-**One codebase → every store, registry, CDN, and channel. Ads on every network. Cloud infra on demand. AI agents build the rest.**
+**One codebase → every store, registry, CDN, and channel. Ads on every network. Cloud infra on demand. AI agents tighten the loop.**
 
 [![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![cloud](https://img.shields.io/badge/cloud-%24499%2Fyr-blueviolet)](#pricing)
@@ -93,14 +96,20 @@
 ![esm.sh](https://img.shields.io/badge/esm.sh-F7DF1E?logo=javascript&logoColor=black)
 ![cdnjs](https://img.shields.io/badge/cdnjs-E66F00?logo=cloudflare&logoColor=white)
 
-**Cloud infra (`sh1pt deploy`)**
+**Cloud infra (`sh1pt deploy` / `sh1pt scale`)**
 ![RunPod](https://img.shields.io/badge/RunPod-673AB8?logo=runpod&logoColor=white)
 ![DigitalOcean](https://img.shields.io/badge/DigitalOcean-0080FF?logo=digitalocean&logoColor=white)
 ![Vultr](https://img.shields.io/badge/Vultr-007BFC?logo=vultr&logoColor=white)
 ![Hetzner](https://img.shields.io/badge/Hetzner-D50C2D?logo=hetzner&logoColor=white)
 ![Atlantic.Net](https://img.shields.io/badge/Atlantic.Net-0071BC?logo=atlantic&logoColor=white)
+![Railway](https://img.shields.io/badge/Railway-0B0D0E?logo=railway&logoColor=white)
+![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?logo=cloudflare&logoColor=white)
 ![Lambda Labs](https://img.shields.io/badge/Lambda_Labs-8A2BE2?logo=lambda&logoColor=white)
 ![Linode](https://img.shields.io/badge/Linode-00A95C?logo=linode&logoColor=white)
+
+**DNS (`sh1pt scale dns`)**
+![Porkbun](https://img.shields.io/badge/Porkbun-DA7FBF?logo=porkbun&logoColor=white)
+![Cloudflare DNS](https://img.shields.io/badge/Cloudflare_DNS-F38020?logo=cloudflare&logoColor=white)
 
 **AI agents (`sh1pt agents`)**
 ![Claude Code](https://img.shields.io/badge/Claude_Code-D97757?logo=anthropic&logoColor=white)
@@ -148,14 +157,16 @@
 
 ## CLI surface
 
-Five verbs. Everything else is a subcommand.
+The tagline IS the verb set:
 
 ```bash
 sh1pt build          # compile artifacts for enabled targets
 sh1pt deploy         # provision VPS / GPU / bare-metal infra you own
 sh1pt ship           # publish to every target store, registry, and channel
-sh1pt promote        # run ads across every major network
-sh1pt agents         # drive Claude / Codex / Qwen to build + iterate
+sh1pt promote        # run ads across every major ad network
+sh1pt scale          # horizontal fleet scaling + round-robin DNS + rollouts + cost
+sh1pt iterate        # observe metrics → agent proposes → ship → measure, on loop
+sh1pt agents         # drive Claude / Codex / Qwen (plumbing for generate + iterate)
 ```
 
 ### ship
@@ -202,6 +213,33 @@ sh1pt deploy destroy <instanceId>
 ```
 
 GPU hourly rates are $3–8+. `--max-hourly-price` is strongly recommended for any GPU provision — a forgotten A100 overnight is a tuition-level mistake.
+
+### scale
+
+Horizontal scale + round-robin DNS + staged rollouts + spend tracking. Under the hood it composes `deploy` (to buy/retire instances) with a DNS provider (to point traffic).
+
+```bash
+sh1pt scale up --instances 5 --max-hourly-price 8        # buy 5 more, abort if >$8/hr total
+sh1pt scale down --instances 2
+sh1pt scale auto --min 2 --max 20 --target-cpu 70        # sh1pt cloud polls + scales for you
+sh1pt scale dns --provider dns-porkbun --domain api.example.com
+sh1pt scale dns --provider dns-cloudflare --domain api.example.com --proxied
+sh1pt scale rollout --version v0.7.0 --strategy canary --percent 5
+sh1pt scale cost                                         # hourly/monthly + rightsizing hints
+sh1pt scale status
+```
+
+### iterate
+
+The optimization loop. Pull live metrics (installs, conversion, CPI, churn, errors), hand them to an agent with your declared goals, let the agent propose a diff, ship it, measure, repeat.
+
+```bash
+sh1pt iterate goals set conversion=8% cpi=2.00 churn=5%  # optimization targets
+sh1pt iterate run                                        # single cycle
+sh1pt iterate watch --interval 3600                      # daemon — cycle every hour
+sh1pt iterate test "pricing anchor at $99 lifts conversion" --traffic 50
+sh1pt iterate experiments
+```
 
 ### agents
 
@@ -307,7 +345,8 @@ sh1pt/
 │   ├── api/              SaaS backend (Hono) — projects, releases, builds, credentials, agents
 │   ├── policy/           Store-policy linter (runs before every ship)
 │   ├── promo/            Ad-platform adapters (reddit, meta, tiktok, google, youtube, x, apple-search, linkedin, microsoft)
-│   ├── cloud/            Cloud-infra adapters (runpod, digitalocean, vultr, hetzner, atlantic)
+│   ├── cloud/            Cloud-infra adapters (runpod, digitalocean, vultr, hetzner, atlantic, railway, cloudflare)
+│   ├── dns/              DNS adapters (porkbun, cloudflare)
 │   ├── agents/           AI CLI adapters (claude, codex, qwen)
 │   ├── recipes/          App-type recipes (waitlist-crypto-investor, …)
 │   ├── web/              Dashboard (stub)

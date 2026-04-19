@@ -3,6 +3,7 @@ packages:
   - "packages/targets/*"
   - "packages/promo/*"
   - "packages/cloud/*"
+  - "packages/dns/*"
   - "packages/agents/*"
   - "packages/recipes/*"
 # boilerplates/* are deliberately NOT workspace members — they are standalone

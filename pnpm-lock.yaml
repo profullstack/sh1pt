@@ -54,79 +54,73 @@ importers:
         specifier: ^3.23.8
         version: 3.25.76
 
-  packages/bot/discord:
+  packages/bots/irc:
     dependencies:
       '@sh1pt/core':
         specifier: workspace:*
         version: link:../../core
 
-  packages/bot/irc:
+  packages/bots/matrix:
     dependencies:
       '@sh1pt/core':
         specifier: workspace:*
         version: link:../../core
 
-  packages/bot/matrix:
+  packages/bots/phonenumbers:
     dependencies:
       '@sh1pt/core':
         specifier: workspace:*
         version: link:../../core
 
-  packages/bot/phonenumbers:
+  packages/bots/signal:
     dependencies:
       '@sh1pt/core':
         specifier: workspace:*
         version: link:../../core
 
-  packages/bot/signal:
+  packages/bots/slack:
     dependencies:
       '@sh1pt/core':
         specifier: workspace:*
         version: link:../../core
 
-  packages/bot/slack:
+  packages/bots/teams:
     dependencies:
       '@sh1pt/core':
         specifier: workspace:*
         version: link:../../core
 
-  packages/bot/teams:
+  packages/bots/telegram:
     dependencies:
       '@sh1pt/core':
         specifier: workspace:*
         version: link:../../core
 
-  packages/bot/telegram:
+  packages/bots/telnyx:
     dependencies:
       '@sh1pt/core':
         specifier: workspace:*
         version: link:../../core
 
-  packages/bot/telnyx:
+  packages/bots/twilio:
     dependencies:
       '@sh1pt/core':
         specifier: workspace:*
         version: link:../../core
 
-  packages/bot/twilio:
+  packages/bots/twitch:
     dependencies:
       '@sh1pt/core':
         specifier: workspace:*
         version: link:../../core
 
-  packages/bot/twitch:
+  packages/bots/wechat:
     dependencies:
       '@sh1pt/core':
         specifier: workspace:*
         version: link:../../core
 
-  packages/bot/wechat:
-    dependencies:
-      '@sh1pt/core':
-        specifier: workspace:*
-        version: link:../../core
-
-  packages/bot/whatsapp:
+  packages/bots/whatsapp:
     dependencies:
       '@sh1pt/core':
         specifier: workspace:*

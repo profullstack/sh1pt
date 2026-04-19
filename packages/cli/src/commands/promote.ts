@@ -1,8 +1,10 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
+import { merchCmd } from './merch.js';
+import { shipCmd as shipSub } from './ship.js';
 
 export const promoteCmd = new Command('promote')
-  .description('Run ads across Reddit, Meta, TikTok, Google, YouTube, X, Apple Search, LinkedIn, and Microsoft')
+  .description('Run ads + ship swag. Reddit, Meta, TikTok, Google, YouTube, X, Apple Search, LinkedIn, Microsoft — plus Printful/Printify merch.')
   .option('--platform <id...>', 'only launch on these platforms')
   .option('--budget <amount>', 'per-platform budget override', Number)
   .option('--duration <span>', 'e.g. 7d, 14d, 30d, ongoing')
@@ -73,4 +75,71 @@ promoteCmd
   .description('Manage ad creatives (headlines, descriptions, images, videos)')
   .action(() => {
     console.log(kleur.dim('[stub] promote creatives — edit manifest.promo.creatives or upload assets to secrets vault'));
+  });
+
+// Everything that gets users — or investors — to the product. All
+// nests under `promote` so the global namespace stays small.
+promoteCmd.addCommand(shipSub);       // sh1pt promote ship [setup|init|status|rollback|lint|logs|target]
+promoteCmd.addCommand(merchCmd);      // sh1pt promote merch [setup|create|publish|giveaway|orders|payout|list]
+
+// Investor outreach via CapitalReach and friends. Same adapter shape as
+// ads (promo-*) under the hood — filters replace ad creatives, reply
+// rate replaces CTR.
+const investorsCmd = promoteCmd
+  .command('investors')
+  .description('Angel / seed / VC outreach — pitch decks to targeted firms via CapitalReach.ai');
+
+investorsCmd
+  .command('setup')
+  .description('Connect CapitalReach (and any other outreach tools) via API key')
+  .option('--provider <id>', 'promo-capitalreach (default)', 'promo-capitalreach')
+  .action((opts: { provider: string }) => {
+    console.log(kleur.cyan(`[stub] investors setup · ${opts.provider}`));
+  });
+
+investorsCmd
+  .command('pitch')
+  .description('Send personalized intros + pitch deck to a targeted list')
+  .option('--stage <stage>', 'pre-seed | seed | series-a | series-b', 'seed')
+  .option('--sectors <list>', 'comma-separated sectors', 'ai,devtools,saas')
+  .option('--check-min <usd>', 'minimum check size in thousands', Number, 25)
+  .option('--check-max <usd>', 'maximum check size in thousands', Number, 500)
+  .option('--leads-only', 'filter to lead investors only')
+  .option('--deck <path>', 'path or URL to the pitch deck')
+  .option('--one-pager <path>')
+  .option('--dry-run', 'preview the target list + copy without sending')
+  .action((opts) => {
+    console.log(kleur.green(`[stub] investors pitch ${JSON.stringify(opts)}`));
+  });
+
+investorsCmd
+  .command('search')
+  .description('Search investor database and export CSV without launching')
+  .option('--stage <stage>')
+  .option('--sectors <list>')
+  .option('--leads-only')
+  .option('--check-min <usd>', Number)
+  .option('--check-max <usd>', Number)
+  .option('--out <csvPath>', '', './investors.csv')
+  .action((opts) => {
+    console.log(kleur.dim(`[stub] investors search → ${opts.out ?? './investors.csv'}`));
+  });
+
+investorsCmd
+  .command('status')
+  .description('Sent / replies / meetings / term sheets — the funnel')
+  .option('--json')
+  .action((opts: { json?: boolean }) => {
+    if (opts.json) {
+      console.log(JSON.stringify({ sent: 0, replies: 0, meetings: 0, termSheets: 0 }, null, 2));
+      return;
+    }
+    console.log(kleur.dim('[stub] investors status'));
+  });
+
+investorsCmd
+  .command('schedule')
+  .description('Meetings the tool has booked on your behalf (calendar sync)')
+  .action(() => {
+    console.log(kleur.dim('[stub] investors schedule — pulls from the outreach tool calendar integration'));
   });

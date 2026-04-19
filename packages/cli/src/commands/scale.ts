@@ -1,9 +1,14 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
+import { deployCmd } from './deploy.js';
 
 export const scaleCmd = new Command('scale')
-  .description('Horizontally scale the fleet, wire round-robin DNS, stage rollouts, and track cost')
+  .description('Provision + scale cloud infra. DNS round-robin, rollouts, rightsizing — all the capacity ops.')
   .action(() => { scaleCmd.help(); });
+
+// Raw infra provisioning lives under scale (was top-level `sh1pt deploy`).
+// sh1pt scale deploy [setup|quote|provision|list|destroy|status]
+scaleCmd.addCommand(deployCmd);
 
 scaleCmd
   .command('up')

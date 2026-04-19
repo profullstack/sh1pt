@@ -1,9 +1,14 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
+import { agentsCmd } from './agents.js';
 
 export const iterateCmd = new Command('iterate')
-  .description('Ongoing-improvement loop — observe metrics, propose changes, ship, measure, repeat')
+  .description('Observe metrics, have an agent propose changes, ship, measure. Powered by Claude / Codex / Qwen.')
   .action(() => { iterateCmd.help(); });
+
+// AI-CLI orchestration lives under iterate (was top-level `sh1pt agents`).
+// sh1pt iterate agents [list|setup|talk|run|generate]
+iterateCmd.addCommand(agentsCmd);
 
 iterateCmd
   .command('run')

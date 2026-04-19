@@ -111,11 +111,14 @@
 ![Porkbun](https://img.shields.io/badge/Porkbun-DA7FBF?logo=porkbun&logoColor=white)
 ![Cloudflare DNS](https://img.shields.io/badge/Cloudflare_DNS-F38020?logo=cloudflare&logoColor=white)
 
-**Merch / swag (`sh1pt merch`)**
+**Merch / swag (`sh1pt promote merch`)**
 ![Printful](https://img.shields.io/badge/Printful-E91E63?logo=printful&logoColor=white)
 ![Printify](https://img.shields.io/badge/Printify-21A52F?logo=printify&logoColor=white)
 
-**AI agents (`sh1pt agents`)**
+**Investor outreach (`sh1pt promote investors`)**
+![CapitalReach](https://img.shields.io/badge/CapitalReach.ai-0F172A?logo=capitalreach&logoColor=white)
+
+**AI agents (`sh1pt iterate agents`)**
 ![Claude Code](https://img.shields.io/badge/Claude_Code-D97757?logo=anthropic&logoColor=white)
 ![Codex](https://img.shields.io/badge/OpenAI_Codex-412991?logo=openai&logoColor=white)
 ![Qwen](https://img.shields.io/badge/Qwen_Code-FF6A00?logo=alibabacloud&logoColor=white)
@@ -161,23 +164,48 @@
 
 ## CLI surface
 
-The tagline IS the verb set:
+Four verbs. One per word of the tagline. Everything else nests so the global namespace stays tight.
 
 ```bash
-sh1pt build          # compile artifacts for enabled targets
-sh1pt deploy         # provision VPS / GPU / bare-metal infra you own
-sh1pt ship           # publish to every target store, registry, and channel
-sh1pt promote        # run ads across every major ad network
-sh1pt scale          # horizontal fleet scaling + round-robin DNS + rollouts + cost
-sh1pt iterate        # observe metrics → agent proposes → ship → measure, on loop
-sh1pt agents         # drive Claude / Codex / Qwen (plumbing for generate + iterate)
-sh1pt merch          # print + ship swag (shirts, stickers, pens) — sell or give away free
+sh1pt build          # compile artifacts
+sh1pt promote        # publish (ship), run ads, print swag (merch)
+sh1pt scale          # provision infra (deploy), DNS round-robin, rollouts, cost
+sh1pt iterate        # observe metrics → agent proposes (agents) → ship → measure
 ```
 
-### ship
+Nested subcommand tree:
+
+```
+sh1pt build [--target X] [--channel C] [--cloud]
+
+sh1pt promote                                       (default: launch ads)
+  setup / status / stop / creatives                 ad-platform ops
+  ship [--target X] [--channel C] [--dry-run]       publish to stores/registries
+    init / setup / status / rollback / lint / logs
+    target add|remove|list|available
+  merch                                             swag — Printful / Printify
+    setup / create / list / publish / giveaway / orders / payout
+  investors                                         angel/seed/VC outreach — CapitalReach.ai
+    setup / pitch / search / status / schedule
+
+sh1pt scale
+  up / down / auto / dns / rollout / cost / status
+  deploy                                            raw cloud infra (RunPod, DO, Vultr, Hetzner, Atlantic, Railway, Cloudflare)
+    setup / quote / provision / list / destroy / status
+
+sh1pt iterate
+  run / watch / goals / test / experiments
+  agents                                            drive Claude / Codex / Qwen
+    list / setup / talk / run / generate
+
+sh1pt login                                         (auxiliary)
+sh1pt secret set|get|list|rm                        (auxiliary — credentials vault)
+```
+
+### promote ship
 
 ```bash
-sh1pt ship [--target X] [--channel beta|stable] [--dry-run] [--skip-lint]
+sh1pt promote ship [--target X] [--channel beta|stable] [--dry-run] [--skip-lint]
 
 sh1pt ship init                           # scaffold sh1pt.config.ts
 sh1pt ship setup [--store id] [--poll]    # connect store credentials
@@ -203,18 +231,18 @@ sh1pt promote creatives
 
 Publishing alone is table stakes. `promote` closes the loop — one command runs install / traffic / awareness campaigns on Reddit, Meta, TikTok, Google, YouTube, X, Apple Search, LinkedIn, and Microsoft Ads at once.
 
-### deploy
+### scale deploy
 
-Provision raw compute you own (separate from `ship`, which pushes finished apps to hosted platforms).
+Provision raw compute you own (distinct from `promote ship`, which pushes finished apps to hosted platforms).
 
 ```bash
-sh1pt deploy setup                                       # connect RunPod / DO / Vultr / Hetzner / Atlantic
-sh1pt deploy quote --kind gpu --gpu A100 --gpu-count 2   # cheapest-first across all connected providers
-sh1pt deploy provision --provider cloud-runpod \
+sh1pt scale deploy setup                                       # connect RunPod / DO / Vultr / Hetzner / Atlantic / Railway / Cloudflare
+sh1pt scale deploy quote --kind gpu --gpu A100 --gpu-count 2   # cheapest-first across all connected providers
+sh1pt scale deploy provision --provider cloud-runpod \
   --kind gpu --gpu H100 --gpu-count 1 \
-  --max-hourly-price 4.50                                # guardrail — abort if quote exceeds ceiling
-sh1pt deploy list
-sh1pt deploy destroy <instanceId>
+  --max-hourly-price 4.50                                      # guardrail — abort if quote exceeds ceiling
+sh1pt scale deploy list
+sh1pt scale deploy destroy <instanceId>
 ```
 
 GPU hourly rates are $3–8+. `--max-hourly-price` is strongly recommended for any GPU provision — a forgotten A100 overnight is a tuition-level mistake.
@@ -246,31 +274,47 @@ sh1pt iterate test "pricing anchor at $99 lifts conversion" --traffic 50
 sh1pt iterate experiments
 ```
 
-### merch
+### promote merch
 
 Swag — shirts, hoodies, stickers, pens, notebooks, mugs, tote bags, socks, phone cases. Sell it on Shopify/Etsy/Gumroad for revenue, or ship it **free to conference attendees and community members** for no-cost brand amplification.
 
 ```bash
-sh1pt merch setup --provider merch-printful
-sh1pt merch create --design ./logo.svg --products tshirt,hoodie,sticker,pen --price 25
-sh1pt merch publish --storefront shopify                  # sell mode
-sh1pt merch giveaway --sku <id...> --addresses ./list.csv # free mode — bulk ship to a list
-sh1pt merch orders
-sh1pt merch payout
+sh1pt promote merch setup --provider merch-printful
+sh1pt promote merch create --design ./logo.svg --products tshirt,hoodie,sticker,pen --price 25
+sh1pt promote merch publish --storefront shopify                   # sell mode
+sh1pt promote merch giveaway --sku <id...> --addresses ./list.csv  # free mode — bulk ship
+sh1pt promote merch orders
+sh1pt promote merch payout
 ```
 
 Providers: Printful (widest catalog, auto-fulfillment) and Printify (multi-supplier, often lower base cost). The `--budget-cap` flag on `merch giveaway` prevents a typo in the CSV from rattling through $5k of free hoodies.
 
-### agents
+### promote investors
+
+Fundraising is just another growth channel. sh1pt wraps investor-outreach APIs (starting with [CapitalReach.ai](https://capitalreach.ai/)) so you can run a seed round the same way you run ads — filter by stage/sector/check-size, send personalized intros with your pitch deck, track the funnel from reply to term sheet.
+
+```bash
+sh1pt promote investors setup
+sh1pt promote investors search --stage seed --sectors ai,devtools --check-max 500 --out ./target-list.csv
+sh1pt promote investors pitch \
+  --stage seed --sectors ai,devtools \
+  --check-min 50 --check-max 500 \
+  --deck ./deck.pdf --one-pager ./one-pager.pdf \
+  --leads-only
+sh1pt promote investors status       # sent / replies / meetings / term sheets
+sh1pt promote investors schedule     # synced calendar meetings
+```
+
+### iterate agents
 
 Drive AI coding CLIs — sh1pt wraps Claude Code, Codex, and Qwen so you can generate/iterate on a project from the same manifest.
 
 ```bash
-sh1pt agents list                              # which CLIs are installed locally
-sh1pt agents setup --agent claude codex qwen   # install + auth each one
-sh1pt agents talk [agent] --recipe <id>        # interactive session with a preloaded recipe prompt
-sh1pt agents run <agent> "add stripe checkout to /waitlist/checkout"
-sh1pt agents generate --recipe waitlist-crypto-investor --boilerplate next-supabase --out ./my-app
+sh1pt iterate agents list                              # which CLIs are installed locally
+sh1pt iterate agents setup --agent claude codex qwen   # install + auth each one
+sh1pt iterate agents talk [agent] --recipe <id>        # interactive session with a preloaded recipe prompt
+sh1pt iterate agents run <agent> "add stripe checkout to /waitlist/checkout"
+sh1pt iterate agents generate --recipe waitlist-crypto-investor --boilerplate next-supabase --out ./my-app
 ```
 
 ### Cross-cutting utilities

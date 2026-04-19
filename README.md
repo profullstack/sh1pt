@@ -503,6 +503,38 @@ sh1pt config vcs hook add --events push,pull_request,release
 
 Local git stays the source of truth. The VCS provider handles remote-side operations (releases, PRs, webhooks) that can't be done with git alone.
 
+## Contract tests
+
+Every adapter implements one of ~12 interfaces (`Target`, `AdPlatform`, `CloudProvider`, `DnsProvider`, `MerchProvider`, `PaymentProvider`, `SocialPlatform`, `VcsProvider`, `WebhookTarget`, `AgentCLI`, `CaptchaSolver`, `Recipe`). sh1pt ships generic contract-test runners in `@sh1pt/core/testing` — adapters consume them with one line:
+
+```ts
+// packages/payments/coinpay/src/index.test.ts
+import { contractTestPayment } from '@sh1pt/core/testing';
+import payment from './index.js';
+
+contractTestPayment(payment, {
+  sampleConfig: { merchantId: 'm_test' },
+  requiredSecrets: ['COINPAY_API_KEY'],
+});
+```
+
+Each runner verifies:
+
+- **id / label / required fields** present and correctly namespaced (e.g. `payment-*`, `cloud-*`, `webhook-*`)
+- **`connect()` throws a vault-hint error** when required secrets are missing — enforces the prompt-to-vault rule
+- **`dry-run` never hits the network** — guardrail against accidental real calls in test suites
+- **Return shapes** match the declared types
+- **Interface-specific guardrails** — e.g. GPU cloud adapters accept `--max-hourly-price`, social adapters with media requirements reject posts without media, payments parse webhooks without throwing
+
+Run everything:
+
+```bash
+pnpm test             # vitest run
+pnpm test:watch       # vitest --watch
+```
+
+Current coverage: ~12 representative adapters across all interfaces. Wiring the remaining ~80 adapters is mechanical — one-line test file per adapter — and the runners catch drift immediately.
+
 ### Webhooks — the minimum viable integration
 
 Sometimes all you need is a webhook URL. Create one in the destination (Discord channel → Webhooks, Slack app → Incoming Webhooks, Teams channel → Connectors, Telegram bot from BotFather), paste it once:

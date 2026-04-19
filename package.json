@@ -9,10 +9,14 @@
     "dev": "pnpm -r --parallel dev",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "cli": "pnpm --filter @sh1pt/cli exec sh1pt"
   },
   "devDependencies": {
     "typescript": "^5.6.3",
-    "tsx": "^4.19.1"
+    "tsx": "^4.19.1",
+    "vitest": "^2.1.4",
+    "@types/node": "^22.0.0"
   }
 }

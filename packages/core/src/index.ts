@@ -15,4 +15,5 @@ export * from './webhook.js';
 export * from './bridge.js';
 export * from './docs.js';
 export * from './jurisdiction.js';
+export * from './bot.js';
 export * from './exec.js';

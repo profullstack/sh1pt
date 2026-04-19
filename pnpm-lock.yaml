@@ -54,6 +54,84 @@ importers:
         specifier: ^3.23.8
         version: 3.25.76
 
+  packages/bot/discord:
+    dependencies:
+      '@sh1pt/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/bot/irc:
+    dependencies:
+      '@sh1pt/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/bot/matrix:
+    dependencies:
+      '@sh1pt/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/bot/phonenumbers:
+    dependencies:
+      '@sh1pt/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/bot/signal:
+    dependencies:
+      '@sh1pt/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/bot/slack:
+    dependencies:
+      '@sh1pt/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/bot/teams:
+    dependencies:
+      '@sh1pt/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/bot/telegram:
+    dependencies:
+      '@sh1pt/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/bot/telnyx:
+    dependencies:
+      '@sh1pt/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/bot/twilio:
+    dependencies:
+      '@sh1pt/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/bot/twitch:
+    dependencies:
+      '@sh1pt/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/bot/wechat:
+    dependencies:
+      '@sh1pt/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/bot/whatsapp:
+    dependencies:
+      '@sh1pt/core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/bridges/discord:
     dependencies:
       '@sh1pt/core':

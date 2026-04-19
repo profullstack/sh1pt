@@ -58,7 +58,7 @@ export interface ProvisionContext {
   dryRun: boolean;
 }
 
-export interface ConnectContext {
+export interface CloudConnectContext {
   secret(key: string): string | undefined;
   log(msg: string, level?: 'info' | 'warn' | 'error'): void;
 }
@@ -67,14 +67,14 @@ export interface CloudProvider<Config = unknown> {
   id: string;                            // e.g. 'cloud-runpod'
   label: string;
   supports: InstanceKind[];
-  connect(ctx: ConnectContext, config: Config): Promise<{ accountId: string }>;
+  connect(ctx: CloudConnectContext, config: Config): Promise<{ accountId: string }>;
   // Return a price quote BEFORE provisioning. Never skip this step for
   // GPUs or bare metal — an A100 rack left running overnight is a bad day.
-  quote(ctx: ConnectContext, spec: InstanceSpec, config: Config): Promise<Quote>;
+  quote(ctx: CloudConnectContext, spec: InstanceSpec, config: Config): Promise<Quote>;
   provision(ctx: ProvisionContext, spec: InstanceSpec, config: Config): Promise<Instance>;
-  list(ctx: ConnectContext, config: Config): Promise<Instance[]>;
+  list(ctx: CloudConnectContext, config: Config): Promise<Instance[]>;
   destroy(ctx: ProvisionContext, instanceId: string, config: Config): Promise<void>;
-  status(ctx: ConnectContext, instanceId: string, config: Config): Promise<Instance>;
+  status(ctx: CloudConnectContext, instanceId: string, config: Config): Promise<Instance>;
 }
 
 export function defineCloud<Config>(p: CloudProvider<Config>): CloudProvider<Config> {

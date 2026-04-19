@@ -1,6 +1,6 @@
 export default async function Thanks({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const { code } = await searchParams;
-  const referralUrl = code ? `https://sh1pt.dev/r/${code}` : 'https://sh1pt.dev/';
+  const referralUrl = code ? `https://sh1pt.com/r/${code}` : 'https://sh1pt.com/';
   return (
     <main>
       <section>

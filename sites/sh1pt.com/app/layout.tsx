@@ -5,11 +5,11 @@ export const metadata = {
   title: 'sh1pt — Build. Promote. Scale. Iterate…',
   description:
     'One codebase → every store, registry, CDN, and channel. Ads on every network. Cloud infra on demand. AI agents tighten the loop.',
-  metadataBase: new URL('https://sh1pt.dev'),
+  metadataBase: new URL('https://sh1pt.com'),
   openGraph: {
     title: 'sh1pt — Build. Promote. Scale. Iterate…',
     description: 'One codebase. Every store. Ads everywhere. Cloud on demand. AI agents iterate.',
-    url: 'https://sh1pt.dev',
+    url: 'https://sh1pt.com',
     type: 'website',
   },
   twitter: { card: 'summary_large_image', title: 'sh1pt', description: 'Build. Promote. Scale. Iterate…' },

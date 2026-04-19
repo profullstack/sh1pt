@@ -14,7 +14,7 @@ export default function Investors() {
             AI agents now generate a working app in minutes. Shipping that app — to 30+ stores, running ads on 10 networks, provisioning infra, processing payments, coordinating a launch — still takes weeks of founder time. sh1pt collapses the post-generation loop into <code>build → promote → scale → iterate</code> — one manifest, one CLI, one cloud.
           </p>
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
-            <a className="btn" href="mailto:investors@sh1pt.dev">Talk to us → investors@sh1pt.dev</a>
+            <a className="btn" href="mailto:investors@sh1pt.com">Talk to us → investors@sh1pt.com</a>
             <a className="btn secondary" href="/deck">Read the deck</a>
           </div>
         </div>
@@ -88,7 +88,7 @@ export default function Investors() {
         <div className="container">
           <h2>Roadmap</h2>
           <ul className="muted" style={{ paddingLeft: '1.2rem', maxWidth: 780 }}>
-            <li><strong>Q1</strong> — Stubs hardened into working adapters for npm / Homebrew / iOS / Android / Chrome / Cloudflare Pages. Prepaid waitlist live at sh1pt.dev.</li>
+            <li><strong>Q1</strong> — Stubs hardened into working adapters for npm / Homebrew / iOS / Android / Chrome / Cloudflare Pages. Prepaid waitlist live at sh1pt.com.</li>
             <li><strong>Q2</strong> — macOS / Windows desktop, TV targets (tvOS / Fire TV / Android TV), XR (Quest / Vision Pro). First 100 paid customers.</li>
             <li><strong>Q3</strong> — Promote (ads + social + outreach + merch) live. First ARR milestone.</li>
             <li><strong>Q4</strong> — Scale (infra + DNS + rollouts) and iterate (agent-driven metric loops) generally available.</li>
@@ -109,7 +109,7 @@ export default function Investors() {
           <p className="muted">
             Check size: $25k–$500k for this round. Lead investors welcome — reach out before the round closes to a broad LP list.
           </p>
-          <a className="btn" href="mailto:investors@sh1pt.dev">investors@sh1pt.dev</a>
+          <a className="btn" href="mailto:investors@sh1pt.com">investors@sh1pt.com</a>
         </div>
       </section>
     </main>

@@ -25,7 +25,7 @@ export default defineConfig({
         dir: './.next',
         provider: 'cloudflare-pages',
         project: 'sh1pt-dot-com',
-        domain: 'sh1pt.dev',
+        domain: 'sh1pt.com',
       },
     },
   },

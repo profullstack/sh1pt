@@ -1,22 +1,3 @@
 packages:
   - "packages/*"
-  - "packages/targets/*"
-  - "packages/promo/*"
-  - "packages/cloud/*"
-  - "packages/dns/*"
-  - "packages/agents/*"
-  - "packages/recipes/*"
-  - "packages/merch/*"
-  - "packages/captcha/*"
-  - "packages/social/*"
-  - "packages/outreach/*"
-  - "packages/payments/*"
-  - "packages/vcs/*"
-  - "packages/webhooks/*"
-  - "packages/bridges/*"
-  - "packages/docs/*"
-  - "packages/entity/*"
-  - "packages/bots/*"
-  - "sites/*"
-# boilerplates/* are deliberately NOT workspace members — they are standalone
-# starter projects that a customer would copy, not packages sh1pt publishes.
+  - "packages/agent-providers/*"

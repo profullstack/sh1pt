@@ -1,23 +1,31 @@
 import { defineAdPlatform } from '@sh1pt/core';
 
-// CapitalReach (capitalreach.ai) — investor-outreach automation. Finds
-// relevant angels/seed/VC funds by sector/stage/check-size, personalizes
-// intros from a pitch deck + one-pager, tracks replies and meetings.
+// CapitalReach (capitalreach.ai) — investor-outreach automation.
 //
-// Modelled as an AdPlatform-style adapter because the shape fits: connect
-// once, kick off a targeted campaign, watch metrics (reply rate, meetings
-// booked) come back. sh1pt promote investors uses this under the hood.
+// ⚠ CapitalReach doesn't appear to expose a public API — the only path
+// users have shipped with is the web app. Two modes:
+//   1. 'api'      — if you have enterprise API access, use this
+//   2. 'browser'  — Playwright automation against the web UI with an
+//                   optional captcha solver (captcha-2captcha or
+//                   captcha-solver) injected when challenges appear
+//
+// Browser mode is opt-in and rate-limited by default (10 sends/hr) to
+// stay well under flag thresholds. This is a last-resort fallback for
+// vendors that refuse programmatic access — respect ToS + rate limits.
 interface Config {
+  mode: 'api' | 'browser';
+  captchaSolver?: 'captcha-2captcha' | 'captcha-solver';
   workspaceId?: string;
-  pitchDeck?: string;                   // path or URL
+  pitchDeck?: string;
   onePager?: string;
   stage?: 'pre-seed' | 'seed' | 'series-a' | 'series-b';
-  sectors?: string[];                   // e.g. ['devtools','ai','infra']
-  checkSizeMin?: number;                // USD
+  sectors?: string[];
+  checkSizeMin?: number;
   checkSizeMax?: number;
-  // Filter to investors who lead (vs only follow). Lead finds are rarer
-  // and worth targeting separately.
   leadsOnly?: boolean;
+  // Send throttling. Browser mode defaults low to avoid triggering
+  // anti-bot heuristics. API mode defers to vendor rate limits.
+  sendsPerHour?: number;
 }
 
 export default defineAdPlatform<Config>({
@@ -25,42 +33,55 @@ export default defineAdPlatform<Config>({
   label: 'CapitalReach (investor outreach)',
 
   async connect(ctx, config) {
-    if (!ctx.secret('CAPITALREACH_API_KEY')) {
-      throw new Error('CAPITALREACH_API_KEY not set — `sh1pt secret set CAPITALREACH_API_KEY ...`');
+    if (config.mode === 'api') {
+      if (!ctx.secret('CAPITALREACH_API_KEY')) {
+        throw new Error('CAPITALREACH_API_KEY not in vault — run `sh1pt secret set CAPITALREACH_API_KEY`');
+      }
+      ctx.log('capitalreach api mode · authed');
+    } else {
+      if (!ctx.secret('CAPITALREACH_EMAIL') || !ctx.secret('CAPITALREACH_PASSWORD')) {
+        throw new Error('browser mode needs CAPITALREACH_EMAIL + CAPITALREACH_PASSWORD in the vault');
+      }
+      if (!config.captchaSolver) {
+        ctx.log('no captchaSolver configured — a challenge prompt will block the run', 'warn');
+      }
+      ctx.log(`capitalreach browser mode · solver=${config.captchaSolver ?? 'none'}`);
     }
-    ctx.log(`capitalreach connected · workspace=${config.workspaceId ?? '(default)'}`);
     return { accountId: config.workspaceId ?? 'capitalreach' };
   },
 
   async start(ctx, config) {
+    const pace = config.sendsPerHour ?? (config.mode === 'browser' ? 10 : 60);
     ctx.log(
-      `capitalreach outreach · stage=${config.stage ?? 'seed'} · ` +
+      `capitalreach ${config.mode} · stage=${config.stage ?? 'seed'} · ` +
       `sectors=${config.sectors?.join(',') ?? 'any'} · ` +
-      `check=$${config.checkSizeMin ?? 25}k-$${config.checkSizeMax ?? 250}k` +
+      `check=$${config.checkSizeMin ?? 25}k-$${config.checkSizeMax ?? 250}k · ` +
+      `${pace}/hr` +
       (config.leadsOnly ? ' · leads-only' : ''),
     );
-    if (!config.pitchDeck) ctx.log('no pitchDeck configured — intros will be thin; consider adding one', 'warn');
+    if (!config.pitchDeck) ctx.log('no pitchDeck — intros will be thin', 'warn');
     if (ctx.dryRun) return { id: 'dry-run' };
-    // TODO:
-    //   1. POST /v1/campaigns  → create with filters (stage/sector/check-size/leads)
-    //   2. Upload pitchDeck + onePager assets, attach to campaign
-    //   3. Generate personalized intros for each investor (model decides firm + partner)
-    //   4. Schedule sends at polite hours in target timezone
-    //   5. Return campaign id so `sh1pt promote investors status` can poll
-    return {
-      id: `cr_${Date.now()}`,
-      url: 'https://app.capitalreach.ai/campaigns',
-    };
+
+    if (config.mode === 'api') {
+      // TODO: POST /v1/campaigns + upload deck + create personalized intros
+    } else {
+      // TODO: Playwright flow
+      //   1. launch chromium (headful first time for manual 2FA setup)
+      //   2. login; on captcha page, resolve via config.captchaSolver
+      //   3. apply search filters, iterate pages, send intros paced to sendsPerHour
+      //   4. persist run state so crashes resume rather than restart
+      // Never bulk-send at max rate; accounts get flagged and the work is wasted.
+    }
+    return { id: `cr_${Date.now()}`, url: 'https://app.capitalreach.ai/campaigns' };
   },
 
   async status() {
-    // Returned metrics mean something different than for ads:
-    //   impressions = intros sent, clicks = replies received,
-    //   installs = meetings booked, conversions = term sheets
+    // impressions = intros sent, clicks = replies received,
+    // installs = meetings booked, conversions = term sheets
     return { state: 'active', spend: 0, impressions: 0, clicks: 0, installs: 0 };
   },
 
   async stop(id) {
-    console.log(`[stub] capitalreach pause campaign ${id}`);
+    console.log(`[stub] capitalreach pause ${id}`);
   },
 });

@@ -143,3 +143,36 @@ investorsCmd
   .action(() => {
     console.log(kleur.dim('[stub] investors schedule — pulls from the outreach tool calendar integration'));
   });
+
+// Crowdfunding — equity (Wefunder, Republic) + reward (Kickstarter).
+// Different from 1:1 investor outreach: mass-audience, public campaigns.
+const crowdfundCmd = promoteCmd
+  .command('crowdfund')
+  .description('Crowdfunding — equity (Wefunder) + reward (Kickstarter, Indiegogo)');
+
+crowdfundCmd
+  .command('setup')
+  .description('Connect a crowdfunding platform')
+  .option('--provider <id>', 'promo-wefunder | promo-kickstarter | promo-indiegogo', 'promo-kickstarter')
+  .action((opts: { provider: string }) => {
+    console.log(kleur.cyan(`[stub] crowdfund setup · ${opts.provider}`));
+  });
+
+crowdfundCmd
+  .command('launch')
+  .description('Launch a campaign or post an update (legal filings must be completed manually first)')
+  .option('--provider <id>')
+  .option('--target <usd>', 'funding target in USD', Number)
+  .option('--duration <days>', '', Number, 30)
+  .action((opts) => {
+    console.log(kleur.green(`[stub] crowdfund launch ${JSON.stringify(opts)}`));
+  });
+
+crowdfundCmd
+  .command('status')
+  .description('Pledges / backers / percent-funded across active campaigns')
+  .option('--json')
+  .action((opts: { json?: boolean }) => {
+    if (opts.json) { console.log(JSON.stringify({ campaigns: [] }, null, 2)); return; }
+    console.log(kleur.dim('[stub] crowdfund status'));
+  });

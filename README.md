@@ -117,6 +117,16 @@
 
 **Investor outreach (`sh1pt promote investors`)**
 ![CapitalReach](https://img.shields.io/badge/CapitalReach.ai-0F172A?logo=capitalreach&logoColor=white)
+![AngelList](https://img.shields.io/badge/AngelList-000?logo=angellist&logoColor=white)
+![OpenVC](https://img.shields.io/badge/OpenVC-2D6CDF?logo=openvc&logoColor=white)
+
+**Crowdfunding (`sh1pt promote crowdfund`)**
+![Wefunder](https://img.shields.io/badge/Wefunder-F26522?logo=wefunder&logoColor=white)
+![Kickstarter](https://img.shields.io/badge/Kickstarter-05CE78?logo=kickstarter&logoColor=white)
+
+**CAPTCHA solvers (last-resort, browser-mode fallback only)**
+![2Captcha](https://img.shields.io/badge/2Captcha-0078D4?logo=2captcha&logoColor=white)
+![CaptchaSolver](https://img.shields.io/badge/CaptchaSolver-374151?logo=captchasolver&logoColor=white)
 
 **AI agents (`sh1pt iterate agents`)**
 ![Claude Code](https://img.shields.io/badge/Claude_Code-D97757?logo=anthropic&logoColor=white)
@@ -291,7 +301,7 @@ Providers: Printful (widest catalog, auto-fulfillment) and Printify (multi-suppl
 
 ### promote investors
 
-Fundraising is just another growth channel. sh1pt wraps investor-outreach APIs (starting with [CapitalReach.ai](https://capitalreach.ai/)) so you can run a seed round the same way you run ads — filter by stage/sector/check-size, send personalized intros with your pitch deck, track the funnel from reply to term sheet.
+Fundraising is just another growth channel. sh1pt wraps investor-outreach tools (starting with [CapitalReach.ai](https://capitalreach.ai/)) so you can run a seed round the same way you run ads — filter by stage/sector/check-size, send personalized intros with your pitch deck, track the funnel from reply to term sheet.
 
 ```bash
 sh1pt promote investors setup
@@ -303,6 +313,21 @@ sh1pt promote investors pitch \
   --leads-only
 sh1pt promote investors status       # sent / replies / meetings / term sheets
 sh1pt promote investors schedule     # synced calendar meetings
+```
+
+**⚠ API vs browser mode.** Most investor-outreach platforms don't expose public write APIs — they'd cannibalize their own moat. sh1pt's adapters run in two modes:
+
+- **`api`** — when the vendor offers programmatic access (rare; usually enterprise-tier).
+- **`browser`** — Playwright drives the web UI. A CAPTCHA challenge gets routed to a configured solver (`captcha-2captcha` or `captcha-solver`). Rate-limited by default (10 sends/hr) to stay under anti-bot thresholds. Use responsibly — respect ToS.
+
+### promote crowdfund
+
+Equity (Wefunder, Republic, StartEngine) and reward-based (Kickstarter, Indiegogo). Legal filings (Form C for Reg CF, KYC, bank linking) must be completed manually — sh1pt automates the launch + updates + status polling around them.
+
+```bash
+sh1pt promote crowdfund setup --provider promo-wefunder
+sh1pt promote crowdfund launch --target 100000 --duration 30
+sh1pt promote crowdfund status
 ```
 
 ### iterate agents
@@ -323,6 +348,8 @@ sh1pt iterate agents generate --recipe waitlist-crypto-investor --boilerplate ne
 sh1pt login                      # authenticate with sh1pt cloud (device-code flow)
 sh1pt secret set|get|list|rm     # manage credentials vault (used by every verb)
 ```
+
+**Secrets model: prompt, don't `.env`.** sh1pt prompts for API keys and writes them to the credentials vault — no `.env` in your project is required for sh1pt-managed secrets. `ctx.secret('KEY')` in every adapter reads from the vault. You only need `.env` for build-time-inlined values like `NEXT_PUBLIC_SUPABASE_URL` where the framework requires it.
 
 ## Recipes — sell the features, then build them
 
@@ -414,6 +441,7 @@ sh1pt/
 │   ├── agents/           AI CLI adapters (claude, codex, qwen)
 │   ├── recipes/          App-type recipes (waitlist-crypto-investor, …)
 │   ├── merch/            Print-on-demand adapters (printful, printify)
+│   ├── captcha/          Captcha-solver adapters (2captcha, captcha-solver) — browser-mode fallback only
 │   ├── web/              Dashboard (stub)
 │   └── targets/          One adapter per distribution surface
 │       ├── pkg-npm/

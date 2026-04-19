@@ -20,6 +20,10 @@
 [![Node.js](https://img.shields.io/badge/Node.js-5FA04E?logo=node.js&logoColor=white)](#)
 [![Bun](https://img.shields.io/badge/Bun-000?logo=bun&logoColor=white)](#)
 [![Deno](https://img.shields.io/badge/Deno-000?logo=deno&logoColor=white)](#)
+[![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)](#)
+[![Rust](https://img.shields.io/badge/Rust-000?logo=rust&logoColor=white)](#)
+[![C++ planned](https://img.shields.io/badge/C%2B%2B-planned-gray?logo=cplusplus&logoColor=white)](#)
+[![.NET planned](https://img.shields.io/badge/.NET-planned-gray?logo=dotnet&logoColor=white)](#)
 [![pnpm](https://img.shields.io/badge/pnpm-F69220?logo=pnpm&logoColor=white)](#)
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)](#)
 
@@ -139,6 +143,12 @@
 ![Listen Notes](https://img.shields.io/badge/Listen_Notes-FF6600?logo=listennotes&logoColor=white)
 ![Resend](https://img.shields.io/badge/Resend-000?logo=resend&logoColor=white)
 ![Product Hunt](https://img.shields.io/badge/Product_Hunt-DA552F?logo=producthunt&logoColor=white)
+
+**Payments (`sh1pt config payments`)**
+![CoinPay](https://img.shields.io/badge/CoinPay-F7931A?logo=bitcoin&logoColor=white)
+![Stripe](https://img.shields.io/badge/Stripe-635BFF?logo=stripe&logoColor=white)
+![PayPal](https://img.shields.io/badge/PayPal-00457C?logo=paypal&logoColor=white)
+![WorldRemit](https://img.shields.io/badge/WorldRemit-ED3CEB?logo=worldremit&logoColor=white)
 
 **CAPTCHA solvers (last-resort, browser-mode fallback only)**
 ![2Captcha](https://img.shields.io/badge/2Captcha-0078D4?logo=2captcha&logoColor=white)
@@ -399,9 +409,43 @@ sh1pt iterate agents generate --recipe waitlist-crypto-investor --boilerplate ne
 ```bash
 sh1pt login                      # authenticate with sh1pt cloud (device-code flow)
 sh1pt secret set|get|list|rm     # manage credentials vault (used by every verb)
+sh1pt config show                # print the resolved manifest
+sh1pt config stack set           # prompts — node / bun / python / rust / custom
+sh1pt config payments add        # payment providers: CoinPay default, Stripe/PayPal opt-in
 ```
 
 **Secrets model: prompt, don't `.env`.** sh1pt prompts for API keys and writes them to the credentials vault — no `.env` in your project is required for sh1pt-managed secrets. `ctx.secret('KEY')` in every adapter reads from the vault. You only need `.env` for build-time-inlined values like `NEXT_PUBLIC_SUPABASE_URL` where the framework requires it.
+
+### Stacks
+
+Supported today (interactive pick via `sh1pt config stack set`):
+
+- **Node** — TypeScript + React (Next.js, Expo, Tauri, Chrome ext) — *default*
+- **Bun** — TypeScript on Bun runtime (Hono backend, compile-to-single-binary)
+- **Python** — FastAPI + Supabase
+- **Rust** — Axum + Supabase (tiny release binaries, great for Fly machines)
+- **Custom** — bring your own, sh1pt skips scaffolding
+
+Planned: **C++** (Drogon / Crow) and **.NET** (ASP.NET Core).
+
+### Payments
+
+CoinPay is the default provider — crypto early-access prepay is the killer flow for the `waitlist-crypto-investor` recipe. Fiat providers are opt-in stubs today:
+
+```ts
+// sh1pt.config.ts
+payments: {
+  defaultProvider: 'payment-coinpay',
+  providers: {
+    coinpay: { use: 'payment-coinpay', enabled: true,  config: { acceptedCoins: ['BTC','ETH','USDC','SOL'] } },
+    stripe:  { use: 'payment-stripe',  enabled: false, config: {} },
+    paypal:  { use: 'payment-paypal',  enabled: false, config: {} },
+  },
+  platformFeeBps: 1500,   // marketplaces: 15% platform fee via Stripe Connect
+}
+```
+
+CLI shortcuts (`sh1pt config payments add|remove|default|list|fee`) edit this block without hand-touching the file.
 
 ## Recipes — sell the features, then build them
 
@@ -496,6 +540,7 @@ sh1pt/
 │   ├── captcha/          Captcha-solver adapters (2captcha, captcha-solver) — browser-mode fallback only
 │   ├── social/           Organic-social adapters (x, linkedin, instagram, threads, tiktok, youtube, reddit, mastodon, bluesky)
 │   ├── outreach/         Outreach adapters (listennotes, resend, producthunt)
+│   ├── payments/         Payment providers (coinpay default; stripe, paypal, worldremit)
 │   ├── web/              Dashboard (stub)
 │   └── targets/          One adapter per distribution surface
 │       ├── pkg-npm/
@@ -541,6 +586,8 @@ sh1pt/
 │   ├── tauri-supabase/       Tauri 2 + React + Supabase (desktop)
 │   ├── chrome-ext-react/     React + Vite + Supabase (Chrome MV3)
 │   ├── bun-hono-supabase/    Bun + Hono + Supabase (backend API, compiled binary)
+│   ├── fastapi-supabase/     FastAPI + Supabase (Python backend)
+│   ├── axum-supabase/        Axum + Supabase (Rust backend, tiny release binaries)
 │   └── next-plugin-store/    Plugin marketplace — publishers list, users buy, Stripe Connect payouts
 │   (all boilerplates ship a LICENSE, logo.svg, favicon.svg, and default to
 │    the waitlist-crypto-investor recipe)

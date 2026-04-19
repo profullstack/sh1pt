@@ -56,6 +56,17 @@ export const manifestSchema = z.object({
   recipeConfig: z.record(z.unknown()).optional(), // overrides for the recipe's defaults
   targets: z.record(targetSpecSchema),
   promo: promoSchema.optional(),
+  // Payment providers — CoinPay default for crypto early-access; Stripe,
+  // PayPal, WorldRemit, Wise, Lemon Squeezy, Polar are opt-in stubs.
+  payments: z.object({
+    defaultProvider: z.string().default('payment-coinpay'),
+    providers: z.record(z.object({
+      use: z.string(),
+      enabled: z.boolean().default(true),
+      config: z.record(z.unknown()).default({}),
+    })).default({}),
+    platformFeeBps: z.number().int().min(0).max(10_000).optional(),  // marketplaces
+  }).optional(),
   hooks: z
     .object({
       prebuild: z.string().optional(),

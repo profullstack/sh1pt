@@ -1,0 +1,8 @@
+{
+  "name": "@sh1pt/payment-worldremit",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": { "build": "tsc -p tsconfig.json", "typecheck": "tsc -p tsconfig.json --noEmit" },
+  "dependencies": { "@sh1pt/core": "workspace:*" }
+}

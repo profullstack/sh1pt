@@ -6,6 +6,7 @@ import { scaleCmd } from './commands/scale.js';
 import { iterateCmd } from './commands/iterate.js';
 import { loginCmd } from './commands/login.js';
 import { secretsCmd } from './commands/secrets.js';
+import { configCmd } from './commands/config.js';
 
 const program = new Command();
 
@@ -21,9 +22,10 @@ program.addCommand(promoteCmd);    // promote  · publish (ship), ads, merch —
 program.addCommand(scaleCmd);      // scale    · provision (deploy), DNS, rollouts, cost
 program.addCommand(iterateCmd);    // iterate  · observe + agent-propose + ship + measure (agents nested)
 
-// Auth utilities — cross-cutting, kept top-level for convention.
+// Auth + config utilities — cross-cutting, kept top-level for convention.
 program.addCommand(loginCmd);
 program.addCommand(secretsCmd);
+program.addCommand(configCmd);
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(kleur.red(`error: ${err.message}`));

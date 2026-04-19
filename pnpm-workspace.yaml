@@ -10,5 +10,6 @@ packages:
   - "packages/captcha/*"
   - "packages/social/*"
   - "packages/outreach/*"
+  - "packages/payments/*"
 # boilerplates/* are deliberately NOT workspace members — they are standalone
 # starter projects that a customer would copy, not packages sh1pt publishes.

@@ -1,0 +1,23 @@
+{
+  "name": "sh1pt-bun-hono-supabase",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --hot src/index.ts",
+    "start": "bun src/index.ts",
+    "build": "bun build src/index.ts --compile --outfile dist/server",
+    "ship": "sh1pt ship",
+    "ship:beta": "sh1pt ship --channel beta"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "hono": "^4.6.3"
+  },
+  "devDependencies": {
+    "@sh1pt/cli": "^0.0.0",
+    "@sh1pt/core": "^0.0.0",
+    "@types/bun": "latest",
+    "typescript": "^5.6.0"
+  }
+}

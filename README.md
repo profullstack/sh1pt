@@ -6,6 +6,9 @@
 [![cloud](https://img.shields.io/badge/cloud-%24499%2Fyr-blueviolet)](#pricing)
 [![status](https://img.shields.io/badge/status-alpha-orange)](#)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](#)
+[![Node.js](https://img.shields.io/badge/Node.js-5FA04E?logo=node.js&logoColor=white)](#)
+[![Bun](https://img.shields.io/badge/Bun-000?logo=bun&logoColor=white)](#)
+[![Deno](https://img.shields.io/badge/Deno-000?logo=deno&logoColor=white)](#)
 [![pnpm](https://img.shields.io/badge/pnpm-F69220?logo=pnpm&logoColor=white)](#)
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)](#)
 
@@ -168,6 +171,18 @@ sh1pt login                      # authenticate with sh1pt cloud (device-code fl
 sh1pt secret set|get|list|rm     # manage credentials vault (used by ship + promote)
 ```
 
+### Runtime
+
+The `sh1pt` CLI runs on **Node** (22+), **Bun** (1.1+), and **Deno** (2.0+). Install whichever you prefer:
+
+```bash
+npm  install -g @sh1pt/cli      # or
+bun  install -g @sh1pt/cli      # or
+deno install -g -A -n sh1pt jsr:@sh1pt/cli
+```
+
+Future: `bun build --compile` will produce a standalone binary for `brew install sh1pt`, `winget install sh1pt`, etc. — no JS runtime required on the user's machine.
+
 Declare creatives, budget, and targeting in `sh1pt.config.ts`:
 
 ```ts
@@ -243,7 +258,8 @@ sh1pt/
 │   ├── next-supabase/        Next.js 15 + React 19 + Supabase (web/PWA)
 │   ├── expo-supabase/        Expo + Supabase (iOS + Android + F-Droid)
 │   ├── tauri-supabase/       Tauri 2 + React + Supabase (desktop)
-│   └── chrome-ext-react/     React + Vite + Supabase (Chrome MV3)
+│   ├── chrome-ext-react/     React + Vite + Supabase (Chrome MV3)
+│   └── bun-hono-supabase/    Bun + Hono + Supabase (backend API, compiled binary)
 └── TARGETS.md            Full matrix of ~40 planned surfaces, stores, and registries
 ```
 

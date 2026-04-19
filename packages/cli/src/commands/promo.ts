@@ -5,13 +5,38 @@ export const promoCmd = new Command('promo').description('Connect ad platforms a
 
 promoCmd
   .command('setup')
-  .description('Authenticate with ad platforms (OAuth / device-code / API keys)')
+  .description('Walk through org/account/funding setup per ad platform — deep links for human-only steps')
   .option('--platform <id...>', 'only set up these platforms (default: all declared in manifest)')
-  .action((opts: { platform?: string[] }) => {
-    const platforms = opts.platform?.join(', ') ?? 'all declared';
-    console.log(kleur.cyan(`[stub] promo setup · platforms=${platforms}`));
-    // TODO: resolve manifest.promo.platforms, run AdPlatform.connect() per entry,
-    // store returned accountIds + tokens in cloud secrets vault
+  .option('--poll', 're-check every 30s until all steps complete')
+  .action(async (opts: { platform?: string[]; poll?: boolean }) => {
+    // TODO: load manifest.promo.platforms, resolve each to an AdPlatform,
+    // call onboard() → render checklist below → persist state.
+    // For now, render a static example against the three priority platforms.
+    const examples = (opts.platform ?? ['meta', 'reddit', 'tiktok']);
+    for (const p of examples) {
+      console.log();
+      console.log(kleur.bold().underline(p.toUpperCase()));
+      // Static preview — real implementation invokes AdPlatform.onboard()
+      const steps: { title: string; status: 'done' | 'pending' | 'action-required' | 'in-review'; url?: string; eta?: number }[] = [
+        { title: 'Business account', status: 'action-required', url: `https://${p === 'meta' ? 'business.facebook.com' : p + '.com'}/`, eta: 5 },
+        { title: 'Ad account created', status: 'pending' },
+        { title: 'Payment method', status: 'action-required', eta: 3 },
+        { title: 'sh1pt authorized (OAuth)', status: 'action-required', eta: 3 },
+      ];
+      for (const s of steps) {
+        const icon =
+          s.status === 'done' ? kleur.green('✓') :
+          s.status === 'in-review' ? kleur.yellow('…') :
+          s.status === 'action-required' ? kleur.yellow('!') :
+          kleur.gray('○');
+        const eta = s.eta ? kleur.dim(` (~${s.eta}m)`) : '';
+        const url = s.url ? kleur.dim(` → ${s.url}`) : '';
+        console.log(`  ${icon} ${s.title}${eta}${url}`);
+      }
+    }
+    if (opts.poll) {
+      console.log(kleur.dim('\n[stub] would poll every 30s and refresh statuses until readyToRun=true'));
+    }
   });
 
 promoCmd

@@ -65,10 +65,34 @@ export interface CampaignMetrics {
   message?: string;
 }
 
+export type OnboardStepStatus = 'done' | 'pending' | 'action-required' | 'in-review' | 'blocked';
+
+export interface OnboardStep {
+  id: string;
+  title: string;
+  description?: string;
+  status: OnboardStepStatus;
+  actionUrl?: string;          // deep link the user should visit
+  estDurationMin?: number;     // human-time the step typically takes
+  blockers?: string[];
+}
+
+export interface OnboardState {
+  platform: string;
+  accountId?: string;
+  steps: OnboardStep[];
+  readyToRun: boolean;         // all required steps complete, safe to call start()
+  funded: boolean;             // payment method attached AND balance sufficient (prepay regions)
+}
+
 export interface AdPlatform<Config = unknown> {
   id: string;            // e.g. 'promo-reddit'
   label: string;
   validate?(config: unknown): Config;
+  // Optional. If present, `sh1pt promo setup --platform <id>` calls this
+  // to render a guided checklist: business account → ad account → payment
+  // → review state. Platforms without onboard() just run connect().
+  onboard?(ctx: ConnectContext, config: Config): Promise<OnboardState>;
   connect(ctx: ConnectContext, config: Config): Promise<{ accountId: string }>;
   start(ctx: CampaignContext, config: Config): Promise<CampaignResult>;
   status(campaignId: string, config: Config): Promise<CampaignMetrics>;

@@ -108,6 +108,7 @@
 ![Atlantic.Net](https://img.shields.io/badge/Atlantic.Net-0071BC?logo=atlantic&logoColor=white)
 ![Railway](https://img.shields.io/badge/Railway-0B0D0E?logo=railway&logoColor=white)
 ![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?logo=cloudflare&logoColor=white)
+![NVIDIA](https://img.shields.io/badge/NVIDIA_(build.nvidia.com)-76B900?logo=nvidia&logoColor=white)
 ![Lambda Labs](https://img.shields.io/badge/Lambda_Labs-8A2BE2?logo=lambda&logoColor=white)
 ![Linode](https://img.shields.io/badge/Linode-00A95C?logo=linode&logoColor=white)
 

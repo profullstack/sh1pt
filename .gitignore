@@ -12,3 +12,11 @@ build/
 !.env.example
 .DS_Store
 coverage/
+
+# Session / handoff notes — keep out of the repo. The authoritative copy
+# lives at ~/.claude/projects/-home-ubuntu-src-sh1pt/memory/, outside the
+# working tree, so it can never be committed by accident.
+progress/
+notes/
+.session/
+CLAUDE-*.md

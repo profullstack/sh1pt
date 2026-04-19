@@ -6,4 +6,5 @@ export * from './cloud.js';
 export * from './dns.js';
 export * from './agent.js';
 export * from './recipe.js';
+export * from './merch.js';
 export * from './exec.js';

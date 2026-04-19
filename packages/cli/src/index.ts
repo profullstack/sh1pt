@@ -7,6 +7,7 @@ import { promoteCmd } from './commands/promote.js';
 import { scaleCmd } from './commands/scale.js';
 import { iterateCmd } from './commands/iterate.js';
 import { agentsCmd } from './commands/agents.js';
+import { merchCmd } from './commands/merch.js';
 import { loginCmd } from './commands/login.js';
 import { secretsCmd } from './commands/secrets.js';
 
@@ -25,6 +26,7 @@ program.addCommand(promoteCmd);    // promote · run ads across every ad network
 program.addCommand(scaleCmd);      // scale   · horizontal scale, round-robin DNS, rollouts, cost
 program.addCommand(iterateCmd);    // iterate · observe metrics → agent proposes → ship → measure
 program.addCommand(agentsCmd);     // (plumbing) drive Claude / Codex / Qwen CLIs
+program.addCommand(merchCmd);      // merch / swag · sell or give away printed goods
 
 // Cross-cutting utilities.
 program.addCommand(loginCmd);

@@ -6,5 +6,6 @@ packages:
   - "packages/dns/*"
   - "packages/agents/*"
   - "packages/recipes/*"
+  - "packages/merch/*"
 # boilerplates/* are deliberately NOT workspace members — they are standalone
 # starter projects that a customer would copy, not packages sh1pt publishes.

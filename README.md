@@ -111,6 +111,10 @@
 ![Porkbun](https://img.shields.io/badge/Porkbun-DA7FBF?logo=porkbun&logoColor=white)
 ![Cloudflare DNS](https://img.shields.io/badge/Cloudflare_DNS-F38020?logo=cloudflare&logoColor=white)
 
+**Merch / swag (`sh1pt merch`)**
+![Printful](https://img.shields.io/badge/Printful-E91E63?logo=printful&logoColor=white)
+![Printify](https://img.shields.io/badge/Printify-21A52F?logo=printify&logoColor=white)
+
 **AI agents (`sh1pt agents`)**
 ![Claude Code](https://img.shields.io/badge/Claude_Code-D97757?logo=anthropic&logoColor=white)
 ![Codex](https://img.shields.io/badge/OpenAI_Codex-412991?logo=openai&logoColor=white)
@@ -167,6 +171,7 @@ sh1pt promote        # run ads across every major ad network
 sh1pt scale          # horizontal fleet scaling + round-robin DNS + rollouts + cost
 sh1pt iterate        # observe metrics → agent proposes → ship → measure, on loop
 sh1pt agents         # drive Claude / Codex / Qwen (plumbing for generate + iterate)
+sh1pt merch          # print + ship swag (shirts, stickers, pens) — sell or give away free
 ```
 
 ### ship
@@ -240,6 +245,21 @@ sh1pt iterate watch --interval 3600                      # daemon — cycle ever
 sh1pt iterate test "pricing anchor at $99 lifts conversion" --traffic 50
 sh1pt iterate experiments
 ```
+
+### merch
+
+Swag — shirts, hoodies, stickers, pens, notebooks, mugs, tote bags, socks, phone cases. Sell it on Shopify/Etsy/Gumroad for revenue, or ship it **free to conference attendees and community members** for no-cost brand amplification.
+
+```bash
+sh1pt merch setup --provider merch-printful
+sh1pt merch create --design ./logo.svg --products tshirt,hoodie,sticker,pen --price 25
+sh1pt merch publish --storefront shopify                  # sell mode
+sh1pt merch giveaway --sku <id...> --addresses ./list.csv # free mode — bulk ship to a list
+sh1pt merch orders
+sh1pt merch payout
+```
+
+Providers: Printful (widest catalog, auto-fulfillment) and Printify (multi-supplier, often lower base cost). The `--budget-cap` flag on `merch giveaway` prevents a typo in the CSV from rattling through $5k of free hoodies.
 
 ### agents
 
@@ -349,6 +369,7 @@ sh1pt/
 │   ├── dns/              DNS adapters (porkbun, cloudflare)
 │   ├── agents/           AI CLI adapters (claude, codex, qwen)
 │   ├── recipes/          App-type recipes (waitlist-crypto-investor, …)
+│   ├── merch/            Print-on-demand adapters (printful, printify)
 │   ├── web/              Dashboard (stub)
 │   └── targets/          One adapter per distribution surface
 │       ├── pkg-npm/
@@ -393,7 +414,8 @@ sh1pt/
 │   ├── expo-supabase/        Expo + Supabase (iOS + Android + F-Droid)
 │   ├── tauri-supabase/       Tauri 2 + React + Supabase (desktop)
 │   ├── chrome-ext-react/     React + Vite + Supabase (Chrome MV3)
-│   └── bun-hono-supabase/    Bun + Hono + Supabase (backend API, compiled binary)
+│   ├── bun-hono-supabase/    Bun + Hono + Supabase (backend API, compiled binary)
+│   └── next-plugin-store/    Plugin marketplace — publishers list, users buy, Stripe Connect payouts
 │   (all boilerplates ship a LICENSE, logo.svg, favicon.svg, and default to
 │    the waitlist-crypto-investor recipe)
 └── TARGETS.md            Full matrix of ~40 planned surfaces, stores, and registries

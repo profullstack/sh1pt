@@ -3,7 +3,9 @@ import { defineConfig } from '@sh1pt/core';
 export default defineConfig({
   name: 'sh1pt-bun-hono-supabase',
   version: '0.1.0',
-  description: 'Bun + Hono + Supabase backend boilerplate',
+  description: 'Bun + Hono + Supabase backend boilerplate — waitlist + payments + referrals API',
+  recipe: 'waitlist-crypto-investor',
+  recipeConfig: {},
   targets: {
     fly: {
       use: 'deploy-fly',

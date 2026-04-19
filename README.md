@@ -1,6 +1,14 @@
-# sh1pt
+<!--
+  sh1pt · Build. Promote. Scale.
+  HTML meta for preview cards:
+  <meta name="description" content="sh1pt — Build. Promote. Scale. Ship any app to every store, registry, and channel. Run ads everywhere. Provision cloud infra. Drive Claude / Codex / Qwen to build the rest.">
+  <meta property="og:title" content="sh1pt · Build. Promote. Scale.">
+  <meta property="og:description" content="One codebase → every store, registry, and channel. Ads on every network. Cloud infra on demand. AI agents build the rest.">
+-->
 
-**Ship one codebase to every platform, store, and registry.**
+# sh1pt — Build. Promote. Scale.
+
+**One codebase → every store, registry, CDN, and channel. Ads on every network. Cloud infra on demand. AI agents build the rest.**
 
 [![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![cloud](https://img.shields.io/badge/cloud-%24499%2Fyr-blueviolet)](#pricing)
@@ -85,6 +93,20 @@
 ![esm.sh](https://img.shields.io/badge/esm.sh-F7DF1E?logo=javascript&logoColor=black)
 ![cdnjs](https://img.shields.io/badge/cdnjs-E66F00?logo=cloudflare&logoColor=white)
 
+**Cloud infra (`sh1pt deploy`)**
+![RunPod](https://img.shields.io/badge/RunPod-673AB8?logo=runpod&logoColor=white)
+![DigitalOcean](https://img.shields.io/badge/DigitalOcean-0080FF?logo=digitalocean&logoColor=white)
+![Vultr](https://img.shields.io/badge/Vultr-007BFC?logo=vultr&logoColor=white)
+![Hetzner](https://img.shields.io/badge/Hetzner-D50C2D?logo=hetzner&logoColor=white)
+![Atlantic.Net](https://img.shields.io/badge/Atlantic.Net-0071BC?logo=atlantic&logoColor=white)
+![Lambda Labs](https://img.shields.io/badge/Lambda_Labs-8A2BE2?logo=lambda&logoColor=white)
+![Linode](https://img.shields.io/badge/Linode-00A95C?logo=linode&logoColor=white)
+
+**AI agents (`sh1pt agents`)**
+![Claude Code](https://img.shields.io/badge/Claude_Code-D97757?logo=anthropic&logoColor=white)
+![Codex](https://img.shields.io/badge/OpenAI_Codex-412991?logo=openai&logoColor=white)
+![Qwen](https://img.shields.io/badge/Qwen_Code-FF6A00?logo=alibabacloud&logoColor=white)
+
 **Chat / bot**
 ![Telegram](https://img.shields.io/badge/Telegram-26A5E4?logo=telegram&logoColor=white)
 ![Slack](https://img.shields.io/badge/Slack-4A154B?logo=slack&logoColor=white)
@@ -126,13 +148,14 @@
 
 ## CLI surface
 
-Four verbs. Everything else is a subcommand.
+Five verbs. Everything else is a subcommand.
 
 ```bash
 sh1pt build          # compile artifacts for enabled targets
-sh1pt ship           # publish to every target store/registry
+sh1pt deploy         # provision VPS / GPU / bare-metal infra you own
+sh1pt ship           # publish to every target store, registry, and channel
 sh1pt promote        # run ads across every major network
-sh1pt help           # full command tree
+sh1pt agents         # drive Claude / Codex / Qwen to build + iterate
 ```
 
 ### ship
@@ -164,11 +187,80 @@ sh1pt promote creatives
 
 Publishing alone is table stakes. `promote` closes the loop — one command runs install / traffic / awareness campaigns on Reddit, Meta, TikTok, Google, YouTube, X, Apple Search, LinkedIn, and Microsoft Ads at once.
 
+### deploy
+
+Provision raw compute you own (separate from `ship`, which pushes finished apps to hosted platforms).
+
+```bash
+sh1pt deploy setup                                       # connect RunPod / DO / Vultr / Hetzner / Atlantic
+sh1pt deploy quote --kind gpu --gpu A100 --gpu-count 2   # cheapest-first across all connected providers
+sh1pt deploy provision --provider cloud-runpod \
+  --kind gpu --gpu H100 --gpu-count 1 \
+  --max-hourly-price 4.50                                # guardrail — abort if quote exceeds ceiling
+sh1pt deploy list
+sh1pt deploy destroy <instanceId>
+```
+
+GPU hourly rates are $3–8+. `--max-hourly-price` is strongly recommended for any GPU provision — a forgotten A100 overnight is a tuition-level mistake.
+
+### agents
+
+Drive AI coding CLIs — sh1pt wraps Claude Code, Codex, and Qwen so you can generate/iterate on a project from the same manifest.
+
+```bash
+sh1pt agents list                              # which CLIs are installed locally
+sh1pt agents setup --agent claude codex qwen   # install + auth each one
+sh1pt agents talk [agent] --recipe <id>        # interactive session with a preloaded recipe prompt
+sh1pt agents run <agent> "add stripe checkout to /waitlist/checkout"
+sh1pt agents generate --recipe waitlist-crypto-investor --boilerplate next-supabase --out ./my-app
+```
+
 ### Cross-cutting utilities
 
 ```bash
 sh1pt login                      # authenticate with sh1pt cloud (device-code flow)
-sh1pt secret set|get|list|rm     # manage credentials vault (used by ship + promote)
+sh1pt secret set|get|list|rm     # manage credentials vault (used by every verb)
+```
+
+## Recipes — sell the features, then build them
+
+A recipe is a composed app type. Declare one in `sh1pt.config.ts` and sh1pt scaffolds a product shape — including pricing tiers, payment flows, waitlist capture, and an investor pitch page — that ships *the marketing side* across every channel immediately. Then an agent fills in the actual product on demand the waitlist proves.
+
+**The flagship recipe — `waitlist-crypto-investor`:**
+
+- Landing page + tiered pricing (default: $244/yr early-bird vs $499/yr standard)
+- Prepaid waitlist (email + handle), early-bird tier sends signups straight to checkout
+- Crypto payment via CoinPay / Solana Pay / Coinbase Commerce + Stripe for cards
+- Investor page with pitch deck viewer, team, traction, contact
+- Referral program — $50 credit per invite, tiered bonuses (3 → +$150, 10 → +$600, 25 → +$2000)
+- Supabase auth + postgres + RLS (Row-Level Security) for every table
+
+Every boilerplate (`next-supabase`, `expo-supabase`, `tauri-supabase`, `chrome-ext-react`, `bun-hono-supabase`) declares this recipe by default. Override any field in `recipeConfig`, or swap recipes entirely.
+
+```ts
+// sh1pt.config.ts
+export default defineConfig({
+  name: 'my-app',
+  version: '0.1.0',
+  recipe: 'waitlist-crypto-investor',
+  recipeConfig: {
+    pricing: [
+      { id: 'early', label: 'Founder tier', amount: 99, currency: 'USD', cadence: 'yearly' },
+      { id: 'standard', label: 'Pro', amount: 299, currency: 'USD', cadence: 'yearly' },
+    ],
+    referral: { rewardAmount: 25 },
+  },
+  targets: { /* ... */ },
+});
+```
+
+Combined flow:
+
+```bash
+sh1pt agents generate --recipe waitlist-crypto-investor --boilerplate next-supabase
+sh1pt ship --channel beta       # deploy the waitlist + investor page everywhere sh1pt supports
+sh1pt promote --budget 100/day  # run ads across Reddit / Meta / TikTok / Google / YouTube
+# … collect prepaid signups. build what pays.
 ```
 
 ### Runtime
@@ -215,6 +307,9 @@ sh1pt/
 │   ├── api/              SaaS backend (Hono) — projects, releases, builds, credentials, agents
 │   ├── policy/           Store-policy linter (runs before every ship)
 │   ├── promo/            Ad-platform adapters (reddit, meta, tiktok, google, youtube, x, apple-search, linkedin, microsoft)
+│   ├── cloud/            Cloud-infra adapters (runpod, digitalocean, vultr, hetzner, atlantic)
+│   ├── agents/           AI CLI adapters (claude, codex, qwen)
+│   ├── recipes/          App-type recipes (waitlist-crypto-investor, …)
 │   ├── web/              Dashboard (stub)
 │   └── targets/          One adapter per distribution surface
 │       ├── pkg-npm/
@@ -260,6 +355,8 @@ sh1pt/
 │   ├── tauri-supabase/       Tauri 2 + React + Supabase (desktop)
 │   ├── chrome-ext-react/     React + Vite + Supabase (Chrome MV3)
 │   └── bun-hono-supabase/    Bun + Hono + Supabase (backend API, compiled binary)
+│   (all boilerplates ship a LICENSE, logo.svg, favicon.svg, and default to
+│    the waitlist-crypto-investor recipe)
 └── TARGETS.md            Full matrix of ~40 planned surfaces, stores, and registries
 ```
 

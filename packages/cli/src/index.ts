@@ -1,8 +1,10 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
 import { buildCmd } from './commands/build.js';
+import { deployCmd } from './commands/deploy.js';
 import { shipCmd } from './commands/ship.js';
 import { promoteCmd } from './commands/promote.js';
+import { agentsCmd } from './commands/agents.js';
 import { loginCmd } from './commands/login.js';
 import { secretsCmd } from './commands/secrets.js';
 
@@ -14,9 +16,11 @@ program
   .version('0.0.0');
 
 // Primary verbs.
-program.addCommand(buildCmd);
-program.addCommand(shipCmd);
-program.addCommand(promoteCmd);
+program.addCommand(buildCmd);      // compile
+program.addCommand(deployCmd);     // provision cloud infra (VPS / GPU / bare metal)
+program.addCommand(shipCmd);       // publish to stores / registries
+program.addCommand(promoteCmd);    // run ads across every ad network
+program.addCommand(agentsCmd);     // drive AI CLIs (Claude / Codex / Qwen) to build + iterate
 
 // Cross-cutting utilities.
 program.addCommand(loginCmd);

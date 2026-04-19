@@ -4,6 +4,10 @@ export default defineConfig({
   name: 'sh1pt-next-supabase',
   version: '0.1.0',
   description: 'Next.js + Supabase boilerplate',
+  // Waitlist + investor page + crypto early-access + referral program.
+  // Sell the features then build them. Override defaults via recipeConfig.
+  recipe: 'waitlist-crypto-investor',
+  recipeConfig: {},
   targets: {
     web: {
       use: 'web-static',

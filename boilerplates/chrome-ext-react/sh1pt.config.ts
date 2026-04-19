@@ -3,6 +3,8 @@ import { defineConfig } from '@sh1pt/core';
 export default defineConfig({
   name: 'sh1pt-chrome-ext-react',
   version: '0.1.0',
+  recipe: 'waitlist-crypto-investor',
+  recipeConfig: {},
   targets: {
     chrome: {
       use: 'browser-chrome',

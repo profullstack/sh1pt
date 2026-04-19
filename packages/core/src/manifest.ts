@@ -52,6 +52,8 @@ export const manifestSchema = z.object({
   version: z.string(),
   description: z.string().optional(),
   channels: z.array(z.string()).default(['stable', 'beta', 'canary']),
+  recipe: z.string().optional(),                 // e.g. 'waitlist-crypto-investor'
+  recipeConfig: z.record(z.unknown()).optional(), // overrides for the recipe's defaults
   targets: z.record(targetSpecSchema),
   promo: promoSchema.optional(),
   hooks: z

@@ -2,5 +2,8 @@ packages:
   - "packages/*"
   - "packages/targets/*"
   - "packages/promo/*"
+  - "packages/cloud/*"
+  - "packages/agents/*"
+  - "packages/recipes/*"
 # boilerplates/* are deliberately NOT workspace members — they are standalone
 # starter projects that a customer would copy, not packages sh1pt publishes.

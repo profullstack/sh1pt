@@ -1,15 +1,15 @@
 {
   "name": "@sh1pt/bot-whatsapp",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
   "main": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
   "dependencies": {
+    "@sh1pt/bot-core": "workspace:*",
     "baileys": "^6.10.0",
     "zod": "^3.24.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.7.0"
   }
 }

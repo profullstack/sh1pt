@@ -1,0 +1,10 @@
+{
+  "name": "@sh1pt/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'web dashboard stub — wire up Next.js or SvelteKit here'",
+    "build": "echo 'web dashboard build stub'",
+    "typecheck": "echo 'web dashboard typecheck stub'"
+  }
+}

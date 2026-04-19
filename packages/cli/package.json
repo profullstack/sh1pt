@@ -1,0 +1,24 @@
+{
+  "name": "@sh1pt/cli",
+  "version": "0.0.0",
+  "type": "module",
+  "bin": {
+    "sh1pt": "./bin/sh1pt.js"
+  },
+  "main": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@sh1pt/core": "workspace:*",
+    "@sh1pt/policy": "workspace:*",
+    "commander": "^12.1.0",
+    "kleur": "^4.1.5",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/prompts": "^2.4.9"
+  }
+}

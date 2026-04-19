@@ -29,6 +29,7 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 | `desktop-mac` | Mac App Store / notarized DMG | ✅ |
 | `desktop-win` | Microsoft Store / MSIX / MSI | ✅ |
 | `desktop-linux` | AppImage / Snap / Flatpak / deb / rpm | ✅ |
+| `desktop-steamos` | Steam Deck Desktop Mode (Flathub / self-hosted) | ✅ |
 
 ### Mobile
 | Target id | Channel | Status |

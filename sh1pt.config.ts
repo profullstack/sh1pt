@@ -54,6 +54,7 @@ export default defineConfig({
     'target-desktop-mac-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/desktop-mac', access: 'public' } },
     'target-desktop-win-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/desktop-win', access: 'public' } },
     'target-desktop-linux-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/desktop-linux', access: 'public' } },
+    'target-desktop-steamos-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/desktop-steamos', access: 'public' } },
     'target-browser-chrome-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/browser-chrome', access: 'public' } },
     'target-web-static-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/web-static', access: 'public' } },
     'target-tv-tvos-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/tv-tvos', access: 'public' } },

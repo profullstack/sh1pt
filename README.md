@@ -48,6 +48,7 @@ sh1pt/
 │       ├── desktop-mac/
 │       ├── desktop-win/
 │       ├── desktop-linux/
+│       ├── desktop-steamos/  Steam Deck Desktop Mode (Flatpak, bypasses Steam)
 │       ├── browser-chrome/
 │       ├── web-static/
 │       ├── tv-tvos/         Apple TV
@@ -61,7 +62,7 @@ sh1pt/
 │       ├── xr-visionos/     Apple Vision Pro
 │       ├── xr-pico/         Pico Store (ByteDance)
 │       ├── xr-steamvr/      SteamVR (PCVR / OpenXR)
-│       ├── console-steam/   Steam + Steam Deck (SteamOS)
+│       ├── console-steam/   Steam (incl. Deck Gaming Mode via Steamworks)
 │       └── pkg-fdroid/      F-Droid (FOSS Android repo)
 ├── boilerplates/         Standalone starter projects (NOT workspace members).
 │   └── hello-world/      Customers copy this and edit sh1pt.config.ts.

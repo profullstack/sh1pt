@@ -7,6 +7,7 @@ import { iterateCmd } from './commands/iterate.js';
 import { loginCmd } from './commands/login.js';
 import { secretsCmd } from './commands/secrets.js';
 import { configCmd } from './commands/config.js';
+import { entityCmd } from './commands/entity.js';
 
 const program = new Command();
 
@@ -26,6 +27,7 @@ program.addCommand(iterateCmd);    // iterate  · observe + agent-propose + ship
 program.addCommand(loginCmd);
 program.addCommand(secretsCmd);
 program.addCommand(configCmd);
+program.addCommand(entityCmd);     // entity   · formation + compliance + spinouts (jurisdiction packs)
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(kleur.red(`error: ${err.message}`));

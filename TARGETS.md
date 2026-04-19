@@ -101,9 +101,11 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 ### Chat / bot
 | Target id | Channel | Status |
 |---|---|---|
-| `chat-discord` | Discord App Directory | 🚧 |
-| `chat-telegram` | BotFather deploy | 🚧 |
-| `chat-whatsapp` | WhatsApp Cloud API | 🚧 |
+| `chat-telegram` | Telegram Bot API | ✅ |
+| `chat-slack` | Slack App Directory | ✅ |
+| `chat-signal` | signal-cli / signald | ✅ ⚠️ |
+| `chat-discord` | Discord App Directory | ✅ |
+| `chat-whatsapp` | WhatsApp Business Cloud API | ✅ |
 | `chat-teams` | Teams App Store | — |
 | `chat-line` | LINE Developers | — |
 

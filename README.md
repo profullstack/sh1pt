@@ -82,6 +82,13 @@
 ![esm.sh](https://img.shields.io/badge/esm.sh-F7DF1E?logo=javascript&logoColor=black)
 ![cdnjs](https://img.shields.io/badge/cdnjs-E66F00?logo=cloudflare&logoColor=white)
 
+**Chat / bot**
+![Telegram](https://img.shields.io/badge/Telegram-26A5E4?logo=telegram&logoColor=white)
+![Slack](https://img.shields.io/badge/Slack-4A154B?logo=slack&logoColor=white)
+![Signal](https://img.shields.io/badge/Signal-3A76F0?logo=signal&logoColor=white)
+![Discord](https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white)
+![WhatsApp](https://img.shields.io/badge/WhatsApp-25D366?logo=whatsapp&logoColor=white)
+
 **Container registries**
 ![Docker Hub](https://img.shields.io/badge/Docker_Hub-2496ED?logo=docker&logoColor=white)
 ![GHCR](https://img.shields.io/badge/GHCR-181717?logo=github&logoColor=white)
@@ -205,7 +212,12 @@ sh1pt/
 │       ├── deploy-denodeploy/ Deno Deploy
 │       ├── deploy-workers/    Cloudflare Workers
 │       ├── deploy-fly/        Fly.io
-│       └── deploy-railway/    Railway
+│       ├── deploy-railway/    Railway
+│       ├── chat-telegram/     Telegram Bot API
+│       ├── chat-slack/        Slack App Directory
+│       ├── chat-signal/       Signal (signal-cli / signald, ⚠ no official bot platform)
+│       ├── chat-discord/      Discord App Directory
+│       └── chat-whatsapp/     WhatsApp Business Cloud API
 ├── boilerplates/         Standalone starter projects (NOT workspace members).
 │   ├── hello-world/          Bare manifest — no framework
 │   ├── next-supabase/        Next.js 15 + React 19 + Supabase (web/PWA)

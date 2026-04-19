@@ -53,7 +53,16 @@ sh1pt/
 │       ├── tv-tvos/         Apple TV
 │       ├── tv-firetv/       Fire TV / Firestick
 │       ├── tv-roku/         Roku (⚠ BrightScript, not JS/React)
-│       └── tv-androidtv/    Android TV
+│       ├── tv-androidtv/    Android TV
+│       ├── tv-webos/        LG webOS
+│       ├── xr-webxr/        WebXR (universal)
+│       ├── xr-meta-quest/   Meta Horizon Store (Quest)
+│       ├── xr-sidequest/    SideQuest (Quest sideload)
+│       ├── xr-visionos/     Apple Vision Pro
+│       ├── xr-pico/         Pico Store (ByteDance)
+│       ├── xr-steamvr/      SteamVR (PCVR / OpenXR)
+│       ├── console-steam/   Steam + Steam Deck (SteamOS)
+│       └── pkg-fdroid/      F-Droid (FOSS Android repo)
 ├── boilerplates/         Standalone starter projects (NOT workspace members).
 │   └── hello-world/      Customers copy this and edit sh1pt.config.ts.
 └── TARGETS.md            Full matrix of ~40 planned surfaces, stores, and registries

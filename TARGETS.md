@@ -35,6 +35,7 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 |---|---|---|
 | `mobile-ios` | App Store Connect + TestFlight | ✅ |
 | `mobile-android` | Google Play + internal tracks | 🚧 |
+| `pkg-fdroid` | F-Droid (FOSS Android repo) | ✅ |
 | `mobile-huawei` | Huawei AppGallery | — |
 | `mobile-amazon` | Amazon Appstore | — |
 
@@ -52,12 +53,23 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 | `tv-androidtv` | Play Store (Android TV) | ✅ |
 | `tv-roku` | Roku Channel Store | ✅ ⚠️ |
 | `tv-firetv` | Amazon Fire TV | ✅ |
-| `tv-webos` | LG Content Store | — |
+| `tv-webos` | LG Content Store | ✅ |
 | `tv-tizen` | Samsung Tizen Store | — |
-| `console-steam` | Steamworks | — |
+| `console-steam` | Steam / Steam Deck (SteamOS) | ✅ |
 | `console-xbox` | Microsoft Partner Center | — |
 | `console-playstation` | PlayStation Partners | — |
 | `console-switch` | Nintendo NDP | — |
+
+### XR (VR / AR)
+| Target id | Channel | Status |
+|---|---|---|
+| `xr-webxr` | WebXR (browser-native VR/AR) | ✅ |
+| `xr-meta-quest` | Meta Horizon Store (Quest 2/3/Pro/3S) | ✅ |
+| `xr-sidequest` | SideQuest (Quest sideload) | ✅ |
+| `xr-visionos` | App Store (Apple Vision Pro) | ✅ |
+| `xr-pico` | Pico Store | ✅ |
+| `xr-steamvr` | Steam (PCVR / OpenXR) | ✅ |
+| `xr-viveport` | Viveport | — |
 
 ### Browser extension
 | Target id | Channel | Status |

@@ -7,6 +7,7 @@ export type TargetKind =
   | 'wearable'
   | 'tv'
   | 'console'
+  | 'xr'
   | 'browser-ext'
   | 'plugin'
   | 'voice'

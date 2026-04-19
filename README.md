@@ -90,6 +90,18 @@
 ![GCR](https://img.shields.io/badge/GCR-4285F4?logo=googlecloud&logoColor=white)
 ![ACR](https://img.shields.io/badge/Azure_ACR-0078D4?logo=microsoftazure&logoColor=white)
 
+### Promotes via
+
+![Reddit Ads](https://img.shields.io/badge/Reddit_Ads-FF4500?logo=reddit&logoColor=white)
+![Meta Ads](https://img.shields.io/badge/Meta_Ads-0668E1?logo=meta&logoColor=white)
+![TikTok Ads](https://img.shields.io/badge/TikTok_Ads-000?logo=tiktok&logoColor=white)
+![Google Ads](https://img.shields.io/badge/Google_Ads-4285F4?logo=googleads&logoColor=white)
+![YouTube Ads](https://img.shields.io/badge/YouTube_Ads-FF0000?logo=youtube&logoColor=white)
+![X Ads](https://img.shields.io/badge/X_Ads-000?logo=x&logoColor=white)
+![Apple Search Ads](https://img.shields.io/badge/Apple_Search_Ads-000?logo=apple&logoColor=white)
+![LinkedIn Ads](https://img.shields.io/badge/LinkedIn_Ads-0A66C2?logo=linkedin&logoColor=white)
+![Microsoft Ads](https://img.shields.io/badge/Microsoft_Ads-0078D4?logo=microsoft&logoColor=white)
+
 ---
 
 `sh1pt` is Expo for *everywhere*: web, mobile (iOS/Android), desktop (macOS/Windows/Linux/SteamOS), wearables, TV, XR, browser extensions, CLIs, SDKs, package managers, CDNs, container registries, app-hosting platforms — all driven by one manifest, one CLI, and one cloud.
@@ -118,6 +130,36 @@ sh1pt ship --channel stable   # promote to production stores
 
 `sh1pt setup` is the killer command: run it once, connect every store in parallel, walk away. Human-only steps (Apple D-U-N-S, Google Play identity verification, Microsoft Partner Center review) become a tracked checklist with deep links, polled automatically.
 
+## Promo — one command, ads everywhere
+
+Publishing alone is table stakes. `sh1pt promo` closes the loop by running install / traffic / awareness campaigns across every major ad network.
+
+```bash
+sh1pt promo setup             # OAuth each ad platform once
+sh1pt promo start --budget 50 --duration 7d --objective install
+sh1pt promo status            # aggregated spend / impressions / clicks / installs
+sh1pt promo stop
+```
+
+Declare creatives, budget, and targeting in `sh1pt.config.ts`:
+
+```ts
+promo: {
+  platforms: {
+    reddit:   { use: 'promo-reddit',   config: { businessId: '...', accountId: '...' } },
+    meta:     { use: 'promo-meta',     config: { adAccountId: '...', pageId: '...' } },
+    tiktok:   { use: 'promo-tiktok',   config: { advertiserId: '...' } },
+    google:   { use: 'promo-google',   config: { customerId: '...', campaignType: 'app-install' } },
+    youtube:  { use: 'promo-youtube',  config: { customerId: '...', formats: ['bumper-6s', 'shorts'] } },
+  },
+  defaultBudget: { amount: 50, currency: 'USD', cadence: 'daily' },
+  creatives: [{ headline: '...', description: '...', image: './assets/ad1.jpg' }],
+  targeting: { geo: ['US','CA','GB'], languages: ['en'] },
+}
+```
+
+One campaign definition fans out to every platform sh1pt understands how to talk to — same model as targets.
+
 ## Layout
 
 ```
@@ -130,6 +172,7 @@ sh1pt/
 │   ├── sdk/              Programmatic JS/TS SDK
 │   ├── api/              SaaS backend (Hono) — projects, releases, builds, credentials, agents
 │   ├── policy/           Store-policy linter (runs before every ship)
+│   ├── promo/            Ad-platform adapters (reddit, meta, tiktok, google, youtube, x, apple-search, linkedin, microsoft)
 │   ├── web/              Dashboard (stub)
 │   └── targets/          One adapter per distribution surface
 │       ├── pkg-npm/

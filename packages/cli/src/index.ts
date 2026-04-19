@@ -10,6 +10,7 @@ import { secretsCmd } from './commands/secrets.js';
 import { rollback } from './commands/rollback.js';
 import { logsCmd } from './commands/logs.js';
 import { lintCmd } from './commands/lint.js';
+import { promoCmd } from './commands/promo.js';
 
 const program = new Command();
 
@@ -66,6 +67,7 @@ program
 
 program.addCommand(targetsCmd);
 program.addCommand(secretsCmd);
+program.addCommand(promoCmd);
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(kleur.red(`error: ${err.message}`));

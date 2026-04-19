@@ -8,6 +8,7 @@ import { credentials } from './routes/credentials.js';
 import { webhooks } from './routes/webhooks.js';
 import { auth } from './routes/auth.js';
 import { agents } from './routes/agents.js';
+import { promo } from './routes/promo.js';
 
 export const app = new Hono();
 
@@ -24,5 +25,6 @@ app.route('/v1/projects/:projectId/targets', targets);
 app.route('/v1/projects/:projectId/credentials', credentials);
 app.route('/v1/webhooks', webhooks);
 app.route('/v1/agents', agents);
+app.route('/v1/promo', promo);
 
 export default app;

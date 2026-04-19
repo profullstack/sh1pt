@@ -1,0 +1,15 @@
+{
+  "name": "hello-world",
+  "version": "0.1.0",
+  "private": true,
+  "description": "sh1pt boilerplate — ships a minimal app to multiple targets.",
+  "scripts": {
+    "ship": "sh1pt ship",
+    "ship:beta": "sh1pt ship --channel beta",
+    "lint": "sh1pt lint"
+  },
+  "devDependencies": {
+    "@sh1pt/cli": "^0.0.0",
+    "@sh1pt/core": "^0.0.0"
+  }
+}

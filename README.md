@@ -32,14 +32,15 @@ sh1pt ship --channel stable   # promote to production stores
 
 ```
 sh1pt/
-├── packages/
+├── sh1pt.config.ts       This repo ships ONE thing — the CLI — to every package manager.
+│                         This config dogfoods sh1pt to publish itself.
+├── packages/             Workspace members — what this repo actually produces.
 │   ├── core/             Target plugin interface, manifest schema, registry
-│   ├── cli/              `sh1pt` CLI
+│   ├── cli/              `sh1pt` CLI (the single user-facing artifact)
 │   ├── sdk/              Programmatic JS/TS SDK
 │   ├── api/              SaaS backend (Hono) — projects, releases, builds, credentials, agents
 │   ├── policy/           Store-policy linter (runs before every ship)
 │   ├── web/              Dashboard (stub)
-│   ├── hello-world/      Example project with sh1pt.config.ts
 │   └── targets/          One adapter per distribution surface
 │       ├── pkg-npm/
 │       ├── pkg-homebrew/
@@ -48,9 +49,19 @@ sh1pt/
 │       ├── desktop-win/
 │       ├── desktop-linux/
 │       ├── browser-chrome/
-│       └── web-static/
+│       ├── web-static/
+│       ├── tv-tvos/         Apple TV
+│       ├── tv-firetv/       Fire TV / Firestick
+│       ├── tv-roku/         Roku (⚠ BrightScript, not JS/React)
+│       └── tv-androidtv/    Android TV
+├── boilerplates/         Standalone starter projects (NOT workspace members).
+│   └── hello-world/      Customers copy this and edit sh1pt.config.ts.
 └── TARGETS.md            Full matrix of ~40 planned surfaces, stores, and registries
 ```
+
+## What this repo publishes
+
+Just the CLI. `sh1pt.config.ts` at the root uses sh1pt itself to fan the CLI out to every package manager — `npm install -g @sh1pt/cli`, `brew install sh1pt`, `winget install sh1pt`, `scoop install sh1pt`, etc. Lib packages (`@sh1pt/core`, `@sh1pt/sdk`, `@sh1pt/policy`, target adapters) ride along on npm so `sh1pt init` and target plugins can pull them at runtime.
 
 ## Concepts
 

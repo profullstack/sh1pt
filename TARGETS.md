@@ -48,10 +48,10 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 ### TV / Console
 | Target id | Channel | Status |
 |---|---|---|
-| `tv-tvos` | App Store (tvOS) | — |
-| `tv-androidtv` | Play Store (Android TV) | — |
-| `tv-roku` | Roku Channel Store | — |
-| `tv-firetv` | Amazon Fire TV | — |
+| `tv-tvos` | App Store (tvOS) | ✅ |
+| `tv-androidtv` | Play Store (Android TV) | ✅ |
+| `tv-roku` | Roku Channel Store | ✅ ⚠️ |
+| `tv-firetv` | Amazon Fire TV | ✅ |
 | `tv-webos` | LG Content Store | — |
 | `tv-tizen` | Samsung Tizen Store | — |
 | `console-steam` | Steamworks | — |

@@ -580,7 +580,25 @@ pnpm test             # vitest run
 pnpm test:watch       # vitest --watch
 ```
 
-Current coverage: ~12 representative adapters across all interfaces. Wiring the remaining ~80 adapters is mechanical — one-line test file per adapter — and the runners catch drift immediately.
+**Full contract** for representative adapters (`pkg-npm`, `cloud-runpod`, `payment-coinpay`, `bridge-discord`, `docs-marp`, etc.) and **smoke tests** for everything else (~110 adapters). Smoke is deliberately permissive — verifies the adapter exports `id + label`, the id follows the package-family convention, and `kind` / `supports` are declared where the interface requires them. No network calls, no sample configs. Graduates to a full contract test as real implementations land.
+
+```ts
+// smoke test — used on ~110 adapters across the repo
+import { smokeTest } from '@sh1pt/core/testing';
+import adapter from './index.js';
+smokeTest(adapter, { idPrefix: 'social' });
+```
+
+## Auth UX
+
+Setup flows follow a **least-friction-first** ordering — prefer whichever the vendor supports:
+
+1. **Webhook URL** — paste once, done. No token lifecycle. (Discord, Slack incoming, Teams connector, generic HTTP.)
+2. **API key / static token** — one copy-paste. Long-lived credentials, no expiry dance.
+3. **OAuth** — browser redirect + callback. Automated but multi-step.
+4. **Manual URL + written instructions** — last resort. Print a deep link to the vendor's developer page with "go here, do this, paste the result."
+
+Never "set an env var from the shell." When an adapter's `connect()` throws *"KEY not in vault"* the CLI launches the right flow automatically.
 
 ### Webhooks — the minimum viable integration
 

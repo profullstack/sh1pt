@@ -204,3 +204,78 @@ vcsCmd
   .action((opts: { events?: string }) => {
     console.log(kleur.cyan(`[stub] vcs hook add · events=${opts.events ?? 'push,pull_request,release'}`));
   });
+
+// ------ webhooks --------------------------------------------------------
+
+const webhooksCmd = configCmd
+  .command('webhooks')
+  .description('Wire webhook targets (Discord, Slack, Telegram, Teams, generic) + manage outbound subscriptions')
+  .action(() => { webhooksCmd.help(); });
+
+webhooksCmd
+  .command('add <target>')
+  .description('Register a webhook target — paste a URL, done. e.g. sh1pt config webhooks add discord')
+  .option('--events <list>', 'which events fire this target (default: all)', '*')
+  .option('--name <label>', 'friendly name (for multi-channel setups)')
+  .action(async (target: string, opts: { events: string; name?: string }) => {
+    const known = ['discord', 'slack', 'telegram', 'teams', 'generic'];
+    if (!known.includes(target)) {
+      console.log(kleur.yellow(`unknown target "${target}". Known: ${known.join(', ')}`));
+      return;
+    }
+    console.log(kleur.cyan(`[stub] webhooks add ${target}`));
+    console.log(kleur.dim(`would prompt to paste the URL, store it in the vault under ${urlKeyFor(target)}, and enable for events=${opts.events}`));
+    // TODO: prompts → paste URL → secret set <KEY>, patch manifest.webhooks, test-fire with a stub payload
+  });
+
+webhooksCmd
+  .command('remove <target>')
+  .description('Disable a webhook target')
+  .action((target: string) => {
+    console.log(kleur.yellow(`[stub] webhooks remove ${target}`));
+  });
+
+webhooksCmd
+  .command('test <target>')
+  .description('Fire a stub event at a registered target to check it works')
+  .option('--event <id>', 'which event to simulate', 'ship.published')
+  .action((target: string, opts: { event: string }) => {
+    console.log(kleur.green(`[stub] webhooks test ${target} · event=${opts.event}`));
+  });
+
+webhooksCmd
+  .command('list')
+  .description('All configured outbound targets + subscription URLs')
+  .option('--json')
+  .action((opts: { json?: boolean }) => {
+    if (opts.json) { console.log(JSON.stringify({ targets: [], subscriptions: [] }, null, 2)); return; }
+    console.log(kleur.dim('[stub] webhooks list'));
+  });
+
+// Customer-supplied subscriptions — sh1pt cloud fires these on events.
+webhooksCmd
+  .command('sub add <url>')
+  .description('Subscribe an external URL to sh1pt events (sh1pt POSTs to it with HMAC-signed bodies)')
+  .option('--events <list>', 'comma-separated event names, or * for all', '*')
+  .option('--description <text>')
+  .action((url: string, opts: { events: string; description?: string }) => {
+    console.log(kleur.cyan(`[stub] webhooks sub add ${url} events=${opts.events}`));
+    console.log(kleur.dim('Signing secret will be printed once — store it; we only keep a hash.'));
+  });
+
+webhooksCmd
+  .command('sub remove <subscriptionId>')
+  .description('Remove a subscription')
+  .action((id: string) => {
+    console.log(kleur.yellow(`[stub] webhooks sub remove ${id}`));
+  });
+
+function urlKeyFor(target: string): string {
+  return ({
+    discord: 'DISCORD_WEBHOOK_URL',
+    slack: 'SLACK_WEBHOOK_URL',
+    telegram: 'TELEGRAM_BOT_TOKEN',
+    teams: 'TEAMS_WEBHOOK_URL',
+    generic: 'WEBHOOK_URL',
+  } as Record<string, string>)[target] ?? 'WEBHOOK_URL';
+}

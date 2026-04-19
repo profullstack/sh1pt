@@ -183,6 +183,13 @@
 ![GitLab](https://img.shields.io/badge/GitLab-FC6D26?logo=gitlab&logoColor=white)
 ![Gitea](https://img.shields.io/badge/Gitea-609926?logo=gitea&logoColor=white)
 
+**Webhook targets (`sh1pt config webhooks`)**
+![Discord](https://img.shields.io/badge/Discord_webhook-5865F2?logo=discord&logoColor=white)
+![Slack](https://img.shields.io/badge/Slack_webhook-4A154B?logo=slack&logoColor=white)
+![Telegram](https://img.shields.io/badge/Telegram_bot-26A5E4?logo=telegram&logoColor=white)
+![Teams](https://img.shields.io/badge/Teams_connector-6264A7?logo=microsoftteams&logoColor=white)
+![Generic HTTP](https://img.shields.io/badge/Generic_HTTP-475569?logoColor=white)
+
 **CAPTCHA solvers (last-resort, browser-mode fallback only)**
 ![2Captcha](https://img.shields.io/badge/2Captcha-0078D4?logo=2captcha&logoColor=white)
 ![CaptchaSolver](https://img.shields.io/badge/CaptchaSolver-374151?logo=captchasolver&logoColor=white)
@@ -446,6 +453,7 @@ sh1pt config show                # print the resolved manifest
 sh1pt config stack set           # prompts — node / bun / python / rust / custom
 sh1pt config payments add        # payment providers: CoinPay default, Stripe/PayPal opt-in
 sh1pt config vcs set             # prompts — GitHub / GitLab / Gitea / local-only
+sh1pt config webhooks add discord # paste-URL integrations (Slack / Teams / Telegram / Discord / generic)
 ```
 
 **Secrets model: prompt, don't `.env`.** sh1pt prompts for API keys and writes them to the credentials vault — no `.env` in your project is required for sh1pt-managed secrets. `ctx.secret('KEY')` in every adapter reads from the vault. You only need `.env` for build-time-inlined values like `NEXT_PUBLIC_SUPABASE_URL` where the framework requires it.
@@ -494,6 +502,29 @@ sh1pt config vcs hook add --events push,pull_request,release
 ```
 
 Local git stays the source of truth. The VCS provider handles remote-side operations (releases, PRs, webhooks) that can't be done with git alone.
+
+### Webhooks — the minimum viable integration
+
+Sometimes all you need is a webhook URL. Create one in the destination (Discord channel → Webhooks, Slack app → Incoming Webhooks, Teams channel → Connectors, Telegram bot from BotFather), paste it once:
+
+```bash
+sh1pt config webhooks add discord                       # prompts for the URL, stores in vault
+sh1pt config webhooks add slack   --events ship.published,scale.alarm.tripped
+sh1pt config webhooks add telegram                      # bot token + chat_id
+sh1pt config webhooks add teams
+sh1pt config webhooks add generic                       # any HTTP URL; body is HMAC-signed
+sh1pt config webhooks test discord --event ship.published   # fire a stub event
+```
+
+Sh1pt fires every configured target on the events you subscribe it to — `ship.published`, `promote.campaign.started`, `promote.merch.order.placed`, `scale.alarm.tripped`, `payments.checkout.completed`, `iterate.cycle.completed`, etc. Or use `*` to get everything.
+
+Customer-direction subscriptions (sh1pt → your server):
+
+```bash
+sh1pt config webhooks sub add https://yoursite.com/api/sh1pt --events ship.published,payments.checkout.completed
+# prints the signing secret ONCE — store it; sh1pt only keeps a hash.
+# Verify the X-Sh1pt-Signature header with HMAC-SHA256(body, secret).
+```
 
 ## Recipes — sell the features, then build them
 
@@ -590,6 +621,7 @@ sh1pt/
 │   ├── outreach/         Outreach adapters (listennotes, resend, producthunt)
 │   ├── payments/         Payment providers (coinpay default; stripe, paypal, worldremit)
 │   ├── vcs/              VCS providers (github, gitlab, gitea)
+│   ├── webhooks/         Paste-URL webhook targets (discord, slack, telegram, teams, generic)
 │   ├── web/              Dashboard (stub)
 │   └── targets/          One adapter per distribution surface
 │       ├── pkg-npm/

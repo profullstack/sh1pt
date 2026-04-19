@@ -12,5 +12,6 @@ packages:
   - "packages/outreach/*"
   - "packages/payments/*"
   - "packages/vcs/*"
+  - "packages/webhooks/*"
 # boilerplates/* are deliberately NOT workspace members — they are standalone
 # starter projects that a customer would copy, not packages sh1pt publishes.

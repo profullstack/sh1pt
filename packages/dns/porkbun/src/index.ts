@@ -20,7 +20,7 @@ export default defineDns<Config>({
 
   async connect(ctx) {
     if (!ctx.secret('PORKBUN_API_KEY') || !ctx.secret('PORKBUN_API_SECRET')) {
-      throw new Error('set PORKBUN_API_KEY and PORKBUN_API_SECRET via `sh1pt secret set`');
+      throw new Error('PORKBUN_API_KEY / PORKBUN_API_SECRET not set — run `sh1pt secret set PORKBUN_API_KEY ...`');
     }
     ctx.log('porkbun connected');
     return { accountId: 'porkbun' };

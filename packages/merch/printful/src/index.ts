@@ -27,7 +27,7 @@ export default defineMerch<Config>({
   ],
 
   async connect(ctx) {
-    if (!ctx.secret('PRINTFUL_TOKEN')) throw new Error('PRINTFUL_TOKEN not set');
+    if (!ctx.secret('PRINTFUL_TOKEN')) throw new Error('PRINTFUL_TOKEN not set — run `sh1pt secret set PRINTFUL_TOKEN`');
     return { accountId: 'printful' };
   },
 

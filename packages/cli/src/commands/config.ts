@@ -253,8 +253,13 @@ webhooksCmd
   });
 
 // Customer-supplied subscriptions — sh1pt cloud fires these on events.
-webhooksCmd
-  .command('sub add <url>')
+const subCmd = webhooksCmd
+  .command('sub')
+  .description('Manage event subscriptions (sh1pt POSTs to your URLs on events)')
+  .action(() => { subCmd.help(); });
+
+subCmd
+  .command('add <url>')
   .description('Subscribe an external URL to sh1pt events (sh1pt POSTs to it with HMAC-signed bodies)')
   .option('--events <list>', 'comma-separated event names, or * for all', '*')
   .option('--description <text>')
@@ -263,8 +268,8 @@ webhooksCmd
     console.log(kleur.dim('Signing secret will be printed once — store it; we only keep a hash.'));
   });
 
-webhooksCmd
-  .command('sub remove <subscriptionId>')
+subCmd
+  .command('remove <subscriptionId>')
   .description('Remove a subscription')
   .action((id: string) => {
     console.log(kleur.yellow(`[stub] webhooks sub remove ${id}`));

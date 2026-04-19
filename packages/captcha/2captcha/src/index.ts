@@ -14,7 +14,7 @@ interface Config {
 const API = 'https://api.2captcha.com';
 
 export default defineCaptcha<Config>({
-  id: 'captcha-2captcha',
+  id: 'captcha-twocaptcha',
   label: '2Captcha',
   supports: [
     'recaptcha-v2', 'recaptcha-v2-invisible', 'recaptcha-v3',

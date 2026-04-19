@@ -176,3 +176,93 @@ crowdfundCmd
     if (opts.json) { console.log(JSON.stringify({ campaigns: [] }, null, 2)); return; }
     console.log(kleur.dim('[stub] crowdfund status'));
   });
+
+// Organic social — cross-post to every connected network with per-platform
+// adaptation (truncation, hashtag placement, media requirements).
+const socialCmd = promoteCmd
+  .command('social')
+  .description('Post organically to X, LinkedIn, Instagram, Threads, TikTok, YouTube, Reddit, Mastodon, Bluesky');
+
+socialCmd
+  .command('setup')
+  .description('Connect social accounts (OAuth where possible, app passwords elsewhere)')
+  .option('--platform <id...>', 'e.g. social-x social-linkedin social-instagram')
+  .action((opts: { platform?: string[] }) => {
+    console.log(kleur.cyan(`[stub] social setup · ${opts.platform?.join(', ') ?? 'all configured'}`));
+  });
+
+socialCmd
+  .command('post')
+  .description('Cross-post to every connected platform with per-platform adaptation')
+  .requiredOption('--body <text>', 'core message — adapters truncate per their limits')
+  .option('--title <text>', 'used for long-form (LinkedIn articles, Dev.to, Hashnode)')
+  .option('--hashtags <list>', 'comma-separated, no #')
+  .option('--media <path...>', 'images and/or videos — adapters enforce kind requirements')
+  .option('--link <url>', 'CTA URL')
+  .option('--platform <id...>', 'subset; default: all connected')
+  .option('--schedule <iso>', 'publish at ISO timestamp; omit for now')
+  .option('--dry-run')
+  .action((opts) => {
+    console.log(kleur.green(`[stub] social post ${JSON.stringify(opts)}`));
+  });
+
+socialCmd
+  .command('metrics')
+  .description('Aggregated engagement across recent posts')
+  .option('--platform <id>')
+  .option('--json')
+  .action((opts: { platform?: string; json?: boolean }) => {
+    if (opts.json) { console.log(JSON.stringify({ posts: [], totals: {} }, null, 2)); return; }
+    console.log(kleur.dim('[stub] social metrics'));
+  });
+
+// Outreach umbrella — podcast booking, cold email, launch sites.
+// Anything salesy we can automate beyond paid ads and public posts.
+const outreachCmd = promoteCmd
+  .command('outreach')
+  .description('Podcasts, cold email, launch sites — anything salesy that scales');
+
+outreachCmd
+  .command('podcasts')
+  .description('Discover relevant podcasts + send guest-pitch emails (Listen Notes + Resend)')
+  .option('--niche <list>', 'comma-separated topic list', 'ai,startups,devtools')
+  .option('--min-listeners <n>', Number, 5000)
+  .option('--language <code>', '', 'en')
+  .option('--deck <path>', 'media kit / pitch deck')
+  .option('--dry-run')
+  .action((opts) => {
+    console.log(kleur.green(`[stub] podcast outreach ${JSON.stringify(opts)}`));
+  });
+
+outreachCmd
+  .command('email')
+  .description('Cold email sequence via Resend — CAN-SPAM / CASL / GDPR compliance is your responsibility')
+  .requiredOption('--recipients <csvPath>', 'CSV with email,name,company,...')
+  .requiredOption('--subject <text>')
+  .requiredOption('--body <path>', 'markdown/html body file with {{placeholders}}')
+  .option('--from <addr>', 'must be a verified Resend domain')
+  .option('--rate <perHour>', Number, 20)
+  .option('--dry-run')
+  .action((opts) => {
+    console.log(kleur.green(`[stub] email sequence ${JSON.stringify(opts)}`));
+  });
+
+outreachCmd
+  .command('launch')
+  .description('Schedule / coordinate a launch post on Product Hunt, BetaList, Hacker News Show, Indie Hackers')
+  .option('--site <id...>', 'producthunt | betalist | hn-show | indiehackers', 'producthunt')
+  .option('--schedule <iso>', 'launch time; PH prefers 12:01 AM PST')
+  .option('--tagline <text>')
+  .option('--gallery <path...>')
+  .action((opts) => {
+    console.log(kleur.green(`[stub] launch ${JSON.stringify(opts)}`));
+  });
+
+outreachCmd
+  .command('status')
+  .description('Open podcast pitches, active email sequences, upcoming launch slots')
+  .option('--json')
+  .action((opts: { json?: boolean }) => {
+    if (opts.json) { console.log(JSON.stringify({ podcasts: [], email: [], launches: [] }, null, 2)); return; }
+    console.log(kleur.dim('[stub] outreach status'));
+  });

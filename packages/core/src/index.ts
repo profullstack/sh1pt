@@ -8,4 +8,5 @@ export * from './agent.js';
 export * from './recipe.js';
 export * from './merch.js';
 export * from './captcha.js';
+export * from './social.js';
 export * from './exec.js';

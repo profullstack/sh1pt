@@ -124,6 +124,22 @@
 ![Wefunder](https://img.shields.io/badge/Wefunder-F26522?logo=wefunder&logoColor=white)
 ![Kickstarter](https://img.shields.io/badge/Kickstarter-05CE78?logo=kickstarter&logoColor=white)
 
+**Organic social (`sh1pt promote social`)**
+![X](https://img.shields.io/badge/X-000?logo=x&logoColor=white)
+![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?logo=linkedin&logoColor=white)
+![Instagram](https://img.shields.io/badge/Instagram-E4405F?logo=instagram&logoColor=white)
+![Threads](https://img.shields.io/badge/Threads-000?logo=threads&logoColor=white)
+![TikTok](https://img.shields.io/badge/TikTok-000?logo=tiktok&logoColor=white)
+![YouTube](https://img.shields.io/badge/YouTube-FF0000?logo=youtube&logoColor=white)
+![Reddit](https://img.shields.io/badge/Reddit-FF4500?logo=reddit&logoColor=white)
+![Mastodon](https://img.shields.io/badge/Mastodon-6364FF?logo=mastodon&logoColor=white)
+![Bluesky](https://img.shields.io/badge/Bluesky-0285FF?logo=bluesky&logoColor=white)
+
+**Outreach (`sh1pt promote outreach`)**
+![Listen Notes](https://img.shields.io/badge/Listen_Notes-FF6600?logo=listennotes&logoColor=white)
+![Resend](https://img.shields.io/badge/Resend-000?logo=resend&logoColor=white)
+![Product Hunt](https://img.shields.io/badge/Product_Hunt-DA552F?logo=producthunt&logoColor=white)
+
 **CAPTCHA solvers (last-resort, browser-mode fallback only)**
 ![2Captcha](https://img.shields.io/badge/2Captcha-0078D4?logo=2captcha&logoColor=white)
 ![CaptchaSolver](https://img.shields.io/badge/CaptchaSolver-374151?logo=captchasolver&logoColor=white)
@@ -195,8 +211,14 @@ sh1pt promote                                       (default: launch ads)
     target add|remove|list|available
   merch                                             swag — Printful / Printify
     setup / create / list / publish / giveaway / orders / payout
-  investors                                         angel/seed/VC outreach — CapitalReach.ai
+  investors                                         angel/seed/VC outreach — CapitalReach.ai + AngelList + OpenVC
     setup / pitch / search / status / schedule
+  crowdfund                                         equity + reward crowdfunding
+    setup / launch / status
+  social                                            organic cross-post to 9 social networks
+    setup / post / metrics
+  outreach                                          cold email, podcast pitches, launch sites
+    podcasts / email / launch / status
 
 sh1pt scale
   up / down / auto / dns / rollout / cost / status
@@ -330,6 +352,36 @@ sh1pt promote crowdfund launch --target 100000 --duration 30
 sh1pt promote crowdfund status
 ```
 
+### promote social
+
+Cross-post organically to X, LinkedIn, Instagram, Threads, TikTok, YouTube (Shorts + long-form), Reddit, Mastodon, and Bluesky. One `Post` definition adapts per platform — truncation, hashtag placement, media requirements, visibility rules are all enforced by the adapter.
+
+```bash
+sh1pt promote social setup --platform social-x social-linkedin social-bluesky
+sh1pt promote social post \
+  --body "Launched sh1pt — one CLI ships your app to every store. Early bird \$244/yr." \
+  --hashtags indiehackers,launch,devtools,ai \
+  --media ./demo.mp4 --link https://sh1pt.dev
+sh1pt promote social metrics
+```
+
+Platform quirks the adapters handle: X 280-char limit with hashtags counted, Instagram requires media, TikTok requires a video, YouTube detects Shorts from aspect + duration, Reddit doesn't do hashtags, each Mastodon instance needs its own token.
+
+### promote outreach
+
+Every "salesy thing we can automate online" — podcast guest-pitches, cold email sequences, launch coordination.
+
+```bash
+sh1pt promote outreach podcasts --niche ai,startups,devtools --min-listeners 5000 --deck ./kit.pdf
+sh1pt promote outreach email --recipients ./targets.csv \
+  --subject "Thought you might find this useful" \
+  --body ./templates/pitch.md --from "You <you@yourdomain.com>" --rate 20
+sh1pt promote outreach launch --site producthunt --schedule 2026-05-01T07:01:00Z --gallery ./shots/*.png
+sh1pt promote outreach status
+```
+
+**Compliance reminder.** Cold email is legitimate under CAN-SPAM / CASL / GDPR only with proper basis (legitimate interest), physical address in the footer, one-click unsubscribe, and immediate opt-out honoring. sh1pt enforces per-hour rate limits (default 20) and auto-suppresses bounces + unsubscribes, but the legal basis is yours to establish.
+
 ### iterate agents
 
 Drive AI coding CLIs — sh1pt wraps Claude Code, Codex, and Qwen so you can generate/iterate on a project from the same manifest.
@@ -442,6 +494,8 @@ sh1pt/
 │   ├── recipes/          App-type recipes (waitlist-crypto-investor, …)
 │   ├── merch/            Print-on-demand adapters (printful, printify)
 │   ├── captcha/          Captcha-solver adapters (2captcha, captcha-solver) — browser-mode fallback only
+│   ├── social/           Organic-social adapters (x, linkedin, instagram, threads, tiktok, youtube, reddit, mastodon, bluesky)
+│   ├── outreach/         Outreach adapters (listennotes, resend, producthunt)
 │   ├── web/              Dashboard (stub)
 │   └── targets/          One adapter per distribution surface
 │       ├── pkg-npm/

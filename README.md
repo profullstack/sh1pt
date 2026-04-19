@@ -63,7 +63,16 @@ sh1pt/
 │       ├── xr-pico/         Pico Store (ByteDance)
 │       ├── xr-steamvr/      SteamVR (PCVR / OpenXR)
 │       ├── console-steam/   Steam (incl. Deck Gaming Mode via Steamworks)
-│       └── pkg-fdroid/      F-Droid (FOSS Android repo)
+│       ├── pkg-fdroid/      F-Droid (FOSS Android repo)
+│       ├── pkg-cdn/         jsDelivr / unpkg / esm.sh / cdnjs / Skypack / JSPM
+│       ├── pkg-jsr/         JSR (TS-native registry)
+│       ├── pkg-deno/        deno.land/x (git-tag based)
+│       ├── pkg-ghpackages/  GitHub Packages (npm)
+│       ├── pkg-docker/      OCI images — Docker Hub / GHCR / Quay / ECR / GCR / ACR
+│       ├── deploy-denodeploy/ Deno Deploy
+│       ├── deploy-workers/    Cloudflare Workers
+│       ├── deploy-fly/        Fly.io
+│       └── deploy-railway/    Railway
 ├── boilerplates/         Standalone starter projects (NOT workspace members).
 │   └── hello-world/      Customers copy this and edit sh1pt.config.ts.
 └── TARGETS.md            Full matrix of ~40 planned surfaces, stores, and registries

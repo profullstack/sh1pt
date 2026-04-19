@@ -124,6 +124,9 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 |---|---|---|
 | `api-rapidapi` | RapidAPI Hub | — |
 | `api-aws-marketplace` | AWS Marketplace (API) | — |
+| `pkg-jsr` | JSR (TS-native) | ✅ |
+| `pkg-deno` | deno.land/x (git tags) | ✅ |
+| `pkg-ghpackages` | GitHub Packages (npm) | ✅ |
 | `sdk-npm` | npm (library) | 🚧 |
 | `sdk-pypi` | PyPI | 🚧 |
 | `sdk-maven` | Maven Central | 🚧 |
@@ -135,6 +138,25 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 | `sdk-hex` | hex.pm | — |
 | `sdk-pub` | pub.dev | — |
 | `webhooks` | Versioned outbound webhook catalog | — |
+
+### CDN / container registries
+| Target id | Channel | Status |
+|---|---|---|
+| `pkg-cdn` | jsDelivr / unpkg / esm.sh / cdnjs / Skypack / JSPM | ✅ |
+| `pkg-docker` | Docker Hub / GHCR / Quay / ECR / GCR / ACR | ✅ |
+
+### App hosting
+| Target id | Channel | Status |
+|---|---|---|
+| `deploy-denodeploy` | Deno Deploy | ✅ |
+| `deploy-workers` | Cloudflare Workers | ✅ |
+| `deploy-fly` | Fly.io | ✅ |
+| `deploy-railway` | Railway | ✅ |
+| `deploy-render` | Render | — |
+| `deploy-vercel` | Vercel (SSR/API) | — |
+| `deploy-netlify` | Netlify (Functions/Edge) | — |
+| `deploy-lambda` | AWS Lambda | — |
+| `deploy-cloudrun` | Google Cloud Run | — |
 
 ---
 

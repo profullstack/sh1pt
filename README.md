@@ -121,31 +121,51 @@
 
 **$499/year** for the managed cloud — build runners (Linux + macOS + Windows), credentials vault, store submission monitoring, webhook alerts, policy linter, rate-limit protection. Self-host core is OSS.
 
-## The DX goal
+## CLI surface
 
-Expo-style, but with **minimum prompting**. The config file is the source of truth, not an interactive wizard.
+Four verbs. Everything else is a subcommand.
 
 ```bash
-sh1pt init                    # scaffold sh1pt.config.ts
-sh1pt setup                   # wire every store/registry — OAuth where possible,
-                              # paste-once keys where not, deep links for human-only steps
-sh1pt setup status            # which stores are live / pending / blocked
-
-sh1pt ship --channel beta     # publish to test tracks on every target
-sh1pt ship --channel stable   # promote to production stores
+sh1pt build          # compile artifacts for enabled targets
+sh1pt ship           # publish to every target store/registry
+sh1pt promote        # run ads across every major network
+sh1pt help           # full command tree
 ```
 
-`sh1pt setup` is the killer command: run it once, connect every store in parallel, walk away. Human-only steps (Apple D-U-N-S, Google Play identity verification, Microsoft Partner Center review) become a tracked checklist with deep links, polled automatically.
-
-## Promo — one command, ads everywhere
-
-Publishing alone is table stakes. `sh1pt promo` closes the loop by running install / traffic / awareness campaigns across every major ad network.
+### ship
 
 ```bash
-sh1pt promo setup             # OAuth each ad platform once
-sh1pt promo start --budget 50 --duration 7d --objective install
-sh1pt promo status            # aggregated spend / impressions / clicks / installs
-sh1pt promo stop
+sh1pt ship [--target X] [--channel beta|stable] [--dry-run] [--skip-lint]
+
+sh1pt ship init                           # scaffold sh1pt.config.ts
+sh1pt ship setup [--store id] [--poll]    # connect store credentials
+sh1pt ship status [--target id] [--json]  # live/pending/in-review per target
+sh1pt ship rollback [--target id]
+sh1pt ship lint [--strict] [--json]       # also runs automatically pre-ship
+sh1pt ship logs [--target id] [-f]
+sh1pt ship target add|remove|list|available
+```
+
+`sh1pt ship setup` is the killer command: run once, connect every store in parallel, walk away. Human-only steps (Apple D-U-N-S, Google Play identity verification, Microsoft Partner Center review) become a tracked checklist with deep links, polled automatically.
+
+### promote
+
+```bash
+sh1pt promote [--platform X] [--budget N] [--duration 7d] [--objective install] [--dry-run]
+
+sh1pt promote setup [--platform id] [--poll]   # org + ad account + funding + OAuth
+sh1pt promote status [--platform id] [--json]  # aggregated spend / impressions / installs
+sh1pt promote stop [--platform id]
+sh1pt promote creatives
+```
+
+Publishing alone is table stakes. `promote` closes the loop — one command runs install / traffic / awareness campaigns on Reddit, Meta, TikTok, Google, YouTube, X, Apple Search, LinkedIn, and Microsoft Ads at once.
+
+### Cross-cutting utilities
+
+```bash
+sh1pt login                      # authenticate with sh1pt cloud (device-code flow)
+sh1pt secret set|get|list|rm     # manage credentials vault (used by ship + promote)
 ```
 
 Declare creatives, budget, and targeting in `sh1pt.config.ts`:

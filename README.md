@@ -601,6 +601,8 @@ sh1pt/
 │       ├── chat-signal/       Signal (signal-cli / signald, ⚠ no official bot platform)
 │       ├── chat-discord/      Discord App Directory
 │       └── chat-whatsapp/     WhatsApp Business Cloud API
+├── sites/                sh1pt's own live properties (dogfood).
+│   └── sh1pt.com/            Marketing + waitlist + investor page
 ├── boilerplates/         Standalone starter projects (NOT workspace members).
 │   ├── hello-world/          Bare manifest — no framework
 │   ├── next-supabase/        Next.js 15 + React 19 + Supabase (web/PWA)

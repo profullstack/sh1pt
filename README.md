@@ -150,6 +150,12 @@
 ![PayPal](https://img.shields.io/badge/PayPal-00457C?logo=paypal&logoColor=white)
 ![WorldRemit](https://img.shields.io/badge/WorldRemit-ED3CEB?logo=worldremit&logoColor=white)
 
+**VCS (`sh1pt config vcs`)**
+![Git](https://img.shields.io/badge/git-F05032?logo=git&logoColor=white)
+![GitHub](https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white)
+![GitLab](https://img.shields.io/badge/GitLab-FC6D26?logo=gitlab&logoColor=white)
+![Gitea](https://img.shields.io/badge/Gitea-609926?logo=gitea&logoColor=white)
+
 **CAPTCHA solvers (last-resort, browser-mode fallback only)**
 ![2Captcha](https://img.shields.io/badge/2Captcha-0078D4?logo=2captcha&logoColor=white)
 ![CaptchaSolver](https://img.shields.io/badge/CaptchaSolver-374151?logo=captchasolver&logoColor=white)
@@ -412,6 +418,7 @@ sh1pt secret set|get|list|rm     # manage credentials vault (used by every verb)
 sh1pt config show                # print the resolved manifest
 sh1pt config stack set           # prompts — node / bun / python / rust / custom
 sh1pt config payments add        # payment providers: CoinPay default, Stripe/PayPal opt-in
+sh1pt config vcs set             # prompts — GitHub / GitLab / Gitea / local-only
 ```
 
 **Secrets model: prompt, don't `.env`.** sh1pt prompts for API keys and writes them to the credentials vault — no `.env` in your project is required for sh1pt-managed secrets. `ctx.secret('KEY')` in every adapter reads from the vault. You only need `.env` for build-time-inlined values like `NEXT_PUBLIC_SUPABASE_URL` where the framework requires it.
@@ -446,6 +453,20 @@ payments: {
 ```
 
 CLI shortcuts (`sh1pt config payments add|remove|default|list|fee`) edit this block without hand-touching the file.
+
+### VCS
+
+Git + a remote (GitHub / GitLab / Gitea) are plumbing every verb touches. `promote ship --channel stable` tags a release and uploads assets. `iterate run` opens a PR from the branch the agent just wrote to. `promote outreach launch` can auto-link the public repo.
+
+```bash
+sh1pt config vcs set                          # prompts — GitHub / GitLab / Gitea / local-only
+sh1pt config vcs auth --provider vcs-github   # writes GITHUB_TOKEN (or GITLAB_TOKEN / GITEA_TOKEN) to vault
+sh1pt config vcs release v0.7.0 --body ./RELEASE.md --asset ./dist/*.tar.gz
+sh1pt config vcs pr --head iterate/fix-abc --base main --title "fix checkout flow"
+sh1pt config vcs hook add --events push,pull_request,release
+```
+
+Local git stays the source of truth. The VCS provider handles remote-side operations (releases, PRs, webhooks) that can't be done with git alone.
 
 ## Recipes — sell the features, then build them
 
@@ -541,6 +562,7 @@ sh1pt/
 │   ├── social/           Organic-social adapters (x, linkedin, instagram, threads, tiktok, youtube, reddit, mastodon, bluesky)
 │   ├── outreach/         Outreach adapters (listennotes, resend, producthunt)
 │   ├── payments/         Payment providers (coinpay default; stripe, paypal, worldremit)
+│   ├── vcs/              VCS providers (github, gitlab, gitea)
 │   ├── web/              Dashboard (stub)
 │   └── targets/          One adapter per distribution surface
 │       ├── pkg-npm/

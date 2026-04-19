@@ -10,4 +10,5 @@ export * from './merch.js';
 export * from './captcha.js';
 export * from './social.js';
 export * from './payments.js';
+export * from './vcs.js';
 export * from './exec.js';

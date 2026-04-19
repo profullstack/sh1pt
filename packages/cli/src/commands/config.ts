@@ -132,3 +132,75 @@ stackCmd
   .action(() => {
     console.log(kleur.dim('[stub] stack detect — look for package.json, pyproject.toml, Cargo.toml, *.csproj, CMakeLists.txt'));
   });
+
+// ------ vcs (git / github / gitlab / gitea) -----------------------------
+
+const vcsCmd = configCmd
+  .command('vcs')
+  .description('Git, GitHub, GitLab, Gitea integration — tags, releases, PRs, webhooks')
+  .action(() => { vcsCmd.help(); });
+
+vcsCmd
+  .command('set [provider]')
+  .description('Pick a VCS provider (prompts if omitted)')
+  .action(async (provider?: string) => {
+    let pick = provider;
+    if (!pick) {
+      const response = await prompts({
+        type: 'select',
+        name: 'pick',
+        message: 'Which VCS?',
+        choices: [
+          { title: 'GitHub', description: 'github.com — most common', value: 'vcs-github' },
+          { title: 'GitLab', description: 'gitlab.com or self-hosted', value: 'vcs-gitlab' },
+          { title: 'Gitea / Forgejo / Codeberg', description: 'self-hosted or Codeberg.org', value: 'vcs-gitea' },
+          { title: 'None (local git only)', description: 'tag/push via local `git`; no remote API calls', value: 'none' },
+        ],
+        initial: 0,
+      });
+      pick = response.pick as string | undefined;
+      if (!pick) return;
+    }
+    console.log(kleur.green(`✓ vcs set to ${pick}`));
+  });
+
+vcsCmd
+  .command('auth')
+  .description('Walk through setting the right token in the vault (GITHUB_TOKEN / GITLAB_TOKEN / GITEA_TOKEN)')
+  .option('--provider <id>', 'vcs-github | vcs-gitlab | vcs-gitea')
+  .action((opts: { provider?: string }) => {
+    console.log(kleur.cyan(`[stub] vcs auth · ${opts.provider ?? 'current'} — prompt for token and write to vault`));
+  });
+
+vcsCmd
+  .command('release <tag>')
+  .description('Create a GitHub/GitLab/Gitea release from the current HEAD with optional asset uploads')
+  .option('--name <text>')
+  .option('--body <path>', 'path to a markdown file with release notes')
+  .option('--draft')
+  .option('--prerelease')
+  .option('--asset <path...>', 'files to attach')
+  .action((tag: string, opts) => {
+    console.log(kleur.green(`[stub] vcs release ${tag} ${JSON.stringify(opts)}`));
+    // TODO: local git tag + push, then VcsProvider.createRelease() with assets
+  });
+
+vcsCmd
+  .command('pr')
+  .description('Open a PR / MR from a branch (used by `sh1pt iterate` to file agent changes)')
+  .requiredOption('--head <branch>')
+  .option('--base <branch>', '', 'main')
+  .requiredOption('--title <text>')
+  .option('--body <path>')
+  .option('--draft')
+  .action((opts) => {
+    console.log(kleur.green(`[stub] vcs pr ${JSON.stringify(opts)}`));
+  });
+
+vcsCmd
+  .command('hook add')
+  .description('Register a webhook from the VCS provider → sh1pt cloud (ship events, PR events, comments)')
+  .option('--events <list>', 'comma-separated')
+  .action((opts: { events?: string }) => {
+    console.log(kleur.cyan(`[stub] vcs hook add · events=${opts.events ?? 'push,pull_request,release'}`));
+  });

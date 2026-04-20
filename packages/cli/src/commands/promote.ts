@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
+import { describeInput, resolveInput } from '../input.js';
 import { merchCmd } from './merch.js';
 import { shipCmd as shipSub } from './ship.js';
 
@@ -10,7 +11,18 @@ export const promoteCmd = new Command('promote')
   .option('--duration <span>', 'e.g. 7d, 14d, 30d, ongoing')
   .option('--objective <kind>', 'install | web-traffic | awareness | engagement | signup | purchase', 'install')
   .option('--dry-run', 'validate creatives/targeting without launching')
-  .action((opts) => {
+  .option('--from <input>', 'existing live url, repo, local path, or manifest doc to promote')
+  .action((opts: Record<string, unknown> & { from?: string }) => {
+    if (opts.from) {
+      const input = resolveInput(opts.from);
+      const rest = { ...opts };
+      delete rest.from;
+      console.log(kleur.green('[stub] promote launch'), kleur.dim(`from=${describeInput(input)} ${JSON.stringify(rest)}`));
+      // TODO: kind==='url' → crawl title/description/OG/screenshots to seed campaign;
+      // kind==='git' → pull README + package.json + site links; kind==='doc' → parse
+      // manifest.promo; kind==='path' → load local manifest.
+      return;
+    }
     console.log(kleur.green('[stub] promote launch'), kleur.dim(JSON.stringify(opts)));
     // TODO: load manifest.promo, build CampaignContext, invoke AdPlatform.start() per platform
     // in parallel, record campaign ids in cloud

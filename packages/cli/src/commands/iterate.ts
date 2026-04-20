@@ -1,10 +1,22 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
+import { describeInput, resolveInput } from '../input.js';
 import { agentsCmd } from './agents.js';
 
 export const iterateCmd = new Command('iterate')
   .description('Observe metrics, have an agent propose changes, ship, measure. Powered by Claude / Codex / Qwen.')
-  .action(() => { iterateCmd.help(); });
+  .option('--from <input>', 'existing live url, repo, or local path to start observing + iterating on')
+  .action((opts: { from?: string }) => {
+    if (opts.from) {
+      const input = resolveInput(opts.from);
+      console.log(kleur.cyan(`[stub] iterate attach · from=${describeInput(input)}`));
+      // TODO: kind==='url' → uptime/latency/Lighthouse baseline, seed observation loop;
+      // kind==='git' → clone, read last N commits + CI signals, hook up an agent;
+      // kind==='path'/'doc' → read local manifest and attach the metric sources it declares.
+      return;
+    }
+    iterateCmd.help();
+  });
 
 // AI-CLI orchestration lives under iterate (was top-level `sh1pt agents`).
 // sh1pt iterate agents [list|setup|talk|run|generate]

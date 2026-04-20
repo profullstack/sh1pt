@@ -1,10 +1,22 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
+import { describeInput, resolveInput } from '../input.js';
 import { deployCmd } from './deploy.js';
 
 export const scaleCmd = new Command('scale')
   .description('Provision + scale cloud infra. DNS round-robin, rollouts, rightsizing — all the capacity ops.')
-  .action(() => { scaleCmd.help(); });
+  .option('--from <input>', 'existing live url, repo, or local path to probe + propose scaling for')
+  .action((opts: { from?: string }) => {
+    if (opts.from) {
+      const input = resolveInput(opts.from);
+      console.log(kleur.green(`[stub] scale probe · from=${describeInput(input)}`));
+      // TODO: kind==='url' → DNS/HTTP probe (region(s), provider heuristics, TTFB);
+      // kind==='git' → parse IaC/Dockerfile/infra manifests; kind==='path'/'doc' → read
+      // local manifest. Output: current fleet inference + scale-up/down recommendations.
+      return;
+    }
+    scaleCmd.help();
+  });
 
 // Raw infra provisioning lives under scale (was top-level `sh1pt deploy`).
 // sh1pt scale deploy [setup|quote|provision|list|destroy|status]

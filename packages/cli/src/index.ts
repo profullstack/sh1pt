@@ -7,7 +7,6 @@ import { iterateCmd } from './commands/iterate.js';
 import { loginCmd } from './commands/login.js';
 import { secretsCmd } from './commands/secrets.js';
 import { configCmd } from './commands/config.js';
-import { entityCmd } from './commands/entity.js';
 
 const program = new Command();
 
@@ -16,9 +15,10 @@ program
   .description('Build. Promote. Scale. Iterate…')
   .version('0.0.0');
 
-// Four primary verbs — one per word of the tagline. Everything else is a
-// subcommand so the global namespace stays clean.
-program.addCommand(buildCmd);      // build    · compile
+// Four primary verbs — one per word of the tagline. Each accepts --from
+// <git|url|path|doc> to jump into the workflow against an existing asset.
+// Entity-ops lives under `build` (see docs/prd/entityctl.md).
+program.addCommand(buildCmd);      // build    · compile · entity-ops nested
 program.addCommand(promoteCmd);    // promote  · publish (ship), ads, merch — anything that gets users
 program.addCommand(scaleCmd);      // scale    · provision (deploy), DNS, rollouts, cost
 program.addCommand(iterateCmd);    // iterate  · observe + agent-propose + ship + measure (agents nested)
@@ -27,7 +27,6 @@ program.addCommand(iterateCmd);    // iterate  · observe + agent-propose + ship
 program.addCommand(loginCmd);
 program.addCommand(secretsCmd);
 program.addCommand(configCmd);
-program.addCommand(entityCmd);     // entity   · formation + compliance + spinouts (jurisdiction packs)
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(kleur.red(`error: ${err.message}`));

@@ -37,9 +37,9 @@ section:last-child { border-bottom: 0; }
   display: inline-flex;
   align-items: baseline;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-weight: 500;
-  font-size: 1.5rem;
-  letter-spacing: -0.04em;
+  font-weight: 800;
+  font-size: clamp(2.75rem, 5vw, 4rem);
+  letter-spacing: -0.06em;
   color: #fff;
   text-decoration: none;
   line-height: 1;
@@ -47,6 +47,6 @@ section:last-child { border-bottom: 0; }
 .brand-logo:hover { text-decoration: none; opacity: 0.9; }
 .brand-dot {
   color: #c2ff3d;
-  text-shadow: 0 0 12px rgba(194, 255, 61, 0.5);
-  margin-left: 0.02em;
+  text-shadow: 0 0 24px rgba(194, 255, 61, 0.75), 0 0 4px rgba(194, 255, 61, 0.9);
+  margin-left: 0.06em;
 }

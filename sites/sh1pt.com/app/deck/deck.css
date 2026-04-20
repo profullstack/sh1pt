@@ -371,6 +371,108 @@
 .bg-paper .metric .n { color: #0a0a0a; }
 .bg-paper .metric .l { color: #525252; }
 
+/* Why now (paper slide) */
+.bg-paper .dotgrid {
+  background-image: radial-gradient(circle at 1px 1px, rgba(10, 10, 10, 0.08) 1px, transparent 0);
+  background-size: 28px 28px;
+}
+.why-now-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.why-now-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-display);
+  font-size: clamp(0.7rem, 0.82vw, 0.82rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #525252;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid #d6d3d1;
+  background: #fff;
+  border-radius: 999px;
+  margin-bottom: 2rem;
+}
+.why-now-stamp-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(194, 255, 61, 0.25);
+}
+.why-now-headline { max-width: 22ch; color: #0a0a0a; }
+.why-now-headline .serif { font-weight: 400; color: #0a0a0a; }
+.why-now-zero {
+  color: #ff3d3d;
+  background: rgba(255, 61, 61, 0.08);
+  padding: 0 0.25rem;
+  border-radius: 4px;
+}
+.why-now-rule {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent 0,
+    #0a0a0a 0,
+    #0a0a0a 3.5rem,
+    #d6d3d1 3.5rem,
+    #d6d3d1 100%
+  );
+  border: 0;
+  margin: clamp(2rem, 4vw, 3.5rem) 0 0;
+}
+.why-now-metrics { margin-top: clamp(1.75rem, 3.5vw, 2.5rem); gap: 1.25rem; }
+.bg-paper .metric {
+  position: relative;
+  padding: 2.25rem 1.75rem 1.75rem;
+  background: #fff;
+  border: 1px solid #e7e5e4;
+  border-radius: 16px;
+  box-shadow: 0 1px 0 rgba(10, 10, 10, 0.04), 0 8px 24px -12px rgba(10, 10, 10, 0.08);
+  overflow: hidden;
+}
+.bg-paper .metric::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--accent);
+}
+.why-now-tag {
+  font-family: var(--font-display);
+  font-size: clamp(0.6rem, 0.72vw, 0.72rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #737373;
+  margin-bottom: 0.75rem;
+}
+.bg-paper .metric .n { color: #0a0a0a; }
+.bg-paper .metric .l { color: #525252; margin-top: 0.85rem; }
+.why-now-quote {
+  margin-top: clamp(2.25rem, 4vw, 3.5rem);
+  padding: 1.25rem 1.5rem;
+  border-left: 3px solid var(--accent);
+  background: rgba(194, 255, 61, 0.12);
+  color: #404040;
+  font-size: clamp(0.8rem, 1vw, 1rem);
+  line-height: 1.55;
+  max-width: 80ch;
+  border-radius: 0 10px 10px 0;
+}
+.why-now-quote-mark { color: #737373; margin-right: 0.35rem; }
+.why-now-quote-hi {
+  color: #0a0a0a;
+  background: linear-gradient(transparent 62%, var(--accent) 62%);
+  padding: 0 0.15rem;
+}
+
 /* Chip grid (problem wall) */
 .chip-grid {
   display: grid;

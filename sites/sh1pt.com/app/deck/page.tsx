@@ -182,46 +182,46 @@ const slides: Slide[] = [
     id: 'why-now',
     label: 'Why now',
     bg: 'paper',
+    dotgrid: true,
     render: ({ num, total }) => (
       <>
         <Chrome num={`${num} / ${total}`} label="Why now" />
-        <div className="content" style={{ justifyContent: 'center' }}>
-          <span className="eyebrow">Why now</span>
-          <h2 className="title-xl" style={{ maxWidth: '22ch', color: '#0a0a0a' }}>
-            Agents ship code at <span className="serif" style={{ fontWeight: 400 }}>100×</span>
+        <div className="content why-now" style={{ justifyContent: 'center' }}>
+          <div className="why-now-head">
+            <span className="eyebrow">Why now</span>
+            <span className="why-now-stamp">
+              <span className="why-now-stamp-dot" />
+              Q2 · 2026
+            </span>
+          </div>
+          <h2 className="title-xl why-now-headline">
+            Agents ship code at <span className="serif">100×</span>
             <br />
             human velocity. They publish at{' '}
-            <span className="mono" style={{ color: '#ff3d3d' }}>
-              0×
-            </span>
-            .
+            <span className="mono why-now-zero">0×</span>.
           </h2>
-          <div className="metric-row">
+          <hr className="why-now-rule" aria-hidden />
+          <div className="metric-row why-now-metrics">
             <div className="metric">
+              <div className="why-now-tag">Audience</div>
               <div className="n">42M</div>
               <div className="l">Devs using AI coding assistants</div>
             </div>
             <div className="metric">
+              <div className="why-now-tag">Gap</div>
               <div className="n">~0</div>
               <div className="l">Can publish to every major surface</div>
             </div>
             <div className="metric">
-              <div className="n" style={{ color: '#0a0a0a' }}>
-                $180B
-              </div>
+              <div className="why-now-tag">Market</div>
+              <div className="n">$180B</div>
               <div className="l">Annual app-distribution tax, today</div>
             </div>
           </div>
-          <p
-            className="mono"
-            style={{
-              marginTop: 'clamp(2.5rem, 5vw, 5rem)',
-              color: '#737373',
-              fontSize: 'clamp(0.8rem, 1vw, 1rem)',
-            }}
-          >
-            // whoever owns the last mile between a generated artifact and a paying user owns the
-            next platform.
+          <p className="why-now-quote mono">
+            <span className="why-now-quote-mark">//</span> whoever owns the last mile between a
+            generated artifact and a paying user owns the{' '}
+            <span className="why-now-quote-hi">next platform</span>.
           </p>
         </div>
       </>

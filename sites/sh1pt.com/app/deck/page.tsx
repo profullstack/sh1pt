@@ -151,6 +151,9 @@ const slides: Slide[] = [
               'Apple Search',
               'Stripe',
               'CoinPay',
+              'Compound · Aave',
+              'Stripe Capital',
+              'Brex · Mercury',
               'Supabase auth',
               'Resend',
               'Listen Notes',
@@ -273,7 +276,10 @@ const slides: Slide[] = [
                   </span>
                 </div>
                 <div className="line out out-ok">
-                  submitted to 31 surfaces · ads live on 9 networks · 42 podcast pitches sent
+                  submitted to 33 surfaces · ads live on 9 networks · 42 podcast pitches sent
+                </div>
+                <div className="line out out-ok">
+                  funding: $40k credit line approved · DeFi pool ready (Aave v3 · USDC)
                 </div>
                 <div className="spacer" />
                 <div className="line">
@@ -313,7 +319,7 @@ const slides: Slide[] = [
               </div>
               <div className="verb-card">
                 <div className="verb-tag">02 — promote</div>
-                <div className="verb-label">Publish · ads · swag · investors · podcasts.</div>
+                <div className="verb-label">Publish · ads · investors · funding · podcasts.</div>
               </div>
               <div className="verb-card">
                 <div className="verb-tag">03 — scale</div>
@@ -411,7 +417,7 @@ const slides: Slide[] = [
                 { y: 78, label: '▸ 4 package registries' },
                 { y: 120, label: '▸ 9 ad networks' },
                 { y: 162, label: '▸ 6 cloud providers' },
-                { y: 204, label: '▸ 5 growth channels' },
+                { y: 204, label: '▸ 5 funding rails' },
               ].map((r) => (
                 <g key={r.y}>
                   <rect x="0" y={r.y} width="300" height="34" rx="8" fill="#141414" stroke="#262626" />
@@ -422,7 +428,7 @@ const slides: Slide[] = [
               ))}
               <rect x="0" y="246" width="300" height="34" rx="8" fill="#c2ff3d" stroke="#c2ff3d" />
               <text x="16" y="268" fontFamily="inherit" fontSize="15" fill="#0a0a0a" fontWeight="500">
-                ∑ 31 + growing
+                ∑ 33 + growing
               </text>
             </g>
             <line x1="300" y1="280" x2="420" y2="280" stroke="#c2ff3d" strokeWidth="2" markerEnd="url(#arr)" />
@@ -457,13 +463,13 @@ const slides: Slide[] = [
             <div>
               <span className="eyebrow">The moat</span>
               <h2 className="title-lg">
-                31 surfaces live.
+                33 surfaces live.
                 <br />
                 <span style={{ color: 'var(--ink-4)' }}>Each one took us months.</span>
               </h2>
             </div>
             <div>
-              <div className="surface-count-n">31</div>
+              <div className="surface-count-n">33</div>
               <div className="surface-count-l">shipping today</div>
             </div>
           </div>
@@ -523,7 +529,7 @@ const slides: Slide[] = [
               ))}
             </div>
             <div className="surface-col">
-              <div className="surface-col-h">Promo · commerce</div>
+              <div className="surface-col-h">Promo · capital</div>
               {[
                 ['done', 'Reddit · Meta · TikTok Ads'],
                 ['done', 'Google · YouTube Ads'],
@@ -531,6 +537,8 @@ const slides: Slide[] = [
                 ['done', 'Apple Search Ads'],
                 ['done', 'Product Hunt'],
                 ['live', 'Stripe · CoinPay'],
+                ['live', 'Compound · Aave (DeFi)'],
+                ['', 'Stripe Capital · Brex'],
                 ['live', 'Resend · Listen Notes'],
                 ['', 'Printful swag'],
               ].map(([s, t]) => (

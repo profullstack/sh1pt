@@ -5,367 +5,951 @@ import './deck.css';
 
 type Slide = {
   id: string;
-  tag?: string;
-  content: ReactNode;
+  label: string;
+  bg?: 'ink' | 'paper' | 'accent';
+  dotgrid?: boolean;
+  render: (meta: { num: string; total: number }) => ReactNode;
 };
+
+const Chrome = ({ num, label }: { num: string; label: string }) => (
+  <div className="chrome">
+    <div className="brand">
+      <span className="brand-dot" />
+      <span>sh1pt</span>
+    </div>
+    <div className="meta">
+      <div className="num">{num}</div>
+      <div>{label}</div>
+    </div>
+  </div>
+);
 
 const slides: Slide[] = [
   {
     id: 'title',
-    content: (
-      <div className="slide slide-title">
-        <img src="/logo.svg" alt="sh1pt" height={72} style={{ marginBottom: '2.5rem' }} />
-        <h1>Build. Promote. Scale. Iterate…</h1>
-        <p className="lead">
-          The single command between an idea and global distribution.
-        </p>
-        <div className="meta">Seed round · Profullstack, Inc. · 2026</div>
-      </div>
+    label: 'Investor Deck · 2026',
+    dotgrid: true,
+    render: ({ num, total }) => (
+      <>
+        <Chrome num={`${num} / ${total}`} label="Investor Deck · 2026" />
+        <div className="content" style={{ justifyContent: 'space-between' }}>
+          <div>
+            <span className="eyebrow">Profullstack, Inc. · Seed round · 2026</span>
+          </div>
+          <div>
+            <h1 className="title-xxl" style={{ marginBottom: '1.5rem' }}>
+              sh1pt<span className="accent-text">.</span>
+            </h1>
+            <p
+              className="body-lg"
+              style={{ fontFamily: 'var(--font-display)', maxWidth: '70ch', fontSize: 'clamp(1.4rem, 2.5vw, 2.5rem)', lineHeight: 1.25, letterSpacing: '-0.02em' }}
+            >
+              <span>Build.</span>{' '}
+              <span style={{ color: 'var(--ink-4)' }}>Promote.</span>{' '}
+              <span style={{ color: 'var(--ink-4)' }}>Scale.</span>{' '}
+              <span style={{ color: 'var(--ink-4)' }}>
+                Iterate<span className="cursor" style={{ background: 'var(--accent)' }} />
+              </span>
+            </p>
+            <div className="pill-row">
+              <span className="pill">
+                <span className="pill-dot" />
+                Early access · $244/yr locked
+              </span>
+              <span className="pill">MIT-licensed core</span>
+              <span className="pill">Agent-first API</span>
+            </div>
+          </div>
+        </div>
+      </>
+    ),
+  },
+  {
+    id: 'premise',
+    label: 'The premise',
+    render: ({ num, total }) => (
+      <>
+        <Chrome num={`${num} / ${total}`} label="The premise" />
+        <div className="content" style={{ justifyContent: 'center' }}>
+          <span className="eyebrow">The premise</span>
+          <h2 className="title-xl" style={{ maxWidth: '22ch' }}>
+            <span className="strike">Writing software</span> is no longer the bottleneck.
+            <br />
+            <span className="accent-text">Publishing it</span> is.
+          </h2>
+          <div className="era-row">
+            <div>
+              <div className="era-year">2018</div>
+              <p className="body-lg">
+                A team of 12 shipped a consumer app in nine months. The hard part was the code.
+              </p>
+            </div>
+            <div className="era-divider" aria-hidden />
+            <div>
+              <div className="era-year accent-text">2026</div>
+              <p className="body-lg">
+                An AI agent generates that app in an afternoon — and then{' '}
+                <span style={{ color: 'var(--warn)' }}>stalls for three weeks</span> trying to
+                publish it.
+              </p>
+            </div>
+          </div>
+        </div>
+      </>
     ),
   },
   {
     id: 'problem',
-    tag: 'The problem',
-    content: (
-      <div className="slide">
-        <h2>AI can build an app in minutes.</h2>
-        <h2 className="accent">Shipping it still takes weeks.</h2>
-        <p className="lead">
-          Thirty different dashboards. Thirty review queues. Thirty quirks. Every AI coding agent
-          that generates a working app hits a wall the moment it tries to publish.
-        </p>
-        <div className="chip-row">
-          <span className="chip">App Store</span>
-          <span className="chip">Play Console</span>
-          <span className="chip">Chrome Web Store</span>
-          <span className="chip">npm</span>
-          <span className="chip">Homebrew</span>
-          <span className="chip">F-Droid</span>
-          <span className="chip">JSR</span>
-          <span className="chip">Docker Hub</span>
-          <span className="chip">Cloudflare</span>
-          <span className="chip">Railway</span>
-          <span className="chip">TestFlight</span>
-          <span className="chip">Product Hunt</span>
-          <span className="chip">Reddit Ads</span>
-          <span className="chip">Meta Ads</span>
-          <span className="chip">TikTok Ads</span>
-          <span className="chip">Google Ads</span>
-          <span className="chip">Apple Search</span>
-          <span className="chip">LinkedIn</span>
-          <span className="chip">X</span>
-          <span className="chip">Stripe</span>
-          <span className="chip">CoinPay</span>
-          <span className="chip">Printful</span>
-          <span className="chip">Resend</span>
-          <span className="chip">Listen Notes</span>
-          <span className="chip">…</span>
+    label: 'Problem',
+    render: ({ num, total }) => (
+      <>
+        <Chrome num={`${num} / ${total}`} label="Problem" />
+        <div className="content">
+          <div className="row" style={{ alignItems: 'flex-end', justifyContent: 'space-between', gap: '2rem', marginBottom: '2rem' }}>
+            <div>
+              <span className="eyebrow">Problem</span>
+              <h2 className="title-lg">
+                Shipping means learning
+                <br />
+                <span className="accent-text">30+ dashboards.</span>
+              </h2>
+            </div>
+            <p className="body" style={{ maxWidth: '42ch', textAlign: 'right' }}>
+              Every surface has its own API, review queue, credential model, and quirks. Every one
+              can silently reject a release.
+            </p>
+          </div>
+          <div className="chip-grid">
+            {[
+              'App Store',
+              'Play Console',
+              'Chrome Web Store',
+              'Homebrew tap',
+              'npm registry',
+              'Docker Hub',
+              'JSR',
+              'Cloudflare Pages',
+              'Fly.io',
+              'Railway',
+              'Vercel',
+              'RunPod',
+              'DigitalOcean',
+              'Vultr · Hetzner',
+              'TestFlight',
+              'F-Droid',
+              'Steam Deck',
+              'Meta Quest',
+              'Vision Pro',
+              'Apple TV · Roku',
+              'GitHub Releases',
+              'Product Hunt',
+              'Reddit Ads',
+              'Meta Ads',
+              'TikTok Ads',
+              'Google Ads',
+              'X · LinkedIn',
+              'Apple Search',
+              'Stripe',
+              'CoinPay',
+              'Supabase auth',
+              'Resend',
+              'Listen Notes',
+              'Printful swag',
+            ].map((t) => (
+              <div key={t} className="chip-cell">
+                <span className="bullet" />
+                {t}
+              </div>
+            ))}
+            <div className="chip-cell is-dashed">
+              <span className="bullet" />
+              …and 12 more
+            </div>
+          </div>
+          <div className="problem-footer">
+            <span className="arrow">→</span>
+            <span>
+              A launch that takes a <span style={{ color: 'var(--ink)' }}>human team weeks</span> is
+              a wall that stops <span style={{ color: 'var(--ink)' }}>every AI agent</span> on the
+              first submission.
+            </span>
+          </div>
         </div>
-      </div>
-    ),
-  },
-  {
-    id: 'solution',
-    tag: 'The solution',
-    content: (
-      <div className="slide">
-        <h2>One manifest. Every surface.</h2>
-        <pre className="code-block">{`sh1pt build       # compile artifacts
-sh1pt promote     # publish, ads, swag, investors, podcasts, cold email
-sh1pt scale       # VPS, GPU, DNS, rollouts, cost ceilings
-sh1pt iterate     # observe → agent proposes → ship — on loop`}</pre>
-        <p className="lead">
-          Four verbs. One CLI. One cloud. An AI agent can drive all of it with a single API call —
-          and sh1pt enforces policy, rate limits, and cost caps so an agent can't get you banned or
-          burn your runway.
-        </p>
-      </div>
+      </>
     ),
   },
   {
     id: 'why-now',
-    tag: 'Why now',
-    content: (
-      <div className="slide">
-        <h2>The window opened in 2024.</h2>
-        <div className="grid-3">
-          <div className="card">
-            <div className="tag">01</div>
-            <h3>AI agents ship production code</h3>
-            <p>
-              Claude Code, Codex, Qwen, Cursor Composer. Generation is solved. Distribution is the
-              new bottleneck.
-            </p>
+    label: 'Why now',
+    bg: 'paper',
+    render: ({ num, total }) => (
+      <>
+        <Chrome num={`${num} / ${total}`} label="Why now" />
+        <div className="content" style={{ justifyContent: 'center' }}>
+          <span className="eyebrow">Why now</span>
+          <h2 className="title-xl" style={{ maxWidth: '22ch', color: '#0a0a0a' }}>
+            Agents ship code at <span className="serif" style={{ fontWeight: 400 }}>100×</span>
+            <br />
+            human velocity. They publish at{' '}
+            <span className="mono" style={{ color: '#ff3d3d' }}>
+              0×
+            </span>
+            .
+          </h2>
+          <div className="metric-row">
+            <div className="metric">
+              <div className="n">42M</div>
+              <div className="l">Devs using AI coding assistants</div>
+            </div>
+            <div className="metric">
+              <div className="n">~0</div>
+              <div className="l">Can publish to every major surface</div>
+            </div>
+            <div className="metric">
+              <div className="n" style={{ color: '#0a0a0a' }}>
+                $180B
+              </div>
+              <div className="l">Annual app-distribution tax, today</div>
+            </div>
           </div>
-          <div className="card">
-            <div className="tag">02</div>
-            <h3>Store APIs are finally automatable</h3>
-            <p>
-              App Store Connect, Play Developer, Chrome Web Store, Meta Horizon — all now expose
-              submission APIs. Five years ago this was impossible.
-            </p>
-          </div>
-          <div className="card">
-            <div className="tag">03</div>
-            <h3>Crypto pre-sell replaces the waitlist</h3>
-            <p>
-              CoinPay / Solana Pay / Coinbase Commerce make pre-launch revenue frictionless and
-              unrefundable. Validate demand before you build.
-            </p>
-          </div>
+          <p
+            className="mono"
+            style={{
+              marginTop: 'clamp(2.5rem, 5vw, 5rem)',
+              color: '#737373',
+              fontSize: 'clamp(0.8rem, 1vw, 1rem)',
+            }}
+          >
+            // whoever owns the last mile between a generated artifact and a paying user owns the
+            next platform.
+          </p>
         </div>
-      </div>
+      </>
     ),
   },
   {
-    id: 'market',
-    tag: 'Market',
-    content: (
-      <div className="slide">
-        <h2>A market as large as every app that ever needs to ship.</h2>
-        <div className="grid-3 market">
-          <div className="card">
-            <div className="tag">TAM</div>
-            <div className="big-num">~30M</div>
-            <p>software developers worldwide (SlashData, 2024).</p>
-          </div>
-          <div className="card">
-            <div className="tag">SAM</div>
-            <div className="big-num">~5M</div>
-            <p>developers shipping commercial apps across at least two stores.</p>
-          </div>
-          <div className="card highlight">
-            <div className="tag">SOM</div>
-            <div className="big-num">100k+</div>
-            <p>indie + AI-agent-driven builders shipping at volume (Expo, Vercel, Replit cohort).</p>
+    id: 'solution',
+    label: 'Solution',
+    render: ({ num, total }) => (
+      <>
+        <Chrome num={`${num} / ${total}`} label="Solution" />
+        <div className="content">
+          <span className="eyebrow">Solution</span>
+          <h2 className="title-lg" style={{ marginBottom: '2.5rem' }}>
+            One manifest. <span className="accent-text">Every surface.</span>
+          </h2>
+          <div className="solution-row">
+            <div className="term">
+              <div className="term-header">
+                <div className="lights">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <div className="title">~/my-app — sh1pt v0.9</div>
+                <div style={{ width: 56 }} />
+              </div>
+              <div className="term-body">
+                <div className="line">
+                  <span className="prompt">
+                    <span className="user">you</span>
+                    <span className="sep">@</span>macbook <span className="sep">~/my-app $</span>
+                  </span>{' '}
+                  <span className="cmd">
+                    <span className="kw">sh1pt</span> <span className="arg">build</span>
+                  </span>
+                </div>
+                <div className="line out out-ok">
+                  compiled 7 artifacts (ios, android, macos, linux, web, wasm, docker)
+                </div>
+                <div className="spacer" />
+                <div className="line">
+                  <span className="prompt">
+                    <span className="user">you</span>
+                    <span className="sep">@</span>macbook <span className="sep">~/my-app $</span>
+                  </span>{' '}
+                  <span className="cmd">
+                    <span className="kw">sh1pt</span> <span className="arg">promote</span> --campaign launch.yml
+                  </span>
+                </div>
+                <div className="line out out-ok">
+                  submitted to 31 surfaces · ads live on 9 networks · 42 podcast pitches sent
+                </div>
+                <div className="spacer" />
+                <div className="line">
+                  <span className="prompt">
+                    <span className="user">you</span>
+                    <span className="sep">@</span>macbook <span className="sep">~/my-app $</span>
+                  </span>{' '}
+                  <span className="cmd">
+                    <span className="kw">sh1pt</span> <span className="arg">scale</span> --cap $200/day
+                  </span>
+                </div>
+                <div className="line out out-ok">
+                  3 regions · round-robin DNS · A100 pool w/ hard ceiling
+                </div>
+                <div className="spacer" />
+                <div className="line">
+                  <span className="prompt">
+                    <span className="user">you</span>
+                    <span className="sep">@</span>macbook <span className="sep">~/my-app $</span>
+                  </span>{' '}
+                  <span className="cmd">
+                    <span className="kw">sh1pt</span> <span className="arg">iterate</span>
+                  </span>
+                </div>
+                <div className="line out out-pending">
+                  agent watching metrics… proposing fix #1 of 4
+                </div>
+                <div>
+                  <span className="cursor" />
+                </div>
+              </div>
+            </div>
+            <div className="verb-stack">
+              <div className="verb-card">
+                <div className="verb-tag">01 — build</div>
+                <div className="verb-label">Compile every artifact, in parallel.</div>
+              </div>
+              <div className="verb-card">
+                <div className="verb-tag">02 — promote</div>
+                <div className="verb-label">Publish · ads · swag · investors · podcasts.</div>
+              </div>
+              <div className="verb-card">
+                <div className="verb-tag">03 — scale</div>
+                <div className="verb-label">Cloud on demand, with cost ceilings.</div>
+              </div>
+              <div className="verb-card">
+                <div className="verb-tag">04 — iterate</div>
+                <div className="verb-label">Agent closes the loop, forever.</div>
+              </div>
+            </div>
           </div>
         </div>
-        <p className="footnote">
-          Every AI coding tool adds to our SOM. Our market grows with every Claude Code / Codex / Cursor seat sold.
-        </p>
-      </div>
+      </>
     ),
   },
   {
-    id: 'product',
-    tag: 'Product',
-    content: (
-      <div className="slide">
-        <h2>What sh1pt covers today.</h2>
-        <div className="grid-3">
-          <div className="card">
-            <h3>30+ distribution surfaces</h3>
-            <p>
-              Web / PWA, iOS, Android, macOS, Windows, Linux, Steam Deck, Apple TV / Fire TV / Roku
-              / Android TV, Meta Quest / Vision Pro / Pico, Chrome Web Store, npm / Homebrew /
-              Docker / JSR, F-Droid.
-            </p>
+    id: 'architecture',
+    label: 'Architecture',
+    render: ({ num, total }) => (
+      <>
+        <Chrome num={`${num} / ${total}`} label="Architecture" />
+        <div className="content">
+          <span className="eyebrow">Architecture</span>
+          <h2 className="title-lg" style={{ marginBottom: '3rem' }}>
+            From one file to <span className="accent-text">global presence.</span>
+          </h2>
+          <svg viewBox="0 0 1600 560" className="arch-svg" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <marker
+                id="arr"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="8"
+                markerHeight="8"
+                orient="auto-start-reverse"
+              >
+                <path d="M0,0 L10,5 L0,10 z" fill="#c2ff3d" />
+              </marker>
+            </defs>
+            <g transform="translate(40, 180)">
+              <rect x="0" y="0" width="260" height="200" rx="14" fill="#141414" stroke="#262626" />
+              <text x="20" y="36" fontFamily="inherit" fontSize="13" fill="#737373" letterSpacing="1">
+                SH1PT.YML
+              </text>
+              <text x="20" y="78" fontFamily="inherit" fontSize="16" fill="#f5f5f4">
+                name: my-app
+              </text>
+              <text x="20" y="104" fontFamily="inherit" fontSize="16" fill="#f5f5f4">
+                targets: <tspan fill="#c2ff3d">all</tspan>
+              </text>
+              <text x="20" y="130" fontFamily="inherit" fontSize="16" fill="#f5f5f4">
+                ads: <tspan fill="#c2ff3d">all</tspan>
+              </text>
+              <text x="20" y="156" fontFamily="inherit" fontSize="16" fill="#f5f5f4">
+                infra: <tspan fill="#7dd3fc">auto</tspan>
+              </text>
+              <text x="20" y="182" fontFamily="inherit" fontSize="16" fill="#f5f5f4">
+                cap: <tspan fill="#ff6a3d">$200/d</tspan>
+              </text>
+            </g>
+            <g transform="translate(420, 140)">
+              <rect x="0" y="0" width="760" height="280" rx="16" fill="#0d0d0d" stroke="#262626" />
+              <text x="30" y="34" fontFamily="inherit" fontSize="13" fill="#737373" letterSpacing="1">
+                SH1PT CORE
+              </text>
+              {[
+                { x: 30, n: '01', v: 'build', b: ['• artifacts', '• signing', '• policy lint'] },
+                { x: 210, n: '02', v: 'promote', b: ['• stores', '• ads / PR', '• outreach'] },
+                { x: 390, n: '03', v: 'scale', b: ['• infra', '• DNS', '• cost caps'] },
+                { x: 570, n: '04', v: 'iterate', b: ['• metrics', '• agent PRs', '• re-ship'] },
+              ].map((c) => (
+                <g key={c.n} transform={`translate(${c.x}, 60)`}>
+                  <rect x="0" y="0" width="160" height="180" rx="10" fill="#141414" stroke="#1f1f1f" />
+                  <text x="16" y="32" fontFamily="inherit" fontSize="12" fill="#c2ff3d" letterSpacing="1">
+                    {c.n}
+                  </text>
+                  <text x="16" y="60" fontFamily="inherit" fontSize="22" fill="#f5f5f4" fontWeight="500">
+                    {c.v}
+                  </text>
+                  {c.b.map((b, i) => (
+                    <text key={b} x="16" y={90 + i * 20} fontFamily="inherit" fontSize="12" fill="#a3a3a3">
+                      {b}
+                    </text>
+                  ))}
+                </g>
+              ))}
+            </g>
+            <g transform="translate(1260, 40)">
+              <text x="0" y="20" fontFamily="inherit" fontSize="13" fill="#737373" letterSpacing="1">
+                SURFACES
+              </text>
+              {[
+                { y: 36, label: '▸ 7 app stores' },
+                { y: 78, label: '▸ 4 package registries' },
+                { y: 120, label: '▸ 9 ad networks' },
+                { y: 162, label: '▸ 6 cloud providers' },
+                { y: 204, label: '▸ 5 growth channels' },
+              ].map((r) => (
+                <g key={r.y}>
+                  <rect x="0" y={r.y} width="300" height="34" rx="8" fill="#141414" stroke="#262626" />
+                  <text x="16" y={r.y + 22} fontFamily="inherit" fontSize="15" fill="#f5f5f4">
+                    {r.label}
+                  </text>
+                </g>
+              ))}
+              <rect x="0" y="246" width="300" height="34" rx="8" fill="#c2ff3d" stroke="#c2ff3d" />
+              <text x="16" y="268" fontFamily="inherit" fontSize="15" fill="#0a0a0a" fontWeight="500">
+                ∑ 31 + growing
+              </text>
+            </g>
+            <line x1="300" y1="280" x2="420" y2="280" stroke="#c2ff3d" strokeWidth="2" markerEnd="url(#arr)" />
+            {[76, 136, 196, 256, 316, 376].map((y) => (
+              <line key={y} x1="1180" y1="280" x2="1260" y2={y} stroke="#c2ff3d" strokeWidth="2" markerEnd="url(#arr)" />
+            ))}
+            <path
+              d="M 1180 420 C 1180 520, 420 520, 420 420"
+              fill="none"
+              stroke="#7dd3fc"
+              strokeWidth="2"
+              strokeDasharray="6 6"
+              markerEnd="url(#arr)"
+              opacity="0.7"
+            />
+            <text x="750" y="540" fontFamily="inherit" fontSize="14" fill="#7dd3fc" letterSpacing="1">
+              metrics → agent → next ship
+            </text>
+          </svg>
+        </div>
+      </>
+    ),
+  },
+  {
+    id: 'surfaces',
+    label: 'The moat',
+    render: ({ num, total }) => (
+      <>
+        <Chrome num={`${num} / ${total}`} label="The moat" />
+        <div className="content">
+          <div className="surface-head">
+            <div>
+              <span className="eyebrow">The moat</span>
+              <h2 className="title-lg">
+                31 surfaces live.
+                <br />
+                <span style={{ color: 'var(--ink-4)' }}>Each one took us months.</span>
+              </h2>
+            </div>
+            <div>
+              <div className="surface-count-n">31</div>
+              <div className="surface-count-l">shipping today</div>
+            </div>
           </div>
-          <div className="card">
-            <h3>Every major ad network</h3>
-            <p>
-              Reddit, Meta, TikTok, Google, YouTube, X, Apple Search Ads, LinkedIn, Microsoft — one
-              campaign description fans out.
-            </p>
+          <div className="surface-grid">
+            <div className="surface-col">
+              <div className="surface-col-h">Native stores</div>
+              {[
+                ['done', 'iOS App Store'],
+                ['done', 'Google Play'],
+                ['done', 'Mac App Store'],
+                ['done', 'Microsoft Store'],
+                ['live', 'Meta Quest'],
+                ['live', 'Vision Pro'],
+                ['', 'Steam · Steam Deck'],
+                ['', 'Apple TV · Roku · Fire TV'],
+              ].map(([s, t]) => (
+                <div key={t} className={`chip-cell ${s === 'done' ? 'is-done' : s === 'live' ? 'is-live' : ''}`}>
+                  <span className="bullet" />
+                  {t}
+                </div>
+              ))}
+            </div>
+            <div className="surface-col">
+              <div className="surface-col-h">Registries · Web</div>
+              {[
+                ['done', 'npm'],
+                ['done', 'JSR'],
+                ['done', 'Homebrew tap'],
+                ['done', 'Docker Hub'],
+                ['done', 'F-Droid'],
+                ['done', 'Chrome Web Store'],
+                ['live', 'PWA / web / wasm'],
+                ['', 'Firefox · Edge add-ons'],
+              ].map(([s, t]) => (
+                <div key={t} className={`chip-cell ${s === 'done' ? 'is-done' : s === 'live' ? 'is-live' : ''}`}>
+                  <span className="bullet" />
+                  {t}
+                </div>
+              ))}
+            </div>
+            <div className="surface-col">
+              <div className="surface-col-h">Cloud · infra</div>
+              {[
+                ['done', 'Cloudflare'],
+                ['done', 'Fly.io'],
+                ['done', 'Railway'],
+                ['done', 'Vercel'],
+                ['live', 'RunPod GPUs'],
+                ['live', 'DigitalOcean'],
+                ['', 'Hetzner · Vultr'],
+                ['', 'AWS · GCP (roadmap)'],
+              ].map(([s, t]) => (
+                <div key={t} className={`chip-cell ${s === 'done' ? 'is-done' : s === 'live' ? 'is-live' : ''}`}>
+                  <span className="bullet" />
+                  {t}
+                </div>
+              ))}
+            </div>
+            <div className="surface-col">
+              <div className="surface-col-h">Promo · commerce</div>
+              {[
+                ['done', 'Reddit · Meta · TikTok Ads'],
+                ['done', 'Google · YouTube Ads'],
+                ['done', 'X · LinkedIn · MS Ads'],
+                ['done', 'Apple Search Ads'],
+                ['done', 'Product Hunt'],
+                ['live', 'Stripe · CoinPay'],
+                ['live', 'Resend · Listen Notes'],
+                ['', 'Printful swag'],
+              ].map(([s, t]) => (
+                <div key={t} className={`chip-cell ${s === 'done' ? 'is-done' : s === 'live' ? 'is-live' : ''}`}>
+                  <span className="bullet" />
+                  {t}
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="card">
-            <h3>Cloud infra on demand</h3>
-            <p>
-              RunPod GPUs, DigitalOcean, Vultr, Hetzner, Cloudflare, Railway — with hard cost
-              ceilings so a forgotten A100 doesn't eat your runway.
-            </p>
-          </div>
-          <div className="card">
-            <h3>Agent-first API</h3>
-            <p>
-              One call publishes everywhere. Claude / Codex / Qwen drive sh1pt; sh1pt drives the
-              distribution.
-            </p>
-          </div>
-          <div className="card">
-            <h3>Policy linter baked in</h3>
-            <p>
-              Catches store rejections before submission — spammy titles, duplicate metadata,
-              invalid bundle ids, reckless rate. Critical at agent volume.
-            </p>
-          </div>
-          <div className="card">
-            <h3>Sell-first recipe</h3>
-            <p>
-              Default stack spins up waitlist + investor page + crypto-prepay checkout + referral
-              program on every channel sh1pt ships to.
-            </p>
+          <div className="legend">
+            <span>
+              <span className="dot dot-live" /> shipping
+            </span>
+            <span>
+              <span className="dot dot-beta" /> beta
+            </span>
+            <span>
+              <span className="dot dot-roadmap" /> roadmap Q3
+            </span>
           </div>
         </div>
-      </div>
+      </>
+    ),
+  },
+  {
+    id: 'wedge',
+    label: 'Wedge',
+    bg: 'accent',
+    render: ({ num, total }) => (
+      <>
+        <Chrome num={`${num} / ${total}`} label="Wedge" />
+        <div className="content" style={{ justifyContent: 'center' }}>
+          <span className="eyebrow">Our wedge</span>
+          <h2 className="title-xl" style={{ color: '#0a0a0a', maxWidth: '20ch' }}>
+            <span className="serif" style={{ fontWeight: 400 }}>
+              Sell first
+            </span>
+            ,<br />
+            build second.
+          </h2>
+          <p
+            className="body-lg"
+            style={{
+              marginTop: '2rem',
+              color: 'rgba(0,0,0,0.8)',
+              fontFamily: 'var(--font-display)',
+              maxWidth: '58ch',
+            }}
+          >
+            Default sh1pt recipe stands up a waitlist, investor page, crypto-prepay checkout, and a
+            referral program — <span className="strong-pen">before a line of product code exists</span>
+            .
+          </p>
+          <div className="wedge-row">
+            <div className="wedge-step">
+              <div className="wedge-day">Day 0</div>
+              <div className="wedge-title">Idea</div>
+              <div className="wedge-cmd">$ sh1pt init saas</div>
+            </div>
+            <div className="wedge-arrow" aria-hidden>→</div>
+            <div className="wedge-step">
+              <div className="wedge-day">Hour 1</div>
+              <div className="wedge-title">Waitlist + checkout live</div>
+              <div className="wedge-cmd">landing · investors · /waitlist</div>
+            </div>
+            <div className="wedge-arrow" aria-hidden>→</div>
+            <div className="wedge-step">
+              <div className="wedge-day">Day 2</div>
+              <div className="wedge-title">First revenue</div>
+              <div className="wedge-cmd">BTC · ETH · USDC · SOL</div>
+            </div>
+            <div className="wedge-arrow" aria-hidden>→</div>
+            <div className="wedge-step wedge-step-accent">
+              <div className="wedge-day">Day 14</div>
+              <div className="wedge-title">Then you build.</div>
+              <div className="wedge-cmd">with proof it's worth building</div>
+            </div>
+          </div>
+          <p
+            className="mono"
+            style={{
+              marginTop: 'clamp(2rem, 4vw, 4rem)',
+              color: 'rgba(0,0,0,0.65)',
+              fontSize: 'clamp(0.8rem, 1vw, 1rem)',
+            }}
+          >
+            // we ran this on ourselves — sh1pt.com was stood up by sh1pt before sh1pt existed as
+            a product.
+          </p>
+        </div>
+      </>
     ),
   },
   {
     id: 'business-model',
-    tag: 'Business model',
-    content: (
-      <div className="slide">
-        <h2>Open core. Managed cloud. ARR.</h2>
-        <div className="grid-3">
-          <div className="card highlight">
-            <div className="tag">Early access</div>
-            <div className="big-num">$244<span className="tiny">/yr</span></div>
-            <p>Prepaid (crypto or card). Lifetime price-lock. Founder-level support.</p>
+    label: 'Business model',
+    render: ({ num, total }) => (
+      <>
+        <Chrome num={`${num} / ${total}`} label="Business model" />
+        <div className="content">
+          <span className="eyebrow">Business model</span>
+          <h2 className="title-lg" style={{ marginBottom: '2rem' }}>
+            Seat subscription. <span style={{ color: 'var(--ink-4)' }}>Self-host free.</span>
+          </h2>
+          <div className="price-row">
+            <div className="price-card">
+              <div>
+                <div className="price-tag">Early access</div>
+                <div className="price-num">
+                  $244<span className="unit"> /yr</span>
+                </div>
+                <div className="price-sub">prepaid · lifetime price-lock</div>
+              </div>
+              <hr className="price-divider" />
+              <ul className="price-bullets">
+                <li>→ every future feature</li>
+                <li>→ founder-level Slack</li>
+                <li>→ locked-in price forever</li>
+              </ul>
+            </div>
+            <div className="price-card featured">
+              <div>
+                <div className="price-tag">At launch · standard</div>
+                <div className="price-num">
+                  $499<span className="unit"> /yr</span>
+                </div>
+                <div className="price-sub">or $49 / month · cancel anytime</div>
+              </div>
+              <hr className="price-divider" />
+              <ul className="price-bullets">
+                <li>→ all features</li>
+                <li>→ standard support</li>
+                <li>→ annual or monthly</li>
+              </ul>
+            </div>
+            <div className="price-card">
+              <div>
+                <div className="price-tag">Self-host core</div>
+                <div className="price-num">$0</div>
+                <div className="price-sub">MIT license · free forever</div>
+              </div>
+              <hr className="price-divider" />
+              <ul className="price-bullets">
+                <li>→ top-of-funnel driver</li>
+                <li>→ trust w/ devs</li>
+                <li>→ upgrade path to cloud</li>
+              </ul>
+            </div>
           </div>
-          <div className="card">
-            <div className="tag">Standard</div>
-            <div className="big-num">$499<span className="tiny">/yr</span></div>
-            <p>Kicks in at launch for everyone who didn't prepay.</p>
-          </div>
-          <div className="card">
-            <div className="tag">Monthly</div>
-            <div className="big-num">$49<span className="tiny">/mo</span></div>
-            <p>Cancel anytime.</p>
+          <div
+            className="row gap-xl"
+            style={{
+              marginTop: '2rem',
+              paddingTop: '1.5rem',
+              borderTop: '1px solid var(--line)',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div className="fill" style={{ minWidth: 280 }}>
+              <div
+                className="mono"
+                style={{
+                  fontSize: 'clamp(0.65rem, 0.8vw, 0.8rem)',
+                  color: 'var(--ink-4)',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                Revenue capture
+              </div>
+              <div className="body" style={{ color: 'var(--ink)' }}>
+                Cloud tier runs the build farm, credentials vault, submission polling, and policy
+                linter. That's the infra devs can't self-host — and don't want to.
+              </div>
+            </div>
+            <div className="fill" style={{ minWidth: 280 }}>
+              <div
+                className="mono"
+                style={{
+                  fontSize: 'clamp(0.65rem, 0.8vw, 0.8rem)',
+                  color: 'var(--ink-4)',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                Expansion
+              </div>
+              <div className="body" style={{ color: 'var(--ink)' }}>
+                Per-agent pricing (API-driven seats), team plans, store-approval SLAs — no take-rate
+                on customer revenue.
+              </div>
+            </div>
           </div>
         </div>
-        <p className="footnote">
-          Self-host core is MIT. Cloud runs the build farm (Linux + macOS + Windows runners),
-          credentials vault, submission polling, policy linter, rate-limit guardrails.
-          <strong> No platform take-rate on customers' apps.</strong> We make money on the tool, not their wallet.
-        </p>
-      </div>
-    ),
-  },
-  {
-    id: 'traction',
-    tag: 'Traction',
-    content: (
-      <div className="slide">
-        <h2>Early signals.</h2>
-        <div className="grid-3">
-          <div className="card">
-            <div className="tag">Waitlist</div>
-            <div className="big-num">—</div>
-            <p>Live at sh1pt.com. Prepay locked-in at $244 lifetime.</p>
-          </div>
-          <div className="card">
-            <div className="tag">Prepaid ARR</div>
-            <div className="big-num">—</div>
-            <p>In-flight. First closes will be reported here.</p>
-          </div>
-          <div className="card">
-            <div className="tag">GitHub</div>
-            <div className="big-num">—</div>
-            <p>Open-source core at profullstack/sh1pt. 175+ adapters scaffolded.</p>
-          </div>
-        </div>
-        <p className="footnote muted">
-          Placeholder until we've earned something to put here. We will not fabricate numbers.
-        </p>
-      </div>
+      </>
     ),
   },
   {
     id: 'moat',
-    tag: 'Moat',
-    content: (
-      <div className="slide">
-        <h2>Why the moat compounds.</h2>
-        <ul className="big-list">
-          <li>
-            <strong>Every new adapter</strong> benefits every existing customer. Network of
-            integrations, not a network of users.
-          </li>
-          <li>
-            <strong>The policy linter</strong> gets smarter with every store rejection across the
-            whole customer base. A new customer inherits thousands of learned rules on day one.
-          </li>
-          <li>
-            <strong>Credential + identity vault</strong> is the highest-switching-cost part. Once
-            your Apple, Play, Stripe, ad accounts, and keys live in sh1pt, moving them out is the
-            blocker — not the CLI.
-          </li>
-          <li>
-            <strong>Agent-first from day one.</strong> Every AI coding tool is a potential OEM
-            channel. Cursor / Claude Code / Codex can bundle sh1pt for publishing long before a
-            competitor catches up on store coverage.
-          </li>
-        </ul>
-      </div>
+    label: 'Moat',
+    render: ({ num, total }) => (
+      <>
+        <Chrome num={`${num} / ${total}`} label="Moat" />
+        <div className="content">
+          <span className="eyebrow">Why we win</span>
+          <h2 className="title-lg">Why the moat compounds.</h2>
+          <ul className="moat-list">
+            <li>
+              <strong>Every new adapter</strong> benefits every existing customer. A network of
+              integrations, not a network of users — immune to social-graph churn.
+            </li>
+            <li>
+              <strong>The policy linter</strong> gets smarter with every store rejection across the
+              whole customer base. A new customer inherits thousands of learned rules on day one.
+            </li>
+            <li>
+              <strong>Credential + identity vault</strong> is the highest-switching-cost layer. Once
+              your Apple, Play, Stripe, and ad accounts live in sh1pt, moving them out is the
+              blocker — not the CLI.
+            </li>
+            <li>
+              <strong>Agent-first from day one.</strong> Every AI coding tool is a potential OEM
+              channel. Cursor / Claude Code / Codex can bundle sh1pt for publishing long before a
+              competitor catches up on store coverage.
+            </li>
+          </ul>
+        </div>
+      </>
     ),
   },
   {
     id: 'roadmap',
-    tag: 'Roadmap',
-    content: (
-      <div className="slide">
-        <h2>The next 12 months.</h2>
-        <div className="timeline">
-          <div className="timeline-item">
-            <div className="tag">Q1</div>
-            <div>
-              <strong>Hardened adapters.</strong> npm, Homebrew, iOS, Android, Chrome, Cloudflare
-              Pages shipping real traffic. Prepaid waitlist live.
+    label: 'Roadmap',
+    render: ({ num, total }) => (
+      <>
+        <Chrome num={`${num} / ${total}`} label="Roadmap" />
+        <div className="content">
+          <span className="eyebrow">Roadmap</span>
+          <h2 className="title-lg">The next 12 months.</h2>
+          <div className="timeline">
+            <div className="timeline-item">
+              <div className="q-tag">Q1</div>
+              <div>
+                <strong>Hardened adapters.</strong> npm, Homebrew, iOS, Android, Chrome, Cloudflare
+                Pages shipping real traffic. Prepaid waitlist live.
+              </div>
             </div>
-          </div>
-          <div className="timeline-item">
-            <div className="tag">Q2</div>
-            <div>
-              <strong>Desktop + TV + XR.</strong> macOS, Windows, tvOS, Fire TV, Android TV, Quest,
-              Vision Pro. First 100 paid customers.
+            <div className="timeline-item">
+              <div className="q-tag">Q2</div>
+              <div>
+                <strong>Desktop + TV + XR.</strong> macOS, Windows, tvOS, Fire TV, Android TV,
+                Quest, Vision Pro. First 100 paid customers.
+              </div>
             </div>
-          </div>
-          <div className="timeline-item">
-            <div className="tag">Q3</div>
-            <div>
-              <strong>Promote GA.</strong> Ads + social + outreach + merch live end-to-end. First
-              ARR milestone.
+            <div className="timeline-item">
+              <div className="q-tag">Q3</div>
+              <div>
+                <strong>Promote GA.</strong> Ads + social + outreach + merch live end-to-end. First
+                ARR milestone.
+              </div>
             </div>
-          </div>
-          <div className="timeline-item">
-            <div className="tag">Q4</div>
-            <div>
-              <strong>Scale + iterate GA.</strong> Infra, DNS, rollouts, agent-driven metric loops
-              generally available.
+            <div className="timeline-item">
+              <div className="q-tag">Q4</div>
+              <div>
+                <strong>Scale + iterate GA.</strong> Infra, DNS, rollouts, agent-driven metric loops
+                generally available.
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    ),
-  },
-  {
-    id: 'team',
-    tag: 'Team',
-    content: (
-      <div className="slide">
-        <h2>Team.</h2>
-        <p className="lead">
-          <strong>Profullstack, Inc.</strong> — founded by Anthony Ettinger. Twenty-plus years
-          building full-stack systems, the last three deep in AI-agent tooling.
-        </p>
-        <p className="lead muted">
-          Co-founders and early hires to be named as the round closes.
-        </p>
-        <p className="footnote">
-          Built in the open at <code>github.com/profullstack/sh1pt</code>. MIT-licensed core. Every commit public.
-        </p>
-      </div>
+      </>
     ),
   },
   {
     id: 'ask',
-    tag: 'The ask',
-    content: (
-      <div className="slide slide-ask">
-        <div className="tag">Seed round · open</div>
-        <h2>$25k – $500k checks.</h2>
-        <p className="lead">
-          Capital funds the build farm (macOS + Windows runners are the expensive bit), the first
-          two hires on the adapter team, and the compliance / credential-vault buildout.
-        </p>
-        <p className="lead">
-          Lead investors welcome. Closing to a broad LP list shortly after.
-        </p>
-        <a className="btn-big" href="mailto:investors@sh1pt.com">
-          investors@sh1pt.com →
-        </a>
-        <div className="meta">Talk to us before the round closes.</div>
-      </div>
+    label: 'The ask',
+    render: ({ num, total }) => (
+      <>
+        <Chrome num={`${num} / ${total}`} label="The ask" />
+        <div className="content">
+          <div className="ask-row">
+            <div className="stack">
+              <span className="eyebrow">The ask</span>
+              <h2 className="title-xl" style={{ marginBottom: '1.5rem' }}>
+                Raising
+                <br />
+                <span className="accent-text">$25k – $500k</span> checks.
+              </h2>
+              <p className="body-lg" style={{ maxWidth: '42ch' }}>
+                Seed round open. 18 months of runway to own the last mile of software distribution
+                before the window closes. Lead investors welcome.
+              </p>
+              <div className="uof">
+                <div className="uof-head">Use of funds</div>
+                <div className="uof-row">
+                  <span className="uof-pct">60%</span>
+                  <span>Engineering — integrations engineers owning the surface graph</span>
+                </div>
+                <div className="uof-row">
+                  <span className="uof-pct">20%</span>
+                  <span>Agent R&D — iterate loop, policy linter, cost control</span>
+                </div>
+                <div className="uof-row">
+                  <span className="uof-pct">10%</span>
+                  <span>Compliance & legal — stores push back, we push back harder</span>
+                </div>
+                <div className="uof-row">
+                  <span className="uof-pct">10%</span>
+                  <span>Build farm — macOS + Windows runners, credential vault, GTM</span>
+                </div>
+              </div>
+            </div>
+            <div className="stack gap-m">
+              <div
+                className="mono"
+                style={{
+                  fontSize: 'clamp(0.65rem, 0.8vw, 0.8rem)',
+                  color: 'var(--ink-4)',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Traction · in-flight
+              </div>
+              <div className="traction-grid">
+                <div className="traction-card">
+                  <div className="traction-n accent-text">Live</div>
+                  <div className="traction-l">Waitlist @ sh1pt.com</div>
+                </div>
+                <div className="traction-card">
+                  <div className="traction-n accent-text">Open</div>
+                  <div className="traction-l">First prepays closing</div>
+                </div>
+                <div className="traction-card">
+                  <div className="traction-n">30+</div>
+                  <div className="traction-l">Adapters scaffolded</div>
+                </div>
+                <div className="traction-card">
+                  <div className="traction-n">MIT</div>
+                  <div className="traction-l">Core open at profullstack/sh1pt</div>
+                </div>
+              </div>
+              <div className="traction-note">
+                <span className="accent-text">$</span> sh1pt metrics —live
+                <br />
+                <span style={{ color: 'var(--ink-5)' }}>—</span> waitlist live · first prepays closing
+                at <span style={{ color: 'var(--ink)' }}>$244/yr</span> · we will{' '}
+                <span style={{ color: 'var(--ink)' }}>not fabricate numbers</span>.
+              </div>
+              <a
+                href="mailto:investors@sh1pt.com"
+                className="mono"
+                style={{
+                  alignSelf: 'flex-start',
+                  marginTop: '1rem',
+                  padding: '0.9rem 1.5rem',
+                  background: 'var(--accent)',
+                  color: '#0a0a0a',
+                  borderRadius: 10,
+                  fontWeight: 500,
+                  fontSize: 'clamp(0.9rem, 1.1vw, 1.1rem)',
+                  textDecoration: 'none',
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                investors@sh1pt.com →
+              </a>
+            </div>
+          </div>
+        </div>
+      </>
+    ),
+  },
+  {
+    id: 'close',
+    label: 'Thank you',
+    dotgrid: true,
+    render: ({ num, total }) => (
+      <>
+        <Chrome num={`${num} / ${total}`} label="Thank you" />
+        <div className="content" style={{ justifyContent: 'space-between' }}>
+          <div>
+            <span className="eyebrow">Profullstack, Inc. · 2026</span>
+          </div>
+          <div>
+            <h2 className="title-xxl" style={{ fontSize: 'clamp(2.75rem, 7vw, 7rem)', lineHeight: 0.96 }}>
+              The single command
+              <br />
+              between an idea and
+              <br />
+              <span className="accent-text">global distribution.</span>
+            </h2>
+            <div className="close-contacts">
+              <div>
+                <div className="close-label">Contact</div>
+                <div className="close-val">investors@sh1pt.com</div>
+              </div>
+              <div>
+                <div className="close-label">Source</div>
+                <div className="close-val">github.com/profullstack/sh1pt</div>
+              </div>
+              <div>
+                <div className="close-label">Prepay</div>
+                <div className="close-val">sh1pt.com · $244/yr</div>
+              </div>
+              <div>
+                <div className="close-label">Say hi</div>
+                <div className="close-val accent-text">
+                  $ sh1pt invest
+                  <span className="cursor" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
     ),
   },
 ];
@@ -422,16 +1006,22 @@ export default function Deck() {
       </div>
 
       <div className="deck-stage">
-        {slides.map((slide, i) => (
-          <div
-            key={slide.id}
-            className={`deck-slide ${i === index ? 'is-active' : i < index ? 'is-past' : 'is-future'}`}
-            aria-hidden={i !== index}
-          >
-            {slide.tag ? <div className="deck-eyebrow">{slide.tag}</div> : null}
-            {slide.content}
-          </div>
-        ))}
+        {slides.map((slide, i) => {
+          const pad = (n: number) => String(n).padStart(2, '0');
+          const num = `${pad(i + 1)} / ${pad(total)}`;
+          return (
+            <div
+              key={slide.id}
+              className={`deck-slide ${i === index ? 'is-active' : ''}`}
+              aria-hidden={i !== index}
+            >
+              <div className={`slide bg-${slide.bg ?? 'ink'}`}>
+                {slide.dotgrid && <div className="dotgrid" />}
+                {slide.render({ num: num.split(' / ')[0], total })}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="deck-click-left" onClick={() => go(index - 1)} aria-label="Previous slide" />
@@ -448,7 +1038,7 @@ export default function Deck() {
           ◀
         </button>
         <div className="deck-counter">
-          {index + 1} / {total}
+          {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
         </div>
         <button
           type="button"
@@ -462,15 +1052,6 @@ export default function Deck() {
         <a className="deck-exit" href="/">
           ← back to site
         </a>
-      </div>
-
-      <div className="deck-print">
-        {slides.map((slide) => (
-          <div key={slide.id} className="deck-slide deck-slide-print">
-            {slide.tag ? <div className="deck-eyebrow">{slide.tag}</div> : null}
-            {slide.content}
-          </div>
-        ))}
       </div>
     </div>
   );

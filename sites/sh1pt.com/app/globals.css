@@ -32,3 +32,21 @@ pre { background: var(--card); border: 1px solid var(--border); padding: 1rem; b
 .tag { display: inline-block; background: var(--border); padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; margin-right: 0.3rem; }
 section { padding: 5rem 0; border-bottom: 1px solid var(--border); }
 section:last-child { border-bottom: 0; }
+
+.brand-logo {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-weight: 500;
+  font-size: 1.5rem;
+  letter-spacing: -0.04em;
+  color: #fff;
+  text-decoration: none;
+  line-height: 1;
+}
+.brand-logo:hover { text-decoration: none; opacity: 0.9; }
+.brand-dot {
+  color: #c2ff3d;
+  text-shadow: 0 0 12px rgba(194, 255, 61, 0.5);
+  margin-left: 0.02em;
+}

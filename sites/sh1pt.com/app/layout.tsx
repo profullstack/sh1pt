@@ -22,8 +22,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <header>
           <nav className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem 1.5rem' }}>
-            <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', color: 'inherit', textDecoration: 'none' }}>
-              <img src="/logo.svg" alt="sh1pt" height={32} />
+            <a href="/" className="brand-logo" aria-label="sh1pt">
+              sh1pt<span className="brand-dot" aria-hidden>.</span>
             </a>
             <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
               <a href="#pricing">Pricing</a>

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import './globals.css';
+import NavLink from './components/NavLink';
 
 export const metadata = {
   title: 'sh1pt — Build. Promote. Scale. Iterate…',
@@ -27,10 +28,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               sh1pt<span className="brand-dot" aria-hidden>.</span>
             </a>
             <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-              <a className="nav-link" href="/#pricing">Pricing</a>
-              <a className="nav-link" href="/investors">Investors</a>
-              <a className="nav-link" href="/deck">Deck</a>
-              <a className="nav-link" href="https://github.com/profullstack/sh1pt" target="_blank" rel="noreferrer">GitHub</a>
+              <NavLink href="/#pricing">Pricing</NavLink>
+              <NavLink href="/investors" matchPrefix>Investors</NavLink>
+              <NavLink href="/deck" matchPrefix>Deck</NavLink>
+              <NavLink href="https://github.com/profullstack/sh1pt" target="_blank" rel="noreferrer">GitHub</NavLink>
               <a className="btn" href="/waitlist">Join waitlist</a>
             </div>
           </nav>

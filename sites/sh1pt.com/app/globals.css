@@ -1,13 +1,15 @@
 :root {
   color-scheme: dark;
-  --bg: #0a0a0a;
-  --fg: #f5f5f4;
-  --muted: #8a8a85;
-  --accent: #c2ff3d;
-  --accent-fg: #0a0a0a;
-  --accent-glow: rgba(194, 255, 61, 0.35);
-  --card: #141414;
-  --border: #262626;
+  --bg: #0b0f14;
+  --fg: #e6eef7;
+  --muted: #8ca0b8;
+  --accent: #38bdf8;
+  --accent-fg: #031019;
+  --accent-glow: rgba(56, 189, 248, 0.28);
+  --lime: #c2ff3d;
+  --lime-glow: rgba(194, 255, 61, 0.45);
+  --card: #111827;
+  --border: #1f2937;
   --ok: #22c55e;
   --warn: #f59e0b;
   --danger: #ef4444;
@@ -40,17 +42,17 @@ section:last-child { border-bottom: 0; }
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: var(--accent);
-  box-shadow: 0 0 14px var(--accent-glow);
+  height: 2px;
+  background: var(--lime);
+  box-shadow: 0 0 14px var(--lime-glow);
   z-index: 100;
 }
 
 .site-header {
   position: sticky;
-  top: 3px;
+  top: 2px;
   z-index: 50;
-  background: rgba(10, 10, 10, 0.78);
+  background: rgba(11, 15, 20, 0.82);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
@@ -61,21 +63,26 @@ section:last-child { border-bottom: 0; }
   letter-spacing: -0.005em;
   position: relative;
   padding: 0.25rem 0;
+  text-decoration: none;
 }
-.site-header .nav-link:hover { color: var(--accent); text-decoration: none; }
+.site-header .nav-link:hover { color: var(--fg); text-decoration: none; }
 .site-header .nav-link::after {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -4px;
-  height: 1px;
-  background: var(--accent);
+  bottom: -6px;
+  height: 2px;
+  background: var(--lime);
+  box-shadow: 0 0 8px var(--lime-glow);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 180ms ease;
+  border-radius: 2px;
 }
-.site-header .nav-link:hover::after { transform: scaleX(1); }
+.site-header .nav-link:hover::after { transform: scaleX(0.6); }
+.site-header .nav-link.is-active { color: var(--fg); }
+.site-header .nav-link.is-active::after { transform: scaleX(1); }
 
 .brand-logo {
   display: inline-flex;

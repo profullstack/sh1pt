@@ -20,15 +20,17 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <header>
-          <nav className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem 1.5rem' }}>
+        <div className="brand-stripe" aria-hidden />
+        <header className="site-header">
+          <nav className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem' }}>
             <a href="/" className="brand-logo" aria-label="sh1pt">
               sh1pt<span className="brand-dot" aria-hidden>.</span>
             </a>
-            <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-              <a href="#pricing">Pricing</a>
-              <a href="/investors">Investors</a>
-              <a href="https://github.com/profullstack/sh1pt" target="_blank" rel="noreferrer">GitHub</a>
+            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+              <a className="nav-link" href="/#pricing">Pricing</a>
+              <a className="nav-link" href="/investors">Investors</a>
+              <a className="nav-link" href="/deck">Deck</a>
+              <a className="nav-link" href="https://github.com/profullstack/sh1pt" target="_blank" rel="noreferrer">GitHub</a>
               <a className="btn" href="/waitlist">Join waitlist</a>
             </div>
           </nav>

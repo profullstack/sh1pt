@@ -249,6 +249,12 @@
   opacity: 0.92;
 }
 
+.deck-slide a,
+.deck-slide button {
+  position: relative;
+  z-index: 6;
+}
+
 .deck-click-left,
 .deck-click-right {
   position: absolute;

@@ -13,6 +13,10 @@
 
 **One codebase → every store, registry, CDN, and channel. Ads on every network. Cloud infra on demand. AI agents tighten the loop.**
 
+```bash
+curl -fsSL https://sh1pt.com/install.sh | sh
+```
+
 [![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![cloud](https://img.shields.io/badge/cloud-%24499%2Fyr-blueviolet)](#pricing)
 [![status](https://img.shields.io/badge/status-alpha-orange)](#)

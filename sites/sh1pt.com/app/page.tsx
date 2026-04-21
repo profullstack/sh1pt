@@ -13,6 +13,7 @@ export default function Home() {
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
             <a className="btn" href="/waitlist">Join the waitlist — $244/yr locked in</a>
             <a className="btn secondary" href="/investors">For investors</a>
+            <a className="btn secondary" href="/sh1pt-deck.pdf" download>Download deck (PDF)</a>
           </div>
           <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: 'var(--muted)' }}>
             Prepay via <strong>CoinPay</strong> (BTC / ETH / USDC / SOL) or card at launch. Lifetime price-lock.
@@ -38,7 +39,7 @@ export default function Home() {
             <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Install the CLI</div>
             <pre style={{ margin: 0 }}>curl -fsSL https://sh1pt.com/install.sh | sh</pre>
             <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.4rem' }}>
-              Or: <code>npm i -g @sh1pt/cli</code> · <code>bun i -g @sh1pt/cli</code> · <code>deno install -g -A -n sh1pt jsr:@sh1pt/cli</code>
+              Or: <code>npm i -g @profullstack/sh1pt</code> · <code>bun i -g @profullstack/sh1pt</code>
             </div>
           </div>
           <h2>The solution — one manifest, every surface</h2>

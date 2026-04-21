@@ -675,12 +675,12 @@ sh1pt promote --budget 100/day  # run ads across Reddit / Meta / TikTok / Google
 curl -fsSL https://sh1pt.com/install.sh | sh
 ```
 
-The installer picks whichever JS runtime it finds (`bun` → `npm` → `deno`) and installs `@sh1pt/cli` globally. Or pick your own:
+The installer picks whichever JS runtime it finds (`bun` → `npm` → `deno`) and installs `@profullstack/sh1pt` globally. Or pick your own:
 
 ```bash
-npm  install -g @sh1pt/cli      # or
-bun  install -g @sh1pt/cli      # or
-deno install -g -A -n sh1pt jsr:@sh1pt/cli
+npm  install -g @profullstack/sh1pt      # or
+bun  install -g @profullstack/sh1pt      # or
+deno install -g -A -f -n sh1pt npm:@profullstack/sh1pt
 ```
 
 The CLI runs on **Node** (22+), **Bun** (1.1+), and **Deno** (2.0+).
@@ -789,7 +789,7 @@ sh1pt/
 
 ## What this repo publishes
 
-Just the CLI. `sh1pt.config.ts` at the root uses sh1pt itself to fan the CLI out to every package manager — `npm install -g @sh1pt/cli`, `brew install sh1pt`, `winget install sh1pt`, `scoop install sh1pt`, etc. Lib packages (`@sh1pt/core`, `@sh1pt/sdk`, `@sh1pt/policy`, target adapters) ride along on npm so `sh1pt init` and target plugins can pull them at runtime.
+Just the CLI. `sh1pt.config.ts` at the root uses sh1pt itself to fan the CLI out to every package manager — `npm install -g @profullstack/sh1pt`, `brew install sh1pt`, `winget install sh1pt`, `scoop install sh1pt`, etc. Lib packages (`@sh1pt/core`, `@sh1pt/sdk`, `@sh1pt/policy`, target adapters) ride along on npm so `sh1pt init` and target plugins can pull them at runtime.
 
 ## Concepts
 

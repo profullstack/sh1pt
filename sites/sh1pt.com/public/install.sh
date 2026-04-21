@@ -1,16 +1,18 @@
 #!/usr/bin/env sh
-# sh1pt installer — curl -fsSL sh1pt.com/install.sh | sh
+# sh1pt installer — curl -fsSL https://sh1pt.com/install.sh | sh
 set -e
 
+PKG="@profullstack/sh1pt"
+
 if command -v bun >/dev/null 2>&1; then
-  echo "[sh1pt] installing via bun"
-  bun install -g @sh1pt/cli
+  echo "[sh1pt] installing $PKG via bun"
+  bun install -g "$PKG"
 elif command -v npm >/dev/null 2>&1; then
-  echo "[sh1pt] installing via npm"
-  npm install -g @sh1pt/cli
+  echo "[sh1pt] installing $PKG via npm"
+  npm install -g "$PKG"
 elif command -v deno >/dev/null 2>&1; then
-  echo "[sh1pt] installing via deno"
-  deno install -g -A -f -n sh1pt jsr:@sh1pt/cli
+  echo "[sh1pt] installing $PKG via deno"
+  deno install -g -A -f -n sh1pt "npm:$PKG"
 else
   echo "sh1pt needs a JS runtime. Install one of:"
   echo "  bun   https://bun.sh"

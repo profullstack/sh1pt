@@ -964,8 +964,14 @@ const slides: Slide[] = [
 
 export default function Deck() {
   const [index, setIndex] = useState(0);
+  const [isPrint, setIsPrint] = useState(false);
   const total = slides.length;
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setIsPrint(new URLSearchParams(window.location.search).get('print') === '1');
+  }, []);
 
   const go = useCallback(
     (next: number) => {
@@ -1006,6 +1012,25 @@ export default function Deck() {
     if (typeof window === 'undefined') return;
     history.replaceState(null, '', `#${index + 1}`);
   }, [index]);
+
+  if (isPrint) {
+    return (
+      <div className="deck-print">
+        {slides.map((slide, i) => {
+          const pad = (n: number) => String(n).padStart(2, '0');
+          const num = `${pad(i + 1)} / ${pad(total)}`;
+          return (
+            <div key={slide.id} className="deck-print-page">
+              <div className={`slide bg-${slide.bg ?? 'ink'}`}>
+                {slide.dotgrid && <div className="dotgrid" />}
+                {slide.render({ num: num.split(' / ')[0], total })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div className="deck-root" ref={containerRef}>

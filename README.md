@@ -665,15 +665,21 @@ sh1pt promote --budget 100/day  # run ads across Reddit / Meta / TikTok / Google
 # … collect prepaid signups. build what pays.
 ```
 
-### Runtime
+### Install
 
-The `sh1pt` CLI runs on **Node** (22+), **Bun** (1.1+), and **Deno** (2.0+). Install whichever you prefer:
+```bash
+curl -fsSL https://sh1pt.com/install.sh | sh
+```
+
+The installer picks whichever JS runtime it finds (`bun` → `npm` → `deno`) and installs `@sh1pt/cli` globally. Or pick your own:
 
 ```bash
 npm  install -g @sh1pt/cli      # or
 bun  install -g @sh1pt/cli      # or
 deno install -g -A -n sh1pt jsr:@sh1pt/cli
 ```
+
+The CLI runs on **Node** (22+), **Bun** (1.1+), and **Deno** (2.0+).
 
 Future: `bun build --compile` will produce a standalone binary for `brew install sh1pt`, `winget install sh1pt`, etc. — no JS runtime required on the user's machine.
 

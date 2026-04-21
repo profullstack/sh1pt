@@ -10,13 +10,6 @@ export default function Home() {
           <p className="muted" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.2rem)', maxWidth: 780 }}>
             One codebase → every store, registry, CDN, and channel. Ads on every network. Cloud infra on demand. AI agents tighten the loop. sh1pt is the single command between an idea and global distribution.
           </p>
-          <div style={{ marginTop: '1.5rem', maxWidth: 640 }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Install the CLI</div>
-            <pre style={{ margin: 0 }}>curl -fsSL https://sh1pt.com/install.sh | sh</pre>
-            <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.4rem' }}>
-              Or: <code>npm i -g @sh1pt/cli</code> · <code>bun i -g @sh1pt/cli</code> · <code>deno install -g -A -n sh1pt jsr:@sh1pt/cli</code>
-            </div>
-          </div>
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
             <a className="btn" href="/waitlist">Join the waitlist — $244/yr locked in</a>
             <a className="btn secondary" href="/investors">For investors</a>
@@ -41,6 +34,13 @@ export default function Home() {
 
       <section>
         <div className="container">
+          <div style={{ maxWidth: 640, marginBottom: '2.5rem' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Install the CLI</div>
+            <pre style={{ margin: 0 }}>curl -fsSL https://sh1pt.com/install.sh | sh</pre>
+            <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.4rem' }}>
+              Or: <code>npm i -g @sh1pt/cli</code> · <code>bun i -g @sh1pt/cli</code> · <code>deno install -g -A -n sh1pt jsr:@sh1pt/cli</code>
+            </div>
+          </div>
           <h2>The solution — one manifest, every surface</h2>
           <pre>{`sh1pt build       # compile artifacts
 sh1pt promote     # publish (ship), ads, swag, investors, podcasts, cold email

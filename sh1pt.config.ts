@@ -6,7 +6,7 @@ import { defineConfig } from '@sh1pt/core';
 // (packages/cli). That one CLI fans out to every package manager so
 // users can install it however they install anything else:
 //
-//   npm install -g @sh1pt/cli
+//   npm install -g @profullstack/sh1pt
 //   brew install sh1pt
 //   winget install sh1pt
 //   scoop install sh1pt

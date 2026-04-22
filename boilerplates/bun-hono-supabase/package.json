@@ -15,7 +15,7 @@
     "hono": "^4.6.3"
   },
   "devDependencies": {
-    "@sh1pt/cli": "^0.0.0",
+    "@profullstack/sh1pt": "^0.1.0",
     "@sh1pt/core": "^0.0.0",
     "@types/bun": "latest",
     "typescript": "^5.6.0"

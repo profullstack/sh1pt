@@ -18,7 +18,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@sh1pt/cli": "workspace:*",
+    "@profullstack/sh1pt": "workspace:*",
     "@sh1pt/core": "workspace:*",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",

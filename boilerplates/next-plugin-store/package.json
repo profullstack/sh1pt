@@ -19,7 +19,7 @@
     "stripe": "^17.0.0"
   },
   "devDependencies": {
-    "@sh1pt/cli": "^0.0.0",
+    "@profullstack/sh1pt": "^0.1.0",
     "@sh1pt/core": "^0.0.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",

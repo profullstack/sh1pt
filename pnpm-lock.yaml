@@ -109,7 +109,7 @@ importers:
         specifier: ^19.0.0
         version: 19.2.5(react@19.2.5)
     devDependencies:
-      '@sh1pt/cli':
+      '@profullstack/sh1pt':
         specifier: workspace:*
         version: link:../../packages/cli
       '@sh1pt/core':

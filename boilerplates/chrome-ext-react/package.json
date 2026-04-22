@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0",
-    "@sh1pt/cli": "^0.0.0",
+    "@profullstack/sh1pt": "^0.1.0",
     "@sh1pt/core": "^0.0.0",
     "@types/chrome": "^0.0.270",
     "@types/react": "^19.0.0",

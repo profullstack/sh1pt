@@ -7,6 +7,9 @@ PKG="@profullstack/sh1pt"
 if command -v bun >/dev/null 2>&1; then
   echo "[sh1pt] installing $PKG via bun"
   bun install -g "$PKG"
+elif command -v pnpm >/dev/null 2>&1; then
+  echo "[sh1pt] installing $PKG via pnpm"
+  pnpm add -g "$PKG"
 elif command -v npm >/dev/null 2>&1; then
   echo "[sh1pt] installing $PKG via npm"
   npm install -g "$PKG"
@@ -16,6 +19,7 @@ elif command -v deno >/dev/null 2>&1; then
 else
   echo "sh1pt needs a JS runtime. Install one of:"
   echo "  bun   https://bun.sh"
+  echo "  pnpm  https://pnpm.io"
   echo "  node  https://nodejs.org"
   echo "  deno  https://deno.com"
   exit 1

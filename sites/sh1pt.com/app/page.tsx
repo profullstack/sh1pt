@@ -39,7 +39,7 @@ export default function Home() {
             <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Install the CLI</div>
             <pre style={{ margin: 0 }}>curl -fsSL https://sh1pt.com/install.sh | sh</pre>
             <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.4rem' }}>
-              Or: <code>npm i -g @profullstack/sh1pt</code> · <code>bun i -g @profullstack/sh1pt</code>
+              Or: <code>pnpm add -g @profullstack/sh1pt</code> · <code>bun i -g @profullstack/sh1pt</code> · <code>npm i -g @profullstack/sh1pt</code>
             </div>
           </div>
           <h2>The solution — one manifest, every surface</h2>

@@ -675,11 +675,12 @@ sh1pt promote --budget 100/day  # run ads across Reddit / Meta / TikTok / Google
 curl -fsSL https://sh1pt.com/install.sh | sh
 ```
 
-The installer picks whichever JS runtime it finds (`bun` → `npm` → `deno`) and installs `@profullstack/sh1pt` globally. Or pick your own:
+The installer picks whichever JS runtime it finds (`bun` → `pnpm` → `npm` → `deno`) and installs `@profullstack/sh1pt` globally. Or pick your own:
 
 ```bash
-npm  install -g @profullstack/sh1pt      # or
+pnpm add     -g @profullstack/sh1pt      # or
 bun  install -g @profullstack/sh1pt      # or
+npm  install -g @profullstack/sh1pt      # or
 deno install -g -A -f -n sh1pt npm:@profullstack/sh1pt
 ```
 

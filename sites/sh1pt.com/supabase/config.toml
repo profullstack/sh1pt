@@ -221,15 +221,17 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Use a production-ready SMTP server
-# [auth.email.smtp]
-# enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# Production-ready SMTP via Resend. API key is loaded from the
+# RESEND_API_KEY env var when `supabase config push` runs — never commit
+# the actual secret.
+[auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+admin_email = "hello@sh1pt.com"
+sender_name = "sh1pt."
 
 [auth.email.template.magic_link]
 subject = "Your sh1pt sign-in link"

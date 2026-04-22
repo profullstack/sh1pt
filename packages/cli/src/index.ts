@@ -7,6 +7,7 @@ import { iterateCmd } from './commands/iterate.js';
 import { loginCmd } from './commands/login.js';
 import { secretsCmd } from './commands/secrets.js';
 import { configCmd } from './commands/config.js';
+import { updateCmd, removeCmd } from './commands/self.js';
 import { makeCategoryCmd } from './commands/adapter-cmd.js';
 import { CATEGORIES } from './adapter-registry.js';
 
@@ -29,6 +30,10 @@ program.addCommand(iterateCmd);    // iterate  · observe + agent-propose + ship
 program.addCommand(loginCmd);
 program.addCommand(secretsCmd);
 program.addCommand(configCmd);
+
+// Self-management — sh1pt update / upgrade / remove / uninstall.
+program.addCommand(updateCmd);
+program.addCommand(removeCmd);
 
 // Filesystem-mirrored adapter commands. One top-level command per
 // packages/<category>/ directory → `sh1pt <category> <name> setup`.

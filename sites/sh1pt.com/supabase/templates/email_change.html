@@ -36,7 +36,7 @@
           </tr>
           <tr>
             <td align="center" style="padding:8px 32px 28px 32px">
-              <a href="{{ .ConfirmationURL }}"
+              <a href="{{ .SiteURL }}/auth/verify?token_hash={{ .TokenHash }}&type=email_change&next=/dashboard"
                  style="display:inline-block;padding:14px 28px;background:#c2ff3d;color:#0a0a0a;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;letter-spacing:-0.01em">
                 Confirm change →
               </a>
@@ -47,7 +47,7 @@
               <div style="font-size:12px;color:#737373;line-height:1.6">
                 Or paste this URL into your browser:
                 <div style="margin-top:6px;word-break:break-all">
-                  <a href="{{ .ConfirmationURL }}" style="color:#7dd3fc;text-decoration:none">{{ .ConfirmationURL }}</a>
+                  <a href="{{ .SiteURL }}/auth/verify?token_hash={{ .TokenHash }}&type=email_change&next=/dashboard" style="color:#7dd3fc;text-decoration:none">{{ .SiteURL }}/auth/verify?token_hash={{ .TokenHash }}&type=email_change&next=/dashboard</a>
                 </div>
               </div>
             </td>

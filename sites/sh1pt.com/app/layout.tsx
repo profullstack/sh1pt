@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import './globals.css';
 import NavLink from './components/NavLink';
+import { getSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata = {
   title: 'sh1pt — Build. Promote. Scale. Iterate…',
@@ -17,7 +18,12 @@ export const metadata = {
   icons: { icon: '/favicon.svg' },
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  // Header adapts to auth state: signed-in users see Dashboard + Sign out,
+  // signed-out users see Sign in + the primary Join-waitlist CTA.
+  const supabase = await getSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <html lang="en">
       <body>
@@ -32,7 +38,31 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <NavLink href="/investors" matchPrefix>Investors</NavLink>
               <NavLink href="/deck" matchPrefix>Deck</NavLink>
               <NavLink href="https://github.com/profullstack/sh1pt" target="_blank" rel="noreferrer">GitHub</NavLink>
-              <a className="btn" href="/waitlist">Join waitlist</a>
+              {user ? (
+                <>
+                  <NavLink href="/dashboard" matchPrefix>Dashboard</NavLink>
+                  <form action="/auth/signout" method="post" style={{ display: 'inline' }}>
+                    <button
+                      type="submit"
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--muted)',
+                        cursor: 'pointer',
+                        font: 'inherit',
+                        padding: 0,
+                      }}
+                    >
+                      Sign out
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <NavLink href="/login">Sign in</NavLink>
+                  <a className="btn" href="/waitlist">Join waitlist</a>
+                </>
+              )}
             </div>
           </nav>
         </header>

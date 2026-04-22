@@ -10,7 +10,13 @@ export const dynamic = 'force-dynamic';
 
 export default async function Dashboard() {
   const supabase = await getSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    // Stale/invalid cookie — treat as logged out.
+  }
   if (!user) redirect('/waitlist');
 
   const { data: profile, error: profileErr } = await supabase

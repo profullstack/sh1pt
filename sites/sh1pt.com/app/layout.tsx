@@ -21,8 +21,12 @@ export const metadata = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   // Header adapts to auth state: signed-in users see Dashboard + Sign out,
   // signed-out users see Sign in + the primary Join-waitlist CTA.
-  const supabase = await getSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  //
+  // getUser() can throw on stale cookies (e.g. after a db wipe) with
+  // refresh_token_not_found. Treat any failure as "logged out" so a
+  // bad cookie can't 500 the entire site — the cookie will get cleared
+  // on the user's next auth action (sign in / sign out / magic link).
+  const user = await safeGetUser();
 
   return (
     <html lang="en">
@@ -76,4 +80,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </body>
     </html>
   );
+}
+
+async function safeGetUser() {
+  try {
+    const supabase = await getSupabaseServerClient();
+    const { data } = await supabase.auth.getUser();
+    return data.user ?? null;
+  } catch {
+    return null;
+  }
 }

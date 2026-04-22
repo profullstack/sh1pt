@@ -15,7 +15,10 @@
     "test:watch": "vitest",
     "cli": "pnpm --filter @profullstack/sh1pt exec sh1pt",
     "publish:dry": "pnpm --filter @profullstack/sh1pt-core --filter @profullstack/sh1pt-policy --filter @profullstack/sh1pt publish --dry-run --no-git-checks",
-    "publish:all": "pnpm --filter @profullstack/sh1pt-core publish --no-git-checks && pnpm --filter @profullstack/sh1pt-policy publish --no-git-checks && pnpm --filter @profullstack/sh1pt publish --no-git-checks"
+    "publish:core": "pnpm --filter @profullstack/sh1pt-core publish --access public --no-git-checks ${NPM_OTP:+--otp=$NPM_OTP}",
+    "publish:policy": "pnpm --filter @profullstack/sh1pt-policy publish --access public --no-git-checks ${NPM_OTP:+--otp=$NPM_OTP}",
+    "publish:cli": "pnpm --filter @profullstack/sh1pt publish --access public --no-git-checks ${NPM_OTP:+--otp=$NPM_OTP}",
+    "publish:all": "pnpm publish:core && pnpm publish:policy && pnpm publish:cli"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

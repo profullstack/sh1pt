@@ -4,6 +4,10 @@ import { createClient } from '@supabase/supabase-js';
 // actions / API routes. Never import this into client components.
 // SUPABASE_SERVICE_ROLE_KEY must only ever live in a server env —
 // never prefix it with NEXT_PUBLIC_.
+//
+// Used by /r/[code] to verify a referral code against the profiles
+// table before stamping the cookie — anon auth can't read profiles
+// rows it doesn't own under the new RLS policies.
 export function getSupabaseServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

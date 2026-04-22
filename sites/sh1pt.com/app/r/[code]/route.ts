@@ -27,7 +27,7 @@ export async function GET(
     try {
       const supabase = getSupabaseServiceClient();
       const { data } = await supabase
-        .from('waitlist')
+        .from('profiles')
         .select('id')
         .eq('referral_code', trimmed)
         .maybeSingle();

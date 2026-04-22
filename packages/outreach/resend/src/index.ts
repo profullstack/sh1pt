@@ -1,3 +1,4 @@
+import { tokenSetup } from '@profullstack/sh1pt-core';
 // Resend — clean REST API for transactional + outbound email. Best-in-
 // class dev UX. Use for cold outreach sequences (podcast pitches,
 // investor intros if not using CapitalReach, beta-list announcements).
@@ -38,4 +39,15 @@ export default {
     // address in footer, one-click unsubscribe, honor opt-outs immediately.
     return { sent: 0, queued: recipients.length };
   },
+
+  setup: tokenSetup({
+    secretKey: "RESEND_API_KEY",
+    label: "Resend (email)",
+    vendorDocUrl: "https://resend.com/api-keys",
+    steps: [
+      "Open resend.com/api-keys \u2192 Create API Key (full access or send-only)",
+      "Verify your sending domain (SPF + DKIM records)",
+      "Respect CAN-SPAM / CASL / GDPR \u2014 include physical address + one-click unsubscribe",
+    ],
+  }),
 };

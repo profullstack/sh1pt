@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   extensionId: string;
@@ -24,4 +24,15 @@ export default defineTarget<Config>({
       url: `https://chrome.google.com/webstore/detail/${config.extensionId}`,
     };
   },
+
+  setup: manualSetup({
+    label: "Chrome Web Store",
+    vendorDocUrl: "https://chrome.google.com/webstore/devconsole",
+    steps: [
+      "Register at chrome.google.com/webstore/devconsole ($5 one-time fee)",
+      "Complete identity verification (can take 2-3 days)",
+      "Generate OAuth credentials at console.cloud.google.com \u2192 enable Chrome Web Store API",
+      "Run: sh1pt secret set CHROME_STORE_REFRESH_TOKEN <token>",
+    ],
+  }),
 });

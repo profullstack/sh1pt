@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // Steam — desktop (Windows/macOS/Linux) and Steam Deck (SteamOS).
 // The Deck is Arch-based Linux; apps run natively on Linux or through
@@ -37,4 +37,15 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'live', version: id };
   },
+
+  setup: manualSetup({
+    label: "Steam (Steamworks)",
+    vendorDocUrl: "https://partner.steamgames.com/",
+    steps: [
+      "Register as a Steamworks publisher ($100 per app fee)",
+      "Complete tax + payout onboarding (required before publishing)",
+      "Download the Steamworks SDK; generate a publisher web-API key",
+      "Run: sh1pt secret set STEAM_PUBLISHER_WEB_API_KEY <key>",
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineDocs } from '@profullstack/sh1pt-core';
+import { defineDocs, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Google Slides — the practical way to generate a real editable .pptx.
 // Flow: copy a template presentation → batchUpdate with
@@ -33,4 +33,16 @@ export default defineDocs<Config>({
     //   3. drive.files.export(presentationId, mimeType=spec.format) → buffer
     return { id: `gslides_${Date.now()}`, format: spec.format, url: 'https://docs.google.com/presentation/d/stub' };
   },
+
+  setup: oauthSetup({
+    secretKey: "GSLIDES_REFRESH_TOKEN",
+    label: "Google Slides",
+    vendorDocUrl: "https://console.cloud.google.com/apis/credentials",
+    steps: [
+      "console.cloud.google.com \u2192 APIs \u2192 enable Google Slides API + Google Drive API",
+      "Create OAuth 2.0 Client credentials (Desktop type)",
+      "Complete OAuth with scopes: presentations drive.file",
+      "Paste the refresh token when prompted",
+    ],
+  }),
 });

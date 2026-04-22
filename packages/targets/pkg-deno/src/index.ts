@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // deno.land/x — the older Deno registry. No real "publish" — it
 // auto-imports from a linked GitHub repo whenever a git tag is pushed
@@ -28,4 +28,13 @@ export default defineTarget<Config>({
       url: `https://deno.land/x/${config.moduleName}@${tag}`,
     };
   },
+
+  setup: manualSetup({
+    label: "deno.land/x",
+    vendorDocUrl: "https://deno.land/add_module",
+    steps: [
+      "Open deno.land/add_module \u2192 add your GitHub repo + tag pattern",
+      "deno.land/x pulls from git tags automatically; no token needed",
+    ],
+  }),
 });

@@ -1,3 +1,4 @@
+import { tokenSetup } from '@profullstack/sh1pt-core';
 // Product Hunt launch prep + post. Public API allows reading products
 // but launch submissions go through the web UI (browser-mode needed).
 // ⚠ PH has strict anti-gaming — do not buy upvotes, do not coordinate
@@ -33,4 +34,16 @@ export default {
     // Honor PH rules: no upvote solicitation in private channels.
     return { id: `ph_${Date.now()}`, url: `https://www.producthunt.com/posts/${config.productSlug ?? ''}` };
   },
+
+  setup: tokenSetup({
+    secretKey: "PRODUCTHUNT_API_TOKEN",
+    label: "Product Hunt",
+    vendorDocUrl: "https://api.producthunt.com/v2/oauth/applications",
+    steps: [
+      "Open api.producthunt.com/v2/oauth/applications \u2192 Add an application",
+      "Mint a developer token with the public scope",
+      "\u26a0 Launch day submissions still require browser-mode + manual actions",
+      "\u26a0 NEVER solicit upvotes in private channels \u2014 permanent account bans",
+    ],
+  }),
 };

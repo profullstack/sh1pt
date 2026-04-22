@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // HackerNoon — articles pass through an editorial review, so adapter
 // flow is "submit draft" rather than "publish live." No public write
@@ -25,4 +25,14 @@ export default defineSocial<Config>({
     // TODO: Playwright /login → /draft/new → upload markdown + cover image
     return { id: `hnoon_${Date.now()}`, url: 'https://hackernoon.com/', platform: 'hackernoon', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "HACKERNOON_API_KEY",
+    label: "HackerNoon",
+    vendorDocUrl: "https://app.hackernoon.com/settings",
+    steps: [
+      "Contact HackerNoon (api@hackernoon.com) \u2014 their API is gated to publishers",
+      "Once approved, paste the API key you receive",
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineAdPlatform, type OnboardStep, type OnboardState } from '@profullstack/sh1pt-core';
+import { defineAdPlatform, type OnboardStep, type OnboardState, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Meta Ads — Facebook + Instagram + Messenger + Audience Network placements
 // all run through one campaign via the Marketing API (Graph API).
@@ -135,4 +135,14 @@ export default defineAdPlatform<Config>({
   async stop(id) {
     console.log(`[stub] meta stop ${id}`);
   },
+
+  setup: oauthSetup({
+    secretKey: "META_ADS_ACCESS_TOKEN",
+    label: "Meta Ads (Facebook + Instagram)",
+    vendorDocUrl: "https://business.facebook.com/",
+    steps: [
+      "Open business.facebook.com \u2192 Business Settings \u2192 System Users \u2192 Create",
+      "Assign ad accounts + generate a long-lived access token (scope: ads_management)",
+    ],
+  }),
 });

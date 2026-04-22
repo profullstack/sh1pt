@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Bluesky — AT Protocol. Auth via app password (Settings → App Passwords
 // in the Bluesky app; do NOT use the main account password). Endpoint:
@@ -22,4 +22,15 @@ export default defineSocial<Config>({
     // TODO: AT Proto flow — createSession → uploadBlob (per media) → createRecord app.bsky.feed.post
     return { id: `bsky_${Date.now()}`, url: `https://bsky.app/profile/${config.handle}`, platform: 'bluesky', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "BLUESKY_APP_PASSWORD",
+    label: "Bluesky",
+    vendorDocUrl: "https://bsky.app/settings/app-passwords",
+    steps: [
+      "Open bsky.app \u2192 Settings \u2192 App Passwords \u2192 Add App Password",
+      "Copy the generated app password (shown once)",
+      "Use your handle (e.g. you.bsky.social) as the username",
+    ],
+  }),
 });

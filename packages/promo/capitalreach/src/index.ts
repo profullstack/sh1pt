@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@profullstack/sh1pt-core';
+import { defineAdPlatform, oauthSetup } from '@profullstack/sh1pt-core';
 
 // CapitalReach (capitalreach.ai) — investor-outreach automation.
 //
@@ -84,4 +84,15 @@ export default defineAdPlatform<Config>({
   async stop(id) {
     console.log(`[stub] capitalreach pause ${id}`);
   },
+
+  setup: oauthSetup({
+    secretKey: "CAPITALREACH_API_KEY",
+    label: "CapitalReach.ai",
+    vendorDocUrl: "https://capitalreach.ai/",
+    steps: [
+      "Open capitalreach.ai \u2192 sign up + fund the account",
+      "Get an API key from Settings \u2192 API (enterprise tier)",
+      "For free tier: sh1pt drives browser mode using email+password",
+    ],
+  }),
 });

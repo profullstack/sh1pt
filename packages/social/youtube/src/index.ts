@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // YouTube Data API v3. Upload videos (including Shorts < 60s vertical).
 interface Config {
@@ -22,4 +22,15 @@ export default defineSocial<Config>({
     // TODO: videos.insert with resumable upload; Shorts detected from duration + vertical aspect + #shorts tag
     return { id: `yt_${Date.now()}`, url: 'https://www.youtube.com/', platform: 'youtube', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "YOUTUBE_ACCESS_TOKEN",
+    label: "YouTube",
+    vendorDocUrl: "https://console.cloud.google.com/apis/credentials",
+    steps: [
+      "Open console.cloud.google.com \u2192 APIs & Services \u2192 Enable YouTube Data API v3",
+      "Create OAuth 2.0 Client credentials (Desktop or Web)",
+      "Complete the OAuth flow with scope https://www.googleapis.com/auth/youtube.upload",
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineBridge } from '@profullstack/sh1pt-core';
+import { defineBridge, manualSetup } from '@profullstack/sh1pt-core';
 
 // IRC bridge — classic TCP/TLS client against any IRC network (Libera,
 // OFTC, self-hosted InspIRCd, etc.). Use SASL for auth on modern networks.
@@ -30,4 +30,13 @@ export default defineBridge<Config>({
     // PRIVMSGs. Media: post a link (IRC has no attachments).
     return { id: `irc_${Date.now()}` };
   },
+
+  setup: manualSetup({
+    label: "IRC bridge",
+    vendorDocUrl: "https://datatracker.ietf.org/doc/html/rfc1459",
+    steps: [
+      "Configure server host + port + TLS + nickname in sh1pt.config.ts",
+      "Run: sh1pt secret set IRC_NICKSERV_PASSWORD <pw>  (only if your nick is registered)",
+    ],
+  }),
 });

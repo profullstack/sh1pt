@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Hashnode — GraphQL API at gql.hashnode.com. Personal blogs live on
 // hashnode.dev subdomains or custom domains; posts are markdown with
@@ -24,4 +24,14 @@ export default defineSocial<Config>({
     // TODO: GraphQL publishPost mutation with { input: { publicationId, title, contentMarkdown, tags, coverImageOptions } }
     return { id: `hn_${Date.now()}`, url: 'https://hashnode.com/', platform: 'hashnode', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "HASHNODE_API_TOKEN",
+    label: "Hashnode",
+    vendorDocUrl: "https://hashnode.com/settings/developer",
+    steps: [
+      "Open hashnode.com/settings/developer \u2192 Personal Access Tokens \u2192 Generate New Token",
+      "Copy the token (shown once)",
+    ],
+  }),
 });

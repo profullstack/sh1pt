@@ -1,4 +1,4 @@
-import { defineBot } from '@profullstack/sh1pt-core';
+import { defineBot, manualSetup } from '@profullstack/sh1pt-core';
 
 // IRC bot — classic RFC 2812. Minimal interactivity (no rich components),
 // commands are !trigger or PRIVMSG parsing. SASL auth via IRC_PASSWORD.
@@ -22,4 +22,14 @@ export default defineBot<Config>({
     // TODO: PRIVMSG <channel> :<text>
     return { id: `i_${Date.now()}` };
   },
+
+  setup: manualSetup({
+    label: "IRC",
+    vendorDocUrl: "https://datatracker.ietf.org/doc/html/rfc1459",
+    steps: [
+      "IRC uses nickname + optional NickServ password",
+      "Pick a server (e.g. irc.libera.chat:6697 TLS), a nickname, and channels to join",
+      "Run: sh1pt secret set IRC_NICKSERV_PASSWORD <pw>  (only if your nick is registered)",
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
+import { defineJurisdiction, type EntityType, manualSetup } from '@profullstack/sh1pt-core';
 
 // Ireland pack — Read/Compliance support. CRO (cro.ie) runs CORE portal
 // for online incorporation (Company Bureau / A1-online); pack surfaces
@@ -91,4 +91,14 @@ export default defineJurisdiction<Config>({
     ctx.log(`ie · status ${entity.slug}`);
     return { status: entity.status };
   },
+
+  setup: manualSetup({
+    label: "Ireland (CRO)",
+    vendorDocUrl: "https://www.cro.ie/",
+    steps: [
+      "Ireland (CRO) pack supplies entity-formation rules + filing templates.",
+      "No credentials needed here \u2014 this is static jurisdiction data.",
+      "Actual filings happen through the provider specified in sh1pt.config.ts.",
+    ],
+  }),
 });

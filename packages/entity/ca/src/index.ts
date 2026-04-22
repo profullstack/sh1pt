@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
+import { defineJurisdiction, type EntityType, manualSetup } from '@profullstack/sh1pt-core';
 
 // Canada pack — Read/Compliance support. Federal CBCA incorporation
 // via Corporations Canada online + provincial equivalents. Pack does
@@ -91,4 +91,14 @@ export default defineJurisdiction<Config>({
     // TODO: ic.gc.ca/app/scr/cc — federal corp search.
     return { status: entity.status };
   },
+
+  setup: manualSetup({
+    label: "Canada (CBCA / provincial)",
+    vendorDocUrl: "https://www.ic.gc.ca/app/scr/cc/CorporationsCanada/",
+    steps: [
+      "Canada (CBCA / provincial) pack supplies entity-formation rules + filing templates.",
+      "No credentials needed here \u2014 this is static jurisdiction data.",
+      "Actual filings happen through the provider specified in sh1pt.config.ts.",
+    ],
+  }),
 });

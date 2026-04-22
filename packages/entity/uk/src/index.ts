@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
+import { defineJurisdiction, type EntityType, manualSetup } from '@profullstack/sh1pt-core';
 
 // UK pack — Assisted support. Companies House has a public API
 // (api.company-information.service.gov.uk) for name/company lookup,
@@ -98,4 +98,14 @@ export default defineJurisdiction<Config>({
     // TODO: GET api.company-information.service.gov.uk/company/{number}
     return { status: entity.status };
   },
+
+  setup: manualSetup({
+    label: "UK (Companies House)",
+    vendorDocUrl: "https://www.gov.uk/government/organisations/companies-house",
+    steps: [
+      "UK (Companies House) pack supplies entity-formation rules + filing templates.",
+      "No credentials needed here \u2014 this is static jurisdiction data.",
+      "Actual filings happen through the provider specified in sh1pt.config.ts.",
+    ],
+  }),
 });

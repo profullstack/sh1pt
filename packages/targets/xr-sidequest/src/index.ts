@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // SideQuest — third-party Quest sideload distribution. No Meta review,
 // used for demos, betas, and NSFW content Meta rejects. Valuable
@@ -27,4 +27,14 @@ export default defineTarget<Config>({
       url: config.sidequestAppId ? `https://sidequestvr.com/app/${config.sidequestAppId}` : undefined,
     };
   },
+
+  setup: manualSetup({
+    label: "SideQuest (Quest sideload)",
+    vendorDocUrl: "https://sidequestvr.com/",
+    steps: [
+      "Open sidequestvr.com \u2192 sign up \u2192 become a creator",
+      "Upload an APK manually; no automation API",
+      "Good for beta distribution before Horizon Store approval",
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineAdPlatform, type OnboardStep, type OnboardState } from '@profullstack/sh1pt-core';
+import { defineAdPlatform, type OnboardStep, type OnboardState, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Reddit Ads. Strong for niche subreddit targeting (developer tools,
 // gaming, hobbies). Two ad formats: promoted posts and conversation-
@@ -95,4 +95,15 @@ export default defineAdPlatform<Config>({
   async stop(id, config) {
     console.log(`[stub] reddit stop ${id} on ${config.accountId}`);
   },
+
+  setup: oauthSetup({
+    secretKey: "REDDIT_ADS_REFRESH_TOKEN",
+    label: "Reddit Ads",
+    vendorDocUrl: "https://ads.reddit.com/",
+    steps: [
+      "Open ads.reddit.com \u2192 Create a business account + ad account",
+      "Register a script/web app at reddit.com/prefs/apps",
+      "Complete OAuth with scope: ads_read ads_management",
+    ],
+  }),
 });

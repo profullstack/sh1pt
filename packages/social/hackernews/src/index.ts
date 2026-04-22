@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Hacker News — no write API. Submissions go through the web form at
 // news.ycombinator.com/submit. Browser-mode only. HN is extremely
@@ -28,4 +28,15 @@ export default defineSocial<Config>({
     // TODO: Playwright → /login → /submit. Enforce 1/day per user in the call site.
     return { id: `hn_${Date.now()}`, url: 'https://news.ycombinator.com/newest', platform: 'hackernews', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "HN_USERNAME",
+    label: "Hacker News",
+    vendorDocUrl: "https://news.ycombinator.com/",
+    steps: [
+      "No public write API \u2014 browser-mode submission via playwright",
+      "Paste your HN username; password prompt comes on first post",
+      "\u26a0 Respect HN ratelimits + no self-promotion threads on Ask HN",
+    ],
+  }),
 });

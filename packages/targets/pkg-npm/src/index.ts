@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   packageDir?: string;
@@ -26,4 +26,13 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'live', version: id };
   },
+
+  setup: manualSetup({
+    label: "npm registry",
+    vendorDocUrl: "https://www.npmjs.com/settings/<user>/tokens",
+    steps: [
+      "Open npmjs.com \u2192 Account \u2192 Access Tokens \u2192 Generate New Token \u2192 Automation",
+      "Run: sh1pt secret set NPM_TOKEN <token>",
+    ],
+  }),
 });

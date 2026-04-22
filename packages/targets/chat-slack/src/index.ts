@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // Slack apps — bots, slash commands, workflows, Block Kit surfaces.
 // Two distribution tiers:
@@ -32,4 +32,14 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'in-review', version: id };
   },
+
+  setup: manualSetup({
+    label: "Slack App Directory",
+    vendorDocUrl: "https://api.slack.com/apps",
+    steps: [
+      "api.slack.com/apps \u2192 Create New App \u2192 From Manifest",
+      "Complete App Directory review (security + scope audit)",
+      "Run: sh1pt secret set SLACK_APP_DIRECTORY_TOKEN <token>",
+    ],
+  }),
 });

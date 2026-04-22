@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Blossom — Nostr-based media + short-form social app. Uses the Blossom
 // protocol for media hosting and standard Nostr events (kind:1) for
@@ -23,4 +23,14 @@ export default defineSocial<Config>({
     // resulting blob URLs, sign + broadcast to relays.
     return { id: `bl_${Date.now()}`, url: 'https://blossom.primal.net/', platform: 'blossom', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "BLOSSOM_NSEC",
+    label: "Blossom Social (Nostr)",
+    vendorDocUrl: "https://blossom.social/",
+    steps: [
+      "Uses the same Nostr nsec as Primal",
+      "If you already have one from Primal, reuse it",
+    ],
+  }),
 });

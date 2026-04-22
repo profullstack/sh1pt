@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // JS/TS CDNs. Most auto-mirror npm, so "publish to CDN" = "publish to
 // npm + verify it resolves." Only cdnjs requires an explicit submission
@@ -42,4 +42,13 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'live', version: id };
   },
+
+  setup: manualSetup({
+    label: "CDN (jsDelivr / unpkg / esm.sh)",
+    vendorDocUrl: "https://www.jsdelivr.com/",
+    steps: [
+      "Publish to npm first \u2014 jsDelivr + unpkg + esm.sh serve directly from npm",
+      "No auth here; this adapter just validates the package resolves on each CDN",
+    ],
+  }),
 });

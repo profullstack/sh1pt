@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // Meta Horizon Store (formerly Oculus Store) for Quest 2/3/Pro/3S.
 // Apps are Android APKs built with Meta's Quest SDK (Unity/Unreal/native).
@@ -31,4 +31,14 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'in-review', version: id };
   },
+
+  setup: manualSetup({
+    label: "Meta Horizon Store (Quest)",
+    vendorDocUrl: "https://developer.oculus.com/",
+    steps: [
+      "Register at developer.oculus.com \u2192 create an organization",
+      "Submit app for Meta Horizon Store review (gated; 4-8 weeks)",
+      "For sideloading during dev: use SideQuest instead",
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 type Format = 'appimage' | 'snap' | 'flatpak' | 'deb' | 'rpm' | 'tar.gz';
 
@@ -52,4 +52,14 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'live', version: id };
   },
+
+  setup: manualSetup({
+    label: "Desktop (Linux \u2014 Snap / Flatpak / AppImage)",
+    vendorDocUrl: "https://snapcraft.io/",
+    steps: [
+      "Snap: register at snapcraft.io \u2192 snapcraft login \u2192 snapcraft export-login",
+      "Flathub: submit manifest to flathub/flathub repo (manual review 1-4 weeks)",
+      "AppImage: no registry, just publish to your own CDN",
+    ],
+  }),
 });

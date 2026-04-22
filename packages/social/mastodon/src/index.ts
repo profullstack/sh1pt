@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Mastodon — federated. Each instance is its own server; same API.
 // POST /api/v1/statuses with access token scoped to 'write:statuses'.
@@ -23,4 +23,15 @@ export default defineSocial<Config>({
     // TODO: POST https://${instance}/api/v1/statuses with { status, visibility, media_ids }
     return { id: `mst_${Date.now()}`, url: `https://${config.instance}/`, platform: 'mastodon', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "MASTODON_ACCESS_TOKEN",
+    label: "Mastodon",
+    vendorDocUrl: "https://docs.joinmastodon.org/client/token/",
+    steps: [
+      "Open your Mastodon instance \u2192 Preferences \u2192 Development \u2192 New Application",
+      "Scopes: write:statuses write:media read:accounts",
+      "Copy the access token shown after creation",
+    ],
+  }),
 });

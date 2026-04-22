@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Instagram Graph API (Meta). Photo / carousel / reel endpoints.
 // Requires a Business or Creator IG account linked to a Facebook Page
@@ -32,4 +32,15 @@ export default defineSocial<Config>({
     //   3. POST /{igUserId}/media_publish with creation_id
     return { id: `ig_${Date.now()}`, url: `https://www.instagram.com/`, platform: 'instagram', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "INSTAGRAM_ACCESS_TOKEN",
+    label: "Instagram (Graph API)",
+    vendorDocUrl: "https://developers.facebook.com/docs/instagram-api",
+    steps: [
+      "Open developers.facebook.com \u2192 Apps \u2192 your app \u2192 Instagram \u2192 Basic Display or Graph API",
+      "Connect an Instagram Business/Creator account linked to a Facebook Page",
+      "Generate a long-lived access token for that account",
+    ],
+  }),
 });

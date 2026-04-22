@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Moltbook — no public API documentation available to me; treating this
 // as a placeholder. Fill in `requires`, auth, and endpoint URLs once
@@ -21,4 +21,13 @@ export default defineSocial<Config>({
     if (ctx.dryRun) return { id: 'dry-run', url: '', platform: 'moltbook', publishedAt: new Date().toISOString() };
     return { id: `molt_${Date.now()}`, url: '', platform: 'moltbook', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "MOLTBOOK_API_KEY",
+    label: "Moltbook",
+    vendorDocUrl: "https://moltbook.com/",
+    steps: [
+      "No public API yet \u2014 contact the Moltbook team",
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
+import { defineJurisdiction, type EntityType, manualSetup } from '@profullstack/sh1pt-core';
 
 // Singapore pack — Read/Compliance support. ACRA BizFile+ is one of the
 // cleanest registries globally (most incorporations complete in <1 day).
@@ -91,4 +91,14 @@ export default defineJurisdiction<Config>({
     ctx.log(`sg · status ${entity.slug}`);
     return { status: entity.status };
   },
+
+  setup: manualSetup({
+    label: "Singapore (ACRA)",
+    vendorDocUrl: "https://www.acra.gov.sg/",
+    steps: [
+      "Singapore (ACRA) pack supplies entity-formation rules + filing templates.",
+      "No credentials needed here \u2014 this is static jurisdiction data.",
+      "Actual filings happen through the provider specified in sh1pt.config.ts.",
+    ],
+  }),
 });

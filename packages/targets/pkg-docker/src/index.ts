@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // OCI image distribution to any compliant registry: Docker Hub, GHCR,
 // GitLab Registry, Quay, AWS ECR, GCP Artifact Registry, Azure ACR,
@@ -42,4 +42,14 @@ export default defineTarget<Config>({
     // TODO: docker login per registry, then buildx --push for all tags (version + latest + extras)
     return { id: `${config.image}:${ctx.version}`, meta: { pushes } };
   },
+
+  setup: manualSetup({
+    label: "Docker registries (Hub / GHCR / Quay / ECR)",
+    vendorDocUrl: "https://hub.docker.com/settings/security",
+    steps: [
+      "Docker Hub: hub.docker.com \u2192 Security \u2192 New Access Token",
+      "Run: sh1pt secret set DOCKERHUB_ACCESS_TOKEN <token>",
+      "GHCR: GITHUB_TOKEN with write:packages scope works",
+    ],
+  }),
 });

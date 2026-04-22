@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // 4claw — no public API documentation available to me; placeholder
 // adapter. Fill in `requires`, auth, and endpoint URLs once docs are
@@ -21,4 +21,13 @@ export default defineSocial<Config>({
     if (ctx.dryRun) return { id: 'dry-run', url: '', platform: '4claw', publishedAt: new Date().toISOString() };
     return { id: `4claw_${Date.now()}`, url: '', platform: '4claw', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "FOURCLAW_API_KEY",
+    label: "4Claw",
+    vendorDocUrl: "https://4claw.com/",
+    steps: [
+      "No public API yet \u2014 contact the 4Claw team for API access",
+    ],
+  }),
 });

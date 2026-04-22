@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
+import { defineJurisdiction, type EntityType, manualSetup } from '@profullstack/sh1pt-core';
 
 // NZ pack — Full support. Companies Office (companies-register.companiesoffice.govt.nz)
 // has one of the cleanest registry surfaces in the English-speaking world:
@@ -97,4 +97,14 @@ export default defineJurisdiction<Config>({
     ctx.log(`nz · status ${entity.slug}`);
     return { status: entity.status };
   },
+
+  setup: manualSetup({
+    label: "New Zealand (Companies Office)",
+    vendorDocUrl: "https://companies-register.companiesoffice.govt.nz/",
+    steps: [
+      "New Zealand (Companies Office) pack supplies entity-formation rules + filing templates.",
+      "No credentials needed here \u2014 this is static jurisdiction data.",
+      "Actual filings happen through the provider specified in sh1pt.config.ts.",
+    ],
+  }),
 });

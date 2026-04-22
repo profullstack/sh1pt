@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
+import { defineJurisdiction, type EntityType, manualSetup } from '@profullstack/sh1pt-core';
 
 // India — Stub pack. Exists from day 1 so an entity can be modeled
 // and artifacts can be stubbed, but no live registry lookup or filing
@@ -86,4 +86,14 @@ export default defineJurisdiction<Config>({
     ctx.log('in · status (stub) ' + entity.slug);
     return { status: entity.status };
   },
+
+  setup: manualSetup({
+    label: "India (MCA)",
+    vendorDocUrl: "https://www.mca.gov.in/",
+    steps: [
+      "India (MCA) pack supplies entity-formation rules + filing templates.",
+      "No credentials needed here \u2014 this is static jurisdiction data.",
+      "Actual filings happen through the provider specified in sh1pt.config.ts.",
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@profullstack/sh1pt-core';
+import { defineAdPlatform, oauthSetup } from '@profullstack/sh1pt-core';
 
 // YouTube Ads — runs through Google Ads API but modelled as its own
 // adapter because the creative constraints (video-only, format families
@@ -35,4 +35,14 @@ export default defineAdPlatform<Config>({
   async stop(id) {
     console.log(`[stub] youtube stop ${id}`);
   },
+
+  setup: oauthSetup({
+    secretKey: "YOUTUBE_ADS_REFRESH_TOKEN",
+    label: "YouTube Ads",
+    vendorDocUrl: "https://ads.google.com/",
+    steps: [
+      "YouTube ads run via Google Ads \u2014 reuse GOOGLE_ADS credentials",
+      "Additionally request scope: https://www.googleapis.com/auth/youtube",
+    ],
+  }),
 });

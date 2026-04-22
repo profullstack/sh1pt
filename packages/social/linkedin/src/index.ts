@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // LinkedIn API (Share on LinkedIn / UGC Post). OAuth 2.0 with r_liteprofile
 // + w_member_social scopes. 3000 chars for personal posts, longer for
@@ -25,4 +25,15 @@ export default defineSocial<Config>({
     // Media must be registered via /v2/assets?action=registerUpload → uploaded → referenced by URN.
     return { id: `li_${Date.now()}`, url: `https://www.linkedin.com/`, platform: 'linkedin', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "LINKEDIN_ACCESS_TOKEN",
+    label: "LinkedIn",
+    vendorDocUrl: "https://www.linkedin.com/developers/apps",
+    steps: [
+      "Open linkedin.com/developers/apps \u2192 Create app (requires a Company Page)",
+      "Request the w_member_social product",
+      "Generate a 3-legged OAuth access token (use the token generator)",
+    ],
+  }),
 });

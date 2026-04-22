@@ -1,4 +1,4 @@
-import { defineSocial, adaptPost } from '@profullstack/sh1pt-core';
+import { defineSocial, adaptPost, oauthSetup } from '@profullstack/sh1pt-core';
 
 // X (Twitter). OAuth 1.0a or OAuth 2.0; tweet-create endpoint lives at
 // api.twitter.com/2/tweets. The v2 free tier shipped with a very low
@@ -36,4 +36,15 @@ export default defineSocial<Config>({
     //   browser: Playwright → compose tweet → attach media → publish
     return { id: `x_${Date.now()}`, url: 'https://x.com/', platform: 'x', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "X_ACCESS_TOKEN",
+    label: "X (Twitter)",
+    vendorDocUrl: "https://developer.x.com/portal/dashboard",
+    steps: [
+      "Open developer.x.com/portal \u2192 Projects \u2192 Create App",
+      "In User authentication settings enable OAuth 2.0 with Read+Write scope",
+      "Copy the Bearer / Access Token (paid tier required for posting)",
+    ],
+  }),
 });

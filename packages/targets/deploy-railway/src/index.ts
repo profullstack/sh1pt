@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   projectId: string;
@@ -25,4 +25,13 @@ export default defineTarget<Config>({
       meta: { projectId: config.projectId, environment: env },
     };
   },
+
+  setup: manualSetup({
+    label: "Railway",
+    vendorDocUrl: "https://railway.app/account/tokens",
+    steps: [
+      "Open railway.app/account/tokens \u2192 Create New Token",
+      "Run: sh1pt secret set RAILWAY_TOKEN <token>",
+    ],
+  }),
 });

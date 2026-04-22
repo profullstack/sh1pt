@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   dir: string;                 // built output directory
@@ -25,4 +25,13 @@ export default defineTarget<Config>({
       url: config.domain ? `https://${config.domain}` : undefined,
     };
   },
+
+  setup: manualSetup({
+    label: "Web / static hosting",
+    steps: [
+      "No auth here \u2014 web-static is a meta-target that picks the right",
+      "hosting adapter (deploy-denodeploy, deploy-workers, deploy-fly, \u2026)",
+      "based on your sh1pt.config.ts. Configure the underlying adapter instead.",
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Stacker News (stacker.news) — Bitcoin Lightning-themed HN alternative.
 // Submissions cost satoshis to post (anti-spam). GraphQL API at
@@ -26,4 +26,14 @@ export default defineSocial<Config>({
     // have satoshi balance on their SN account before calling.
     return { id: `sn_${Date.now()}`, url: 'https://stacker.news/', platform: 'stackernews', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "STACKERNEWS_API_KEY",
+    label: "Stacker News",
+    vendorDocUrl: "https://stacker.news/",
+    steps: [
+      "stacker.news has lightning-paid posting \u2014 setup: connect a Lightning wallet",
+      "Generate API credentials in Settings \u2192 API",
+    ],
+  }),
 });

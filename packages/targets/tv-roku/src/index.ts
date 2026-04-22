@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // Roku apps run on BrightScript + SceneGraph. Unlike tvOS / Android TV /
 // Fire TV, there is no supported React runtime on Roku OS — react-tv is
@@ -38,4 +38,14 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'in-review', version: id };
   },
+
+  setup: manualSetup({
+    label: "Roku Channel Store",
+    vendorDocUrl: "https://developer.roku.com/",
+    steps: [
+      "\u26a0 Roku uses BrightScript \u2014 not JS/React. Need a separate codebase.",
+      "Register at developer.roku.com ($0) \u2192 submit a channel package for review",
+      "Manual review 1-2 weeks",
+    ],
+  }),
 });

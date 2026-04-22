@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@profullstack/sh1pt-core';
+import { defineAdPlatform, oauthSetup } from '@profullstack/sh1pt-core';
 
 // OpenVC (openvc.app) — free-tier VC directory with contact info.
 // Discovery-focused; use results as a feed into a CRM or cold-email
@@ -28,4 +28,15 @@ export default defineAdPlatform<Config>({
   },
   async status() { return { state: 'active', spend: 0, impressions: 0, clicks: 0 }; },
   async stop(id) { console.log(`[stub] openvc ${id}`); },
+
+  setup: oauthSetup({
+    secretKey: "OPENVC_API_KEY",
+    label: "OpenVC",
+    vendorDocUrl: "https://www.openvc.app/",
+    steps: [
+      "Open openvc.app \u2192 sign up",
+      "OpenVC has no public write API yet \u2014 sh1pt drives browser mode",
+      "Paste your OpenVC email/password (stored in vault) or session cookie",
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // WhatsApp Business Cloud API (Meta). The most regulated of any chat
 // surface: outside the 24-hour customer-initiated window, only
@@ -41,4 +41,14 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'in-review', version: id, message: 'template approvals can take up to 24h; 24h session window applies for free-form outbound' };
   },
+
+  setup: manualSetup({
+    label: "WhatsApp Business Cloud API",
+    vendorDocUrl: "https://developers.facebook.com/docs/whatsapp",
+    steps: [
+      "Register a Meta Business account + request Cloud API access",
+      "Complete business verification (2-7 days, requires business docs)",
+      "Run: sh1pt secret set WHATSAPP_BUSINESS_TOKEN <token>",
+    ],
+  }),
 });

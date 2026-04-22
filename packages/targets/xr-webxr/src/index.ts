@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // WebXR is the universal XR path — works on Quest Browser, Vision Pro
 // Safari, Chrome+headset, and any other WebXR-capable UA. Deploy like a
@@ -29,4 +29,13 @@ export default defineTarget<Config>({
     // TODO: dispatch to per-provider deploy; submit to headset launch catalogs if requested
     return { id: `webxr:${ctx.version}`, url: config.domain ? `https://${config.domain}` : undefined };
   },
+
+  setup: manualSetup({
+    label: "WebXR",
+    steps: [
+      "WebXR has no \"store\" \u2014 it runs in any WebXR-capable browser",
+      "Publish as a regular web app via web-static / deploy-workers / deploy-fly",
+      "No authentication required for WebXR itself",
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineAgent, exec, ensureCli } from '@profullstack/sh1pt-core';
+import { defineAgent, exec, ensureCli, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   model?: string;            // 'qwen2.5-coder', 'qwen3-coder', etc.
@@ -38,4 +38,13 @@ export default defineAgent<Config>({
     const { exitCode } = await exec('qwen', args, { cwd: ctx.cwd, log: ctx.log });
     return { exitCode };
   },
+
+  setup: manualSetup({
+    label: "Qwen Code",
+    vendorDocUrl: "https://github.com/QwenLM/Qwen-Agent",
+    steps: [
+      "Install following Qwen Code docs (typically via pip or a curl script)",
+      "sh1pt invokes whichever qwen CLI is on your PATH",
+    ],
+  }),
 });

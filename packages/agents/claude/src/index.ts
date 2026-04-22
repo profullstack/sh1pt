@@ -1,4 +1,4 @@
-import { defineAgent, exec, ensureCli } from '@profullstack/sh1pt-core';
+import { defineAgent, exec, ensureCli, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   model?: string;            // e.g. 'claude-opus-4-7', 'claude-sonnet-4-6'
@@ -42,4 +42,14 @@ export default defineAgent<Config>({
     const { exitCode } = await exec('claude', args, { cwd: ctx.cwd, log: ctx.log });
     return { exitCode };
   },
+
+  setup: manualSetup({
+    label: "Claude Code",
+    vendorDocUrl: "https://docs.anthropic.com/en/docs/claude-code",
+    steps: [
+      "Install: curl -fsSL https://claude.ai/install.sh | bash (or: npm install -g @anthropic-ai/claude-code)",
+      "Authenticate: claude login",
+      "sh1pt will use `claude` CLI directly; no token in the vault needed",
+    ],
+  }),
 });

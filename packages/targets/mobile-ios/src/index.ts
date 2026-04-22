@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   bundleId: string;
@@ -28,4 +28,16 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'in-review', version: id };
   },
+
+  setup: manualSetup({
+    label: "iOS App Store",
+    vendorDocUrl: "https://developer.apple.com/",
+    steps: [
+      "Enroll in Apple Developer Program ($99/yr) + D-U-N-S (free, 1-2 days)",
+      "Accept all Paid Apps agreements in App Store Connect",
+      "Generate an App Store Connect API key (.p8 file) with Developer role",
+      "Run: sh1pt secret set APP_STORE_CONNECT_KEY_ID <id>",
+      "Run: sh1pt secret set APP_STORE_CONNECT_ISSUER_ID <uuid>",
+    ],
+  }),
 });

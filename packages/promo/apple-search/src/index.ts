@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@profullstack/sh1pt-core';
+import { defineAdPlatform, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Apple Search Ads — promotes iOS apps in the App Store search results.
 // The highest-intent mobile ad channel (user is literally searching for
@@ -34,4 +34,15 @@ export default defineAdPlatform<Config>({
   async stop(id) {
     console.log(`[stub] apple search ads stop ${id}`);
   },
+
+  setup: oauthSetup({
+    secretKey: "APPLE_SEARCH_ADS_JWT",
+    label: "Apple Search Ads",
+    vendorDocUrl: "https://app.searchads.apple.com/",
+    steps: [
+      "Open app.searchads.apple.com \u2192 Settings \u2192 API",
+      "Generate a public/private key pair; download the private key (.p8 file)",
+      "Mint a JWT client_secret (sh1pt can generate this from your .p8 path if provided)",
+    ],
+  }),
 });

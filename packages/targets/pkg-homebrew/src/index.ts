@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   tap: string;               // e.g. "myorg/homebrew-tap"
@@ -21,4 +21,14 @@ export default defineTarget<Config>({
     // TODO: git clone tap, commit formula, push branch, open PR via GH_TOKEN
     return { id: `${config.formulaName}@${ctx.version}`, url: `https://github.com/${config.tap}` };
   },
+
+  setup: manualSetup({
+    label: "Homebrew",
+    vendorDocUrl: "https://github.com/Homebrew/homebrew-core",
+    steps: [
+      "For personal taps: create a homebrew-<name> repo on GitHub",
+      "For core inclusion: submit a formula PR to Homebrew/homebrew-core (manual review)",
+      "sh1pt automates the formula generation + tap push; no token needed for personal tap",
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
+import { defineJurisdiction, type EntityType, manualSetup } from '@profullstack/sh1pt-core';
 
 // Wyoming DAO LLC wrapper — EXPERIMENTAL. Wyoming is the only US state
 // with a DAO-specific LLC statute (W.S. 17-31). This pack creates the
@@ -118,4 +118,14 @@ export default defineJurisdiction<Config>({
     ctx.log(`dao-wy · status ${entity.slug}`);
     return { status: entity.status };
   },
+
+  setup: manualSetup({
+    label: "Wyoming DAO LLC",
+    vendorDocUrl: "https://sos.wyo.gov/Business/",
+    steps: [
+      "Wyoming DAO LLC pack supplies entity-formation rules + filing templates.",
+      "No credentials needed here \u2014 this is static jurisdiction data.",
+      "Actual filings happen through the provider specified in sh1pt.config.ts.",
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineAgent, exec, ensureCli } from '@profullstack/sh1pt-core';
+import { defineAgent, exec, ensureCli, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   model?: string;            // 'gpt-5', 'o1', etc.
@@ -41,4 +41,14 @@ export default defineAgent<Config>({
     const { exitCode } = await exec('codex', args, { cwd: ctx.cwd, log: ctx.log });
     return { exitCode };
   },
+
+  setup: manualSetup({
+    label: "OpenAI Codex CLI",
+    vendorDocUrl: "https://github.com/openai/codex",
+    steps: [
+      "Install: npm install -g @openai/codex (or follow instructions at github.com/openai/codex)",
+      "Set OPENAI_API_KEY in your shell OR run: sh1pt secret set OPENAI_API_KEY <key>",
+      "sh1pt invokes the `codex` CLI directly",
+    ],
+  }),
 });

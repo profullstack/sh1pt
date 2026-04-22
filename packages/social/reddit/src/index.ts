@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Reddit — text/link/image submissions via /api/submit. Each subreddit
 // has its own rules + karma requirements; self-promotion in the wrong
@@ -25,4 +25,15 @@ export default defineSocial<Config>({
     // TODO: POST /api/submit with { sr, kind, title, text|url, flair_id }
     return { id: `rd_${Date.now()}`, url: `https://reddit.com/r/${config.subreddit}`, platform: 'reddit', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "REDDIT_REFRESH_TOKEN",
+    label: "Reddit",
+    vendorDocUrl: "https://www.reddit.com/prefs/apps",
+    steps: [
+      "Open reddit.com/prefs/apps \u2192 create another app \u2192 script or web app",
+      "Complete OAuth dance to get a refresh token (scope: submit, read)",
+      "Paste the refresh token; sh1pt will exchange it for access tokens as needed",
+    ],
+  }),
 });

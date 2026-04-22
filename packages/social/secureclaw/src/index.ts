@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Secureclaw — no public API documentation available to me; placeholder
 // adapter. Fill in `requires`, auth, and endpoint URLs once docs are
@@ -21,4 +21,13 @@ export default defineSocial<Config>({
     if (ctx.dryRun) return { id: 'dry-run', url: '', platform: 'secureclaw', publishedAt: new Date().toISOString() };
     return { id: `secureclaw_${Date.now()}`, url: '', platform: 'secureclaw', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "SECURECLAW_API_KEY",
+    label: "SecureClaw",
+    vendorDocUrl: "https://secureclaw.com/",
+    steps: [
+      "No public API yet \u2014 contact the SecureClaw team",
+    ],
+  }),
 });

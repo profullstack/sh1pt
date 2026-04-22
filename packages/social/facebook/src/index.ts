@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Facebook Page posts via Graph API. /{page-id}/feed + attached media.
 // Requires a Page access token (long-lived via /oauth/access_token).
@@ -20,4 +20,15 @@ export default defineSocial<Config>({
     // TODO: POST /{page-id}/feed { message, link, published }; media via /{page-id}/photos or /videos
     return { id: `fb_${Date.now()}`, url: `https://facebook.com/${config.pageId}`, platform: 'facebook', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "FACEBOOK_PAGE_ACCESS_TOKEN",
+    label: "Facebook Page",
+    vendorDocUrl: "https://developers.facebook.com/apps/",
+    steps: [
+      "Open developers.facebook.com \u2192 Apps \u2192 your app \u2192 Settings",
+      "Request pages_manage_posts scope through App Review",
+      "Use the Graph API Explorer to mint a long-lived Page access token",
+    ],
+  }),
 });

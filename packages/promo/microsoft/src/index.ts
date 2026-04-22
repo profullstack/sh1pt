@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@profullstack/sh1pt-core';
+import { defineAdPlatform, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Microsoft Advertising — Bing search + Microsoft Audience Network
 // (MSN, Outlook, Edge). Often cheaper CPC than Google Search with
@@ -31,4 +31,15 @@ export default defineAdPlatform<Config>({
   async stop(id) {
     console.log(`[stub] microsoft ads stop ${id}`);
   },
+
+  setup: oauthSetup({
+    secretKey: "MICROSOFT_ADS_REFRESH_TOKEN",
+    label: "Microsoft Ads (Bing)",
+    vendorDocUrl: "https://ads.microsoft.com/",
+    steps: [
+      "Open ads.microsoft.com \u2192 sign up for ads account",
+      "Register an Azure AD app with the Bing Ads API permission",
+      "Complete OAuth and paste the refresh token",
+    ],
+  }),
 });

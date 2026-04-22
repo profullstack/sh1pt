@@ -1,3 +1,4 @@
+import { manualSetup } from '@profullstack/sh1pt-core';
 import { z } from "zod";
 import { spawn, type ChildProcess } from "node:child_process";
 
@@ -14,6 +15,17 @@ const configSchema = z.object({
   maxConcurrentSessions: z.number().int().positive().default(5),
   allowedUsers: z.array(z.string()).default([]),
   adminUsers: z.array(z.string()).default([]),
+
+  setup: manualSetup({
+    label: "Signal (signal-cli)",
+    vendorDocUrl: "https://github.com/AsamK/signal-cli",
+    steps: [
+      "Install signal-cli: brew install signal-cli OR download from GitHub releases",
+      "Register a dedicated number: signal-cli -u +12345550100 register",
+      "Verify: signal-cli -u +12345550100 verify <code>",
+      "No token \u2014 sh1pt invokes signal-cli via subprocess",
+    ],
+  }),
 });
 
 export type Config = z.infer<typeof configSchema>;

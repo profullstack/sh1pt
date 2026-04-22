@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Forem — the open-source platform DEV Community runs on, used by many
 // self-hosted communities (CodeNewbie, etc.). Same API shape as dev.to,
@@ -23,4 +23,14 @@ export default defineSocial<Config>({
     // TODO: POST https://${host}/api/articles
     return { id: `forem_${Date.now()}`, url: `https://${config.host}/`, platform: 'forem', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "FOREM_API_KEY",
+    label: "Forem (self-hosted DEV)",
+    vendorDocUrl: "https://dev.to/settings/extensions",
+    steps: [
+      "On your Forem instance \u2192 Settings \u2192 Extensions \u2192 API Keys \u2192 Generate",
+      "Note: host URL needs to be in your sh1pt.config.ts (e.g. https://my.forem.com)",
+    ],
+  }),
 });

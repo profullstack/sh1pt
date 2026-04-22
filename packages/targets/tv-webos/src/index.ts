@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // webOS apps are HTML/CSS/JS — a great fit for React codebases via Enact
 // (LG's React-based framework) or vanilla web. Packaged as .ipk using
@@ -34,4 +34,14 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'in-review', version: id };
   },
+
+  setup: manualSetup({
+    label: "LG webOS",
+    vendorDocUrl: "https://webostv.developer.lge.com/",
+    steps: [
+      "Register at webostv.developer.lge.com \u2192 accept developer agreement",
+      "Apps submitted via LG Content Manager (web UI); no public API for submissions",
+      "Sign packages with webOS CLI; token only required for publish step",
+    ],
+  }),
 });

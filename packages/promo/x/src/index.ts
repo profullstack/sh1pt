@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@profullstack/sh1pt-core';
+import { defineAdPlatform, oauthSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   accountId: string;
@@ -26,4 +26,15 @@ export default defineAdPlatform<Config>({
   async stop(id) {
     console.log(`[stub] x stop ${id}`);
   },
+
+  setup: oauthSetup({
+    secretKey: "X_ADS_ACCESS_TOKEN",
+    label: "X (Twitter) Ads",
+    vendorDocUrl: "https://ads.twitter.com/",
+    steps: [
+      "Open ads.twitter.com \u2192 create an ads account (billing required)",
+      "Register an X app with ads.read + ads.write scopes",
+      "Complete 3-legged OAuth \u2014 paste the access token",
+    ],
+  }),
 });

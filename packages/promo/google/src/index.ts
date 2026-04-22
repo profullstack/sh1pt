@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@profullstack/sh1pt-core';
+import { defineAdPlatform, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Google Ads. Covers Search, Display Network, Discover, Gmail, and
 // (via separate promo-youtube adapter) YouTube. For mobile, use App
@@ -38,4 +38,14 @@ export default defineAdPlatform<Config>({
   async stop(id) {
     console.log(`[stub] google ads stop ${id}`);
   },
+
+  setup: oauthSetup({
+    secretKey: "GOOGLE_ADS_REFRESH_TOKEN",
+    label: "Google Ads",
+    vendorDocUrl: "https://ads.google.com/aw/apicenter",
+    steps: [
+      "Open ads.google.com \u2192 Tools \u2192 API Center \u2192 apply for developer token",
+      "Create OAuth credentials at console.cloud.google.com \u2192 complete OAuth for adwords scope",
+    ],
+  }),
 });

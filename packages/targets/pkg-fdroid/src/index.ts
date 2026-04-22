@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // F-Droid — FOSS Android app repo. Two modes:
 //   - 'main-repo': submit metadata PR to fdroiddata; F-Droid's servers
@@ -49,4 +49,14 @@ export default defineTarget<Config>({
     // TODO: sync repo dir to github-pages / cdn / s3 with correct index-v1.jar signatures
     return { id: `${config.packageName}@${ctx.version}` };
   },
+
+  setup: manualSetup({
+    label: "F-Droid",
+    vendorDocUrl: "https://f-droid.org/docs/",
+    steps: [
+      "F-Droid builds from source \u2014 no upload, just a metadata PR",
+      "Fork f-droid/fdroiddata \u2192 add your app metadata \u2192 submit MR",
+      "Manual review 1-4 weeks",
+    ],
+  }),
 });

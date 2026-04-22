@@ -1,4 +1,4 @@
-import { defineBridge } from '@profullstack/sh1pt-core';
+import { defineBridge, manualSetup } from '@profullstack/sh1pt-core';
 
 // Signal bridge — piggy-backs on signal-cli / signald running as a
 // daemon. Receive via `signal-cli daemon` JSON-RPC; send via the same.
@@ -28,4 +28,13 @@ export default defineBridge<Config>({
     // TODO: JSON-RPC call `sendGroup` or `send` with message + attachments
     return { id: `sig_${Date.now()}` };
   },
+
+  setup: manualSetup({
+    label: "Signal bridge",
+    vendorDocUrl: "https://github.com/AsamK/signal-cli",
+    steps: [
+      "Same flow as bots/signal \u2014 register a dedicated number via signal-cli",
+      "Bridge mode uses the same credentials",
+    ],
+  }),
 });

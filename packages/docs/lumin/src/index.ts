@@ -1,4 +1,4 @@
-import { defineDocs } from '@profullstack/sh1pt-core';
+import { defineDocs, tokenSetup } from '@profullstack/sh1pt-core';
 
 // LuminPDF — PDF editor + hosting. API supports upload, signature
 // flows, form fill, and branded viewer links. NOT a presentation
@@ -24,4 +24,14 @@ export default defineDocs<Config>({
     // Returns a viewer URL you can share with investors / customers.
     return { id: `lumin_${Date.now()}`, format: 'pdf', url: 'https://app.luminpdf.com/viewer/stub' };
   },
+
+  setup: tokenSetup({
+    secretKey: "LUMIN_API_KEY",
+    label: "LuminPDF (sharable PDF hosting)",
+    vendorDocUrl: "https://www.luminpdf.com/developer",
+    steps: [
+      "Open luminpdf.com \u2192 Developer \u2192 Create API key",
+      "Copy the API key",
+    ],
+  }),
 });

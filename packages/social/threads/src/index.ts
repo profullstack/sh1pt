@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Threads (Meta). Public API launched 2024. Same auth pattern as
 // Instagram / Facebook Graph but a distinct endpoint surface.
@@ -21,4 +21,15 @@ export default defineSocial<Config>({
     // then POST /{threadsUserId}/threads_publish with { creation_id }
     return { id: `th_${Date.now()}`, url: 'https://www.threads.net/', platform: 'threads', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "THREADS_ACCESS_TOKEN",
+    label: "Threads",
+    vendorDocUrl: "https://developers.facebook.com/docs/threads",
+    steps: [
+      "Open developers.facebook.com \u2192 Apps \u2192 Create App",
+      "Add the Threads API product and configure redirect URIs",
+      "Complete the OAuth flow for the target Threads account",
+    ],
+  }),
 });

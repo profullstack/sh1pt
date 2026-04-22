@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // GitHub Packages — npm-compatible registry scoped to @<org>. Common
 // for internal packages or dual-publish alongside public npm.
@@ -25,4 +25,13 @@ export default defineTarget<Config>({
       url: `https://github.com/${config.org}/packages`,
     };
   },
+
+  setup: manualSetup({
+    label: "GitHub Packages (npm)",
+    vendorDocUrl: "https://github.com/settings/tokens",
+    steps: [
+      "Generate a fine-grained PAT with write:packages permission",
+      "Run: sh1pt secret set GITHUB_PACKAGES_TOKEN <token>",
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineDocs } from '@profullstack/sh1pt-core';
+import { defineDocs, manualSetup } from '@profullstack/sh1pt-core';
 
 // Pandoc — universal document converter. Markdown → docx, pdf, html,
 // pptx, and back. Strongest at long-form content (whitepapers, memos,
@@ -21,4 +21,13 @@ export default defineDocs<Config>({
     // TODO: spawn `pandoc -f markdown -t <spec.format> ${referenceDoc ? `--reference-doc=${referenceDoc}` : ''} -o <out> -` with markdown on stdin
     return { id: `pandoc_${Date.now()}`, format: spec.format, localPath: `./.sh1pt/docs/${spec.kind}.${spec.format}` };
   },
+
+  setup: manualSetup({
+    label: "Pandoc (universal document converter)",
+    vendorDocUrl: "https://pandoc.org/installing.html",
+    steps: [
+      "Install pandoc: brew install pandoc / apt install pandoc / scoop install pandoc",
+      "No auth \u2014 Pandoc runs fully locally",
+    ],
+  }),
 });

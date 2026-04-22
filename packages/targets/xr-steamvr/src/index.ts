@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // PCVR via Steam. Covers Valve Index, HTC Vive, Meta Rift / Quest Link,
 // Bigscreen Beyond, and any OpenXR-compatible PC headset. Build is a
@@ -29,4 +29,13 @@ export default defineTarget<Config>({
       url: `https://store.steampowered.com/app/${config.steamAppId}`,
     };
   },
+
+  setup: manualSetup({
+    label: "SteamVR (PCVR / OpenXR)",
+    vendorDocUrl: "https://partner.steamgames.com/",
+    steps: [
+      "SteamVR distribution uses Steamworks \u2014 same flow as console-steam",
+      "Use Steam Input + OpenXR for controllers",
+    ],
+  }),
 });

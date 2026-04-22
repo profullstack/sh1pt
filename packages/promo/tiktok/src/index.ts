@@ -1,4 +1,4 @@
-import { defineAdPlatform, type OnboardStep, type OnboardState } from '@profullstack/sh1pt-core';
+import { defineAdPlatform, type OnboardStep, type OnboardState, oauthSetup } from '@profullstack/sh1pt-core';
 
 // TikTok Ads — best CPI for mobile apps in 2024+. Requires video
 // creatives (static images auto-wrapped in basic templates but
@@ -137,4 +137,14 @@ export default defineAdPlatform<Config>({
   async stop(id) {
     console.log(`[stub] tiktok stop ${id}`);
   },
+
+  setup: oauthSetup({
+    secretKey: "TIKTOK_ADS_ACCESS_TOKEN",
+    label: "TikTok Ads",
+    vendorDocUrl: "https://ads.tiktok.com/marketing_api/",
+    steps: [
+      "Open ads.tiktok.com \u2192 apply for Marketing API access (approval required)",
+      "Register an app \u2192 complete OAuth with scope: ads.read ads.write",
+    ],
+  }),
 });

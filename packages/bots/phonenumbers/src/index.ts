@@ -1,4 +1,4 @@
-import { defineBot } from '@profullstack/sh1pt-core';
+import { defineBot, manualSetup } from '@profullstack/sh1pt-core';
 
 // phonenumbers.bot — phone-number-native bot platform. User brings a
 // number (BYON), the service handles SMS + voice webhook routing and
@@ -29,4 +29,11 @@ export default defineBot<Config>({
     // TODO: POST /v1/send with channel (E.164), text, optional voice payload.
     return { id: `pn_${Date.now()}` };
   },
+
+  setup: manualSetup({
+    label: "Phone-number bot (meta)",
+    steps: [
+      "Abstract base \u2014 configure via Twilio or Telnyx instead",
+    ],
+  }),
 });

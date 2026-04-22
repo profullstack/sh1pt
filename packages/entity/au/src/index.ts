@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
+import { defineJurisdiction, type EntityType, manualSetup } from '@profullstack/sh1pt-core';
 
 // AU pack — Assisted support. ASIC Connect for name reservation and
 // proprietary company registration (Form 201). ABR issues ABN + TFN
@@ -92,4 +92,14 @@ export default defineJurisdiction<Config>({
     ctx.log(`au · status ${entity.slug}`);
     return { status: entity.status };
   },
+
+  setup: manualSetup({
+    label: "Australia (ASIC)",
+    vendorDocUrl: "https://asic.gov.au/",
+    steps: [
+      "Australia (ASIC) pack supplies entity-formation rules + filing templates.",
+      "No credentials needed here \u2014 this is static jurisdiction data.",
+      "Actual filings happen through the provider specified in sh1pt.config.ts.",
+    ],
+  }),
 });

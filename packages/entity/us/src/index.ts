@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
+import { defineJurisdiction, type EntityType, manualSetup } from '@profullstack/sh1pt-core';
 
 // US pack — Full support. Delaware C-Corp is the default startup path;
 // the adapter also handles state-by-state LLC / S-Corp / benefit-corp
@@ -106,4 +106,14 @@ export default defineJurisdiction<Config>({
     // TODO: hit state SoS lookup, parse registered/forfeited/dissolved.
     return { status: entity.status };
   },
+
+  setup: manualSetup({
+    label: "United States",
+    vendorDocUrl: "https://www.sba.gov/",
+    steps: [
+      "United States pack supplies entity-formation rules + filing templates.",
+      "No credentials needed here \u2014 this is static jurisdiction data.",
+      "Actual filings happen through the provider specified in sh1pt.config.ts.",
+    ],
+  }),
 });

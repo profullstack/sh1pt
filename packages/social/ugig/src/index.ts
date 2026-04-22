@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Ugig — no public API documentation available to me; placeholder
 // adapter. Fill in `requires`, auth, and endpoint URLs once docs are
@@ -21,4 +21,13 @@ export default defineSocial<Config>({
     if (ctx.dryRun) return { id: 'dry-run', url: '', platform: 'ugig', publishedAt: new Date().toISOString() };
     return { id: `ugig_${Date.now()}`, url: '', platform: 'ugig', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "UGIG_API_KEY",
+    label: "uGig",
+    vendorDocUrl: "https://ugig.com/",
+    steps: [
+      "No public API yet \u2014 contact the uGig team",
+    ],
+  }),
 });

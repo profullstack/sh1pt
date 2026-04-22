@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // SteamOS / Steam Deck — Desktop Mode path that bypasses Steam entirely.
 // The Deck runs KDE Plasma on Arch in Desktop Mode and installs Flatpaks
@@ -50,4 +50,13 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'in-review', version: id };
   },
+
+  setup: manualSetup({
+    label: "Steam Deck (Desktop Mode Flatpak)",
+    vendorDocUrl: "https://flathub.org/",
+    steps: [
+      "Steam Deck Desktop Mode uses Flathub",
+      "Follow the desktop-linux Flathub flow \u2014 no Steam-specific auth needed here",
+    ],
+  }),
 });

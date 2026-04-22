@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   project: string;
@@ -26,4 +26,13 @@ export default defineTarget<Config>({
       url: `https://${config.project}.deno.dev`,
     };
   },
+
+  setup: manualSetup({
+    label: "Deno Deploy",
+    vendorDocUrl: "https://dash.deno.com/account",
+    steps: [
+      "Open dash.deno.com \u2192 Account \u2192 New Access Token",
+      "Run: sh1pt secret set DENO_DEPLOY_TOKEN <token>",
+    ],
+  }),
 });

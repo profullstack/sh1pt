@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
+import { defineJurisdiction, type EntityType, manualSetup } from '@profullstack/sh1pt-core';
 
 // HK pack — Assisted support. Companies Registry e-Registry
 // (e-services.cr.gov.hk) offers online incorporation for private
@@ -93,4 +93,14 @@ export default defineJurisdiction<Config>({
     ctx.log(`hk · status ${entity.slug}`);
     return { status: entity.status };
   },
+
+  setup: manualSetup({
+    label: "Hong Kong (CR)",
+    vendorDocUrl: "https://www.cr.gov.hk/",
+    steps: [
+      "Hong Kong (CR) pack supplies entity-formation rules + filing templates.",
+      "No credentials needed here \u2014 this is static jurisdiction data.",
+      "Actual filings happen through the provider specified in sh1pt.config.ts.",
+    ],
+  }),
 });

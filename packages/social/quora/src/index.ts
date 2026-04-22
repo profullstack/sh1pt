@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Quora — answers and Quora Spaces posts. No public write API since
 // 2017; automation is browser-mode (Playwright). Quora is aggressive
@@ -25,4 +25,14 @@ export default defineSocial<Config>({
     // TODO: Playwright /login → compose answer or space post
     return { id: `q_${Date.now()}`, url: 'https://quora.com/', platform: 'quora', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "QUORA_SESSION",
+    label: "Quora",
+    vendorDocUrl: "https://www.quora.com/",
+    steps: [
+      "No public write API \u2014 browser-mode posting required",
+      "\u26a0 Quora aggressively rate-limits and bans automation \u2014 use rarely",
+    ],
+  }),
 });

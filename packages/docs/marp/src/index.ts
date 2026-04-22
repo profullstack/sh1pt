@@ -1,4 +1,4 @@
-import { defineDocs } from '@profullstack/sh1pt-core';
+import { defineDocs, manualSetup } from '@profullstack/sh1pt-core';
 
 // Marp — open-source markdown → HTML / PDF / PPTX. Run via the marp CLI
 // locally (no API, no auth). Perfect for "version-controlled pitch deck"
@@ -22,4 +22,13 @@ export default defineDocs<Config>({
     // Slides split on --- (horizontal rule) in the markdown.
     return { id: `marp_${Date.now()}`, format: spec.format, localPath: `./.sh1pt/docs/${spec.kind}.${spec.format}` };
   },
+
+  setup: manualSetup({
+    label: "Marp (markdown slides)",
+    vendorDocUrl: "https://marp.app/",
+    steps: [
+      "Install the Marp CLI: npm install -g @marp-team/marp-cli",
+      "No auth \u2014 Marp runs fully locally",
+    ],
+  }),
 });

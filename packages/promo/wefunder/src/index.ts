@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@profullstack/sh1pt-core';
+import { defineAdPlatform, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Wefunder — US regulated equity crowdfunding (Reg CF / Reg A+). Raise
 // from the public up to $5M/yr under Reg CF. No public write API; this
@@ -29,4 +29,15 @@ export default defineAdPlatform<Config>({
   },
   async status() { return { state: 'active', spend: 0, impressions: 0, clicks: 0 }; },
   async stop(id) { console.log(`[stub] wefunder ${id}`); },
+
+  setup: oauthSetup({
+    secretKey: "WEFUNDER_SESSION",
+    label: "Wefunder (Reg CF)",
+    vendorDocUrl: "https://wefunder.com/",
+    steps: [
+      "Reg CF filings require manual Form C submission through FINRA + CIK filing",
+      "No public write API \u2014 browser mode only for the post-filing updates",
+      "Legal filings are YOUR responsibility; sh1pt automates the marketing around them",
+    ],
+  }),
 });

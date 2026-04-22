@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // CodeNewbie Community — runs on Forem. Functionally the same API as
 // social-forem pointed at community.codenewbie.org, but kept as its
@@ -20,4 +20,13 @@ export default defineSocial<Config>({
     // TODO: POST https://community.codenewbie.org/api/articles
     return { id: `cn_${Date.now()}`, url: 'https://community.codenewbie.org/', platform: 'codenewbie', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "CODENEWBIE_API_KEY",
+    label: "CodeNewbie",
+    vendorDocUrl: "https://www.codenewbie.org/",
+    steps: [
+      "CodeNewbie runs on Forem \u2014 use a Forem API key from their instance",
+    ],
+  }),
 });

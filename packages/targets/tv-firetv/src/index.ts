@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   packageName: string;       // e.g. com.acme.myapp
@@ -32,4 +32,16 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'in-review', version: id };
   },
+
+  setup: manualSetup({
+    label: "Fire TV (Amazon Appstore)",
+    vendorDocUrl: "https://developer.amazon.com/apps-and-games/console/app/list",
+    steps: [
+      "Open developer.amazon.com/apps-and-games \u2014 register (free for Fire TV)",
+      "Complete tax + payout onboarding",
+      "Generate API keys in Account Settings \u2192 Security",
+      "Run: sh1pt secret set AMAZON_APPSTORE_CLIENT_ID <id>",
+      "Run: sh1pt secret set AMAZON_APPSTORE_CLIENT_SECRET <secret>",
+    ],
+  }),
 });

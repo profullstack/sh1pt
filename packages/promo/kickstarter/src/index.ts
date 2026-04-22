@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@profullstack/sh1pt-core';
+import { defineAdPlatform, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Kickstarter — reward-based crowdfunding for physical + digital
 // products. No public project-creation API; dashboard is browser-only.
@@ -29,4 +29,14 @@ export default defineAdPlatform<Config>({
   },
   async status() { return { state: 'active', spend: 0, impressions: 0, clicks: 0 }; },
   async stop(id) { console.log(`[stub] kickstarter ${id}`); },
+
+  setup: oauthSetup({
+    secretKey: "KICKSTARTER_SESSION",
+    label: "Kickstarter",
+    vendorDocUrl: "https://www.kickstarter.com/",
+    steps: [
+      "No public API for project creation \u2014 browser-mode only",
+      "sh1pt prompts for email/password on first run (stored in vault)",
+    ],
+  }),
 });

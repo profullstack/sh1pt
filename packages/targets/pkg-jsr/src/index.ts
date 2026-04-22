@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // JSR (jsr.io) — TS-native registry. Publishes source TS directly; the
 // registry handles transpilation for Node/Deno/Bun consumers. No
@@ -27,4 +27,13 @@ export default defineTarget<Config>({
       url: `https://jsr.io/@${config.scope}/${config.packageName}`,
     };
   },
+
+  setup: manualSetup({
+    label: "JSR (jsr.io)",
+    vendorDocUrl: "https://jsr.io/account/tokens",
+    steps: [
+      "Open jsr.io \u2192 sign in with GitHub \u2192 Account \u2192 Tokens \u2192 Create",
+      "Run: sh1pt secret set JSR_TOKEN <token>",
+    ],
+  }),
 });

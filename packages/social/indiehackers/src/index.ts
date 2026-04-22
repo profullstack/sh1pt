@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Indie Hackers — no public write API. Milestone posts, product launches,
 // and forum threads go through the web UI (browser-mode).
@@ -24,4 +24,14 @@ export default defineSocial<Config>({
     // TODO: Playwright → /login → write post / milestone / product launch
     return { id: `ih_${Date.now()}`, url: 'https://www.indiehackers.com/', platform: 'indiehackers', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "INDIEHACKERS_SESSION",
+    label: "Indie Hackers",
+    vendorDocUrl: "https://www.indiehackers.com/",
+    steps: [
+      "No public API \u2014 browser-mode posting via playwright",
+      "sh1pt will prompt for your IH email + password on first run, OR paste a session cookie here",
+    ],
+  }),
 });

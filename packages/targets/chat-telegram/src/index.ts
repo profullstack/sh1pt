@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // Telegram bots. No "store" — a bot is just a token + webhook URL. This
 // adapter registers the webhook with Telegram, sets commands/description/
@@ -34,4 +34,14 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'live', version: id };
   },
+
+  setup: manualSetup({
+    label: "Telegram Bot (@BotFather)",
+    vendorDocUrl: "https://t.me/BotFather",
+    steps: [
+      "Open Telegram \u2192 chat with @BotFather \u2192 /newbot",
+      "Copy the HTTP API token \u2014 sh1pt will store it",
+      "Run: sh1pt secret set TELEGRAM_BOT_TOKEN <token>",
+    ],
+  }),
 });

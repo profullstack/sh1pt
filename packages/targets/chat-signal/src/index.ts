@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // Signal has no official bot platform and no app directory. Bots are
 // built by running `signal-cli` (or the `signald` daemon) as a registered
@@ -38,4 +38,14 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'live', version: id };
   },
+
+  setup: manualSetup({
+    label: "Signal (signal-cli)",
+    vendorDocUrl: "https://github.com/AsamK/signal-cli",
+    steps: [
+      "Signal has no app directory \u2014 distribute via signal-cli or libsignal-service",
+      "Install signal-cli locally and register a dedicated sh1pt phone number",
+      "No automation possible for account creation",
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineRecipe } from '@profullstack/sh1pt-core';
+import { defineRecipe, manualSetup } from '@profullstack/sh1pt-core';
 
 // Sell first, build second. This recipe goes live across every sh1pt
 // distribution channel with a waitlist, an investor page, crypto-pay
@@ -115,4 +115,12 @@ Build Hono endpoints backing the waitlist:
 Validate payloads with zod, verify webhook signatures, store all writes
 under a \`sh1pt_waitlist\` schema in Supabase postgres.`,
   },
+
+  setup: manualSetup({
+    label: "waitlist-crypto-investor recipe",
+    steps: [
+      "Recipes are composed app templates \u2014 no external auth required at this layer",
+      "Configure the underlying payments + vcs + targets adapters instead",
+    ],
+  }),
 });

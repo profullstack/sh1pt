@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   appId: string;             // Partner Center app identity (e.g. Acme.MyApp)
@@ -37,4 +37,17 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'in-review', version: id };
   },
+
+  setup: manualSetup({
+    label: "Microsoft Store (Windows)",
+    vendorDocUrl: "https://partner.microsoft.com/dashboard",
+    steps: [
+      "Register at partner.microsoft.com ($19 individual / $99 company)",
+      "Complete identity verification (1-3 days)",
+      "Create an Azure AD app \u2192 generate client_secret",
+      "Run: sh1pt secret set MS_STORE_TENANT_ID <uuid>",
+      "Run: sh1pt secret set MS_STORE_CLIENT_ID <uuid>",
+      "Run: sh1pt secret set MS_STORE_CLIENT_SECRET <secret>",
+    ],
+  }),
 });

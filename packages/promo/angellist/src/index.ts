@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@profullstack/sh1pt-core';
+import { defineAdPlatform, oauthSetup } from '@profullstack/sh1pt-core';
 
 // AngelList / AngelList Talent / AngelList Venture — investor discovery,
 // SPVs, Rolling Funds. Public write-API is limited; most automation is
@@ -25,4 +25,14 @@ export default defineAdPlatform<Config>({
   },
   async status() { return { state: 'active', spend: 0, impressions: 0, clicks: 0 }; },
   async stop(id) { console.log(`[stub] angellist stop ${id}`); },
+
+  setup: oauthSetup({
+    secretKey: "ANGELLIST_API_KEY",
+    label: "AngelList",
+    vendorDocUrl: "https://angel.co/",
+    steps: [
+      "AngelList API access is enterprise/paid; contact the AngelList team",
+      "Alternatively sh1pt can drive the public UI in browser mode",
+    ],
+  }),
 });

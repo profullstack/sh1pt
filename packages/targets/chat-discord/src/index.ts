@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // Discord apps — bots, slash commands, message components, modals.
 // Distribution surfaces:
@@ -41,4 +41,14 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'live', version: id };
   },
+
+  setup: manualSetup({
+    label: "Discord App Directory",
+    vendorDocUrl: "https://discord.com/developers/applications",
+    steps: [
+      "discord.com/developers/applications \u2192 New Application",
+      "Complete bot identity + verification for 100+ guild distribution",
+      "Run: sh1pt secret set DISCORD_APP_TOKEN <token>",
+    ],
+  }),
 });

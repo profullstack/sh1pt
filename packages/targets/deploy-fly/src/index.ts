@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   app: string;
@@ -25,4 +25,14 @@ export default defineTarget<Config>({
       url: `https://${config.app}.fly.dev`,
     };
   },
+
+  setup: manualSetup({
+    label: "Fly.io",
+    vendorDocUrl: "https://fly.io/user/personal_access_tokens",
+    steps: [
+      "Run: flyctl auth login",
+      "Generate a deploy token: flyctl tokens create deploy",
+      "Run: sh1pt secret set FLY_API_TOKEN <token>",
+    ],
+  }),
 });

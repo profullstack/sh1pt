@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   name: string;                          // worker name
@@ -27,4 +27,14 @@ export default defineTarget<Config>({
       url: `https://${config.name}.${config.accountId}.workers.dev`,
     };
   },
+
+  setup: manualSetup({
+    label: "Cloudflare Workers",
+    vendorDocUrl: "https://dash.cloudflare.com/profile/api-tokens",
+    steps: [
+      "Open dash.cloudflare.com \u2192 My Profile \u2192 API Tokens \u2192 Edit Cloudflare Workers template",
+      "Scope: Workers Scripts:Edit, Account:Read, Zone:Read",
+      "Run: sh1pt secret set CLOUDFLARE_API_TOKEN <token>",
+    ],
+  }),
 });

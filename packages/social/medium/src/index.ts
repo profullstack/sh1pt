@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Medium — the Medium Integration API is deprecated for new apps
 // (as of 2023). Existing integration tokens still work; new accounts
@@ -32,4 +32,15 @@ export default defineSocial<Config>({
     //       browser      → Playwright compose flow
     return { id: `med_${Date.now()}`, url: 'https://medium.com/', platform: 'medium', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "MEDIUM_ACCESS_TOKEN",
+    label: "Medium",
+    vendorDocUrl: "https://medium.com/me/settings",
+    steps: [
+      "Open medium.com/me/settings \u2192 Integration tokens (bottom of page)",
+      "Medium disabled new integration tokens for most users \u2014 if unavailable, post via RSS bridge",
+      "If you have access: copy the integration token",
+    ],
+  }),
 });

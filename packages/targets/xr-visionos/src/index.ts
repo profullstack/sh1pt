@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // Apple Vision Pro (visionOS). Ships via App Store Connect like iOS /
 // tvOS but with the xrOS SDK. Three app modes: native immersive
@@ -31,4 +31,14 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'in-review', version: id };
   },
+
+  setup: manualSetup({
+    label: "Apple Vision Pro",
+    vendorDocUrl: "https://developer.apple.com/",
+    steps: [
+      "Same Apple Developer Program as iOS ($99/yr + D-U-N-S)",
+      "Enable visionOS as a platform in App Store Connect",
+      "Reuse APP_STORE_CONNECT_KEY_ID and APP_STORE_CONNECT_ISSUER_ID",
+    ],
+  }),
 });

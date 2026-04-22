@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   packageName: string;                                   // e.g. com.acme.myapp
@@ -34,4 +34,14 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'in-review', version: id };
   },
+
+  setup: manualSetup({
+    label: "Android TV (Google Play Console)",
+    vendorDocUrl: "https://play.google.com/console",
+    steps: [
+      "Same Google Play Console flow as mobile Android \u2014 $25 one-time + identity verification",
+      "Add Android TV as a distribution channel in the app listing",
+      "Run: sh1pt secret set PLAY_CONSOLE_SERVICE_ACCOUNT_JSON <path-to-json>",
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineTarget } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 // Pico Store (ByteDance). Android-based headset family (Pico 4, Pico
 // Neo). Separate developer portal from Meta. Region splits matter —
@@ -27,4 +27,13 @@ export default defineTarget<Config>({
   async status(id) {
     return { state: 'in-review', version: id };
   },
+
+  setup: manualSetup({
+    label: "Pico Store (ByteDance)",
+    vendorDocUrl: "https://developer.picoxr.com/",
+    steps: [
+      "Register at developer.picoxr.com \u2192 create a dev account",
+      "Submit for Pico Store review (gated, similar to Oculus flow)",
+    ],
+  }),
 });

@@ -1,3 +1,4 @@
+import { tokenSetup } from '@profullstack/sh1pt-core';
 // Listen Notes — the biggest podcast database with a real API. Use
 // this for DISCOVERY (find relevant shows by niche, audience size,
 // guest history); send the actual pitch via outreach-cold-email.
@@ -27,4 +28,14 @@ export default {
     // Return results with host contact emails where available (listed_in_* fields).
     return { podcasts: [] };
   },
+
+  setup: tokenSetup({
+    secretKey: "LISTENNOTES_API_KEY",
+    label: "Listen Notes (podcast discovery)",
+    vendorDocUrl: "https://www.listennotes.com/api/",
+    steps: [
+      "Open listennotes.com/api \u2192 Sign up for a plan (free tier has limits)",
+      "Copy your API key",
+    ],
+  }),
 };

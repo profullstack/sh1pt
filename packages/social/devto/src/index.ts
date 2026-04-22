@@ -1,4 +1,4 @@
-import { defineSocial } from '@profullstack/sh1pt-core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // DEV Community (dev.to) — clean REST API at dev.to/api. Articles are
 // markdown; tags are native (not hashtags). Auth: API key from user
@@ -24,4 +24,14 @@ export default defineSocial<Config>({
     // TODO: POST https://dev.to/api/articles { article: { title, body_markdown, published, tags, canonical_url, organization_id } }
     return { id: `dev_${Date.now()}`, url: 'https://dev.to/', platform: 'devto', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "DEVTO_API_KEY",
+    label: "DEV.to",
+    vendorDocUrl: "https://dev.to/settings/extensions",
+    steps: [
+      "Open dev.to/settings/extensions \u2192 DEV Community API Keys",
+      "Generate a new API key \u2192 copy it",
+    ],
+  }),
 });

@@ -1,7 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { getSupabaseServerClient } from '@/lib/supabase/server';
+import { getSupabaseServiceClient } from '@/lib/supabase/service';
 
 function randomCode(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(4)))
@@ -18,7 +18,7 @@ export async function joinWaitlist(formData: FormData) {
     redirect('/waitlist?error=email');
   }
 
-  const supabase = await getSupabaseServerClient();
+  const supabase = getSupabaseServiceClient();
   const referralCode = randomCode();
 
   const { error } = await supabase

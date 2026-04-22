@@ -1,4 +1,4 @@
-import { getMailer, MAIL_FROM } from './transport';
+import { sendMail } from './transport';
 
 // Branded welcome email sent when a user joins the waitlist. Keeps the
 // sh1pt palette (dark bg, white body, lime accent) and gives the user
@@ -16,13 +16,9 @@ export interface WaitlistWelcomeArgs {
 }
 
 export async function sendWaitlistWelcome({ to, handle, referralUrl, thanksUrl }: WaitlistWelcomeArgs): Promise<void> {
-  const mailer = getMailer();
-  if (!mailer) return;
-
   const greeting = handle ? `Hey ${handle},` : 'Hey there,';
 
-  await mailer.sendMail({
-    from: MAIL_FROM,
+  await sendMail({
     to,
     subject: "You're on the sh1pt waitlist — here's your referral link",
     text: [

@@ -1,6 +1,6 @@
 {
   "name": "@profullstack/sh1pt",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "One codebase → every store, registry, CDN, and channel. Build. Promote. Scale. Iterate.",
   "license": "MIT",
   "repository": {
@@ -10,7 +10,14 @@
   },
   "homepage": "https://sh1pt.com",
   "bugs": "https://github.com/profullstack/sh1pt/issues",
-  "keywords": ["cli", "deploy", "publish", "app-store", "ads", "devtools"],
+  "keywords": [
+    "cli",
+    "deploy",
+    "publish",
+    "app-store",
+    "ads",
+    "devtools"
+  ],
   "type": "module",
   "bin": {
     "sh1pt": "./bin/sh1pt.js"
@@ -36,9 +43,6 @@
     "commander": "^12.1.0",
     "kleur": "^4.1.5",
     "prompts": "^2.4.2"
-  },
-  "optionalDependencies": {
-    "@profullstack/sh1pt-webhooks-discord": "workspace:^"
   },
   "devDependencies": {
     "@types/prompts": "^2.4.9"

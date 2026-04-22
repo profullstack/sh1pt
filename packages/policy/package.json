@@ -1,6 +1,6 @@
 {
   "name": "@profullstack/sh1pt-policy",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Store-policy linter for sh1pt — catches rejections before submission.",
   "license": "MIT",
   "repository": {
@@ -10,7 +10,12 @@
   },
   "homepage": "https://sh1pt.com",
   "bugs": "https://github.com/profullstack/sh1pt/issues",
-  "keywords": ["sh1pt", "devtools", "publish", "lint"],
+  "keywords": [
+    "sh1pt",
+    "devtools",
+    "publish",
+    "lint"
+  ],
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

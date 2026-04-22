@@ -1,6 +1,6 @@
 {
   "name": "@profullstack/sh1pt-core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Core interfaces and contract-test runners for sh1pt adapters.",
   "license": "MIT",
   "repository": {
@@ -10,7 +10,12 @@
   },
   "homepage": "https://sh1pt.com",
   "bugs": "https://github.com/profullstack/sh1pt/issues",
-  "keywords": ["sh1pt", "devtools", "publish", "adapter"],
+  "keywords": [
+    "sh1pt",
+    "devtools",
+    "publish",
+    "adapter"
+  ],
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -48,6 +53,8 @@
     "vitest": "*"
   },
   "peerDependenciesMeta": {
-    "vitest": { "optional": true }
+    "vitest": {
+      "optional": true
+    }
   }
 }

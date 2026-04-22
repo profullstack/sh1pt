@@ -1,0 +1,75 @@
+name: Publish to npm
+
+# Triggers:
+#   - Push a tag matching v*.*.*  → auto-publishes core + policy + cli
+#   - workflow_dispatch            → manual run from the Actions tab; supports dry_run
+#
+# Uses npm provenance via OIDC so no OTP is needed in CI even when the
+# account has "Authorization and writes" 2FA mode. Requires:
+#   - permissions.id-token: write
+#   - --provenance flag on publish
+#   - NPM_TOKEN secret (any classic or automation token; provenance handles 2FA bypass)
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (pack + show what would be published, no upload)'
+        type: boolean
+        default: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write              # required for npm provenance
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build publishable packages
+        run: |
+          pnpm --filter @profullstack/sh1pt-core build
+          pnpm --filter @profullstack/sh1pt-policy build
+          pnpm --filter @profullstack/sh1pt build
+
+      - name: Publish @profullstack/sh1pt-core
+        run: >-
+          pnpm --filter @profullstack/sh1pt-core publish
+          --access public --no-git-checks --provenance
+          ${{ inputs.dry_run && '--dry-run' || '' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @profullstack/sh1pt-policy
+        run: >-
+          pnpm --filter @profullstack/sh1pt-policy publish
+          --access public --no-git-checks --provenance
+          ${{ inputs.dry_run && '--dry-run' || '' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @profullstack/sh1pt
+        run: >-
+          pnpm --filter @profullstack/sh1pt publish
+          --access public --no-git-checks --provenance
+          ${{ inputs.dry_run && '--dry-run' || '' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

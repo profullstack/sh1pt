@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@sh1pt/core';
+import { defineAdPlatform } from '@profullstack/sh1pt-core';
 
 // OpenVC (openvc.app) — free-tier VC directory with contact info.
 // Discovery-focused; use results as a feed into a CRM or cold-email

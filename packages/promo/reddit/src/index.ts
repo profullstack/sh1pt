@@ -1,4 +1,4 @@
-import { defineAdPlatform, type OnboardStep, type OnboardState } from '@sh1pt/core';
+import { defineAdPlatform, type OnboardStep, type OnboardState } from '@profullstack/sh1pt-core';
 
 // Reddit Ads. Strong for niche subreddit targeting (developer tools,
 // gaming, hobbies). Two ad formats: promoted posts and conversation-

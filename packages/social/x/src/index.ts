@@ -1,4 +1,4 @@
-import { defineSocial, adaptPost } from '@sh1pt/core';
+import { defineSocial, adaptPost } from '@profullstack/sh1pt-core';
 
 // X (Twitter). OAuth 1.0a or OAuth 2.0; tweet-create endpoint lives at
 // api.twitter.com/2/tweets. The v2 free tier shipped with a very low

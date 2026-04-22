@@ -1,5 +1,5 @@
 {
-  "name": "@sh1pt/agent-provider-shared",
+  "name": "@profullstack/sh1pt-agent-provider-shared",
   "version": "0.0.0",
   "type": "module",
   "main": "src/index.ts"

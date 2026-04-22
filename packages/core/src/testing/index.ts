@@ -2,7 +2,7 @@
 // matches its interface and passes its own instance in — one-line test
 // file per adapter, and the whole interface suite runs against it.
 //
-//   import { contractTestTarget } from '@sh1pt/core/testing';
+//   import { contractTestTarget } from '@profullstack/sh1pt-core/testing';
 //   import adapter from './index.js';
 //   contractTestTarget(adapter, { sampleConfig: { ... } });
 //

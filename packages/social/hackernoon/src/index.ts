@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // HackerNoon — articles pass through an editorial review, so adapter
 // flow is "submit draft" rather than "publish live." No public write

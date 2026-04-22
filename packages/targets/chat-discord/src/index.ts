@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // Discord apps — bots, slash commands, message components, modals.
 // Distribution surfaces:

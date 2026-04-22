@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // GitHub Packages — npm-compatible registry scoped to @<org>. Common
 // for internal packages or dual-publish alongside public npm.

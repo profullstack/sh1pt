@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // Moltbook — no public API documentation available to me; treating this
 // as a placeholder. Fill in `requires`, auth, and endpoint URLs once

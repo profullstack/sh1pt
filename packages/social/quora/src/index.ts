@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // Quora — answers and Quora Spaces posts. No public write API since
 // 2017; automation is browser-mode (Playwright). Quora is aggressive

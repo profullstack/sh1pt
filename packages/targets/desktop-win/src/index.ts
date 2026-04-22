@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 interface Config {
   appId: string;             // Partner Center app identity (e.g. Acme.MyApp)

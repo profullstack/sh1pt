@@ -1,4 +1,4 @@
-import { defineConfig } from '@sh1pt/core';
+import { defineConfig } from '@profullstack/sh1pt-core';
 
 // sh1pt uses sh1pt to publish itself.
 //

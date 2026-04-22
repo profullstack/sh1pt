@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@sh1pt/core';
+import { defineAdPlatform } from '@profullstack/sh1pt-core';
 
 // YouTube Ads — runs through Google Ads API but modelled as its own
 // adapter because the creative constraints (video-only, format families

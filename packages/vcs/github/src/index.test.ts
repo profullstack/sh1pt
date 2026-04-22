@@ -1,4 +1,4 @@
-import { contractTestVcs } from '@sh1pt/core/testing';
+import { contractTestVcs } from '@profullstack/sh1pt-core/testing';
 import vcs from './index.js';
 
 contractTestVcs(vcs, {

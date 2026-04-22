@@ -1,4 +1,4 @@
-import { defineCloud, type Instance } from '@sh1pt/core';
+import { defineCloud, type Instance } from '@profullstack/sh1pt-core';
 
 // build.nvidia.com — NVIDIA's developer platform. Umbrella for:
 //   - API Catalog (free): 100+ hosted models behind OpenAI-compatible endpoints

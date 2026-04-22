@@ -1,4 +1,4 @@
-import { defineBot } from '@sh1pt/core';
+import { defineBot } from '@profullstack/sh1pt-core';
 
 // Matrix bot — sync loop against homeserver. Access token via MATRIX_TOKEN
 // (obtain via /login). E2EE rooms need an Olm/Megolm-capable client;

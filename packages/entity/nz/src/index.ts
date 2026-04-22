@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@sh1pt/core';
+import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
 
 // NZ pack — Full support. Companies Office (companies-register.companiesoffice.govt.nz)
 // has one of the cleanest registry surfaces in the English-speaking world:

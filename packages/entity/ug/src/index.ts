@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@sh1pt/core';
+import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
 
 // Uganda — Stub pack. Exists from day 1 so an entity can be modeled
 // and artifacts can be stubbed, but no live registry lookup or filing

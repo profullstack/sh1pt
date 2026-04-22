@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // deno.land/x — the older Deno registry. No real "publish" — it
 // auto-imports from a linked GitHub repo whenever a git tag is pushed

@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@profullstack/sh1pt": "workspace:*",
-    "@sh1pt/core": "workspace:*",
+    "@profullstack/sh1pt-core": "workspace:*",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

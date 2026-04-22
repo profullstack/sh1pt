@@ -1,4 +1,4 @@
-import { defineAgent, exec, ensureCli } from '@sh1pt/core';
+import { defineAgent, exec, ensureCli } from '@profullstack/sh1pt-core';
 
 interface Config {
   model?: string;            // 'gpt-5', 'o1', etc.

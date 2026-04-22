@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@sh1pt/core';
+import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
 
 // Wyoming DAO LLC wrapper — EXPERIMENTAL. Wyoming is the only US state
 // with a DAO-specific LLC statute (W.S. 17-31). This pack creates the

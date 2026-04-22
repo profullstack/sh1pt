@@ -1,5 +1,5 @@
 {
-  "name": "@sh1pt/api",
+  "name": "@profullstack/sh1pt-api",
   "version": "0.0.0",
   "type": "module",
   "main": "./src/index.ts",
@@ -10,7 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@sh1pt/core": "workspace:*",
+    "@profullstack/sh1pt-core": "workspace:*",
     "@hono/node-server": "^1.13.2",
     "hono": "^4.6.3",
     "zod": "^3.23.8"

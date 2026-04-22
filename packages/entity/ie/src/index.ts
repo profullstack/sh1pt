@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@sh1pt/core';
+import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
 
 // Ireland pack — Read/Compliance support. CRO (cro.ie) runs CORE portal
 // for online incorporation (Company Bureau / A1-online); pack surfaces

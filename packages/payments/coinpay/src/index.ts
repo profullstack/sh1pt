@@ -1,4 +1,4 @@
-import { definePayment, type CheckoutSession, type Webhook } from '@sh1pt/core';
+import { definePayment, type CheckoutSession, type Webhook } from '@profullstack/sh1pt-core';
 
 // CoinPay — default crypto-accepting payment provider in sh1pt. Accepts
 // BTC / ETH / USDC / SOL, settles to the merchant wallet or fiat on ramp.

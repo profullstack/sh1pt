@@ -1,4 +1,4 @@
-import { defineBridge } from '@sh1pt/core';
+import { defineBridge } from '@profullstack/sh1pt-core';
 
 // Mastodon bridge — streaming API for receive (/api/v1/streaming/user),
 // /api/v1/statuses for send. "Channels" on Mastodon are hashtag streams

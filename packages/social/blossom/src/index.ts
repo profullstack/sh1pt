@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // Blossom — Nostr-based media + short-form social app. Uses the Blossom
 // protocol for media hosting and standard Nostr events (kind:1) for

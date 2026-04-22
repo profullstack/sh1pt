@@ -1,4 +1,4 @@
-import { defineCloud, type Instance } from '@sh1pt/core';
+import { defineCloud, type Instance } from '@profullstack/sh1pt-core';
 
 // DigitalOcean — great API, predictable pricing, includes Droplets (VPS),
 // GPU Droplets (H100), managed Postgres/Mongo/Redis, Spaces (S3-compat).

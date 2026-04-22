@@ -1,9 +1,9 @@
 {
-  "name": "@sh1pt/agent-provider-openrouter",
+  "name": "@profullstack/sh1pt-agent-provider-openrouter",
   "version": "0.0.0",
   "type": "module",
   "main": "src/index.ts",
   "dependencies": {
-    "@sh1pt/agent-provider-shared": "workspace:*"
+    "@profullstack/sh1pt-agent-provider-shared": "workspace:*"
   }
 }

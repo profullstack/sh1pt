@@ -1,8 +1,8 @@
 {
-  "name": "@sh1pt/entity-ng",
+  "name": "@profullstack/sh1pt-entity-ng",
   "version": "0.0.0",
   "type": "module",
   "main": "./src/index.ts",
   "scripts": { "build": "tsc -p tsconfig.json", "typecheck": "tsc -p tsconfig.json --noEmit" },
-  "dependencies": { "@sh1pt/core": "workspace:*" }
+  "dependencies": { "@profullstack/sh1pt-core": "workspace:*" }
 }

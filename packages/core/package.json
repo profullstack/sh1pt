@@ -1,5 +1,5 @@
 {
-  "name": "@sh1pt/core",
+  "name": "@profullstack/sh1pt-core",
   "version": "0.0.0",
   "type": "module",
   "main": "./src/index.ts",

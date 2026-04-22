@@ -1,4 +1,4 @@
-import { defineBridge } from '@sh1pt/core';
+import { defineBridge } from '@profullstack/sh1pt-core';
 
 // Telegram bridge — Bot API (getUpdates long-polling or webhook)
 // receive, sendMessage send. "Channels" are chat_ids (channel = -100…,

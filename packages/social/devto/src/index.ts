@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // DEV Community (dev.to) — clean REST API at dev.to/api. Articles are
 // markdown; tags are native (not hashtags). Auth: API key from user

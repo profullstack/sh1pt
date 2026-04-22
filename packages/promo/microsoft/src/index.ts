@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@sh1pt/core';
+import { defineAdPlatform } from '@profullstack/sh1pt-core';
 
 // Microsoft Advertising — Bing search + Microsoft Audience Network
 // (MSN, Outlook, Edge). Often cheaper CPC than Google Search with

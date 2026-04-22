@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 interface Config {
   packageName: string;                                   // e.g. com.acme.myapp

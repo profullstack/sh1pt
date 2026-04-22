@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // Medium — the Medium Integration API is deprecated for new apps
 // (as of 2023). Existing integration tokens still work; new accounts

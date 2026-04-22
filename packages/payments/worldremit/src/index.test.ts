@@ -1,4 +1,4 @@
-import { smokeTest } from '@sh1pt/core/testing';
+import { smokeTest } from '@profullstack/sh1pt-core/testing';
 import adapter from './index.js';
 
 // worldremit is a payouts adapter, not a checkout provider — supports[] is

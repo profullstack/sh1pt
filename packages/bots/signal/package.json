@@ -1,5 +1,5 @@
 {
-  "name": "@sh1pt/bot-signal",
+  "name": "@profullstack/sh1pt-bot-signal",
   "version": "0.0.0",
   "type": "module",
   "main": "./src/index.ts",
@@ -8,7 +8,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@sh1pt/bot-core": "workspace:*",
+    "@profullstack/sh1pt-bot-core": "workspace:*",
     "zod": "^3.24.0"
   }
 }

@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // Reddit — text/link/image submissions via /api/submit. Each subreddit
 // has its own rules + karma requirements; self-promotion in the wrong

@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // Apple Vision Pro (visionOS). Ships via App Store Connect like iOS /
 // tvOS but with the xrOS SDK. Three app modes: native immersive

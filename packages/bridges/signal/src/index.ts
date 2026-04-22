@@ -1,4 +1,4 @@
-import { defineBridge } from '@sh1pt/core';
+import { defineBridge } from '@profullstack/sh1pt-core';
 
 // Signal bridge — piggy-backs on signal-cli / signald running as a
 // daemon. Receive via `signal-cli daemon` JSON-RPC; send via the same.

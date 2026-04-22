@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@sh1pt/core';
+import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
 
 // Canada pack — Read/Compliance support. Federal CBCA incorporation
 // via Corporations Canada online + provincial equivalents. Pack does

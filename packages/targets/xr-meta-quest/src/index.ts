@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // Meta Horizon Store (formerly Oculus Store) for Quest 2/3/Pro/3S.
 // Apps are Android APKs built with Meta's Quest SDK (Unity/Unreal/native).

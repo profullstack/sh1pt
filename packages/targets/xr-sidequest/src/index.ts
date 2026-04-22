@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // SideQuest — third-party Quest sideload distribution. No Meta review,
 // used for demos, betas, and NSFW content Meta rejects. Valuable

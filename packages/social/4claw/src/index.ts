@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // 4claw — no public API documentation available to me; placeholder
 // adapter. Fill in `requires`, auth, and endpoint URLs once docs are

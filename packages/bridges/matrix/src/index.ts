@@ -1,4 +1,4 @@
-import { defineBridge } from '@sh1pt/core';
+import { defineBridge } from '@profullstack/sh1pt-core';
 
 // Matrix bridge — the original bridge-first protocol. Use the regular
 // client/server API (sync + m.room.message) for simple bridges;

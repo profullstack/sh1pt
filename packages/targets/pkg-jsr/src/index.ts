@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // JSR (jsr.io) — TS-native registry. Publishes source TS directly; the
 // registry handles transpilation for Node/Deno/Bun consumers. No

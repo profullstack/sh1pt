@@ -1,4 +1,4 @@
-import { defineDocs } from '@sh1pt/core';
+import { defineDocs } from '@profullstack/sh1pt-core';
 
 // Pandoc — universal document converter. Markdown → docx, pdf, html,
 // pptx, and back. Strongest at long-form content (whitepapers, memos,

@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // Forem — the open-source platform DEV Community runs on, used by many
 // self-hosted communities (CodeNewbie, etc.). Same API shape as dev.to,

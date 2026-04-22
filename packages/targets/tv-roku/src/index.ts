@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // Roku apps run on BrightScript + SceneGraph. Unlike tvOS / Android TV /
 // Fire TV, there is no supported React runtime on Roku OS — react-tv is

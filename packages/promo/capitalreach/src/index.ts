@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@sh1pt/core';
+import { defineAdPlatform } from '@profullstack/sh1pt-core';
 
 // CapitalReach (capitalreach.ai) — investor-outreach automation.
 //

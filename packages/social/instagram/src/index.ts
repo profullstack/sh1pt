@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // Instagram Graph API (Meta). Photo / carousel / reel endpoints.
 // Requires a Business or Creator IG account linked to a Facebook Page

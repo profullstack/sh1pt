@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // Slack apps — bots, slash commands, workflows, Block Kit surfaces.
 // Two distribution tiers:

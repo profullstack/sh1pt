@@ -1,4 +1,4 @@
-import { contractTestTarget } from '@sh1pt/core/testing';
+import { contractTestTarget } from '@profullstack/sh1pt-core/testing';
 import target from './index.js';
 
 contractTestTarget(target, {

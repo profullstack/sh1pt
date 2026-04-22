@@ -1,4 +1,4 @@
-import { contractTestMerch } from '@sh1pt/core/testing';
+import { contractTestMerch } from '@profullstack/sh1pt-core/testing';
 import merch from './index.js';
 
 contractTestMerch(merch, {

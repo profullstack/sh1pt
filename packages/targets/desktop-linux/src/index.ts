@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 type Format = 'appimage' | 'snap' | 'flatpak' | 'deb' | 'rpm' | 'tar.gz';
 

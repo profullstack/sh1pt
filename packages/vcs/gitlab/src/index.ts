@@ -1,4 +1,4 @@
-import { defineVcs, type Release, type PullRequest, type Issue } from '@sh1pt/core';
+import { defineVcs, type Release, type PullRequest, type Issue } from '@profullstack/sh1pt-core';
 
 // GitLab REST API v4 — works for both gitlab.com and self-hosted.
 // "Pull request" is called "Merge Request" here; the adapter exposes

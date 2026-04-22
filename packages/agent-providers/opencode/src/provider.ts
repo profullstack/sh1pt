@@ -1,7 +1,7 @@
 import {
   AgentProviderAdapter,
   AgentProviderNotImplementedError,
-} from "@sh1pt/agent-provider-shared";
+} from "@profullstack/sh1pt-agent-provider-shared";
 
 export const opencodeProvider: AgentProviderAdapter = {
   id: "opencode",

@@ -1,4 +1,4 @@
-import { defineCloud, type Instance, type Quote, type InstanceSpec } from '@sh1pt/core';
+import { defineCloud, type Instance, type Quote, type InstanceSpec } from '@profullstack/sh1pt-core';
 
 // RunPod — GPU-first, pay-by-the-second. GraphQL API. Two pod types:
 //   - Community Cloud: cheapest, non-SLA, host may reclaim

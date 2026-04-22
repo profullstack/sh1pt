@@ -1,4 +1,4 @@
-import { defineVcs, type Release, type PullRequest, type Issue } from '@sh1pt/core';
+import { defineVcs, type Release, type PullRequest, type Issue } from '@profullstack/sh1pt-core';
 
 // Gitea / Forgejo / Codeberg — GitHub-compatible REST at /api/v1/*.
 // Self-hosted is the common case; host is required.

@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // Stacker News (stacker.news) — Bitcoin Lightning-themed HN alternative.
 // Submissions cost satoshis to post (anti-spam). GraphQL API at

@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@sh1pt/core';
+import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
 
 // Singapore pack — Read/Compliance support. ACRA BizFile+ is one of the
 // cleanest registries globally (most incorporations complete in <1 day).

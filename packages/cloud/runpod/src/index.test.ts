@@ -1,4 +1,4 @@
-import { contractTestCloud } from '@sh1pt/core/testing';
+import { contractTestCloud } from '@profullstack/sh1pt-core/testing';
 import cloud from './index.js';
 
 contractTestCloud(cloud, {

@@ -2,7 +2,7 @@ import {
   AgentProviderAdapter,
   AgentProviderNotImplementedError,
   AgentProviderConfigError,
-} from "@sh1pt/agent-provider-shared";
+} from "@profullstack/sh1pt-agent-provider-shared";
 import axios from "axios";
 
 export const openrouterProvider: AgentProviderAdapter = {

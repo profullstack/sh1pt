@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // Hashnode — GraphQL API at gql.hashnode.com. Personal blogs live on
 // hashnode.dev subdomains or custom domains; posts are markdown with

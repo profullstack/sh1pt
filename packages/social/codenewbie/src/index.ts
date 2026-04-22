@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // CodeNewbie Community — runs on Forem. Functionally the same API as
 // social-forem pointed at community.codenewbie.org, but kept as its

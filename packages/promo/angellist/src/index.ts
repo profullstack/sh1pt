@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@sh1pt/core';
+import { defineAdPlatform } from '@profullstack/sh1pt-core';
 
 // AngelList / AngelList Talent / AngelList Venture — investor discovery,
 // SPVs, Rolling Funds. Public write-API is limited; most automation is

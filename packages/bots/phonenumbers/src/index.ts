@@ -1,4 +1,4 @@
-import { defineBot } from '@sh1pt/core';
+import { defineBot } from '@profullstack/sh1pt-core';
 
 // phonenumbers.bot — phone-number-native bot platform. User brings a
 // number (BYON), the service handles SMS + voice webhook routing and

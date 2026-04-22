@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@sh1pt/core';
+import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
 
 // UK pack — Assisted support. Companies House has a public API
 // (api.company-information.service.gov.uk) for name/company lookup,

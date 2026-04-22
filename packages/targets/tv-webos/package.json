@@ -1,5 +1,5 @@
 {
-  "name": "@sh1pt/target-tv-webos",
+  "name": "@profullstack/sh1pt-target-tv-webos",
   "version": "0.0.0",
   "type": "module",
   "main": "./src/index.ts",
@@ -8,6 +8,6 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@sh1pt/core": "workspace:*"
+    "@profullstack/sh1pt-core": "workspace:*"
   }
 }

@@ -3,10 +3,10 @@ import { writeFile, access } from 'node:fs/promises';
 import { join } from 'node:path';
 import kleur from 'kleur';
 import prompts from 'prompts';
-import { lint } from '@sh1pt/policy';
-import type { Manifest } from '@sh1pt/core';
+import { lint } from '@profullstack/sh1pt-policy';
+import type { Manifest } from '@profullstack/sh1pt-core';
 
-const CONFIG_TEMPLATE = (name: string) => `import { defineConfig } from '@sh1pt/core';
+const CONFIG_TEMPLATE = (name: string) => `import { defineConfig } from '@profullstack/sh1pt-core';
 
 export default defineConfig({
   name: '${name}',

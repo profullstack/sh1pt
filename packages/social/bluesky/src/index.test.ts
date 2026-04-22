@@ -1,4 +1,4 @@
-import { contractTestSocial } from '@sh1pt/core/testing';
+import { contractTestSocial } from '@profullstack/sh1pt-core/testing';
 import social from './index.js';
 
 contractTestSocial(social, {

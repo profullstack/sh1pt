@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@sh1pt/core';
+import { defineAdPlatform } from '@profullstack/sh1pt-core';
 
 // Google Ads. Covers Search, Display Network, Discover, Gmail, and
 // (via separate promo-youtube adapter) YouTube. For mobile, use App

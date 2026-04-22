@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@sh1pt/core';
+import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
 
 // AU pack — Assisted support. ASIC Connect for name reservation and
 // proprietary company registration (Form 201). ABR issues ABN + TFN

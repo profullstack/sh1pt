@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // YouTube Data API v3. Upload videos (including Shorts < 60s vertical).
 interface Config {

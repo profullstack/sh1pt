@@ -11,4 +11,4 @@ npx sh1pt ship --dry-run  # verify the plan
 npx sh1pt ship --channel beta
 ```
 
-Boilerplates are deliberately **not** part of the sh1pt pnpm workspace — they are standalone consumer projects that depend on published `@profullstack/sh1pt` and `@sh1pt/core`.
+Boilerplates are deliberately **not** part of the sh1pt pnpm workspace — they are standalone consumer projects that depend on published `@profullstack/sh1pt` and `@profullstack/sh1pt-core`.

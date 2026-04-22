@@ -1,4 +1,4 @@
-import { defineCaptcha, type CaptchaSolution } from '@sh1pt/core';
+import { defineCaptcha, type CaptchaSolution } from '@profullstack/sh1pt-core';
 
 // 2Captcha (2captcha.com) — human + AI-assisted CAPTCHA solving. ~$1
 // per 1k image challenges, ~$2 per 1k reCAPTCHAs. Used ONLY as a last

@@ -1,4 +1,4 @@
-import { defineMerch, type MerchSku } from '@sh1pt/core';
+import { defineMerch, type MerchSku } from '@profullstack/sh1pt-core';
 
 // Printify — aggregator marketplace across many print providers; often
 // cheaper base costs than Printful but variable quality. REST API at

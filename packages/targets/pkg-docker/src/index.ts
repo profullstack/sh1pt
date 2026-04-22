@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // OCI image distribution to any compliant registry: Docker Hub, GHCR,
 // GitLab Registry, Quay, AWS ECR, GCP Artifact Registry, Azure ACR,

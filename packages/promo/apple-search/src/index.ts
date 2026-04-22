@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@sh1pt/core';
+import { defineAdPlatform } from '@profullstack/sh1pt-core';
 
 // Apple Search Ads — promotes iOS apps in the App Store search results.
 // The highest-intent mobile ad channel (user is literally searching for

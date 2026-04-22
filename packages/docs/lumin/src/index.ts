@@ -1,4 +1,4 @@
-import { defineDocs } from '@sh1pt/core';
+import { defineDocs } from '@profullstack/sh1pt-core';
 
 // LuminPDF — PDF editor + hosting. API supports upload, signature
 // flows, form fill, and branded viewer links. NOT a presentation

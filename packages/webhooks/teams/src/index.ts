@@ -1,4 +1,4 @@
-import { defineWebhookTarget, type WebhookResult } from '@sh1pt/core';
+import { defineWebhookTarget, type WebhookResult } from '@profullstack/sh1pt-core';
 
 // Microsoft Teams — Incoming Webhook connector. Channel → ... →
 // Connectors → Incoming Webhook → name + copy URL. Posts render as

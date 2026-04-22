@@ -1,4 +1,4 @@
-import { defineAgent, exec, ensureCli } from '@sh1pt/core';
+import { defineAgent, exec, ensureCli } from '@profullstack/sh1pt-core';
 
 interface Config {
   model?: string;            // e.g. 'claude-opus-4-7', 'claude-sonnet-4-6'

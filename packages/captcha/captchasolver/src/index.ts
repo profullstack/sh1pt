@@ -1,4 +1,4 @@
-import { defineCaptcha, type CaptchaSolution } from '@sh1pt/core';
+import { defineCaptcha, type CaptchaSolution } from '@profullstack/sh1pt-core';
 
 // CaptchaSolver (captchasolver.com) — alternative to 2Captcha, 2Captcha-
 // compatible API, often cheaper for Turnstile and hCaptcha. Same

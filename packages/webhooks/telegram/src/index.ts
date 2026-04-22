@@ -1,4 +1,4 @@
-import { defineWebhookTarget, type WebhookResult } from '@sh1pt/core';
+import { defineWebhookTarget, type WebhookResult } from '@profullstack/sh1pt-core';
 
 // Telegram — not strictly "just a webhook URL," but close. Pipe through
 // a bot with sendMessage; setup is trivial (BotFather → /newbot → token +

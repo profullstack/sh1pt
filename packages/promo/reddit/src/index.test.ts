@@ -1,4 +1,4 @@
-import { contractTestAdPlatform } from '@sh1pt/core/testing';
+import { contractTestAdPlatform } from '@profullstack/sh1pt-core/testing';
 import platform from './index.js';
 
 contractTestAdPlatform(platform, {

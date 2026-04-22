@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // Bluesky — AT Protocol. Auth via app password (Settings → App Passwords
 // in the Bluesky app; do NOT use the main account password). Endpoint:

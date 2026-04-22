@@ -1,4 +1,4 @@
-import { defineMerch, type MerchSku, type MerchOrder } from '@sh1pt/core';
+import { defineMerch, type MerchSku, type MerchOrder } from '@profullstack/sh1pt-core';
 
 // Printful — print-on-demand + fulfillment. Huge catalog (t-shirts,
 // hoodies, stickers, mugs, pens, notebooks, tote bags — aka "swag" for

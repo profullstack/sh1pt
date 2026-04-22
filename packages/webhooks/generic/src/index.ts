@@ -1,4 +1,4 @@
-import { defineWebhookTarget, type WebhookResult } from '@sh1pt/core';
+import { defineWebhookTarget, type WebhookResult } from '@profullstack/sh1pt-core';
 
 // Generic HTTP POST target. Use when the destination doesn't have its
 // own adapter — Zapier webhook, n8n webhook, your own server, etc.

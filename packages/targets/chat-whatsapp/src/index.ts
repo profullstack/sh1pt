@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // WhatsApp Business Cloud API (Meta). The most regulated of any chat
 // surface: outside the 24-hour customer-initiated window, only

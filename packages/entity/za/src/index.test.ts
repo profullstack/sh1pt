@@ -1,4 +1,4 @@
-import { contractTestJurisdiction } from '@sh1pt/core/testing';
+import { contractTestJurisdiction } from '@profullstack/sh1pt-core/testing';
 import pack from './index.js';
 
 contractTestJurisdiction(pack, {

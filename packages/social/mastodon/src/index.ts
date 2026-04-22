@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // Mastodon — federated. Each instance is its own server; same API.
 // POST /api/v1/statuses with access token scoped to 'write:statuses'.

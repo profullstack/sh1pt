@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@sh1pt/core';
+import { defineAdPlatform } from '@profullstack/sh1pt-core';
 
 // Wefunder — US regulated equity crowdfunding (Reg CF / Reg A+). Raise
 // from the public up to $5M/yr under Reg CF. No public write API; this

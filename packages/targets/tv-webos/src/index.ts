@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // webOS apps are HTML/CSS/JS — a great fit for React codebases via Enact
 // (LG's React-based framework) or vanilla web. Packaged as .ipk using

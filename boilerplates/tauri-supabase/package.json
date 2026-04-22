@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "@profullstack/sh1pt": "^0.1.0",
-    "@sh1pt/core": "^0.0.0",
+    "@profullstack/sh1pt-core": "^0.0.0",
     "@tauri-apps/cli": "^2.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@sh1pt/core';
+import { defineAdPlatform } from '@profullstack/sh1pt-core';
 
 // Kickstarter — reward-based crowdfunding for physical + digital
 // products. No public project-creation API; dashboard is browser-only.

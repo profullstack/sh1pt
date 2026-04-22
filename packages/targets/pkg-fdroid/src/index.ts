@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // F-Droid — FOSS Android app repo. Two modes:
 //   - 'main-repo': submit metadata PR to fdroiddata; F-Droid's servers

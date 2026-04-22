@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // Primal — a Nostr client + long-form publishing. Auth with an nsec
 // (Nostr secret key); post is a signed kind:1 event (short) or kind:30023

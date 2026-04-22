@@ -1,4 +1,4 @@
-import { defineBridge, type BridgeMessage } from '@sh1pt/core';
+import { defineBridge, type BridgeMessage } from '@profullstack/sh1pt-core';
 
 // Discord bridge — gateway WebSocket for receive, bot API for send.
 // Uses a bot user (not a webhook) since only bots can subscribe to live

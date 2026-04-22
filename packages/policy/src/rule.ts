@@ -1,4 +1,4 @@
-import type { Manifest, TargetKind } from '@sh1pt/core';
+import type { Manifest, TargetKind } from '@profullstack/sh1pt-core';
 
 export type Severity = 'error' | 'warn' | 'info';
 

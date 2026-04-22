@@ -1,4 +1,4 @@
-import { defineDocs } from '@sh1pt/core';
+import { defineDocs } from '@profullstack/sh1pt-core';
 
 // Google Slides — the practical way to generate a real editable .pptx.
 // Flow: copy a template presentation → batchUpdate with

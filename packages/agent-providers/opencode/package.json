@@ -1,9 +1,9 @@
 {
-  "name": "@sh1pt/agent-provider-opencode",
+  "name": "@profullstack/sh1pt-agent-provider-opencode",
   "version": "0.0.0",
   "type": "module",
   "main": "src/index.ts",
   "dependencies": {
-    "@sh1pt/agent-provider-shared": "workspace:*"
+    "@profullstack/sh1pt-agent-provider-shared": "workspace:*"
   }
 }

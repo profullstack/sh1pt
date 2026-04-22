@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // Indie Hackers — no public write API. Milestone posts, product launches,
 // and forum threads go through the web UI (browser-mode).

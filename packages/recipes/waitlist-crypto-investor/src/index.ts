@@ -1,4 +1,4 @@
-import { defineRecipe } from '@sh1pt/core';
+import { defineRecipe } from '@profullstack/sh1pt-core';
 
 // Sell first, build second. This recipe goes live across every sh1pt
 // distribution channel with a waitlist, an investor page, crypto-pay

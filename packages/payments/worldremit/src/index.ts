@@ -1,4 +1,4 @@
-import { definePayment, type Webhook } from '@sh1pt/core';
+import { definePayment, type Webhook } from '@profullstack/sh1pt-core';
 
 // WorldRemit — cross-border payouts / remittance. Not a typical checkout
 // provider (you don't take customer money through them); use this for

@@ -1,4 +1,4 @@
-import { defineBot } from '@sh1pt/core';
+import { defineBot } from '@profullstack/sh1pt-core';
 
 // Microsoft Teams bot — Bot Framework (Azure Bot Service) with Teams
 // channel enabled. Needs TEAMS_APP_ID + TEAMS_APP_PASSWORD (app registration

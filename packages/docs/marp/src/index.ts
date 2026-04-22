@@ -1,4 +1,4 @@
-import { defineDocs } from '@sh1pt/core';
+import { defineDocs } from '@profullstack/sh1pt-core';
 
 // Marp — open-source markdown → HTML / PDF / PPTX. Run via the marp CLI
 // locally (no API, no auth). Perfect for "version-controlled pitch deck"

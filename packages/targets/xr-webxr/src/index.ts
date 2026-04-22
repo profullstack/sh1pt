@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // WebXR is the universal XR path — works on Quest Browser, Vision Pro
 // Safari, Chrome+headset, and any other WebXR-capable UA. Deploy like a

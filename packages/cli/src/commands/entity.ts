@@ -5,7 +5,7 @@ import kleur from 'kleur';
 // checks + doc generation + filing handoff + compliance tracking).
 // Cross-cuts the 4 primary verbs so it lives top-level alongside
 // login/secret/config. Packs live under packages/entity/* and implement
-// the JurisdictionPack interface in @sh1pt/core.
+// the JurisdictionPack interface in @profullstack/sh1pt-core.
 
 export const entityCmd = new Command('entity')
   .description('Entity operations — formation, compliance, spinouts (uses jurisdiction packs)')

@@ -1,4 +1,4 @@
-import { defineAdPlatform, type OnboardStep, type OnboardState } from '@sh1pt/core';
+import { defineAdPlatform, type OnboardStep, type OnboardState } from '@profullstack/sh1pt-core';
 
 // Meta Ads — Facebook + Instagram + Messenger + Audience Network placements
 // all run through one campaign via the Marketing API (Graph API).

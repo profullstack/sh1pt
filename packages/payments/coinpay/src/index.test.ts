@@ -1,4 +1,4 @@
-import { contractTestPayment } from '@sh1pt/core/testing';
+import { contractTestPayment } from '@profullstack/sh1pt-core/testing';
 import payment from './index.js';
 
 contractTestPayment(payment, {

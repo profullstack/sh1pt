@@ -1,4 +1,4 @@
-import { defineBot } from '@sh1pt/core';
+import { defineBot } from '@profullstack/sh1pt-core';
 
 // Twitch bot — IRC-compatible chat (tmi.twitch.tv) + EventSub for
 // non-chat events (follows, subs, redemptions). OAuth token via

@@ -1,4 +1,4 @@
-import { defineCloud, type Instance } from '@sh1pt/core';
+import { defineCloud, type Instance } from '@profullstack/sh1pt-core';
 
 // Railway — app hosting with a GraphQL API. Not a raw-VPS provider,
 // but sh1pt models each Railway *service* as an instance for scaling

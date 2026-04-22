@@ -1,4 +1,4 @@
-import { defineAdPlatform, type OnboardStep, type OnboardState } from '@sh1pt/core';
+import { defineAdPlatform, type OnboardStep, type OnboardState } from '@profullstack/sh1pt-core';
 
 // TikTok Ads — best CPI for mobile apps in 2024+. Requires video
 // creatives (static images auto-wrapped in basic templates but

@@ -1,4 +1,4 @@
-import { defineDns, type DnsRecord } from '@sh1pt/core';
+import { defineDns, type DnsRecord } from '@profullstack/sh1pt-core';
 
 // Cloudflare DNS API v4. Auth: Bearer token scoped to Zone.DNS:Edit.
 // Endpoints: /client/v4/zones, /client/v4/zones/:id/dns_records

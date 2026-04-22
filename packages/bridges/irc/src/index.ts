@@ -1,4 +1,4 @@
-import { defineBridge } from '@sh1pt/core';
+import { defineBridge } from '@profullstack/sh1pt-core';
 
 // IRC bridge — classic TCP/TLS client against any IRC network (Libera,
 // OFTC, self-hosted InspIRCd, etc.). Use SASL for auth on modern networks.

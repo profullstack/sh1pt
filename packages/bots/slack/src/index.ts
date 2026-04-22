@@ -1,4 +1,4 @@
-import { defineBot } from '@sh1pt/core';
+import { defineBot } from '@profullstack/sh1pt-core';
 
 // Slack app — Socket Mode (preferred) or Events API webhook. Needs
 // SLACK_BOT_TOKEN (xoxb-) and SLACK_APP_TOKEN (xapp-) for Socket Mode.

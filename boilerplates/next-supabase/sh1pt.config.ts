@@ -1,4 +1,4 @@
-import { defineConfig } from '@sh1pt/core';
+import { defineConfig } from '@profullstack/sh1pt-core';
 
 export default defineConfig({
   name: 'sh1pt-next-supabase',

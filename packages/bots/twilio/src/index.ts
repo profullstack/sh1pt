@@ -1,4 +1,4 @@
-import { defineBot } from '@sh1pt/core';
+import { defineBot } from '@profullstack/sh1pt-core';
 
 // Twilio — SMS (Programmable Messaging) + Voice (Programmable Voice) from
 // the same account. Channel strings are E.164 phone numbers for both.

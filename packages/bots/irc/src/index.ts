@@ -1,4 +1,4 @@
-import { defineBot } from '@sh1pt/core';
+import { defineBot } from '@profullstack/sh1pt-core';
 
 // IRC bot — classic RFC 2812. Minimal interactivity (no rich components),
 // commands are !trigger or PRIVMSG parsing. SASL auth via IRC_PASSWORD.

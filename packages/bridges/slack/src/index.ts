@@ -1,4 +1,4 @@
-import { defineBridge } from '@sh1pt/core';
+import { defineBridge } from '@profullstack/sh1pt-core';
 
 // Slack bridge — Socket Mode for receive (no public HTTP endpoint
 // required), chat.postMessage for send. Bot needs channels:history,

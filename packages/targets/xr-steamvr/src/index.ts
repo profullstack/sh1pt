@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // PCVR via Steam. Covers Valve Index, HTC Vive, Meta Rift / Quest Link,
 // Bigscreen Beyond, and any OpenXR-compatible PC headset. Build is a

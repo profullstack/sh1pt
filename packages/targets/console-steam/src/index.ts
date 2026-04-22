@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // Steam — desktop (Windows/macOS/Linux) and Steam Deck (SteamOS).
 // The Deck is Arch-based Linux; apps run natively on Linux or through

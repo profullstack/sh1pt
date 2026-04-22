@@ -1,4 +1,4 @@
-import { defineBridge } from '@sh1pt/core';
+import { defineBridge } from '@profullstack/sh1pt-core';
 
 // Nostr bridge — relay WebSocket subscriptions for receive, signed
 // events for send. "Channels" are public keys (for user feeds) or

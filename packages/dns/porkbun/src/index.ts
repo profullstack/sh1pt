@@ -1,4 +1,4 @@
-import { defineDns, type DnsRecord } from '@sh1pt/core';
+import { defineDns, type DnsRecord } from '@profullstack/sh1pt-core';
 
 // Porkbun DNS API (v3). Auth is API key + secret (not OAuth). Endpoints:
 //   POST /api/json/v3/dns/retrieve/:domain

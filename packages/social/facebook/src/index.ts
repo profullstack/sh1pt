@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // Facebook Page posts via Graph API. /{page-id}/feed + attached media.
 // Requires a Page access token (long-lived via /oauth/access_token).

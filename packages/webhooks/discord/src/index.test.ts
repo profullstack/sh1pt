@@ -1,4 +1,4 @@
-import { contractTestWebhook } from '@sh1pt/core/testing';
+import { contractTestWebhook } from '@profullstack/sh1pt-core/testing';
 import webhook from './index.js';
 
 contractTestWebhook(webhook, {

@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@sh1pt/core';
+import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
 
 // HK pack — Assisted support. Companies Registry e-Registry
 // (e-services.cr.gov.hk) offers online incorporation for private

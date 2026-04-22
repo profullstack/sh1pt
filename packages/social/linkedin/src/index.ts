@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // LinkedIn API (Share on LinkedIn / UGC Post). OAuth 2.0 with r_liteprofile
 // + w_member_social scopes. 3000 chars for personal posts, longer for

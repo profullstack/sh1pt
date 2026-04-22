@@ -1,4 +1,4 @@
-import { defineCloud, type Instance } from '@sh1pt/core';
+import { defineCloud, type Instance } from '@profullstack/sh1pt-core';
 
 interface Config {
   apiKey?: string;            // ATLANTIC_API_KEY

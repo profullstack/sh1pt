@@ -1,4 +1,4 @@
-import { defineCloud, type Instance } from '@sh1pt/core';
+import { defineCloud, type Instance } from '@profullstack/sh1pt-core';
 
 // Hetzner Cloud — cheapest per-core pricing of any major EU host.
 // Includes VPS, dedicated bare metal, load balancers, S3-compat storage.

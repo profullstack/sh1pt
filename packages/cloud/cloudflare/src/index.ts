@@ -1,4 +1,4 @@
-import { defineCloud, type Instance } from '@sh1pt/core';
+import { defineCloud, type Instance } from '@profullstack/sh1pt-core';
 
 // Cloudflare — not a traditional IaaS (no VMs to rent), but sh1pt models
 // the provisionable primitives: Workers (compute), R2 (object storage),

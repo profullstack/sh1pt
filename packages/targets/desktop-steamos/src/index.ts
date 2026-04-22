@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // SteamOS / Steam Deck — Desktop Mode path that bypasses Steam entirely.
 // The Deck runs KDE Plasma on Arch in Desktop Mode and installs Flatpaks

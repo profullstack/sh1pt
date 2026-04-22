@@ -557,11 +557,11 @@ Local git stays the source of truth. The VCS provider handles remote-side operat
 
 ## Contract tests
 
-Every adapter implements one of ~12 interfaces (`Target`, `AdPlatform`, `CloudProvider`, `DnsProvider`, `MerchProvider`, `PaymentProvider`, `SocialPlatform`, `VcsProvider`, `WebhookTarget`, `AgentCLI`, `CaptchaSolver`, `Recipe`). sh1pt ships generic contract-test runners in `@sh1pt/core/testing` — adapters consume them with one line:
+Every adapter implements one of ~12 interfaces (`Target`, `AdPlatform`, `CloudProvider`, `DnsProvider`, `MerchProvider`, `PaymentProvider`, `SocialPlatform`, `VcsProvider`, `WebhookTarget`, `AgentCLI`, `CaptchaSolver`, `Recipe`). sh1pt ships generic contract-test runners in `@profullstack/sh1pt-core/testing` — adapters consume them with one line:
 
 ```ts
 // packages/payments/coinpay/src/index.test.ts
-import { contractTestPayment } from '@sh1pt/core/testing';
+import { contractTestPayment } from '@profullstack/sh1pt-core/testing';
 import payment from './index.js';
 
 contractTestPayment(payment, {
@@ -589,7 +589,7 @@ pnpm test:watch       # vitest --watch
 
 ```ts
 // smoke test — used on ~110 adapters across the repo
-import { smokeTest } from '@sh1pt/core/testing';
+import { smokeTest } from '@profullstack/sh1pt-core/testing';
 import adapter from './index.js';
 smokeTest(adapter, { idPrefix: 'social' });
 ```
@@ -790,7 +790,7 @@ sh1pt/
 
 ## What this repo publishes
 
-Just the CLI. `sh1pt.config.ts` at the root uses sh1pt itself to fan the CLI out to every package manager — `npm install -g @profullstack/sh1pt`, `brew install sh1pt`, `winget install sh1pt`, `scoop install sh1pt`, etc. Lib packages (`@sh1pt/core`, `@sh1pt/sdk`, `@sh1pt/policy`, target adapters) ride along on npm so `sh1pt init` and target plugins can pull them at runtime.
+Just the CLI. `sh1pt.config.ts` at the root uses sh1pt itself to fan the CLI out to every package manager — `npm install -g @profullstack/sh1pt`, `brew install sh1pt`, `winget install sh1pt`, `scoop install sh1pt`, etc. Lib packages (`@profullstack/sh1pt-core`, `@profullstack/sh1pt-sdk`, `@profullstack/sh1pt-policy`, target adapters) ride along on npm so `sh1pt init` and target plugins can pull them at runtime.
 
 ## Concepts
 
@@ -798,7 +798,7 @@ Just the CLI. `sh1pt.config.ts` at the root uses sh1pt itself to fan the CLI out
 - **Target**: a plugin that knows how to `build`, `ship`, `status`, and `rollback` for one surface.
 - **Release**: a versioned build destined for one or more targets on a given **channel** (`stable` / `beta` / `canary`).
 - **Channel → store track mapping**: `beta` routes to TestFlight on iOS, Play internal track on Android, Chrome Web Store testing, etc. `stable` promotes to production.
-- **Policy linter** (`@sh1pt/policy`): runs before every ship. Catches duplicate titles, banned keywords, bad bundle ids, and spammy submission rate *before* the store rejects you (or flags the account).
+- **Policy linter** (`@profullstack/sh1pt-policy`): runs before every ship. Catches duplicate titles, banned keywords, bad bundle ids, and spammy submission rate *before* the store rejects you (or flags the account).
 - **Cloud**: projects, secrets vault, build queue with per-OS runners, release history, live status dashboards, inbound webhooks from store APIs, outbound webhooks to your systems.
 
 ## Agent-first API

@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // Telegram bots. No "store" — a bot is just a token + webhook URL. This
 // adapter registers the webhook with Telegram, sets commands/description/

@@ -1,4 +1,4 @@
-import { defineWebhookTarget, type WebhookResult } from '@sh1pt/core';
+import { defineWebhookTarget, type WebhookResult } from '@profullstack/sh1pt-core';
 
 // Slack Incoming Webhook. Create at api.slack.com/apps → Incoming
 // Webhooks → "Add New Webhook to Workspace" → pick a channel → copy URL.

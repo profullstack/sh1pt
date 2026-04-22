@@ -1,4 +1,4 @@
-import { contractTestDocs } from '@sh1pt/core/testing';
+import { contractTestDocs } from '@profullstack/sh1pt-core/testing';
 import docs from './index.js';
 
 contractTestDocs(docs, {

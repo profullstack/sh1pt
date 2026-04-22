@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // TikTok Content Posting API. Requires app approval for direct-publish
 // scope; sandbox starts as 'upload only' (user must confirm in the app).

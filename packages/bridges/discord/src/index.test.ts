@@ -1,4 +1,4 @@
-import { contractTestBridge } from '@sh1pt/core/testing';
+import { contractTestBridge } from '@profullstack/sh1pt-core/testing';
 import bridge from './index.js';
 
 contractTestBridge(bridge, {

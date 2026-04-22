@@ -1,4 +1,4 @@
-import { defineWebhookTarget, type WebhookResult } from '@sh1pt/core';
+import { defineWebhookTarget, type WebhookResult } from '@profullstack/sh1pt-core';
 
 // Discord channel webhook. Simplest possible integration — Channel
 // Settings → Integrations → Webhooks → Create → copy URL → paste in.

@@ -1,4 +1,4 @@
-import { defineVcs, type Release, type PullRequest, type Issue } from '@sh1pt/core';
+import { defineVcs, type Release, type PullRequest, type Issue } from '@profullstack/sh1pt-core';
 
 // GitHub REST (v3) + GraphQL (v4). Auth: classic PAT, fine-grained PAT,
 // or GitHub App installation token. Installation tokens are preferred —

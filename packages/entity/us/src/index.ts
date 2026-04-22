@@ -1,4 +1,4 @@
-import { defineJurisdiction, type EntityType } from '@sh1pt/core';
+import { defineJurisdiction, type EntityType } from '@profullstack/sh1pt-core';
 
 // US pack — Full support. Delaware C-Corp is the default startup path;
 // the adapter also handles state-by-state LLC / S-Corp / benefit-corp

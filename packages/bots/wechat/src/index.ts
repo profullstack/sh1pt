@@ -1,4 +1,4 @@
-import { defineBot } from '@sh1pt/core';
+import { defineBot } from '@profullstack/sh1pt-core';
 
 // WeChat Official Account — api.weixin.qq.com. Requires appId + appSecret
 // for access_token + verified OA (service or subscription). Customer

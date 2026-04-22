@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // JS/TS CDNs. Most auto-mirror npm, so "publish to CDN" = "publish to
 // npm + verify it resolves." Only cdnjs requires an explicit submission

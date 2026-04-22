@@ -1,4 +1,4 @@
-import { definePayment, type Webhook } from '@sh1pt/core';
+import { definePayment, type Webhook } from '@profullstack/sh1pt-core';
 
 interface Config {
   clientId?: string;

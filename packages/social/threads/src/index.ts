@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // Threads (Meta). Public API launched 2024. Same auth pattern as
 // Instagram / Facebook Graph but a distinct endpoint surface.

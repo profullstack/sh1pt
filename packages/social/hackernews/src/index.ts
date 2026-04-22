@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial } from '@profullstack/sh1pt-core';
 
 // Hacker News — no write API. Submissions go through the web form at
 // news.ycombinator.com/submit. Browser-mode only. HN is extremely

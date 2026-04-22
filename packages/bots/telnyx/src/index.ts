@@ -1,4 +1,4 @@
-import { defineBot } from '@sh1pt/core';
+import { defineBot } from '@profullstack/sh1pt-core';
 
 // Telnyx — programmable SMS + Voice, similar surface to Twilio, often
 // lower egress cost. API key auth (TELNYX_API_KEY). SMS via Messaging

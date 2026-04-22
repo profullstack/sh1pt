@@ -1,4 +1,4 @@
-import { defineAdPlatform } from '@sh1pt/core';
+import { defineAdPlatform } from '@profullstack/sh1pt-core';
 
 // LinkedIn Ads. B2B only realistically — highest CPC of any major
 // platform. Useful for SaaS, developer tools, enterprise offerings.

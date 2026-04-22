@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget } from '@profullstack/sh1pt-core';
 
 // Signal has no official bot platform and no app directory. Bots are
 // built by running `signal-cli` (or the `signald` daemon) as a registered

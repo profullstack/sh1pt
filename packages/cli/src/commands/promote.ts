@@ -130,8 +130,8 @@ investorsCmd
   .option('--stage <stage>')
   .option('--sectors <list>')
   .option('--leads-only')
-  .option('--check-min <usd>', Number)
-  .option('--check-max <usd>', Number)
+  .option('--check-min <usd>', 'minimum check size USD', Number)
+  .option('--check-max <usd>', 'maximum check size USD', Number)
   .option('--out <csvPath>', '', './investors.csv')
   .action((opts) => {
     console.log(kleur.dim(`[stub] investors search → ${opts.out ?? './investors.csv'}`));
@@ -238,7 +238,7 @@ outreachCmd
   .command('podcasts')
   .description('Discover relevant podcasts + send guest-pitch emails (Listen Notes + Resend)')
   .option('--niche <list>', 'comma-separated topic list', 'ai,startups,devtools')
-  .option('--min-listeners <n>', Number, 5000)
+  .option('--min-listeners <n>', 'minimum listener count filter', Number, 5000)
   .option('--language <code>', '', 'en')
   .option('--deck <path>', 'media kit / pitch deck')
   .option('--dry-run')
@@ -253,7 +253,7 @@ outreachCmd
   .requiredOption('--subject <text>')
   .requiredOption('--body <path>', 'markdown/html body file with {{placeholders}}')
   .option('--from <addr>', 'must be a verified Resend domain')
-  .option('--rate <perHour>', Number, 20)
+  .option('--rate <perHour>', 'max sends per hour', Number, 20)
   .option('--dry-run')
   .action((opts) => {
     console.log(kleur.green(`[stub] email sequence ${JSON.stringify(opts)}`));

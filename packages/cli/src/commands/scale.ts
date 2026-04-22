@@ -37,8 +37,8 @@ scaleCmd
 scaleCmd
   .command('down')
   .description('Tear down instances (cheapest / least-healthy first)')
-  .option('--instances <n>', Number)
-  .option('--provider <id>')
+  .option('--instances <n>', 'number of instances to destroy', Number)
+  .option('--provider <id>', 'cloud provider id')
   .action((opts) => {
     console.log(kleur.yellow(`[stub] scale down ${JSON.stringify(opts)}`));
     // TODO: pick N victims, CloudProvider.destroy() each, syncRoundRobin() with remaining IPs

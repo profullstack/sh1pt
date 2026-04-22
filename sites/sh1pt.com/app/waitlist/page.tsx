@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { joinWaitlist } from './actions';
 
 export const metadata = {
@@ -32,7 +33,11 @@ export default function Waitlist({ searchParams }: { searchParams: Promise<Recor
 
 async function WaitlistFields({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const params = await searchParams;
-  const referredBy = params.ref;
+  // Prefer the URL param (freshest click) over the cookie, but fall
+  // back to cookie so signups days after clicking /r/<code> still credit
+  // the right inviter.
+  const cookieRef = (await cookies()).get('sh1pt_ref')?.value;
+  const referredBy = params.ref ?? cookieRef;
   return (
     <div style={{ display: 'grid', gap: '0.75rem' }}>
       <label>

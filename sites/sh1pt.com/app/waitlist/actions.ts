@@ -1,7 +1,10 @@
 'use server';
 
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+
+const REF_COOKIE = 'sh1pt_ref';
 
 function randomCode(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(4)))
@@ -12,7 +15,15 @@ function randomCode(): string {
 export async function joinWaitlist(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
   const handle = String(formData.get('handle') ?? '').trim() || null;
-  const referredByCode = String(formData.get('referred_by') ?? '').trim() || null;
+
+  // Form field takes priority (hidden input set from ?ref=), then the
+  // 90-day cookie set by /r/[code] for signups that happen well after
+  // the click.
+  const jar = await cookies();
+  const referredByCode =
+    String(formData.get('referred_by') ?? '').trim() ||
+    jar.get(REF_COOKIE)?.value ||
+    null;
 
   if (!email || !email.includes('@')) {
     redirect('/waitlist?error=email');
@@ -62,6 +73,10 @@ export async function joinWaitlist(formData: FormData) {
       }
     }
   }
+
+  // Credit is done — drop the cookie so a later unrelated signup in the
+  // same browser doesn't get wrongly attributed.
+  jar.delete(REF_COOKIE);
 
   redirect(`/waitlist/thanks?code=${referralCode}`);
 }

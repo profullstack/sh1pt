@@ -79,6 +79,7 @@ export interface VcsProvider<Config = unknown> {
 
   // Webhooks — called by `sh1pt config webhooks` to wire vendor → sh1pt cloud
   createWebhook(ctx: { secret(k: string): string | undefined; log(m: string): void }, spec: WebhookSpec, config: Config): Promise<{ id: string }>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineVcs<Config>(v: VcsProvider<Config>): VcsProvider<Config> {

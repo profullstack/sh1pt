@@ -1,4 +1,4 @@
-import { defineBot } from '@profullstack/sh1pt-core';
+import { defineBot, tokenSetup } from '@profullstack/sh1pt-core';
 
 // Telnyx — programmable SMS + Voice, similar surface to Twilio, often
 // lower egress cost. API key auth (TELNYX_API_KEY). SMS via Messaging
@@ -32,4 +32,15 @@ export default defineBot<Config>({
     // TODO: POST /v2/messages { from, to, text, messaging_profile_id }.
     return { id: `txs_${Date.now()}` };
   },
+
+  setup: tokenSetup({
+    secretKey: 'TELNYX_API_KEY',
+    label: 'Telnyx SMS/voice',
+    vendorDocUrl: 'https://portal.telnyx.com/#/app/api-keys',
+    steps: [
+      'Open https://portal.telnyx.com/#/app/api-keys',
+      'Create a bot application / API key',
+      'Copy the token shown (usually once)',
+    ],
+  }),
 });

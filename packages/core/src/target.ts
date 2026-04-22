@@ -65,6 +65,7 @@ export interface Target<Config = unknown> {
   ship(ctx: ShipContext, config: Config): Promise<ShipResult>;
   status?(shipId: string, config: Config): Promise<TargetStatus>;
   rollback?(shipId: string, config: Config): Promise<void>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineTarget<Config>(t: Target<Config>): Target<Config> {

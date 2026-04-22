@@ -77,6 +77,7 @@ export interface CloudProvider<Config = unknown> {
   list(ctx: CloudConnectContext, config: Config): Promise<Instance[]>;
   destroy(ctx: ProvisionContext, instanceId: string, config: Config): Promise<void>;
   status(ctx: CloudConnectContext, instanceId: string, config: Config): Promise<Instance>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineCloud<Config>(p: CloudProvider<Config>): CloudProvider<Config> {

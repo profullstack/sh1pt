@@ -1,4 +1,4 @@
-import { defineBot } from '@profullstack/sh1pt-core';
+import { defineBot, tokenSetup } from '@profullstack/sh1pt-core';
 
 // Slack app — Socket Mode (preferred) or Events API webhook. Needs
 // SLACK_BOT_TOKEN (xoxb-) and SLACK_APP_TOKEN (xapp-) for Socket Mode.
@@ -25,4 +25,15 @@ export default defineBot<Config>({
     // TODO: chat.postMessage with blocks built from reply.actions.
     return { id: `s_${Date.now()}` };
   },
+
+  setup: tokenSetup({
+    secretKey: 'SLACK_BOT_TOKEN',
+    label: 'Slack bot',
+    vendorDocUrl: 'https://api.slack.com/apps',
+    steps: [
+      'Open https://api.slack.com/apps',
+      'Create a bot application / API key',
+      'Copy the token shown (usually once)',
+    ],
+  }),
 });

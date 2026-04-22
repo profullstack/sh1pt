@@ -1,4 +1,4 @@
-import { defineBridge } from '@profullstack/sh1pt-core';
+import { defineBridge, tokenSetup } from '@profullstack/sh1pt-core';
 
 // Nostr bridge — relay WebSocket subscriptions for receive, signed
 // events for send. "Channels" are public keys (for user feeds) or
@@ -29,4 +29,15 @@ export default defineBridge<Config>({
     // ['client', 'sh1pt']], sign with nsec, publish to all config.relays.
     return { id: `nostr_${Date.now()}` };
   },
+
+  setup: tokenSetup({
+    secretKey: 'NOSTR_BRIDGE_PRIVATE_KEY',
+    label: 'Nostr bridge',
+    vendorDocUrl: 'https://nostr.com/',
+    steps: [
+      'Open https://nostr.com/',
+      'Create a bot application / API key',
+      'Copy the token shown (usually once)',
+    ],
+  }),
 });

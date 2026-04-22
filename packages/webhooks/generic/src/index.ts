@@ -1,4 +1,4 @@
-import { defineWebhookTarget, type WebhookResult } from '@profullstack/sh1pt-core';
+import { defineWebhookTarget, webhookUrlSetup, type WebhookResult } from '@profullstack/sh1pt-core';
 
 // Generic HTTP POST target. Use when the destination doesn't have its
 // own adapter — Zapier webhook, n8n webhook, your own server, etc.
@@ -30,4 +30,15 @@ export default defineWebhookTarget<Config>({
     //   fetch(url, { method, body, headers })
     return { ok: true, url };
   },
+
+  setup: webhookUrlSetup<Config>({
+    secretKey: 'WEBHOOK_URL',
+    label: 'Generic HTTP webhook',
+    urlPrefix: 'https://',
+    steps: [
+      'Pick the destination URL that should receive sh1pt events (Zapier, n8n, your own server, …)',
+      'Paste it when prompted',
+      'sh1pt HMAC-signs the body; set WEBHOOK_SECRET with `sh1pt secret set WEBHOOK_SECRET <secret>` so the receiver can verify',
+    ],
+  }),
 });

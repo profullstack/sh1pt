@@ -1,4 +1,4 @@
-import { definePayment, type Webhook } from '@profullstack/sh1pt-core';
+import { definePayment, manualSetup, type Webhook } from '@profullstack/sh1pt-core';
 
 // WorldRemit — cross-border payouts / remittance. Not a typical checkout
 // provider (you don't take customer money through them); use this for
@@ -26,4 +26,15 @@ export default definePayment<Config>({
     // TODO: quote → create transfer → pay via saved funding source
     return { id: `wr_${Date.now()}` };
   },
+
+  setup: manualSetup({
+    label: 'WorldRemit',
+    vendorDocUrl: 'https://www.worldremit.com/en/business',
+    steps: [
+      'WorldRemit has no self-serve public API — contact their Business team to get credentials',
+      'Once approved, they supply an API key + signing secret',
+      'Run: sh1pt secret set WORLDREMIT_API_KEY <key>',
+      'Run: sh1pt secret set WORLDREMIT_API_SECRET <secret>',
+    ],
+  }),
 });

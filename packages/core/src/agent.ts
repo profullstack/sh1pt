@@ -36,6 +36,7 @@ export interface AgentCLI<Config = unknown> {
   check(ctx: { log: AgentRunContext['log'] }, config: Config): Promise<AgentInstallState>;
   run(ctx: AgentRunContext, config: Config): Promise<{ exitCode: number }>;
   generate?(ctx: AgentRunContext, config: Config): Promise<{ projectDir: string }>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineAgent<Config>(a: AgentCLI<Config>): AgentCLI<Config> {

@@ -1,4 +1,4 @@
-import { defineBot } from '@profullstack/sh1pt-core';
+import { defineBot, tokenSetup } from '@profullstack/sh1pt-core';
 
 // WeChat Official Account — api.weixin.qq.com. Requires appId + appSecret
 // for access_token + verified OA (service or subscription). Customer
@@ -25,4 +25,15 @@ export default defineBot<Config>({
     // TODO: POST /cgi-bin/message/custom/send with openid + text payload.
     return { id: `wc_${Date.now()}` };
   },
+
+  setup: tokenSetup({
+    secretKey: 'WECHAT_APP_SECRET',
+    label: 'WeChat Official Account',
+    vendorDocUrl: 'https://mp.weixin.qq.com/',
+    steps: [
+      'Open https://mp.weixin.qq.com/',
+      'Create a bot application / API key',
+      'Copy the token shown (usually once)',
+    ],
+  }),
 });

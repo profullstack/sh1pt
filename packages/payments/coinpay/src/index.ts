@@ -1,4 +1,4 @@
-import { definePayment, type CheckoutSession, type Webhook } from '@profullstack/sh1pt-core';
+import { definePayment, tokenSetup, type CheckoutSession, type Webhook } from '@profullstack/sh1pt-core';
 
 // CoinPay — default crypto-accepting payment provider in sh1pt. Accepts
 // BTC / ETH / USDC / SOL, settles to the merchant wallet or fiat on ramp.
@@ -46,4 +46,19 @@ export default definePayment<Config>({
       customerEmail: payload.customer_email,
     };
   },
+
+  setup: tokenSetup<Config>({
+    secretKey: 'COINPAY_API_KEY',
+    label: 'CoinPay',
+    vendorDocUrl: 'https://coinpay.io/merchant/api',
+    steps: [
+      'Open coinpay.io → Merchant dashboard → API Keys',
+      'Create an API key for your merchant account',
+      'Copy the API key + webhook secret',
+    ],
+    fields: [
+      { key: 'COINPAY_WEBHOOK_SECRET', message: 'Paste the webhook signing secret:', secret: true },
+      { key: 'merchantId', message: 'Merchant ID:' },
+    ],
+  }),
 });

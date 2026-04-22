@@ -1,4 +1,4 @@
-import { defineVcs, type Release, type PullRequest, type Issue } from '@profullstack/sh1pt-core';
+import { defineVcs, tokenSetup, type Release, type PullRequest, type Issue } from '@profullstack/sh1pt-core';
 
 // Gitea / Forgejo / Codeberg — GitHub-compatible REST at /api/v1/*.
 // Self-hosted is the common case; host is required.
@@ -50,4 +50,20 @@ export default defineVcs<Config>({
     ctx.log(`gitea webhook · ${spec.url}`);
     return { id: `gt_hook_${Date.now()}` };
   },
+
+  setup: tokenSetup<Config>({
+    secretKey: 'GITEA_TOKEN',
+    label: 'Gitea / Forgejo / Codeberg',
+    vendorDocUrl: 'https://docs.gitea.com/development/api-usage#authentication',
+    steps: [
+      'Open <your-gitea-host>/user/settings/applications',
+      'Generate New Token → select scopes (repo, issue, pull_request, release)',
+      'Copy the token (shown once)',
+    ],
+    fields: [
+      { key: 'host', message: 'Host (e.g. "codeberg.org" or "gitea.yourco.com"):', required: true },
+      { key: 'owner', message: 'Owner / org:', required: true },
+      { key: 'repo', message: 'Repo name:', required: true },
+    ],
+  }),
 });

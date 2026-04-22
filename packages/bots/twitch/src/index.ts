@@ -1,4 +1,4 @@
-import { defineBot } from '@profullstack/sh1pt-core';
+import { defineBot, tokenSetup } from '@profullstack/sh1pt-core';
 
 // Twitch bot — IRC-compatible chat (tmi.twitch.tv) + EventSub for
 // non-chat events (follows, subs, redemptions). OAuth token via
@@ -26,4 +26,15 @@ export default defineBot<Config>({
     // alternative with richer metadata.
     return { id: `tw_${Date.now()}` };
   },
+
+  setup: tokenSetup({
+    secretKey: 'TWITCH_ACCESS_TOKEN',
+    label: 'Twitch bot',
+    vendorDocUrl: 'https://dev.twitch.tv/console/apps',
+    steps: [
+      'Open https://dev.twitch.tv/console/apps',
+      'Create a bot application / API key',
+      'Copy the token shown (usually once)',
+    ],
+  }),
 });

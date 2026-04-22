@@ -1,4 +1,4 @@
-import { defineBridge } from '@profullstack/sh1pt-core';
+import { defineBridge, tokenSetup } from '@profullstack/sh1pt-core';
 
 // Telegram bridge — Bot API (getUpdates long-polling or webhook)
 // receive, sendMessage send. "Channels" are chat_ids (channel = -100…,
@@ -32,4 +32,15 @@ export default defineBridge<Config>({
     // For media use sendPhoto / sendVideo / sendDocument with file_id or URL.
     return { id: `tg_${Date.now()}` };
   },
+
+  setup: tokenSetup({
+    secretKey: 'TELEGRAM_BRIDGE_BOT_TOKEN',
+    label: 'Telegram bridge',
+    vendorDocUrl: 'https://core.telegram.org/bots',
+    steps: [
+      'Open https://core.telegram.org/bots',
+      'Create a bot application / API key',
+      'Copy the token shown (usually once)',
+    ],
+  }),
 });

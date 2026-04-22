@@ -1,4 +1,4 @@
-import { defineBridge } from '@profullstack/sh1pt-core';
+import { defineBridge, tokenSetup } from '@profullstack/sh1pt-core';
 
 // Mastodon bridge — streaming API for receive (/api/v1/streaming/user),
 // /api/v1/statuses for send. "Channels" on Mastodon are hashtag streams
@@ -27,4 +27,15 @@ export default defineBridge<Config>({
     // Tag the post with #<channel> so it lands in the hashtag stream.
     return { id: `mst_${Date.now()}` };
   },
+
+  setup: tokenSetup({
+    secretKey: 'MASTODON_BRIDGE_ACCESS_TOKEN',
+    label: 'Mastodon bridge',
+    vendorDocUrl: 'https://docs.joinmastodon.org/client/intro/',
+    steps: [
+      'Open https://docs.joinmastodon.org/client/intro/',
+      'Create a bot application / API key',
+      'Copy the token shown (usually once)',
+    ],
+  }),
 });

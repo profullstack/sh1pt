@@ -20,6 +20,17 @@ const configSchema = z.object({
   allowedUsers: z.array(z.string()).default([]),
   allowedChannels: z.array(z.string()).optional(),
   adminUsers: z.array(z.string()).default([]),
+
+  setup: tokenSetup({
+    secretKey: 'DISCORD_BOT_TOKEN',
+    label: 'Discord bot',
+    vendorDocUrl: 'https://discord.com/developers/applications',
+    steps: [
+      'Open https://discord.com/developers/applications',
+      'Create a bot application / API key',
+      'Copy the token shown (usually once)',
+    ],
+  }),
 });
 
 export type Config = z.infer<typeof configSchema>;

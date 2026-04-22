@@ -1,4 +1,4 @@
-import { defineCloud, type Instance } from '@profullstack/sh1pt-core';
+import { defineCloud, tokenSetup, type Instance } from '@profullstack/sh1pt-core';
 
 // DigitalOcean — great API, predictable pricing, includes Droplets (VPS),
 // GPU Droplets (H100), managed Postgres/Mongo/Redis, Spaces (S3-compat).
@@ -36,6 +36,17 @@ export default defineCloud<Config>({
   async status(ctx, id) {
     return stubInstance(id, 'running', 'cpu-vps');
   },
+
+  setup: tokenSetup({
+    secretKey: 'DO_API_TOKEN',
+    label: 'DigitalOcean',
+    vendorDocUrl: 'https://cloud.digitalocean.com/account/api/tokens',
+    steps: [
+      'Open https://cloud.digitalocean.com/account/api/tokens',
+      'Create an API token with full / read-write scope',
+      'Copy the token (usually shown once)',
+    ],
+  }),
 });
 
 function stubInstance(id: string, status: Instance['status'], kind: Instance['kind']): Instance {

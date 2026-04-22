@@ -1,4 +1,4 @@
-import { defineVcs, type Release, type PullRequest, type Issue } from '@profullstack/sh1pt-core';
+import { defineVcs, tokenSetup, type Release, type PullRequest, type Issue } from '@profullstack/sh1pt-core';
 
 // GitHub REST (v3) + GraphQL (v4). Auth: classic PAT, fine-grained PAT,
 // or GitHub App installation token. Installation tokens are preferred —
@@ -58,4 +58,20 @@ export default defineVcs<Config>({
     // TODO: POST /repos/:owner/:repo/hooks with { config: { url, content_type: 'json', secret }, events }
     return { id: `gh_hook_${Date.now()}` };
   },
+
+  setup: tokenSetup<Config>({
+    secretKey: 'GITHUB_TOKEN',
+    label: 'GitHub',
+    vendorDocUrl: 'https://github.com/settings/tokens',
+    steps: [
+      'Open https://github.com/settings/tokens → Generate new token (classic) or Fine-grained',
+      'Scopes: repo (for releases, PRs, issues), workflow (if managing Actions)',
+      'Or: create a GitHub App and use an installation token for repo-scoped, auto-rotating auth',
+      'Copy the token (shown once) and paste when prompted',
+    ],
+    fields: [
+      { key: 'owner', message: 'GitHub owner / org (e.g. "profullstack"):', required: true },
+      { key: 'repo', message: 'Repo name (e.g. "sh1pt"):', required: true },
+    ],
+  }),
 });

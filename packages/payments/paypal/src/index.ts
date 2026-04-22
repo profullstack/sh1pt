@@ -1,4 +1,4 @@
-import { definePayment, type Webhook } from '@profullstack/sh1pt-core';
+import { definePayment, tokenSetup, type Webhook } from '@profullstack/sh1pt-core';
 
 interface Config {
   clientId?: string;
@@ -23,4 +23,19 @@ export default definePayment<Config>({
     // TODO: /v1/notifications/verify-webhook-signature
     return { type: 'unknown', payload: JSON.parse(rawBody) };
   },
+
+  setup: tokenSetup<Config>({
+    secretKey: 'PAYPAL_CLIENT_SECRET',
+    label: 'PayPal',
+    vendorDocUrl: 'https://developer.paypal.com/dashboard/applications',
+    steps: [
+      'Open developer.paypal.com → My Apps & Credentials',
+      'Create a REST API app (Sandbox for testing, Live for production)',
+      'Copy the Client ID and Secret',
+    ],
+    fields: [
+      { key: 'clientId', message: 'PayPal Client ID:', required: true },
+      { key: 'environment', message: 'Environment (sandbox or live):' },
+    ],
+  }),
 });

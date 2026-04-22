@@ -1,4 +1,4 @@
-import { defineDns, type DnsRecord } from '@profullstack/sh1pt-core';
+import { defineDns, tokenSetup, type DnsRecord } from '@profullstack/sh1pt-core';
 
 // Cloudflare DNS API v4. Auth: Bearer token scoped to Zone.DNS:Edit.
 // Endpoints: /client/v4/zones, /client/v4/zones/:id/dns_records
@@ -58,4 +58,15 @@ export default defineDns<Config>({
       proxied: proxiedFinal,
     })) satisfies DnsRecord[];
   },
+
+  setup: tokenSetup<Config>({
+    secretKey: 'CLOUDFLARE_API_TOKEN',
+    label: 'Cloudflare DNS',
+    vendorDocUrl: 'https://dash.cloudflare.com/profile/api-tokens',
+    steps: [
+      'Open dash.cloudflare.com → My Profile → API Tokens → Create Token',
+      'Use the "Edit zone DNS" template (or custom with Zone.DNS:Edit)',
+      'Scope to the zones sh1pt should manage → Continue → Create → copy the token',
+    ],
+  }),
 });

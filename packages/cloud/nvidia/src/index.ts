@@ -1,4 +1,4 @@
-import { defineCloud, type Instance } from '@profullstack/sh1pt-core';
+import { defineCloud, tokenSetup, type Instance } from '@profullstack/sh1pt-core';
 
 // build.nvidia.com — NVIDIA's developer platform. Umbrella for:
 //   - API Catalog (free): 100+ hosted models behind OpenAI-compatible endpoints
@@ -62,6 +62,17 @@ export default defineCloud<Config>({
   async status(ctx, id) {
     return stub(id, 'running', 'gpu');
   },
+
+  setup: tokenSetup({
+    secretKey: 'NVIDIA_API_KEY',
+    label: 'NVIDIA (build.nvidia.com)',
+    vendorDocUrl: 'https://build.nvidia.com/',
+    steps: [
+      'Open https://build.nvidia.com/',
+      'Create an API token with full / read-write scope',
+      'Copy the token (usually shown once)',
+    ],
+  }),
 });
 
 function stub(id: string, status: Instance['status'], kind: Instance['kind']): Instance {

@@ -1,4 +1,4 @@
-import { defineWebhookTarget, type WebhookResult } from '@profullstack/sh1pt-core';
+import { defineWebhookTarget, webhookUrlSetup, type WebhookResult } from '@profullstack/sh1pt-core';
 
 // Slack Incoming Webhook. Create at api.slack.com/apps → Incoming
 // Webhooks → "Add New Webhook to Workspace" → pick a channel → copy URL.
@@ -37,4 +37,16 @@ export default defineWebhookTarget<Config>({
     // TODO: POST url with the formatted block payload; 200 "ok" on success
     return { ok: true, url };
   },
+
+  setup: webhookUrlSetup<Config>({
+    secretKey: 'SLACK_WEBHOOK_URL',
+    label: 'Slack (incoming webhook)',
+    urlPrefix: 'https://hooks.slack.com/services/',
+    vendorDocUrl: 'https://api.slack.com/messaging/webhooks',
+    steps: [
+      'Open api.slack.com/apps → your app (or create one) → Incoming Webhooks',
+      'Toggle Activate Incoming Webhooks → Add New Webhook to Workspace',
+      'Pick a channel → Allow → Copy Webhook URL',
+    ],
+  }),
 });

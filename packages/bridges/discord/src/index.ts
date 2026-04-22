@@ -1,4 +1,4 @@
-import { defineBridge, type BridgeMessage } from '@profullstack/sh1pt-core';
+import { defineBridge, type BridgeMessage, tokenSetup } from '@profullstack/sh1pt-core';
 
 // Discord bridge — gateway WebSocket for receive, bot API for send.
 // Uses a bot user (not a webhook) since only bots can subscribe to live
@@ -30,4 +30,15 @@ export default defineBridge<Config>({
     // shows "<username> [<network>]" as the author.
     return { id: `d_${Date.now()}` };
   },
+
+  setup: tokenSetup({
+    secretKey: 'DISCORD_BRIDGE_BOT_TOKEN',
+    label: 'Discord bridge',
+    vendorDocUrl: 'https://discord.com/developers/applications',
+    steps: [
+      'Open https://discord.com/developers/applications',
+      'Create a bot application / API key',
+      'Copy the token shown (usually once)',
+    ],
+  }),
 });

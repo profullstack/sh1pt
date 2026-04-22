@@ -1,4 +1,4 @@
-import { defineCaptcha, type CaptchaSolution } from '@profullstack/sh1pt-core';
+import { defineCaptcha, tokenSetup, type CaptchaSolution } from '@profullstack/sh1pt-core';
 
 // CaptchaSolver (captchasolver.com) — alternative to 2Captcha, 2Captcha-
 // compatible API, often cheaper for Turnstile and hCaptcha. Same
@@ -33,4 +33,15 @@ export default defineCaptcha<Config>({
     // TODO: 2Captcha-compatible API — createTask → getTaskResult polling
     return { token: 'stub-token', kind: challenge.kind, solvedInMs: 0 } satisfies CaptchaSolution;
   },
+
+  setup: tokenSetup<Config>({
+    secretKey: 'CAPTCHASOLVER_API_KEY',
+    label: 'CaptchaSolver',
+    vendorDocUrl: 'https://captchasolver.com/profile',
+    steps: [
+      'Open captchasolver.com → sign up / log in → top up balance',
+      'Copy your API key from profile settings',
+      'Reminder: use as LAST RESORT — respect vendor ToS and rate-limit aggressively',
+    ],
+  }),
 });

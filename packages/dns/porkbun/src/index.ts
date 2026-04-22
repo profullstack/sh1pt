@@ -1,4 +1,4 @@
-import { defineDns, type DnsRecord } from '@profullstack/sh1pt-core';
+import { defineDns, tokenSetup, type DnsRecord } from '@profullstack/sh1pt-core';
 
 // Porkbun DNS API (v3). Auth is API key + secret (not OAuth). Endpoints:
 //   POST /api/json/v3/dns/retrieve/:domain
@@ -63,4 +63,19 @@ export default defineDns<Config>({
       ttl: ttlFinal,
     })) satisfies DnsRecord[];
   },
+
+  setup: tokenSetup<Config>({
+    secretKey: 'PORKBUN_API_KEY',
+    label: 'Porkbun DNS',
+    vendorDocUrl: 'https://porkbun.com/account/api',
+    steps: [
+      'Open porkbun.com → Account → API Access',
+      'Enable API access for each domain sh1pt should manage',
+      'Create API credentials → copy both the API Key and Secret API Key',
+      'Paste API Key when prompted; the secret you will enter on the next prompt',
+    ],
+    fields: [
+      { key: 'PORKBUN_API_SECRET', message: 'Paste the Porkbun Secret API Key:', secret: true, required: true },
+    ],
+  }),
 });

@@ -1,4 +1,4 @@
-import { defineCloud, type Instance } from '@profullstack/sh1pt-core';
+import { defineCloud, tokenSetup, type Instance } from '@profullstack/sh1pt-core';
 
 // Cloudflare — not a traditional IaaS (no VMs to rent), but sh1pt models
 // the provisionable primitives: Workers (compute), R2 (object storage),
@@ -44,6 +44,17 @@ export default defineCloud<Config>({
   async list() { return []; },
   async destroy(ctx, id) { ctx.log(`cloudflare destroy ${id}`); },
   async status(ctx, id) { return stub(id, 'running', 'object-storage'); },
+
+  setup: tokenSetup({
+    secretKey: 'CLOUDFLARE_API_TOKEN',
+    label: 'Cloudflare (cloud)',
+    vendorDocUrl: 'https://dash.cloudflare.com/profile/api-tokens',
+    steps: [
+      'Open https://dash.cloudflare.com/profile/api-tokens',
+      'Create an API token with full / read-write scope',
+      'Copy the token (usually shown once)',
+    ],
+  }),
 });
 
 function stub(id: string, status: Instance['status'], kind: Instance['kind']): Instance {

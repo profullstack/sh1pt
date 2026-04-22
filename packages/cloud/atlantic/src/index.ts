@@ -1,4 +1,4 @@
-import { defineCloud, type Instance } from '@profullstack/sh1pt-core';
+import { defineCloud, tokenSetup, type Instance } from '@profullstack/sh1pt-core';
 
 interface Config {
   apiKey?: string;            // ATLANTIC_API_KEY
@@ -27,6 +27,17 @@ export default defineCloud<Config>({
   async list() { return []; },
   async destroy(ctx, id) { ctx.log(`atlantic destroy ${id}`); },
   async status(ctx, id) { return stub(id, 'running', 'cpu-vps'); },
+
+  setup: tokenSetup({
+    secretKey: 'ATLANTIC_API_KEY',
+    label: 'Atlantic.Net',
+    vendorDocUrl: 'https://cloud.atlantic.net/',
+    steps: [
+      'Open https://cloud.atlantic.net/',
+      'Create an API token with full / read-write scope',
+      'Copy the token (usually shown once)',
+    ],
+  }),
 });
 
 function stub(id: string, status: Instance['status'], kind: Instance['kind']): Instance {

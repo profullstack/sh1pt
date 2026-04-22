@@ -1,4 +1,4 @@
-import { definePayment, type Webhook } from '@profullstack/sh1pt-core';
+import { definePayment, tokenSetup, type Webhook } from '@profullstack/sh1pt-core';
 
 // Stripe — cards + ACH + Link + local payment methods. Checkout API
 // for one-time + subscriptions; Connect for marketplace payouts.
@@ -38,4 +38,18 @@ export default definePayment<Config>({
     // TODO: stripe.transfers.create({ amount, currency, destination: accountId })
     return { id: `tr_${Date.now()}` };
   },
+
+  setup: tokenSetup<Config>({
+    secretKey: 'STRIPE_SECRET_KEY',
+    label: 'Stripe',
+    vendorDocUrl: 'https://dashboard.stripe.com/apikeys',
+    steps: [
+      'Open dashboard.stripe.com → Developers → API keys',
+      'Copy the "Secret key" (sk_live_… or sk_test_… for test mode)',
+      'Webhook endpoint: set up https://dashboard.stripe.com/webhooks for your sh1pt cloud callback, copy the signing secret',
+    ],
+    fields: [
+      { key: 'STRIPE_WEBHOOK_SECRET', message: 'Paste the Stripe webhook signing secret (whsec_…):', secret: true },
+    ],
+  }),
 });

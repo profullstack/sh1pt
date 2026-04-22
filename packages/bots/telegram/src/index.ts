@@ -13,6 +13,17 @@ const configSchema = z.object({
   maxConcurrentSessions: z.number().int().positive().default(5),
   allowedUsers: z.array(z.string()).default([]),
   adminUsers: z.array(z.string()).default([]),
+
+  setup: tokenSetup({
+    secretKey: 'TELEGRAM_BOT_TOKEN',
+    label: 'Telegram bot',
+    vendorDocUrl: 'https://core.telegram.org/bots/tutorial',
+    steps: [
+      'Open https://core.telegram.org/bots/tutorial',
+      'Create a bot application / API key',
+      'Copy the token shown (usually once)',
+    ],
+  }),
 });
 
 export type Config = z.infer<typeof configSchema>;

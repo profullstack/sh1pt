@@ -59,6 +59,7 @@ export interface DocProvider<Config = unknown> {
     to: DocFormat,
     config: Config,
   ): Promise<DocResult>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineDocs<Config>(d: DocProvider<Config>): DocProvider<Config> {

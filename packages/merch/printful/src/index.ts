@@ -1,4 +1,4 @@
-import { defineMerch, type MerchSku, type MerchOrder } from '@profullstack/sh1pt-core';
+import { defineMerch, tokenSetup, type MerchSku, type MerchOrder } from '@profullstack/sh1pt-core';
 
 // Printful — print-on-demand + fulfillment. Huge catalog (t-shirts,
 // hoodies, stickers, mugs, pens, notebooks, tote bags — aka "swag" for
@@ -76,6 +76,17 @@ export default defineMerch<Config>({
   async payout() {
     return { periodStart: '', periodEnd: '', grossRevenue: 0, fees: 0, netPayout: 0, currency: 'USD' };
   },
+
+  setup: tokenSetup<Config>({
+    secretKey: 'PRINTFUL_TOKEN',
+    label: 'Printful',
+    vendorDocUrl: 'https://www.printful.com/dashboard/store/tokens',
+    steps: [
+      'Open Printful → Settings → Stores → API Tokens (or Dashboard → Developer → Tokens)',
+      'Create a new token with the scopes you need (orders, products, files)',
+      'Copy the token (shown once)',
+    ],
+  }),
 });
 
 function stub(id: string, kind: MerchSku['kind']): MerchSku {

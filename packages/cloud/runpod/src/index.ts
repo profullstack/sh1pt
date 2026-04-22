@@ -1,4 +1,4 @@
-import { defineCloud, type Instance, type Quote, type InstanceSpec } from '@profullstack/sh1pt-core';
+import { defineCloud, tokenSetup, type Instance, type Quote, type InstanceSpec } from '@profullstack/sh1pt-core';
 
 // RunPod — GPU-first, pay-by-the-second. GraphQL API. Two pod types:
 //   - Community Cloud: cheapest, non-SLA, host may reclaim
@@ -54,6 +54,18 @@ export default defineCloud<Config>({
     ctx.log(`runpod status pod=${instanceId}`);
     return stubInstance(instanceId, 'running', { kind: 'gpu' });
   },
+
+  setup: tokenSetup({
+    secretKey: 'RUNPOD_API_KEY',
+    label: 'RunPod',
+    vendorDocUrl: 'https://www.runpod.io/console/user/settings',
+    steps: [
+      'Open runpod.io → Settings → API Keys',
+      'Create API key (read + write scope)',
+      'Copy the key',
+      '⚠ GPU instances bill by the second — always use --max-hourly-price',
+    ],
+  }),
 });
 
 function stubInstance(id: string, status: Instance['status'], spec: Partial<InstanceSpec>): Instance {

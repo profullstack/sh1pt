@@ -26,6 +26,7 @@ export interface DnsProvider<Config = unknown> {
   // Sync N IPs as round-robin A records at <name>.<zone>. sh1pt uses this
   // whenever `scale up/down` changes the fleet size.
   syncRoundRobin(opts: { zoneId: string; name: string; ips: string[]; ttl?: number; proxied?: boolean }, config: Config): Promise<DnsRecord[]>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineDns<Config>(p: DnsProvider<Config>): DnsProvider<Config> {

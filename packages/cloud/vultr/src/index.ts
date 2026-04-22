@@ -1,4 +1,4 @@
-import { defineCloud, type Instance } from '@profullstack/sh1pt-core';
+import { defineCloud, tokenSetup, type Instance } from '@profullstack/sh1pt-core';
 
 // Vultr — VPS, bare metal, GPU, block/object storage. Clean REST API.
 interface Config {
@@ -31,6 +31,17 @@ export default defineCloud<Config>({
   async list() { return []; },
   async destroy(ctx, id) { ctx.log(`vultr destroy ${id}`); },
   async status(ctx, id) { return stub(id, 'running', 'cpu-vps'); },
+
+  setup: tokenSetup({
+    secretKey: 'VULTR_API_KEY',
+    label: 'Vultr',
+    vendorDocUrl: 'https://my.vultr.com/settings/#settingsapi',
+    steps: [
+      'Open https://my.vultr.com/settings/#settingsapi',
+      'Create an API token with full / read-write scope',
+      'Copy the token (usually shown once)',
+    ],
+  }),
 });
 
 function stub(id: string, status: Instance['status'], kind: Instance['kind']): Instance {

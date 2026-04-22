@@ -1,4 +1,4 @@
-import { defineCaptcha, type CaptchaSolution } from '@profullstack/sh1pt-core';
+import { defineCaptcha, tokenSetup, type CaptchaSolution } from '@profullstack/sh1pt-core';
 
 // 2Captcha (2captcha.com) — human + AI-assisted CAPTCHA solving. ~$1
 // per 1k image challenges, ~$2 per 1k reCAPTCHAs. Used ONLY as a last
@@ -45,4 +45,15 @@ export default defineCaptcha<Config>({
     // TODO: GET /res.php?action=getbalance&key=...
     return { amount: 0, currency: 'USD' };
   },
+
+  setup: tokenSetup<Config>({
+    secretKey: 'TWOCAPTCHA_API_KEY',
+    label: '2Captcha',
+    vendorDocUrl: 'https://2captcha.com/enterpage',
+    steps: [
+      'Open 2captcha.com → sign up / log in → top up balance',
+      'Copy your API key from the dashboard',
+      'Reminder: use as LAST RESORT — respect vendor ToS and rate-limit aggressively',
+    ],
+  }),
 });

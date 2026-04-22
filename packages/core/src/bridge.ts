@@ -65,6 +65,7 @@ export interface BridgeNetwork<Config = unknown> {
     msg: BridgeMessage,
     config: Config,
   ): Promise<{ id: string }>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineBridge<Config>(b: BridgeNetwork<Config>): BridgeNetwork<Config> {

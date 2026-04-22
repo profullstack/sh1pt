@@ -1,4 +1,4 @@
-import { defineCloud, type Instance } from '@profullstack/sh1pt-core';
+import { defineCloud, tokenSetup, type Instance } from '@profullstack/sh1pt-core';
 
 // Railway — app hosting with a GraphQL API. Not a raw-VPS provider,
 // but sh1pt models each Railway *service* as an instance for scaling
@@ -41,6 +41,17 @@ export default defineCloud<Config>({
   async list() { return []; },
   async destroy(ctx, id) { ctx.log(`railway destroy service=${id}`); },
   async status(ctx, id) { return stub(id, 'running', 'cpu-vps'); },
+
+  setup: tokenSetup({
+    secretKey: 'RAILWAY_TOKEN',
+    label: 'Railway',
+    vendorDocUrl: 'https://railway.app/account/tokens',
+    steps: [
+      'Open https://railway.app/account/tokens',
+      'Create an API token with full / read-write scope',
+      'Copy the token (usually shown once)',
+    ],
+  }),
 });
 
 function stub(id: string, status: Instance['status'], kind: Instance['kind']): Instance {

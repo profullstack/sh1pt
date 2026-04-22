@@ -1,4 +1,4 @@
-import { defineBot } from '@profullstack/sh1pt-core';
+import { defineBot, tokenSetup } from '@profullstack/sh1pt-core';
 
 // Microsoft Teams bot — Bot Framework (Azure Bot Service) with Teams
 // channel enabled. Needs TEAMS_APP_ID + TEAMS_APP_PASSWORD (app registration
@@ -25,4 +25,15 @@ export default defineBot<Config>({
     // TODO: POST to conversation reference with Adaptive Card payload.
     return { id: `tm_${Date.now()}` };
   },
+
+  setup: tokenSetup({
+    secretKey: 'TEAMS_APP_PASSWORD',
+    label: 'Microsoft Teams bot',
+    vendorDocUrl: 'https://dev.botframework.com/bots',
+    steps: [
+      'Open https://dev.botframework.com/bots',
+      'Create a bot application / API key',
+      'Copy the token shown (usually once)',
+    ],
+  }),
 });

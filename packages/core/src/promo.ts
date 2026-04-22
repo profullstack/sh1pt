@@ -100,6 +100,7 @@ export interface AdPlatform<Config = unknown> {
   status(campaignId: string, config: Config): Promise<CampaignMetrics>;
   stop(campaignId: string, config: Config): Promise<void>;
   update?(campaignId: string, patch: Partial<CampaignContext>, config: Config): Promise<void>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineAdPlatform<Config>(p: AdPlatform<Config>): AdPlatform<Config> {

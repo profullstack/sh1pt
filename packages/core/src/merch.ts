@@ -81,6 +81,7 @@ export interface MerchProvider<Config = unknown> {
   publish(ctx: { log(m: string): void; dryRun: boolean }, skuIds: string[], storefront: string, config: Config): Promise<{ urls: string[] }>;
   listOrders(config: Config): Promise<MerchOrder[]>;
   payout?(config: Config): Promise<MerchPayout>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineMerch<Config>(m: MerchProvider<Config>): MerchProvider<Config> {

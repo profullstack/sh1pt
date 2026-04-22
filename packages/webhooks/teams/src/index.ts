@@ -1,4 +1,4 @@
-import { defineWebhookTarget, type WebhookResult } from '@profullstack/sh1pt-core';
+import { defineWebhookTarget, webhookUrlSetup, type WebhookResult } from '@profullstack/sh1pt-core';
 
 // Microsoft Teams — Incoming Webhook connector. Channel → ... →
 // Connectors → Incoming Webhook → name + copy URL. Posts render as
@@ -47,4 +47,15 @@ export default defineWebhookTarget<Config>({
     if (ctx.dryRun) return { ok: true, url };
     return { ok: true, url };
   },
+
+  setup: webhookUrlSetup<Config>({
+    secretKey: 'TEAMS_WEBHOOK_URL',
+    label: 'Microsoft Teams (incoming webhook)',
+    vendorDocUrl: 'https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook',
+    steps: [
+      'Open the Teams channel → ⋯ menu → Connectors',
+      'Pick "Incoming Webhook" → Configure → give it a name and optional icon',
+      'Click Create → copy the URL shown on the next screen',
+    ],
+  }),
 });

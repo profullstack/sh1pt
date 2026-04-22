@@ -100,6 +100,7 @@ export interface Bot<Config = unknown> {
     reply: BotReply,
     config: Config,
   ): Promise<{ id: string }>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineBot<Config>(b: Bot<Config>): Bot<Config> {

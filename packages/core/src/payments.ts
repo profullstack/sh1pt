@@ -57,6 +57,7 @@ export interface PaymentProvider<Config = unknown> {
   refund?(paymentId: string, amount: number | undefined, config: Config): Promise<{ id: string }>;
   // For marketplace boilerplates: move money to a connected payee.
   payout?(accountId: string, amount: number, currency: string, config: Config): Promise<{ id: string }>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function definePayment<Config>(p: PaymentProvider<Config>): PaymentProvider<Config> {

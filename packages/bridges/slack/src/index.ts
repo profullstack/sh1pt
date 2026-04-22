@@ -1,4 +1,4 @@
-import { defineBridge } from '@profullstack/sh1pt-core';
+import { defineBridge, tokenSetup } from '@profullstack/sh1pt-core';
 
 // Slack bridge — Socket Mode for receive (no public HTTP endpoint
 // required), chat.postMessage for send. Bot needs channels:history,
@@ -31,4 +31,15 @@ export default defineBridge<Config>({
     //     icon_url: msg.identity.avatarUrl, blocks: [...] }
     return { id: `s_${Date.now()}` };
   },
+
+  setup: tokenSetup({
+    secretKey: 'SLACK_BRIDGE_BOT_TOKEN',
+    label: 'Slack bridge',
+    vendorDocUrl: 'https://api.slack.com/apps',
+    steps: [
+      'Open https://api.slack.com/apps',
+      'Create a bot application / API key',
+      'Copy the token shown (usually once)',
+    ],
+  }),
 });

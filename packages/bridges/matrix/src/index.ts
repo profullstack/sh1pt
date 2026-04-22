@@ -1,4 +1,4 @@
-import { defineBridge } from '@profullstack/sh1pt-core';
+import { defineBridge, tokenSetup } from '@profullstack/sh1pt-core';
 
 // Matrix bridge — the original bridge-first protocol. Use the regular
 // client/server API (sync + m.room.message) for simple bridges;
@@ -36,4 +36,15 @@ export default defineBridge<Config>({
     // If appservice: impersonate via ?user_id=<ghost> from the namespace.
     return { id: `mx_${Date.now()}` };
   },
+
+  setup: tokenSetup({
+    secretKey: 'MATRIX_BRIDGE_ACCESS_TOKEN',
+    label: 'Matrix bridge',
+    vendorDocUrl: 'https://matrix.org/docs',
+    steps: [
+      'Open https://matrix.org/docs',
+      'Create a bot application / API key',
+      'Copy the token shown (usually once)',
+    ],
+  }),
 });

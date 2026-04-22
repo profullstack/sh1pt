@@ -11,6 +11,17 @@ const configSchema = z.object({
   maxConcurrentSessions: z.number().int().positive().default(5),
   allowedUsers: z.array(z.string()).default([]),
   adminUsers: z.array(z.string()).default([]),
+
+  setup: tokenSetup({
+    secretKey: 'WHATSAPP_ACCESS_TOKEN',
+    label: 'WhatsApp Business Cloud API',
+    vendorDocUrl: 'https://developers.facebook.com/apps/',
+    steps: [
+      'Open https://developers.facebook.com/apps/',
+      'Create a bot application / API key',
+      'Copy the token shown (usually once)',
+    ],
+  }),
 });
 
 export type Config = z.infer<typeof configSchema>;

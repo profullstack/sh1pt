@@ -1,4 +1,4 @@
-import { defineWebhookTarget, type WebhookResult } from '@profullstack/sh1pt-core';
+import { defineWebhookTarget, tokenSetup, type WebhookResult } from '@profullstack/sh1pt-core';
 
 // Telegram — not strictly "just a webhook URL," but close. Pipe through
 // a bot with sendMessage; setup is trivial (BotFather → /newbot → token +
@@ -34,6 +34,21 @@ export default defineWebhookTarget<Config>({
     // TODO: POST url with formatted body
     return { ok: true, url };
   },
+
+  setup: tokenSetup<Config>({
+    secretKey: 'TELEGRAM_BOT_TOKEN',
+    label: 'Telegram (bot sendMessage)',
+    vendorDocUrl: 'https://core.telegram.org/bots/tutorial',
+    steps: [
+      'Open Telegram → chat with @BotFather → /newbot → follow the prompts',
+      'Copy the HTTP API token BotFather returns',
+      'Add the bot to your target channel/group as an admin',
+      'Get the chat_id: for groups/channels use -100XXXXXXXX; for DMs, positive numeric user id',
+    ],
+    fields: [
+      { key: 'chatId', message: 'Chat ID (-100… for channels/groups, positive for DMs):', required: true },
+    ],
+  }),
 });
 
 function escape(s: string): string {

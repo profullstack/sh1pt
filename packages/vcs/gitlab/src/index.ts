@@ -1,4 +1,4 @@
-import { defineVcs, type Release, type PullRequest, type Issue } from '@profullstack/sh1pt-core';
+import { defineVcs, tokenSetup, type Release, type PullRequest, type Issue } from '@profullstack/sh1pt-core';
 
 // GitLab REST API v4 — works for both gitlab.com and self-hosted.
 // "Pull request" is called "Merge Request" here; the adapter exposes
@@ -56,4 +56,19 @@ export default defineVcs<Config>({
     // TODO: POST /projects/:id/hooks with { url, token, push_events, merge_requests_events, ... }
     return { id: `gl_hook_${Date.now()}` };
   },
+
+  setup: tokenSetup<Config>({
+    secretKey: 'GITLAB_TOKEN',
+    label: 'GitLab',
+    vendorDocUrl: 'https://gitlab.com/-/user_settings/personal_access_tokens',
+    steps: [
+      'Open gitlab.com → User Settings → Access Tokens (self-hosted: /-/user_settings/personal_access_tokens)',
+      'Scopes: api (full), read_repository, write_repository',
+      'Create → copy the token (shown once)',
+    ],
+    fields: [
+      { key: 'host', message: 'Host (blank for gitlab.com):' },
+      { key: 'projectId', message: 'Project ID or path (e.g. "12345" or "group/project"):', required: true },
+    ],
+  }),
 });

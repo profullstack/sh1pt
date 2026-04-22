@@ -1,4 +1,4 @@
-import { defineBot } from '@profullstack/sh1pt-core';
+import { defineBot, tokenSetup } from '@profullstack/sh1pt-core';
 
 // Twilio — SMS (Programmable Messaging) + Voice (Programmable Voice) from
 // the same account. Channel strings are E.164 phone numbers for both.
@@ -33,4 +33,15 @@ export default defineBot<Config>({
     // TODO: POST /2010-04-01/Accounts/{sid}/Messages.json { From, To, Body }.
     return { id: `ts_${Date.now()}` };
   },
+
+  setup: tokenSetup({
+    secretKey: 'TWILIO_AUTH_TOKEN',
+    label: 'Twilio SMS/voice',
+    vendorDocUrl: 'https://console.twilio.com/',
+    steps: [
+      'Open https://console.twilio.com/',
+      'Create a bot application / API key',
+      'Copy the token shown (usually once)',
+    ],
+  }),
 });

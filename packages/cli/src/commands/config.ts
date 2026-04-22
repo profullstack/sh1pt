@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
 import prompts from 'prompts';
+import { runSetup, type SetupContext, type SetupPromptDef } from '@profullstack/sh1pt-core';
 
 type Stack = 'node' | 'bun' | 'python' | 'rust' | 'cpp' | 'dotnet' | 'custom';
 
@@ -217,15 +218,18 @@ webhooksCmd
   .description('Register a webhook target — paste a URL, done. e.g. sh1pt config webhooks add discord')
   .option('--events <list>', 'which events fire this target (default: all)', '*')
   .option('--name <label>', 'friendly name (for multi-channel setups)')
-  .action(async (target: string, opts: { events: string; name?: string }) => {
+  .action(async (target: string, _opts: { events: string; name?: string }) => {
     const known = ['discord', 'slack', 'telegram', 'teams', 'generic'];
     if (!known.includes(target)) {
       console.log(kleur.yellow(`unknown target "${target}". Known: ${known.join(', ')}`));
       return;
     }
-    console.log(kleur.cyan(`[stub] webhooks add ${target}`));
-    console.log(kleur.dim(`would prompt to paste the URL, store it in the vault under ${urlKeyFor(target)}, and enable for events=${opts.events}`));
-    // TODO: prompts → paste URL → secret set <KEY>, patch manifest.webhooks, test-fire with a stub payload
+    const adapter = await loadWebhookAdapter(target);
+    if (!adapter) {
+      console.log(kleur.yellow(`no adapter installed for webhook-${target} yet.`));
+      return;
+    }
+    await runSetup(adapter, makeCliSetupContext());
   });
 
 webhooksCmd
@@ -283,4 +287,51 @@ function urlKeyFor(target: string): string {
     teams: 'TEAMS_WEBHOOK_URL',
     generic: 'WEBHOOK_URL',
   } as Record<string, string>)[target] ?? 'WEBHOOK_URL';
+}
+
+// Build the SetupContext the CLI hands to every adapter.setup(). Today
+// secrets live in-process + logged; a real vault lands once `sh1pt login`
+// has an API to write against.
+function makeCliSetupContext(): SetupContext {
+  const memSecrets = new Map<string, string>();
+  return {
+    secret: (key) => process.env[key] ?? memSecrets.get(key),
+    async setSecret(key, value) {
+      memSecrets.set(key, value);
+      process.env[key] = value;
+      console.log(kleur.dim(`  [vault-stub] would persist ${key}=*** (vault not wired yet)`));
+    },
+    log: (m) => console.log(m),
+    async prompt<T>(def: SetupPromptDef<T>): Promise<T> {
+      const promptType =
+        def.type === 'confirm' ? 'confirm' :
+        def.type === 'select' ? 'select' :
+        def.type === 'password' ? 'password' :
+        'text';
+      const res = await prompts({
+        type: promptType as 'text' | 'password' | 'confirm' | 'select',
+        name: 'v',
+        message: def.message,
+        initial: def.initial as unknown as string | number | boolean,
+        choices: def.choices?.map((c) => ({ title: c.title, value: c.value })) as prompts.Choice[] | undefined,
+        validate: def.validate ? (v: unknown) => {
+          const r = def.validate!(v as T);
+          return r === true ? true : r;
+        } : undefined,
+      });
+      return res.v as T;
+    },
+    async open(url) {
+      console.log(kleur.dim(`  → open: ${url}`));
+    },
+  };
+}
+
+async function loadWebhookAdapter(target: string): Promise<Parameters<typeof runSetup>[0] | undefined> {
+  try {
+    const mod = await import(`@profullstack/sh1pt-webhooks-${target}`);
+    return mod.default ?? mod;
+  } catch {
+    return undefined;
+  }
 }

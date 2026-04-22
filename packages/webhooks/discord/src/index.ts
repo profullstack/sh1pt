@@ -1,4 +1,4 @@
-import { defineWebhookTarget, type WebhookResult } from '@profullstack/sh1pt-core';
+import { defineWebhookTarget, type WebhookResult, type SetupContext, type SetupResult } from '@profullstack/sh1pt-core';
 
 // Discord channel webhook. Simplest possible integration — Channel
 // Settings → Integrations → Webhooks → Create → copy URL → paste in.
@@ -43,6 +43,45 @@ export default defineWebhookTarget<Config>({
     // TODO: POST url with Content-Type application/json; body = this.format(payload, config).
     // Discord returns 204 on success, 429 with retry_after on rate limit.
     return { ok: true, url };
+  },
+
+  async setup(ctx: SetupContext): Promise<SetupResult<Config>> {
+    const urlKey = 'DISCORD_WEBHOOK_URL';
+    const existing = ctx.secret(urlKey);
+
+    if (existing && existing.startsWith('https://discord.com/api/webhooks/')) {
+      const reuse = await ctx.prompt<boolean>({
+        type: 'confirm',
+        message: `${urlKey} already in vault — reuse it?`,
+        initial: true,
+      });
+      if (reuse) return { ok: true, config: { urlKey } };
+    }
+
+    ctx.log('Discord webhooks = one URL, no OAuth app, no bot token.');
+    ctx.log('Open the server → Server Settings → Integrations → Webhooks → New Webhook → pick a channel → Copy Webhook URL.');
+    await ctx.open('https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks');
+
+    const url = await ctx.prompt<string>({
+      type: 'password',
+      message: 'Paste the Discord webhook URL:',
+      validate: (v) => v.startsWith('https://discord.com/api/webhooks/') || 'Must start with https://discord.com/api/webhooks/',
+    });
+
+    if (!url || !url.startsWith('https://discord.com/api/webhooks/')) {
+      return {
+        ok: false,
+        config: { urlKey },
+        manual: [
+          'Discord → Server Settings → Integrations → Webhooks → New Webhook',
+          'Pick a channel, click "Copy Webhook URL"',
+          `Run: sh1pt secret set ${urlKey}  (paste URL when prompted)`,
+        ],
+      };
+    }
+
+    await ctx.setSecret(urlKey, url);
+    return { ok: true, config: { urlKey } };
   },
 });
 

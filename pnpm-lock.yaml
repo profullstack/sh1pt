@@ -250,6 +250,10 @@ importers:
       prompts:
         specifier: ^2.4.2
         version: 2.4.2
+    optionalDependencies:
+      '@profullstack/sh1pt-webhooks-discord':
+        specifier: workspace:^
+        version: link:../webhooks/discord
     devDependencies:
       '@types/prompts':
         specifier: ^2.4.9
@@ -1093,7 +1097,7 @@ importers:
   packages/webhooks/discord:
     dependencies:
       '@profullstack/sh1pt-core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../core
 
   packages/webhooks/generic:

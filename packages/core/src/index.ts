@@ -17,3 +17,5 @@ export * from './docs.js';
 export * from './jurisdiction.js';
 export * from './bot.js';
 export * from './exec.js';
+export * from './config-store.js';
+export * from './setup.js';

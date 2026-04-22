@@ -37,11 +37,18 @@ export async function GET(
     }
   }
 
+  // Behind Railway's proxy, request.url reports the internal 0.0.0.0:8080
+  // listen address — use the forwarded headers so redirects land on the
+  // public origin (sh1pt.com / preview URLs / whatever).
+  const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host');
+  const proto = request.headers.get('x-forwarded-proto') ?? 'https';
+  const origin = host ? `${proto}://${host}` : new URL(request.url).origin;
+
   if (!valid) {
-    return NextResponse.redirect(new URL('/waitlist', request.url));
+    return NextResponse.redirect(new URL('/waitlist', origin));
   }
 
-  const target = new URL(`/waitlist?ref=${encodeURIComponent(trimmed)}`, request.url);
+  const target = new URL(`/waitlist?ref=${encodeURIComponent(trimmed)}`, origin);
   const response = NextResponse.redirect(target);
   response.cookies.set(COOKIE, trimmed, {
     maxAge: NINETY_DAYS,

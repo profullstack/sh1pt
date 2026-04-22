@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 // DNS management — used by `sh1pt scale` to round-robin across the
 // fleet as instances come up, and drop records as they're destroyed.
 
@@ -27,7 +29,7 @@ export interface DnsProvider<Config = unknown> {
 }
 
 export function defineDns<Config>(p: DnsProvider<Config>): DnsProvider<Config> {
-  return p;
+  return autoSetup(p);
 }
 
 const dnsRegistry = new Map<string, DnsProvider<any>>();

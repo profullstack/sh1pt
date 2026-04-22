@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 // Communications bridge — cross-post messages between chat networks.
 // Slack ↔ Discord ↔ IRC ↔ Signal ↔ Matrix ↔ Mastodon ↔ Nostr ↔ Telegram.
 //
@@ -66,7 +68,7 @@ export interface BridgeNetwork<Config = unknown> {
 }
 
 export function defineBridge<Config>(b: BridgeNetwork<Config>): BridgeNetwork<Config> {
-  return b;
+  return autoSetup(b);
 }
 
 const bridgeRegistry = new Map<string, BridgeNetwork<any>>();

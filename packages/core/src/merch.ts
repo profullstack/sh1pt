@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 // Merchandise / print-on-demand. A merch provider can upload a design,
 // mint SKUs (t-shirts, hoodies, stickers, mugs, posters), list them to
 // a sales channel, and forward orders for fulfillment.
@@ -82,7 +84,7 @@ export interface MerchProvider<Config = unknown> {
 }
 
 export function defineMerch<Config>(m: MerchProvider<Config>): MerchProvider<Config> {
-  return m;
+  return autoSetup(m);
 }
 
 const merchRegistry = new Map<string, MerchProvider<any>>();

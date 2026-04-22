@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 // CAPTCHA-solver abstraction. Used by adapters that can't rely on a
 // public API and have to drive a browser (Playwright / Puppeteer).
 // Treat this as a last resort — most vendors prefer you email their
@@ -39,7 +41,7 @@ export interface CaptchaSolver<Config = unknown> {
 }
 
 export function defineCaptcha<Config>(c: CaptchaSolver<Config>): CaptchaSolver<Config> {
-  return c;
+  return autoSetup(c);
 }
 
 const captchaRegistry = new Map<string, CaptchaSolver<any>>();

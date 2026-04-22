@@ -19,3 +19,4 @@ export * from './bot.js';
 export * from './exec.js';
 export * from './config-store.js';
 export * from './setup.js';
+export * from './setup-helpers.js';

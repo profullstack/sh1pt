@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 // Bot — a long-running, event-driven runtime you DEPLOY to a comms
 // platform and that handles inbound events (messages, slash commands,
 // SMS, voice calls) by dispatching to registered handlers.
@@ -101,7 +103,7 @@ export interface Bot<Config = unknown> {
 }
 
 export function defineBot<Config>(b: Bot<Config>): Bot<Config> {
-  return b;
+  return autoSetup(b);
 }
 
 const botRegistry = new Map<string, Bot<any>>();

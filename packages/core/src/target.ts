@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 export type TargetKind =
   | 'web'
   | 'cli'
@@ -66,5 +68,5 @@ export interface Target<Config = unknown> {
 }
 
 export function defineTarget<Config>(t: Target<Config>): Target<Config> {
-  return t;
+  return autoSetup(t);
 }

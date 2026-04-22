@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 // Organic social posting — separate concern from ads (promo/*) and
 // investor outreach. One Post definition adapts to every connected
 // platform (truncation, hashtag placement, media requirements).
@@ -56,10 +58,11 @@ export interface SocialPlatform<Config = unknown> {
   post(ctx: { secret(k: string): string | undefined; log(m: string): void; dryRun: boolean }, post: SocialPost, config: Config): Promise<PostResult>;
   metrics?(postId: string, config: Config): Promise<EngagementMetrics>;
   delete?(postId: string, config: Config): Promise<void>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineSocial<Config>(s: SocialPlatform<Config>): SocialPlatform<Config> {
-  return s;
+  return autoSetup(s);
 }
 
 const socialRegistry = new Map<string, SocialPlatform<any>>();

@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 // Raw compute provisioning — VPS, GPU instances, bare metal. Different
 // abstraction from Target adapters: you OWN the resource (and the bill)
 // until you destroy it. `sh1pt deploy` drives this; `sh1pt ship` does not.
@@ -78,7 +80,7 @@ export interface CloudProvider<Config = unknown> {
 }
 
 export function defineCloud<Config>(p: CloudProvider<Config>): CloudProvider<Config> {
-  return p;
+  return autoSetup(p);
 }
 
 const cloudRegistry = new Map<string, CloudProvider<any>>();

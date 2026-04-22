@@ -7,13 +7,15 @@ import { iterateCmd } from './commands/iterate.js';
 import { loginCmd } from './commands/login.js';
 import { secretsCmd } from './commands/secrets.js';
 import { configCmd } from './commands/config.js';
+import { makeCategoryCmd } from './commands/adapter-cmd.js';
+import { CATEGORIES } from './adapter-registry.js';
 
 const program = new Command();
 
 program
   .name('sh1pt')
   .description('Build. Promote. Scale. Iterate…')
-  .version('0.0.0');
+  .version('0.1.0');
 
 // Four primary verbs — one per word of the tagline. Each accepts --from
 // <git|url|path|doc> to jump into the workflow against an existing asset.
@@ -27,6 +29,12 @@ program.addCommand(iterateCmd);    // iterate  · observe + agent-propose + ship
 program.addCommand(loginCmd);
 program.addCommand(secretsCmd);
 program.addCommand(configCmd);
+
+// Filesystem-mirrored adapter commands. One top-level command per
+// packages/<category>/ directory → `sh1pt <category> <name> setup`.
+for (const cat of CATEGORIES) {
+  program.addCommand(makeCategoryCmd(cat));
+}
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(kleur.red(`error: ${err.message}`));

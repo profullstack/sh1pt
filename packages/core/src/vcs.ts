@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 // Version-control integration — GitHub / GitLab / Gitea. Cross-cutting
 // plumbing every verb touches: `promote ship` tags releases, `iterate`
 // opens PRs with the agent's diff, `scale rollout` diffs versions,
@@ -80,7 +82,7 @@ export interface VcsProvider<Config = unknown> {
 }
 
 export function defineVcs<Config>(v: VcsProvider<Config>): VcsProvider<Config> {
-  return v;
+  return autoSetup(v);
 }
 
 const vcsRegistry = new Map<string, VcsProvider<any>>();

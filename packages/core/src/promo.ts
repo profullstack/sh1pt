@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 export type AdObjective = 'install' | 'web-traffic' | 'awareness' | 'engagement' | 'signup' | 'purchase';
 
 export interface Creative {
@@ -101,7 +103,7 @@ export interface AdPlatform<Config = unknown> {
 }
 
 export function defineAdPlatform<Config>(p: AdPlatform<Config>): AdPlatform<Config> {
-  return p;
+  return autoSetup(p);
 }
 
 const adRegistry = new Map<string, AdPlatform<any>>();

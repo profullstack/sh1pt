@@ -1,10 +1,12 @@
 'use server';
 
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import { sendWaitlistWelcome } from '@/lib/email/waitlist-welcome';
 
 const REF_COOKIE = 'sh1pt_ref';
+const SITE_ORIGIN = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://sh1pt.com';
 
 function randomCode(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(4)))
@@ -78,5 +80,28 @@ export async function joinWaitlist(formData: FormData) {
   // same browser doesn't get wrongly attributed.
   jar.delete(REF_COOKIE);
 
+  // Fire-and-log the welcome email. SMTP failures must never break the
+  // signup flow — the row is already in Supabase; we can retry later.
+  try {
+    const origin = await resolveOrigin();
+    await sendWaitlistWelcome({
+      to: email,
+      handle,
+      referralUrl: `${origin}/r/${referralCode}`,
+      thanksUrl: `${origin}/waitlist/thanks?code=${referralCode}`,
+    });
+  } catch (err) {
+    console.error('[waitlist] welcome email send failed', err);
+  }
+
   redirect(`/waitlist/thanks?code=${referralCode}`);
+}
+
+// Resolve the user-facing origin so email links don't leak the internal
+// 0.0.0.0:8080 Railway listen address.
+async function resolveOrigin(): Promise<string> {
+  const h = await headers();
+  const host = h.get('x-forwarded-host') ?? h.get('host');
+  const proto = h.get('x-forwarded-proto') ?? 'https';
+  return host ? `${proto}://${host}` : SITE_ORIGIN;
 }

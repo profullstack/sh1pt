@@ -236,10 +236,10 @@ importers:
   packages/cli:
     dependencies:
       '@profullstack/sh1pt-core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@profullstack/sh1pt-policy':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../policy
       commander:
         specifier: ^12.1.0
@@ -555,7 +555,7 @@ importers:
   packages/policy:
     dependencies:
       '@profullstack/sh1pt-core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
 
   packages/promo/angellist:

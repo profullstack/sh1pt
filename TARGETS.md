@@ -76,7 +76,7 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 | Target id | Channel | Status |
 |---|---|---|
 | `browser-chrome` | Chrome Web Store | ✅ |
-| `browser-firefox` | addons.mozilla.org | 🚧 |
+| `browser-firefox` | addons.mozilla.org | ✅ |
 | `browser-edge` | Edge Add-ons | 🚧 |
 | `browser-safari` | App Store (Safari ext.) | 🚧 |
 

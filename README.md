@@ -89,7 +89,7 @@ Or: `pnpm add -g @profullstack/sh1pt` · `aube add -g @profullstack/sh1pt` · `b
 
 **Package managers**
 ![npm](https://img.shields.io/badge/npm-CB3837?logo=npm&logoColor=white)
-![Aube](https://img.shields.io/badge/Aube-111?logo=nodedotjs&logoColor=white)
+[![Aube](https://img.shields.io/badge/Aube-111?logo=nodedotjs&logoColor=white)](https://aube.en.dev)
 ![JSR](https://img.shields.io/badge/JSR-F7DF1E?logo=javascript&logoColor=black)
 ![Deno Land](https://img.shields.io/badge/deno.land%2Fx-000?logo=deno&logoColor=white)
 ![GitHub Packages](https://img.shields.io/badge/GitHub_Packages-181717?logo=github&logoColor=white)

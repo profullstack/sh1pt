@@ -44,6 +44,8 @@ export default definePayment<Config>({
     label: 'Stripe',
     vendorDocUrl: 'https://dashboard.stripe.com/apikeys',
     steps: [
+      'Install stripe CLI from the official docs',
+      'Authenticate locally: stripe login',
       'Open dashboard.stripe.com → Developers → API keys',
       'Copy the "Secret key" (sk_live_… or sk_test_… for test mode)',
       'Webhook endpoint: set up https://dashboard.stripe.com/webhooks for your sh1pt cloud callback, copy the signing secret',

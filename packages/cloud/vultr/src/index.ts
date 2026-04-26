@@ -22,21 +22,22 @@ export default defineCloud<Config>({
   },
 
   async provision(ctx, spec, config) {
-    ctx.log(`vultr provision · kind=${spec.kind} · region=${spec.region ?? config.defaultRegion ?? 'ewr'}`);
+    ctx.log(`vultr-cli instance create · kind=${spec.kind} · region=${spec.region ?? config.defaultRegion ?? 'ewr'}`);
     if (ctx.dryRun) return stub('dry-run', 'provisioning', spec.kind);
     // TODO: POST /v2/instances (or /v2/bare-metals)
     return stub(`vultr_${Date.now()}`, 'provisioning', spec.kind);
   },
 
-  async list() { return []; },
-  async destroy(ctx, id) { ctx.log(`vultr destroy ${id}`); },
-  async status(ctx, id) { return stub(id, 'running', 'cpu-vps'); },
+  async list(ctx) { ctx.log('vultr-cli instance list --output json'); return []; },
+  async destroy(ctx, id) { ctx.log(`vultr-cli instance delete ${id}`); },
+  async status(ctx, id) { ctx.log(`vultr-cli instance get ${id}`); return stub(id, 'running', 'cpu-vps'); },
 
   setup: tokenSetup({
     secretKey: 'VULTR_API_KEY',
     label: 'Vultr',
     vendorDocUrl: 'https://my.vultr.com/settings/#settingsapi',
     steps: [
+      'Install vultr-cli from the official docs',
       'Open https://my.vultr.com/settings/#settingsapi',
       'Create an API token with full / read-write scope',
       'Copy the token (usually shown once)',

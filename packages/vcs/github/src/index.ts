@@ -64,6 +64,8 @@ export default defineVcs<Config>({
     label: 'GitHub',
     vendorDocUrl: 'https://github.com/settings/tokens',
     steps: [
+      'Install GitHub CLI (`gh`) from cli.github.com',
+      'Authenticate locally: gh auth login',
       'Open https://github.com/settings/tokens → Generate new token (classic) or Fine-grained',
       'Scopes: repo (for releases, PRs, issues), workflow (if managing Actions)',
       'Or: create a GitHub App and use an installation token for repo-scoped, auto-rotating auth',

@@ -25,14 +25,14 @@ export default defineCloud<Config>({
   },
 
   async provision(ctx, spec, config) {
-    ctx.log(`do provision · kind=${spec.kind} · region=${spec.region ?? config.defaultRegion ?? 'nyc3'}`);
+    ctx.log(`doctl compute droplet create · kind=${spec.kind} · region=${spec.region ?? config.defaultRegion ?? 'nyc3'}`);
     if (ctx.dryRun) return stubInstance('dry-run', 'provisioning', spec.kind);
     // TODO: POST /v2/droplets (or /v2/databases for managed DBs)
     return stubInstance(`do_${Date.now()}`, 'provisioning', spec.kind);
   },
 
-  async list() { return []; },
-  async destroy(ctx, id) { ctx.log(`do destroy ${id}`); },
+  async list(ctx) { ctx.log('doctl compute droplet list --output json'); return []; },
+  async destroy(ctx, id) { ctx.log(`doctl compute droplet delete ${id} --force`); },
   async status(ctx, id) {
     return stubInstance(id, 'running', 'cpu-vps');
   },
@@ -42,6 +42,8 @@ export default defineCloud<Config>({
     label: 'DigitalOcean',
     vendorDocUrl: 'https://cloud.digitalocean.com/account/api/tokens',
     steps: [
+      'Install doctl from the official docs',
+      'Authenticate locally: doctl auth init',
       'Open https://cloud.digitalocean.com/account/api/tokens',
       'Create an API token with full / read-write scope',
       'Copy the token (usually shown once)',

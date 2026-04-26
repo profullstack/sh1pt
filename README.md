@@ -739,9 +739,12 @@ sh1pt/
 │   ├── api/              SaaS backend (Hono) — projects, releases, builds, credentials, agents
 │   ├── policy/           Store-policy linter (runs before every ship)
 │   ├── promo/            Ad-platform adapters (reddit, meta, tiktok, google, youtube, x, apple-search, linkedin, microsoft)
-│   ├── cloud/            Cloud-infra adapters (runpod, digitalocean, vultr, hetzner, atlantic, railway, cloudflare)
+│   ├── cloud/            Cloud-infra adapters (runpod, digitalocean, vultr, hetzner, atlantic, railway, cloudflare, fly, supabase, firebase)
 │   ├── dns/              DNS adapters (porkbun, cloudflare)
 │   ├── agents/           AI CLI adapters (claude, codex, qwen)
+│   ├── secrets/          Secret-provider CLI adapters (doppler, dotenvx, onepassword)
+│   ├── observability/    Release/telemetry CLI adapters (sentry)
+│   ├── security/         Security scanner CLI adapters (snyk)
 │   ├── recipes/          App-type recipes (waitlist-crypto-investor, …)
 │   ├── merch/            Print-on-demand adapters (printful, printify)
 │   ├── captcha/          Captcha-solver adapters (2captcha, captcha-solver) — browser-mode fallback only
@@ -758,6 +761,7 @@ sh1pt/
 │       ├── pkg-aube/
 │       ├── pkg-homebrew/
 │       ├── mobile-ios/
+│       ├── mobile-expo/
 │       ├── desktop-mac/
 │       ├── desktop-win/
 │       ├── desktop-linux/
@@ -786,6 +790,10 @@ sh1pt/
 │       ├── deploy-workers/    Cloudflare Workers
 │       ├── deploy-fly/        Fly.io
 │       ├── deploy-railway/    Railway
+│       ├── deploy-vercel/     Vercel
+│       ├── deploy-netlify/    Netlify
+│       ├── deploy-render/     Render
+│       ├── deploy-firebase/   Firebase Hosting / Functions
 │       ├── chat-telegram/     Telegram Bot API
 │       ├── chat-slack/        Slack App Directory
 │       ├── chat-signal/       Signal (signal-cli / signald, ⚠ no official bot platform)

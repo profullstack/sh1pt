@@ -32,6 +32,8 @@ export default defineTarget<Config>({
     label: "Cloudflare Workers",
     vendorDocUrl: "https://dash.cloudflare.com/profile/api-tokens",
     steps: [
+      "Install with mise: mise use npm:wrangler",
+      "Authenticate locally: wrangler login",
       "Open dash.cloudflare.com \u2192 My Profile \u2192 API Tokens \u2192 Edit Cloudflare Workers template",
       "Scope: Workers Scripts:Edit, Account:Read, Zone:Read",
       "Run: sh1pt secret set CLOUDFLARE_API_TOKEN <token>",

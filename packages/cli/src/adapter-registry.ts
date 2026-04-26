@@ -43,13 +43,31 @@ export const CATEGORIES: readonly AdapterCategory[] = [
     id: 'cloud',
     pkgPrefix: '@profullstack/sh1pt-cloud',
     description: 'Raw-compute cloud providers — VPS, GPU, rollouts',
-    adapters: ['atlantic', 'cloudflare', 'digitalocean', 'hetzner', 'nvidia', 'railway', 'runpod', 'vultr'],
+    adapters: ['atlantic', 'cloudflare', 'digitalocean', 'firebase', 'fly', 'hetzner', 'nvidia', 'railway', 'runpod', 'supabase', 'vultr'],
+  },
+  {
+    id: 'observability',
+    pkgPrefix: '@profullstack/sh1pt-observability',
+    description: 'Release tracking and telemetry CLIs — Sentry',
+    adapters: ['sentry'],
   },
   {
     id: 'dns',
     pkgPrefix: '@profullstack/sh1pt-dns',
     description: 'DNS providers — Porkbun, Cloudflare',
     adapters: ['cloudflare', 'porkbun'],
+  },
+  {
+    id: 'secrets',
+    pkgPrefix: '@profullstack/sh1pt-secrets',
+    description: 'Secrets CLIs — Doppler, dotenvx, 1Password',
+    adapters: ['doppler', 'dotenvx', 'onepassword'],
+  },
+  {
+    id: 'security',
+    pkgPrefix: '@profullstack/sh1pt-security',
+    description: 'Security scanning CLIs — Snyk',
+    adapters: ['snyk'],
   },
   {
     id: 'docs',
@@ -103,7 +121,7 @@ export const CATEGORIES: readonly AdapterCategory[] = [
     id: 'targets',
     pkgPrefix: '@profullstack/sh1pt-target',
     description: 'Distribution targets — stores, registries, CDNs, deploy platforms',
-    adapters: ['browser-chrome', 'chat-discord', 'chat-signal', 'chat-slack', 'chat-telegram', 'chat-whatsapp', 'console-steam', 'deploy-denodeploy', 'deploy-fly', 'deploy-railway', 'deploy-workers', 'desktop-linux', 'desktop-mac', 'desktop-steamos', 'desktop-win', 'mobile-ios', 'pkg-aube', 'pkg-cdn', 'pkg-deno', 'pkg-docker', 'pkg-fdroid', 'pkg-ghpackages', 'pkg-homebrew', 'pkg-jsr', 'pkg-npm', 'tv-androidtv', 'tv-firetv', 'tv-roku', 'tv-tvos', 'tv-webos', 'web-static', 'xr-meta-quest', 'xr-pico', 'xr-sidequest', 'xr-steamvr', 'xr-visionos', 'xr-webxr'],
+    adapters: ['browser-chrome', 'chat-discord', 'chat-signal', 'chat-slack', 'chat-telegram', 'chat-whatsapp', 'console-steam', 'deploy-denodeploy', 'deploy-firebase', 'deploy-fly', 'deploy-netlify', 'deploy-railway', 'deploy-render', 'deploy-vercel', 'deploy-workers', 'desktop-linux', 'desktop-mac', 'desktop-steamos', 'desktop-win', 'mobile-expo', 'mobile-ios', 'pkg-aube', 'pkg-cdn', 'pkg-deno', 'pkg-docker', 'pkg-fdroid', 'pkg-ghpackages', 'pkg-homebrew', 'pkg-jsr', 'pkg-npm', 'tv-androidtv', 'tv-firetv', 'tv-roku', 'tv-tvos', 'tv-webos', 'web-static', 'xr-meta-quest', 'xr-pico', 'xr-sidequest', 'xr-steamvr', 'xr-visionos', 'xr-webxr'],
   },
   {
     id: 'vcs',

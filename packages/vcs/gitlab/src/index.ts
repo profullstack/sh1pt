@@ -62,6 +62,8 @@ export default defineVcs<Config>({
     label: 'GitLab',
     vendorDocUrl: 'https://gitlab.com/-/user_settings/personal_access_tokens',
     steps: [
+      'Install GitLab CLI (`glab`) from the official GitLab docs',
+      'Authenticate locally: glab auth login',
       'Open gitlab.com → User Settings → Access Tokens (self-hosted: /-/user_settings/personal_access_tokens)',
       'Scopes: api (full), read_repository, write_repository',
       'Create → copy the token (shown once)',

@@ -273,6 +273,18 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/cloud/firebase:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/cloud/fly:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/cloud/hetzner:
     dependencies:
       '@profullstack/sh1pt-core':
@@ -292,6 +304,12 @@ importers:
         version: link:../../core
 
   packages/cloud/runpod:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/cloud/supabase:
     dependencies:
       '@profullstack/sh1pt-core':
         specifier: workspace:*
@@ -510,6 +528,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/observability/sentry:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/outreach/listennotes:
     dependencies:
       '@profullstack/sh1pt-core':
@@ -649,6 +673,30 @@ importers:
         version: link:../../core
 
   packages/sdk: {}
+
+  packages/secrets/doppler:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/secrets/dotenvx:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/secrets/onepassword:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/security/snyk:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
 
   packages/social/4claw:
     dependencies:
@@ -902,13 +950,37 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/targets/deploy-firebase:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/targets/deploy-fly:
     dependencies:
       '@profullstack/sh1pt-core':
         specifier: workspace:*
         version: link:../../core
 
+  packages/targets/deploy-netlify:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/targets/deploy-railway:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/targets/deploy-render:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/targets/deploy-vercel:
     dependencies:
       '@profullstack/sh1pt-core':
         specifier: workspace:*
@@ -939,6 +1011,12 @@ importers:
         version: link:../../core
 
   packages/targets/desktop-win:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/targets/mobile-expo:
     dependencies:
       '@profullstack/sh1pt-core':
         specifier: workspace:*

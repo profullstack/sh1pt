@@ -36,6 +36,7 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 | Target id | Channel | Status |
 |---|---|---|
 | `mobile-ios` | App Store Connect + TestFlight | ✅ |
+| `mobile-expo` | Expo / EAS Build, Update, Submit | ✅ |
 | `mobile-android` | Google Play + internal tracks | 🚧 |
 | `pkg-fdroid` | F-Droid (FOSS Android repo) | ✅ |
 | `mobile-huawei` | Huawei AppGallery | — |
@@ -155,9 +156,10 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 | `deploy-workers` | Cloudflare Workers | ✅ |
 | `deploy-fly` | Fly.io | ✅ |
 | `deploy-railway` | Railway | ✅ |
-| `deploy-render` | Render | — |
-| `deploy-vercel` | Vercel (SSR/API) | — |
-| `deploy-netlify` | Netlify (Functions/Edge) | — |
+| `deploy-render` | Render | ✅ |
+| `deploy-vercel` | Vercel (SSR/API) | ✅ |
+| `deploy-netlify` | Netlify (Functions/Edge) | ✅ |
+| `deploy-firebase` | Firebase Hosting / Functions | ✅ |
 | `deploy-lambda` | AWS Lambda | — |
 | `deploy-cloudrun` | Google Cloud Run | — |
 

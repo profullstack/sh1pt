@@ -30,6 +30,7 @@ export default defineTarget<Config>({
     label: "Fly.io",
     vendorDocUrl: "https://fly.io/user/personal_access_tokens",
     steps: [
+      "Install flyctl from the official docs",
       "Run: flyctl auth login",
       "Generate a deploy token: flyctl tokens create deploy",
       "Run: sh1pt secret set FLY_API_TOKEN <token>",

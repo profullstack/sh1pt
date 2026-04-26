@@ -18,20 +18,20 @@ export default defineAgent<Config>({
         installed: result.exitCode === 0,
         version: result.stdout.trim() || undefined,
         authenticated: true, // real impl: check ~/.codex/auth
-        installHint: 'npm install -g @openai/codex',
+        installHint: 'mise use npm:@openai/codex',
       };
     } catch {
       return {
         installed: false,
         authenticated: false,
-        installHint: 'npm install -g @openai/codex',
+        installHint: 'mise use npm:@openai/codex',
         authHint: 'run `codex auth login` after install',
       };
     }
   },
 
   async run(ctx, config) {
-    await ensureCli('codex', 'Install: npm install -g @openai/codex', ctx.log);
+    await ensureCli('codex', 'Install: mise use npm:@openai/codex', ctx.log);
     const args = [
       ...(config.approvalMode ? ['--approval-mode', config.approvalMode] : []),
       ...(config.model ? ['--model', config.model] : []),
@@ -46,7 +46,7 @@ export default defineAgent<Config>({
     label: "OpenAI Codex CLI",
     vendorDocUrl: "https://github.com/openai/codex",
     steps: [
-      "Install: npm install -g @openai/codex (or follow instructions at github.com/openai/codex)",
+      "Install with mise: mise use npm:@openai/codex",
       "Set OPENAI_API_KEY in your shell OR run: sh1pt secret set OPENAI_API_KEY <key>",
       "sh1pt invokes the `codex` CLI directly",
     ],

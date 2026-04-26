@@ -30,7 +30,7 @@ export default defineCloud<Config>({
   },
 
   async provision(ctx, spec, config) {
-    ctx.log(`cloudflare provision · resource=${config.resourceType ?? 'r2-bucket'}`);
+    ctx.log(`wrangler ${config.resourceType ?? 'r2-bucket'} create`);
     if (ctx.dryRun) return stub('dry-run', 'provisioning', spec.kind);
     // TODO per resourceType:
     //  'r2-bucket'    → POST /accounts/:id/r2/buckets
@@ -41,15 +41,17 @@ export default defineCloud<Config>({
     return stub(`cf_${Date.now()}`, 'provisioning', spec.kind);
   },
 
-  async list() { return []; },
-  async destroy(ctx, id) { ctx.log(`cloudflare destroy ${id}`); },
-  async status(ctx, id) { return stub(id, 'running', 'object-storage'); },
+  async list(ctx) { ctx.log('wrangler whoami && wrangler r2 bucket list'); return []; },
+  async destroy(ctx, id) { ctx.log(`wrangler delete ${id}`); },
+  async status(ctx, id) { ctx.log(`wrangler deployments list --name ${id}`); return stub(id, 'running', 'object-storage'); },
 
   setup: tokenSetup({
     secretKey: 'CLOUDFLARE_API_TOKEN',
     label: 'Cloudflare (cloud)',
     vendorDocUrl: 'https://dash.cloudflare.com/profile/api-tokens',
     steps: [
+      'Install with mise: mise use npm:wrangler',
+      'Authenticate locally: wrangler login',
       'Open https://dash.cloudflare.com/profile/api-tokens',
       'Create an API token with full / read-write scope',
       'Copy the token (usually shown once)',

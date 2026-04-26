@@ -14,6 +14,7 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 | Target id | Channel | Status |
 |---|---|---|
 | `pkg-npm` | npmjs.com | ✅ |
+| `pkg-aube` | Aube (npm-compatible publish) | ✅ |
 | `pkg-homebrew` | Homebrew tap | ✅ |
 | `pkg-winget` | Microsoft winget | 🚧 |
 | `pkg-scoop` | Scoop bucket | 🚧 |

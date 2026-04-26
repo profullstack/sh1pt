@@ -10,6 +10,9 @@ if command -v bun >/dev/null 2>&1; then
 elif command -v pnpm >/dev/null 2>&1; then
   echo "[sh1pt] installing $PKG via pnpm"
   pnpm add -g "$PKG"
+elif command -v aube >/dev/null 2>&1 && command -v node >/dev/null 2>&1; then
+  echo "[sh1pt] installing $PKG via aube"
+  aube add -g "$PKG"
 elif command -v npm >/dev/null 2>&1; then
   echo "[sh1pt] installing $PKG via npm"
   npm install -g "$PKG"
@@ -20,6 +23,7 @@ else
   echo "sh1pt needs a JS runtime. Install one of:"
   echo "  bun   https://bun.sh"
   echo "  pnpm  https://pnpm.io"
+  echo "  aube  https://aube.en.dev"
   echo "  node  https://nodejs.org"
   echo "  deno  https://deno.com"
   exit 1

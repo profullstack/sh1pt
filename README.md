@@ -19,7 +19,7 @@
 curl -fsSL https://sh1pt.com/install.sh | sh
 ```
 
-Or: `pnpm add -g @profullstack/sh1pt` · `bun i -g @profullstack/sh1pt` · `npm i -g @profullstack/sh1pt`
+Or: `pnpm add -g @profullstack/sh1pt` · `aube add -g @profullstack/sh1pt` · `bun i -g @profullstack/sh1pt` · `npm i -g @profullstack/sh1pt`
 
 [![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![cloud](https://img.shields.io/badge/cloud-%24499%2Fyr-blueviolet)](#pricing)
@@ -89,6 +89,7 @@ Or: `pnpm add -g @profullstack/sh1pt` · `bun i -g @profullstack/sh1pt` · `npm 
 
 **Package managers**
 ![npm](https://img.shields.io/badge/npm-CB3837?logo=npm&logoColor=white)
+![Aube](https://img.shields.io/badge/Aube-111?logo=nodedotjs&logoColor=white)
 ![JSR](https://img.shields.io/badge/JSR-F7DF1E?logo=javascript&logoColor=black)
 ![Deno Land](https://img.shields.io/badge/deno.land%2Fx-000?logo=deno&logoColor=white)
 ![GitHub Packages](https://img.shields.io/badge/GitHub_Packages-181717?logo=github&logoColor=white)
@@ -679,10 +680,11 @@ sh1pt promote --budget 100/day  # run ads across Reddit / Meta / TikTok / Google
 curl -fsSL https://sh1pt.com/install.sh | sh
 ```
 
-The installer picks whichever JS runtime it finds (`bun` → `pnpm` → `npm` → `deno`) and installs `@profullstack/sh1pt` globally. Or pick your own:
+The installer picks whichever JS runtime/package manager it finds (`bun` -> `pnpm` -> `aube` -> `npm` -> `deno`) and installs `@profullstack/sh1pt` globally. Or pick your own:
 
 ```bash
 pnpm add     -g @profullstack/sh1pt      # or
+aube add     -g @profullstack/sh1pt      # or
 bun  install -g @profullstack/sh1pt      # or
 npm  install -g @profullstack/sh1pt      # or
 deno install -g -A -f -n sh1pt npm:@profullstack/sh1pt
@@ -740,6 +742,7 @@ sh1pt/
 │   ├── web/              Dashboard (stub)
 │   └── targets/          One adapter per distribution surface
 │       ├── pkg-npm/
+│       ├── pkg-aube/
 │       ├── pkg-homebrew/
 │       ├── mobile-ios/
 │       ├── desktop-mac/

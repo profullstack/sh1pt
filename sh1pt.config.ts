@@ -7,6 +7,7 @@ import { defineConfig } from '@profullstack/sh1pt-core';
 // users can install it however they install anything else:
 //
 //   npm install -g @profullstack/sh1pt
+//   aube add -g @profullstack/sh1pt
 //   brew install sh1pt
 //   winget install sh1pt
 //   scoop install sh1pt
@@ -49,6 +50,7 @@ export default defineConfig({
     'policy-npm': { use: 'pkg-npm', config: { packageDir: './packages/policy', access: 'public' } },
     // target adapters publish individually so users install only what they need
     'target-pkg-npm-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/pkg-npm', access: 'public' } },
+    'target-pkg-aube-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/pkg-aube', access: 'public' } },
     'target-pkg-homebrew-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/pkg-homebrew', access: 'public' } },
     'target-mobile-ios-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/mobile-ios', access: 'public' } },
     'target-desktop-mac-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/desktop-mac', access: 'public' } },

@@ -103,7 +103,7 @@ export const CATEGORIES: readonly AdapterCategory[] = [
     id: 'targets',
     pkgPrefix: '@profullstack/sh1pt-target',
     description: 'Distribution targets — stores, registries, CDNs, deploy platforms',
-    adapters: ['browser-chrome', 'chat-discord', 'chat-signal', 'chat-slack', 'chat-telegram', 'chat-whatsapp', 'console-steam', 'deploy-denodeploy', 'deploy-fly', 'deploy-railway', 'deploy-workers', 'desktop-linux', 'desktop-mac', 'desktop-steamos', 'desktop-win', 'mobile-ios', 'pkg-cdn', 'pkg-deno', 'pkg-docker', 'pkg-fdroid', 'pkg-ghpackages', 'pkg-homebrew', 'pkg-jsr', 'pkg-npm', 'tv-androidtv', 'tv-firetv', 'tv-roku', 'tv-tvos', 'tv-webos', 'web-static', 'xr-meta-quest', 'xr-pico', 'xr-sidequest', 'xr-steamvr', 'xr-visionos', 'xr-webxr'],
+    adapters: ['browser-chrome', 'chat-discord', 'chat-signal', 'chat-slack', 'chat-telegram', 'chat-whatsapp', 'console-steam', 'deploy-denodeploy', 'deploy-fly', 'deploy-railway', 'deploy-workers', 'desktop-linux', 'desktop-mac', 'desktop-steamos', 'desktop-win', 'mobile-ios', 'pkg-aube', 'pkg-cdn', 'pkg-deno', 'pkg-docker', 'pkg-fdroid', 'pkg-ghpackages', 'pkg-homebrew', 'pkg-jsr', 'pkg-npm', 'tv-androidtv', 'tv-firetv', 'tv-roku', 'tv-tvos', 'tv-webos', 'web-static', 'xr-meta-quest', 'xr-pico', 'xr-sidequest', 'xr-steamvr', 'xr-visionos', 'xr-webxr'],
   },
   {
     id: 'vcs',

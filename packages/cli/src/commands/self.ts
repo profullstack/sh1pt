@@ -3,7 +3,7 @@
 // Detects how sh1pt was installed by inspecting its own install path,
 // then shells out to the same package manager to update or remove.
 // No hard-coded paths — works whether you `npm i -g`, `pnpm add -g`,
-// `bun install -g`, or `deno install`.
+// `bun install -g`, `aube add -g`, or `deno install`.
 
 import { Command } from 'commander';
 import { spawnSync } from 'node:child_process';
@@ -14,16 +14,17 @@ import prompts from 'prompts';
 
 const PKG = '@profullstack/sh1pt';
 
-type PM = 'pnpm' | 'bun' | 'npm' | 'deno';
+type PM = 'pnpm' | 'bun' | 'aube' | 'npm' | 'deno';
 
 function detectPackageManager(): PM {
   const self = fileURLToPath(import.meta.url);
   // Look at install path — most accurate since globals live in PM-specific dirs
   if (/[/\\](\.pnpm|pnpm[/\\]global)[/\\]/.test(self)) return 'pnpm';
   if (/[/\\]\.bun[/\\]install[/\\]/.test(self)) return 'bun';
+  if (/[/\\](\.aube|aube[/\\]global)[/\\]/.test(self)) return 'aube';
   if (/[/\\]\.deno[/\\]/.test(self)) return 'deno';
-  // Fallback: whichever tool is on PATH, preferring pnpm → bun → npm
-  for (const pm of ['pnpm', 'bun', 'npm'] as const) {
+  // Fallback: whichever tool is on PATH, preferring pnpm -> bun -> aube -> npm
+  for (const pm of ['pnpm', 'bun', 'aube', 'npm'] as const) {
     const r = spawnSync(pm, ['--version'], { stdio: 'ignore' });
     if (r.status === 0) return pm;
   }
@@ -47,6 +48,7 @@ export const updateCmd = new Command('update')
       switch (pm) {
         case 'pnpm': return ['pnpm', 'add', '-g', `${PKG}@latest`];
         case 'bun':  return ['bun', 'add', '-g', `${PKG}@latest`];
+        case 'aube': return ['aube', 'add', '-g', `${PKG}@latest`];
         case 'deno': return ['deno', 'install', '-g', '-A', '-f', '-n', 'sh1pt', `npm:${PKG}`];
         case 'npm':  return ['npm', 'install', '-g', `${PKG}@latest`];
       }
@@ -64,6 +66,7 @@ export const removeCmd = new Command('remove')
       switch (pm) {
         case 'pnpm': return ['pnpm', 'remove', '-g', PKG];
         case 'bun':  return ['bun', 'remove', '-g', PKG];
+        case 'aube': return ['aube', 'remove', '-g', PKG];
         case 'deno': return ['deno', 'uninstall', '-g', 'sh1pt'];
         case 'npm':  return ['npm', 'uninstall', '-g', PKG];
       }

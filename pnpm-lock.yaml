@@ -950,6 +950,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/targets/pkg-aube:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/targets/pkg-cdn:
     dependencies:
       '@profullstack/sh1pt-core':

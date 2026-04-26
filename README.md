@@ -32,8 +32,21 @@ Or: `pnpm add -g @profullstack/sh1pt` · `aube add -g @profullstack/sh1pt` · `b
 [![Rust](https://img.shields.io/badge/Rust-000?logo=rust&logoColor=white)](#)
 [![C++ planned](https://img.shields.io/badge/C%2B%2B-planned-gray?logo=cplusplus&logoColor=white)](#)
 [![.NET planned](https://img.shields.io/badge/.NET-planned-gray?logo=dotnet&logoColor=white)](#)
+[![mise](https://img.shields.io/badge/mise-dev_env-00A98F)](https://mise.jdx.dev)
 [![pnpm](https://img.shields.io/badge/pnpm-F69220?logo=pnpm&logoColor=white)](#)
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)](#)
+
+### Dev Env
+
+This repo uses [`mise`](https://mise.jdx.dev) as the default local environment for Node, Python, Rust, Bun, Deno, package managers, and repeatable tasks:
+
+```bash
+mise install
+mise run install
+mise run typecheck
+```
+
+See [`CLI_INTEGRATIONS.md`](./CLI_INTEGRATIONS.md) for the CLI-backed integration backlog and install hints.
 
 ### Ships to
 

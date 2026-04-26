@@ -1,0 +1,49 @@
+[tools]
+node = "22"
+pnpm = "9.12.0"
+bun = "1.1"
+deno = "2"
+python = "3.12"
+rust = "stable"
+"npm:@endevco/aube" = "latest"
+
+[env]
+MISE_NPM_PACKAGE_MANAGER = "pnpm"
+
+[tasks.install]
+description = "Install workspace dependencies"
+run = "pnpm install"
+
+[tasks.dev]
+description = "Run all package dev tasks"
+run = "pnpm dev"
+
+[tasks.build]
+description = "Build the default web target"
+run = "pnpm build"
+
+[tasks.build-all]
+description = "Build every workspace package"
+run = "pnpm build:all"
+
+[tasks.typecheck]
+description = "Typecheck every workspace package"
+run = "pnpm typecheck"
+
+[tasks.test]
+description = "Run the Vitest suite"
+run = "pnpm test"
+
+[tasks.cli]
+description = "Run the local sh1pt CLI"
+run = "pnpm cli -- {{arg(name='args', var=true, default='--help')}}"
+
+[tasks.fastapi-dev]
+description = "Run the FastAPI Supabase boilerplate"
+dir = "boilerplates/fastapi-supabase"
+run = "python -m uvicorn app.main:app --reload --port 8000"
+
+[tasks.axum-build]
+description = "Build the Axum Supabase boilerplate"
+dir = "boilerplates/axum-supabase"
+run = "cargo build"

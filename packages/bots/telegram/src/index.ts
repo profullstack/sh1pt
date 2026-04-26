@@ -1,5 +1,6 @@
 import { Bot, type Context } from "grammy";
 import { z } from "zod";
+import { defineBot, tokenSetup, type BotEvent, type BotHandler } from "@profullstack/sh1pt-core";
 
 const configSchema = z.object({
   botToken: z.string().min(1),
@@ -13,17 +14,6 @@ const configSchema = z.object({
   maxConcurrentSessions: z.number().int().positive().default(5),
   allowedUsers: z.array(z.string()).default([]),
   adminUsers: z.array(z.string()).default([]),
-
-  setup: tokenSetup({
-    secretKey: 'TELEGRAM_BOT_TOKEN',
-    label: 'Telegram bot',
-    vendorDocUrl: 'https://core.telegram.org/bots/tutorial',
-    steps: [
-      'Open https://core.telegram.org/bots/tutorial',
-      'Create a bot application / API key',
-      'Copy the token shown (usually once)',
-    ],
-  }),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -120,3 +110,66 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     adminUsers: env.ADMIN_USERS?.split(",").map((u) => u.trim()).filter(Boolean) || [],
   });
 }
+
+function toBotEvent(msg: IncomingMessage): BotEvent {
+  return {
+    type: "message",
+    channel: String(msg.chatId),
+    user: {
+      id: msg.source,
+      displayName: msg.sourceName,
+    },
+    text: msg.text,
+    attachments: msg.attachments.map((a) => ({ url: a.url, filename: a.filename })),
+    timestamp: new Date(msg.timestamp).toISOString(),
+    raw: msg.raw,
+  };
+}
+
+export default defineBot<Partial<Config>>({
+  id: "bot-telegram",
+  label: "Telegram",
+  supports: ["message", "command"],
+
+  async register(ctx, handlers: BotHandler[], config) {
+    const token = config.botToken ?? ctx.secret("TELEGRAM_BOT_TOKEN");
+    if (!token) throw new Error("TELEGRAM_BOT_TOKEN not in vault");
+    ctx.log(`bot-telegram · register ${handlers.length} handlers`);
+    if (ctx.dryRun) return { async close() {} };
+
+    const bot = new TelegramBot(configSchema.parse({ ...config, botToken: token }));
+    bot.onMessage(async (msg) => {
+      const event = toBotEvent(msg);
+      for (const handler of handlers) {
+        const reply = await handler.handle(ctx, event);
+        if (reply?.text) await bot.reply(msg, reply.text);
+      }
+    });
+    await bot.start();
+    return { close: () => bot.stop() };
+  },
+
+  async send(ctx, channel, reply, config) {
+    const token = config.botToken ?? ctx.secret("TELEGRAM_BOT_TOKEN");
+    if (!token) throw new Error("TELEGRAM_BOT_TOKEN not in vault");
+    ctx.log(`bot-telegram · send → chat=${channel}`);
+    if (ctx.dryRun) return { id: "dry-run" };
+
+    const chatId = Number(channel);
+    if (!Number.isFinite(chatId)) throw new Error(`Invalid Telegram chat id: ${channel}`);
+    const bot = new TelegramBot(configSchema.parse({ ...config, botToken: token }));
+    await bot.send(chatId, reply.text ?? "");
+    return { id: `tg_${Date.now()}` };
+  },
+
+  setup: tokenSetup({
+    secretKey: "TELEGRAM_BOT_TOKEN",
+    label: "Telegram bot",
+    vendorDocUrl: "https://core.telegram.org/bots/tutorial",
+    steps: [
+      "Open https://core.telegram.org/bots/tutorial",
+      "Create a bot with BotFather",
+      "Copy the token shown (usually once)",
+    ],
+  }),
+});

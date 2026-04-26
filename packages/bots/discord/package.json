@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@profullstack/sh1pt-bot-core": "workspace:*",
+    "@profullstack/sh1pt-core": "workspace:*",
     "discord.js": "^14.26.3",
     "zod": "^3.24.0"
   }

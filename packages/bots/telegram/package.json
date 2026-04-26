@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@profullstack/sh1pt-bot-core": "workspace:*",
+    "@profullstack/sh1pt-core": "workspace:*",
     "grammy": "^1.21.0",
     "zod": "^3.24.0"
   }

@@ -17,7 +17,7 @@ export default {
 
   async connect(ctx: { secret(k: string): string | undefined; log(m: string): void }) {
     if (!ctx.secret('LISTENNOTES_API_KEY')) {
-      ctx.log('LISTENNOTES_API_KEY not in vault — falling back to free-tier endpoints', 'warn');
+      ctx.log('WARN: LISTENNOTES_API_KEY not in vault — falling back to free-tier endpoints');
     }
     return { accountId: 'listennotes' };
   },

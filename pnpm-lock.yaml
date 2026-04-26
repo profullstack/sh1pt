@@ -79,6 +79,9 @@ importers:
       '@profullstack/sh1pt-bot-core':
         specifier: workspace:*
         version: link:../core
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
       discord.js:
         specifier: ^14.26.3
         version: 14.26.3
@@ -109,6 +112,9 @@ importers:
       '@profullstack/sh1pt-bot-core':
         specifier: workspace:*
         version: link:../core
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -130,6 +136,9 @@ importers:
       '@profullstack/sh1pt-bot-core':
         specifier: workspace:*
         version: link:../core
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
       grammy:
         specifier: ^1.21.0
         version: 1.42.0
@@ -166,6 +175,9 @@ importers:
       '@profullstack/sh1pt-bot-core':
         specifier: workspace:*
         version: link:../core
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
       baileys:
         specifier: ^6.10.0
         version: 6.17.16(eslint@9.39.4)(typescript@5.9.3)

@@ -2,9 +2,11 @@ import {
   Client,
   GatewayIntentBits,
   Partials,
+  type Attachment,
   type Message as DiscordMessage,
 } from "discord.js";
 import { z } from "zod";
+import { defineBot, tokenSetup, type BotEvent, type BotHandler } from "@profullstack/sh1pt-core";
 
 const configSchema = z.object({
   botToken: z.string().min(1),
@@ -20,17 +22,6 @@ const configSchema = z.object({
   allowedUsers: z.array(z.string()).default([]),
   allowedChannels: z.array(z.string()).optional(),
   adminUsers: z.array(z.string()).default([]),
-
-  setup: tokenSetup({
-    secretKey: 'DISCORD_BOT_TOKEN',
-    label: 'Discord bot',
-    vendorDocUrl: 'https://discord.com/developers/applications',
-    steps: [
-      'Open https://discord.com/developers/applications',
-      'Create a bot application / API key',
-      'Copy the token shown (usually once)',
-    ],
-  }),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -100,7 +91,7 @@ export class DiscordBot {
     if (msg.author.bot) return;
     if (!msg.content && msg.attachments.size === 0) return;
 
-    const attachments = msg.attachments.map((a: any) => ({
+    const attachments = msg.attachments.map((a: Attachment) => ({
       filename: a.name || a.id,
       url: a.url,
       contentType: a.contentType || "",
@@ -130,14 +121,14 @@ export class DiscordBot {
 
   async send(channelId: string, message: string): Promise<void> {
     const channel = await this.client.channels.fetch(channelId);
-    if (!channel || !("send" in channel)) throw new Error(`Channel ${channelId} not found`);
+    if (!isTextChannel(channel)) throw new Error(`Channel ${channelId} not found`);
     await channel.send(message);
   }
 
   async sendTyping(channelId: string): Promise<void> {
     try {
       const channel = await this.client.channels.fetch(channelId);
-      if (channel && "sendTyping" in channel) await channel.sendTyping();
+      if (isTextChannel(channel) && "sendTyping" in channel) await channel.sendTyping();
     } catch {}
   }
 
@@ -171,3 +162,82 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     adminUsers: env.ADMIN_USERS?.split(",").map((u) => u.trim()).filter(Boolean) || [],
   });
 }
+
+interface SendableChannel {
+  send(message: string): Promise<unknown>;
+  sendTyping?: () => Promise<unknown>;
+}
+
+function isTextChannel(channel: unknown): channel is SendableChannel {
+  return !!channel && typeof channel === "object" && "send" in channel;
+}
+
+function toBotEvent(msg: IncomingMessage): BotEvent {
+  return {
+    type: "message",
+    channel: msg.channelId,
+    user: {
+      id: msg.source,
+      displayName: msg.sourceName,
+    },
+    text: msg.text,
+    attachments: msg.attachments.map((a) => ({
+      url: a.url,
+      filename: a.filename,
+      mimeType: a.contentType,
+    })),
+    timestamp: new Date(msg.timestamp).toISOString(),
+    raw: msg.raw,
+  };
+}
+
+export default defineBot<Partial<Config>>({
+  id: "bot-discord",
+  label: "Discord",
+  supports: ["message", "command", "interaction", "reaction", "join", "leave"],
+
+  async register(ctx, handlers: BotHandler[], config) {
+    const token = config.botToken ?? ctx.secret("DISCORD_BOT_TOKEN");
+    if (!token) throw new Error("DISCORD_BOT_TOKEN not in vault");
+    ctx.log(`bot-discord · register ${handlers.length} handlers`);
+    if (ctx.dryRun) return { async close() {} };
+
+    const bot = new DiscordBot(configSchema.parse({ ...config, botToken: token }));
+    bot.onMessage(async (msg) => {
+      const event = toBotEvent(msg);
+      for (const handler of handlers) {
+        const reply = await handler.handle(ctx, event);
+        if (reply?.text) await bot.reply(msg, reply.text);
+      }
+    });
+    await bot.start();
+    return { close: () => bot.stop() };
+  },
+
+  async send(ctx, channel, reply, config) {
+    const token = config.botToken ?? ctx.secret("DISCORD_BOT_TOKEN");
+    if (!token) throw new Error("DISCORD_BOT_TOKEN not in vault");
+    ctx.log(`bot-discord · send → channel=${channel}`);
+    if (ctx.dryRun) return { id: "dry-run" };
+
+    const bot = new DiscordBot(configSchema.parse({ ...config, botToken: token }));
+    await bot.start();
+    try {
+      await bot.send(channel, reply.text ?? "");
+    } finally {
+      await bot.stop();
+    }
+    return { id: `d_${Date.now()}` };
+  },
+
+  setup: tokenSetup({
+    secretKey: "DISCORD_BOT_TOKEN",
+    label: "Discord bot",
+    vendorDocUrl: "https://discord.com/developers/applications",
+    steps: [
+      "Open https://discord.com/developers/applications",
+      "Create a bot application / API key",
+      "Copy the token shown (usually once)",
+    ],
+  }),
+});

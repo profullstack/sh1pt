@@ -1,5 +1,6 @@
 import makeBaileysBot, { type WASocket } from "baileys";
 import { z } from "zod";
+import { defineBot, manualSetup, type BotEvent, type BotHandler } from "@profullstack/sh1pt-core";
 
 const configSchema = z.object({
   botName: z.string().default("Bot"),
@@ -11,17 +12,6 @@ const configSchema = z.object({
   maxConcurrentSessions: z.number().int().positive().default(5),
   allowedUsers: z.array(z.string()).default([]),
   adminUsers: z.array(z.string()).default([]),
-
-  setup: tokenSetup({
-    secretKey: 'WHATSAPP_ACCESS_TOKEN',
-    label: 'WhatsApp Business Cloud API',
-    vendorDocUrl: 'https://developers.facebook.com/apps/',
-    steps: [
-      'Open https://developers.facebook.com/apps/',
-      'Create a bot application / API key',
-      'Copy the token shown (usually once)',
-    ],
-  }),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -54,7 +44,7 @@ export class WhatsAppBot {
   }
 
   async start(): Promise<void> {
-    const { state, saveState } = useMultiFileAuthState("./auth");
+    const { state } = useMultiFileAuthState("./auth");
 
     this.sock = makeBaileysBot({
       auth: state,
@@ -77,7 +67,7 @@ export class WhatsAppBot {
           source: chatId,
           sourceName: msg.pushName || "User",
           text,
-          timestamp: msg.messageTimestamp * 1000,
+          timestamp: Number(msg.messageTimestamp ?? 0) * 1000,
           chatId,
           isGroup,
           attachments: [],
@@ -138,3 +128,64 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     adminUsers: env.ADMIN_USERS?.split(",").map((u) => u.trim()).filter(Boolean) || [],
   });
 }
+
+function toBotEvent(msg: IncomingMessage): BotEvent {
+  return {
+    type: "message",
+    channel: msg.chatId,
+    user: {
+      id: msg.source,
+      displayName: msg.sourceName,
+    },
+    text: msg.text,
+    attachments: msg.attachments.map((a) => ({ url: a.url, filename: a.filename })),
+    timestamp: new Date(msg.timestamp).toISOString(),
+    raw: msg.raw,
+  };
+}
+
+export default defineBot<Partial<Config>>({
+  id: "bot-whatsapp",
+  label: "WhatsApp",
+  supports: ["message"],
+
+  async register(ctx, handlers: BotHandler[], config) {
+    ctx.log(`bot-whatsapp · register ${handlers.length} handlers`);
+    if (ctx.dryRun) return { async close() {} };
+
+    const bot = new WhatsAppBot(configSchema.parse(config));
+    bot.onMessage(async (msg) => {
+      const event = toBotEvent(msg);
+      for (const handler of handlers) {
+        const reply = await handler.handle(ctx, event);
+        if (reply?.text) await bot.reply(msg, reply.text);
+      }
+    });
+    await bot.start();
+    return { close: () => bot.stop() };
+  },
+
+  async send(ctx, channel, reply, config) {
+    ctx.log(`bot-whatsapp · send → chat=${channel}`);
+    if (ctx.dryRun) return { id: "dry-run" };
+
+    const bot = new WhatsAppBot(configSchema.parse(config));
+    await bot.start();
+    try {
+      await bot.send(channel, reply.text ?? "");
+    } finally {
+      await bot.stop();
+    }
+    return { id: `wa_${Date.now()}` };
+  },
+
+  setup: manualSetup({
+    label: "WhatsApp",
+    vendorDocUrl: "https://developers.facebook.com/docs/whatsapp",
+    steps: [
+      "For WhatsApp Business Cloud API, create a Meta app and phone number",
+      "For Baileys local runtime, scan the QR code generated on first start",
+      "Cloud API token support belongs in the deploy target; this bot runtime uses local auth state",
+    ],
+  }),
+});

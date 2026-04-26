@@ -22,7 +22,7 @@ export default defineSocial<Config>({
     return { accountId: config.username };
   },
   async post(ctx, post, config) {
-    if ((post.body?.length ?? 0) > 80) ctx.log('HN titles over 80 chars tend to fail the front page heuristic', 'warn');
+    if ((post.body?.length ?? 0) > 80) ctx.log('WARN: HN titles over 80 chars tend to fail the front page heuristic');
     ctx.log(`hackernews ${config.submissionType ?? 'show'} · "${post.body?.slice(0, 60)}…"`);
     if (ctx.dryRun) return { id: 'dry-run', url: 'https://news.ycombinator.com/', platform: 'hackernews', publishedAt: new Date().toISOString() };
     // TODO: Playwright → /login → /submit. Enforce 1/day per user in the call site.

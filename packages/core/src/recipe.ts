@@ -73,6 +73,7 @@ export interface Recipe {
   // `sh1pt agents generate` with this recipe, the matching prompt is
   // handed to Claude/Codex/Qwen to write the implementation.
   prompts?: Record<string, string>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<unknown>>;
 }
 
 export function defineRecipe(r: Recipe): Recipe {

@@ -1,4 +1,4 @@
-import { manualSetup } from '@profullstack/sh1pt-core';
+import { defineBot, manualSetup, type BotEvent, type BotHandler } from '@profullstack/sh1pt-core';
 import { z } from "zod";
 import { spawn, type ChildProcess } from "node:child_process";
 
@@ -15,17 +15,6 @@ const configSchema = z.object({
   maxConcurrentSessions: z.number().int().positive().default(5),
   allowedUsers: z.array(z.string()).default([]),
   adminUsers: z.array(z.string()).default([]),
-
-  setup: manualSetup({
-    label: "Signal (signal-cli)",
-    vendorDocUrl: "https://github.com/AsamK/signal-cli",
-    steps: [
-      "Install signal-cli: brew install signal-cli OR download from GitHub releases",
-      "Register a dedicated number: signal-cli -u +12345550100 register",
-      "Verify: signal-cli -u +12345550100 verify <code>",
-      "No token \u2014 sh1pt invokes signal-cli via subprocess",
-    ],
-  }),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -121,3 +110,63 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     adminUsers: env.ADMIN_USERS?.split(",").map((u) => u.trim()).filter(Boolean) || [],
   });
 }
+
+function toBotEvent(msg: IncomingMessage): BotEvent {
+  return {
+    type: "message",
+    channel: msg.groupId ?? msg.source,
+    user: {
+      id: msg.source,
+      displayName: msg.sourceName,
+    },
+    text: msg.text,
+    attachments: msg.attachments.map((a) => ({ url: a.url, filename: a.filename })),
+    timestamp: new Date(msg.timestamp).toISOString(),
+  };
+}
+
+export default defineBot<Partial<Config>>({
+  id: "bot-signal",
+  label: "Signal (signal-cli)",
+  supports: ["message"],
+
+  async register(ctx, handlers: BotHandler[], config) {
+    const phoneNumber = config.phoneNumber ?? ctx.secret("SIGNAL_PHONE_NUMBER");
+    if (!phoneNumber) throw new Error("SIGNAL_PHONE_NUMBER not in vault");
+    ctx.log(`bot-signal · register ${handlers.length} handlers`);
+    if (ctx.dryRun) return { async close() {} };
+
+    const bot = new SignalBot(configSchema.parse({ ...config, phoneNumber }));
+    bot.onMessage(async (msg) => {
+      const event = toBotEvent(msg);
+      for (const handler of handlers) {
+        const reply = await handler.handle(ctx, event);
+        if (reply?.text) await bot.reply(msg, reply.text);
+      }
+    });
+    await bot.start();
+    return { close: () => bot.stop() };
+  },
+
+  async send(ctx, channel, reply, config) {
+    const phoneNumber = config.phoneNumber ?? ctx.secret("SIGNAL_PHONE_NUMBER");
+    if (!phoneNumber) throw new Error("SIGNAL_PHONE_NUMBER not in vault");
+    ctx.log(`bot-signal · send → recipient=${channel}`);
+    if (ctx.dryRun) return { id: "dry-run" };
+
+    const bot = new SignalBot(configSchema.parse({ ...config, phoneNumber }));
+    await bot.send(channel, reply.text ?? "");
+    return { id: `sig_${Date.now()}` };
+  },
+
+  setup: manualSetup({
+    label: "Signal (signal-cli)",
+    vendorDocUrl: "https://github.com/AsamK/signal-cli",
+    steps: [
+      "Install signal-cli: brew install signal-cli OR download from GitHub releases",
+      "Register a dedicated number: signal-cli -u +12345550100 register",
+      "Verify: signal-cli -u +12345550100 verify <code>",
+      "Run: sh1pt secret set SIGNAL_PHONE_NUMBER <number>",
+    ],
+  }),
+});

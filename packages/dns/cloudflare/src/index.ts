@@ -35,7 +35,7 @@ export default defineDns<Config>({
   async upsertRecord(zoneId, record, config) {
     // TODO: POST ${API}/zones/${zoneId}/dns_records (or PUT /:recordId for update)
     const proxied = record.proxied ?? config.defaultProxied ?? false;
-    return { id: 'stub', zone: zoneId, ...record, proxied };
+    return { id: 'stub', ...record, zone: zoneId, proxied };
   },
 
   async deleteRecord(zoneId, recordId) {

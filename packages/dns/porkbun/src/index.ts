@@ -41,7 +41,7 @@ export default defineDns<Config>({
   async upsertRecord(zoneId, record) {
     // TODO: check existing via retrieve, then create or edit as appropriate.
     // POST ${API}/dns/create/${zoneId} with { apikey, secretapikey, name, type, content, ttl, prio? }
-    return { id: 'stub', zone: zoneId, ...record };
+    return { id: 'stub', ...record, zone: zoneId };
   },
 
   async deleteRecord(zoneId, recordId) {

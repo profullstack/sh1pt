@@ -920,6 +920,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/targets/browser-firefox:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/targets/chat-discord:
     dependencies:
       '@profullstack/sh1pt-core':
@@ -1065,6 +1071,12 @@ importers:
         version: link:../../core
 
   packages/targets/pkg-fdroid:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/targets/pkg-flatpak:
     dependencies:
       '@profullstack/sh1pt-core':
         specifier: workspace:*

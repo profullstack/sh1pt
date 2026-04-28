@@ -20,7 +20,7 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 | `pkg-scoop` | Scoop bucket | 🚧 |
 | `pkg-apt` | apt repo / PPA | 🚧 |
 | `pkg-snap` | Snapcraft | 🚧 |
-| `pkg-flatpak` | Flathub | 🚧 |
+| `pkg-flatpak` | Flathub | ✅ |
 | `pkg-aur` | Arch User Repo | 🚧 |
 | `pkg-nix` | nixpkgs | 🚧 |
 

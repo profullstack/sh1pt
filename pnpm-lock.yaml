@@ -1052,6 +1052,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/targets/pkg-aur:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/targets/pkg-cdn:
     dependencies:
       '@profullstack/sh1pt-core':
@@ -1101,6 +1107,12 @@ importers:
         version: link:../../core
 
   packages/targets/pkg-npm:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/targets/pkg-snap:
     dependencies:
       '@profullstack/sh1pt-core':
         specifier: workspace:*

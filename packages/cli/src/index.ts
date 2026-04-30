@@ -10,6 +10,7 @@ import { configCmd } from './commands/config.js';
 import { updateCmd, removeCmd } from './commands/self.js';
 import { makeCategoryCmd } from './commands/adapter-cmd.js';
 import { CATEGORIES } from './adapter-registry.js';
+import { skillsCmd } from './commands/skills.js';
 
 const program = new Command();
 
@@ -30,6 +31,7 @@ program.addCommand(iterateCmd);    // iterate  · observe + agent-propose + ship
 program.addCommand(loginCmd);
 program.addCommand(secretsCmd);
 program.addCommand(configCmd);
+program.addCommand(skillsCmd);      // skills   · package/promote SKILL.md agent skills across marketplaces
 
 // Self-management — sh1pt update / upgrade / remove / uninstall.
 program.addCommand(updateCmd);

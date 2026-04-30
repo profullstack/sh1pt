@@ -321,7 +321,21 @@ sh1pt iterate
 
 sh1pt login                                         (auxiliary)
 sh1pt secret set|get|list|rm                        (auxiliary — credentials vault)
+sh1pt skills new|create                             create sh1pt.skill.json from SKILL.md
+sh1pt skills publish --all [--dry-run]              promote agent skills to uGig/ClawHub/etc.
+sh1pt skills marketplaces                           list supported skill marketplaces
 ```
+
+### skills
+
+```bash
+sh1pt skills new --skill-file ./SKILL.md --source-url https://raw.example/SKILL.md --price 0
+sh1pt skills publish --all --dry-run
+sh1pt skills publish --marketplace ugig clawhub goose
+sh1pt skills marketplaces
+```
+
+`sh1pt skills new` creates a `sh1pt.skill.json` promotion manifest from a local `SKILL.md`. `sh1pt skills publish --all --dry-run` prints the exact uGig/ClawHub/Goose/LobeHub/Kilo/Skillstore/etc. commands or manual steps so agents can register, verify credentials, and promote without guessing.
 
 ### promote ship
 

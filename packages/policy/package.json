@@ -1,6 +1,6 @@
 {
   "name": "@profullstack/sh1pt-policy",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Store-policy linter for sh1pt — catches rejections before submission.",
   "license": "MIT",
   "repository": {

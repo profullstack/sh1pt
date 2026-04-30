@@ -1,6 +1,6 @@
 {
   "name": "@profullstack/sh1pt-core",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Core interfaces and contract-test runners for sh1pt adapters.",
   "license": "MIT",
   "repository": {

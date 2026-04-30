@@ -18,17 +18,18 @@ type SkillManifest = {
 
 const MARKETPLACES = [
   { id: 'ugig', name: 'uGig', method: 'CLI/API', command: (m: SkillManifest) => `ugig skills new --title ${q(m.title)} --description ${q(m.description)} --category ${q(m.category ?? 'Automation')} --price ${m.price} --tags ${q(m.tags.join(','))}${m.sourceUrl ? ` --source-url ${q(m.sourceUrl)}` : ''}` },
-  { id: 'clawhub', name: 'ClawHub', method: 'CLI', command: (m: SkillManifest) => `clawhub publish . --slug ${q(m.name)} --version 1.0.0` },
-  { id: 'skills-sh', name: 'skills.sh', method: 'Auto-indexed', note: 'Push a public GitHub repo containing SKILL.md; skills.sh auto-indexes it.' },
-  { id: 'lobehub', name: 'LobeHub Skills', method: 'Submit', command: (m: SkillManifest) => `npx @lobehub/cli skill install ${m.name}` },
-  { id: 'goose', name: 'Goose Skills', method: 'PR', command: (m: SkillManifest) => `goose skill add ${m.sourceUrl ?? m.skillFile}` },
-  { id: 'kilo', name: 'Kilo Marketplace', method: 'PR', command: (m: SkillManifest) => `kilo skill install ${m.name}` },
-  { id: 'skillstore', name: 'Skillstore', method: 'GitHub repo', note: 'Submit a public GitHub repo or raw SKILL.md URL for automated security analysis.' },
-  { id: 'freemygent', name: 'FreeMyGent', method: 'Upload', note: 'Upload skill.md, set price, and connect wallet.' },
-  { id: 'clawmart', name: 'ClawMart', method: 'API', command: (m: SkillManifest) => `clawmart publish . --name ${q(m.name)}` },
-  { id: 'manus', name: 'Manus Agent Skills', method: 'Account', note: 'Free account required; submit SKILL.md through Manus account UI.' },
-  { id: 'vscode-agent-skills', name: 'VS Code Agent Skills', method: 'GitHub', note: 'Publish via GitHub repo/PR for extension indexing.' },
-  { id: 'moltbook', name: 'Moltbook / NormieClaw', method: 'Submit', note: 'Submit, set price, and pass quality check.' },
+  { id: 'clawhub', name: 'ClawHub', method: 'CLI', command: (m: SkillManifest) => `npm exec --package=clawhub@latest -- clawhub skill publish . --slug ${q(m.name)} --name ${q(m.title)} --version 1.0.0 --tags latest,automation` },
+  { id: 'skills-sh', name: 'skills.sh / OpenClaw skills index', method: 'GitHub PR', note: 'Submit to openclaw/skills when maintainers allow PRs, or share a compare branch. Public SKILL.md repo remains importable.' },
+  { id: 'lobehub', name: 'LobeHub / Lobe Chat Agents', method: 'GitHub PR', note: 'Submit a compatible Lobe Chat agent entry pointing at the public SKILL.md/repo; this is an agent index, not native SKILL.md hosting.' },
+  { id: 'goose', name: 'Goose Skills', method: 'GitHub PR', note: 'Add a skills/capabilities/<slug>/SKILL.md plus skill.meta.json entry to gooseworks-ai/goose-skills.' },
+  { id: 'kilo', name: 'Kilo Marketplace', method: 'GitHub PR', command: (m: SkillManifest) => `npx tsx bin/add-remote-skill.ts ${m.sourceUrl ?? m.skillFile}` },
+  { id: 'skillstore', name: 'AI Skillstore', method: 'GitHub PR', note: 'Add one skill directory per skill to aiskillstore/marketplace and run its validator before opening a PR.' },
+  { id: 'freemygent', name: 'FreeMyGent', method: 'Wallet/on-chain', note: 'Requires wallet connect/listing transaction; no normal public API-key path found.' },
+  { id: 'clawmart', name: 'ClawMart', method: 'Paid creator API', note: 'Requires shopclawmart.com Creator Membership and CLAWMART_API_KEY; then use the ClawMart publisher script/API.' },
+  { id: 'manus', name: 'Manus Agent Skills', method: 'GitHub import', note: 'Use a public GitHub repo containing SKILL.md files; Manus imports from GitHub.' },
+  { id: 'vscode-agent-skills', name: 'VS Code Agent Skills', method: 'GitHub PR', note: 'Submit repo/source entries to formulahendry/vscode-agent-skills for extension indexing.' },
+  { id: 'moltbook', name: 'Moltbook / NormieClaw', method: 'Issue/PR', note: 'Submit an index request or PR to Moltbook-Official/moltbook with public skill URLs.' },
+  { id: 'agenthub', name: 'AgentHub / agentskillsmarket.space', method: 'Account import', note: 'Requires account email confirmation, then import the public GitHub skill repo from the submit page.' },
 ] as const;
 
 function slugify(s: string): string {

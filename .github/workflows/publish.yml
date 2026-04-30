@@ -49,26 +49,42 @@ jobs:
           pnpm --filter @profullstack/sh1pt-policy build
           pnpm --filter @profullstack/sh1pt build
 
-      - name: Publish @profullstack/sh1pt-core
-        run: >-
-          pnpm --filter @profullstack/sh1pt-core publish
-          --access public --no-git-checks --provenance
-          ${{ inputs.dry_run && '--dry-run' || '' }}
+      - name: Publish packages if not already on npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true' || 'false' }}
+        run: |
+          set -euo pipefail
 
-      - name: Publish @profullstack/sh1pt-policy
-        run: >-
-          pnpm --filter @profullstack/sh1pt-policy publish
-          --access public --no-git-checks --provenance
-          ${{ inputs.dry_run && '--dry-run' || '' }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          publish_if_missing() {
+            local package_json="$1"
+            local package_name
+            local package_version
+            package_name=$(node -p "require('./${package_json}').name")
+            package_version=$(node -p "require('./${package_json}').version")
 
-      - name: Publish @profullstack/sh1pt
-        run: >-
-          pnpm --filter @profullstack/sh1pt publish
-          --access public --no-git-checks --provenance
-          ${{ inputs.dry_run && '--dry-run' || '' }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+            if npm view "${package_name}@${package_version}" version >/dev/null 2>&1; then
+              echo "::notice::${package_name}@${package_version} is already published; skipping"
+              return 0
+            fi
+
+            if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+              echo "::error::NPM_TOKEN secret is required to publish ${package_name}@${package_version}"
+              exit 1
+            fi
+
+            local dry_run_arg=""
+            if [ "${DRY_RUN}" = "true" ]; then
+              dry_run_arg="--dry-run"
+            fi
+
+            pnpm --filter "${package_name}" publish \
+              --access public \
+              --no-git-checks \
+              --provenance \
+              ${dry_run_arg}
+          }
+
+          publish_if_missing packages/core/package.json
+          publish_if_missing packages/policy/package.json
+          publish_if_missing packages/cli/package.json

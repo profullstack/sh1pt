@@ -1,0 +1,13 @@
+{
+  "name": "@profullstack/sh1pt-target-pkg-winget",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@profullstack/sh1pt-core": "workspace:*"
+  }
+}

@@ -4,7 +4,7 @@ import { buildCmd } from './commands/build.js';
 import { promoteCmd } from './commands/promote.js';
 import { scaleCmd } from './commands/scale.js';
 import { iterateCmd } from './commands/iterate.js';
-import { loginCmd } from './commands/login.js';
+import { loginCmd, logoutCmd } from './commands/login.js';
 import { secretsCmd } from './commands/secrets.js';
 import { configCmd } from './commands/config.js';
 import { updateCmd, removeCmd } from './commands/self.js';
@@ -29,6 +29,7 @@ program.addCommand(iterateCmd);    // iterate  · observe + agent-propose + ship
 
 // Auth + config utilities — cross-cutting, kept top-level for convention.
 program.addCommand(loginCmd);
+program.addCommand(logoutCmd);
 program.addCommand(secretsCmd);
 program.addCommand(configCmd);
 program.addCommand(skillsCmd);      // skills   · package/promote SKILL.md agent skills across marketplaces

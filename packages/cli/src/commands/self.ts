@@ -44,13 +44,17 @@ export const updateCmd = new Command('update')
   .description('Update sh1pt to the latest release')
   .action(() => {
     const pm = detectPackageManager();
+    // Most PMs cache the @latest tag aggressively. Bun in particular
+    // returns instantly with a stale tag (the [4ms] "install" path),
+    // which silently keeps users on the old version. Force-bypass the
+    // cache so update actually checks the registry every time.
     const argv = (() => {
       switch (pm) {
-        case 'pnpm': return ['pnpm', 'add', '-g', `${PKG}@latest`];
-        case 'bun':  return ['bun', 'add', '-g', `${PKG}@latest`];
-        case 'aube': return ['aube', 'add', '-g', `${PKG}@latest`];
+        case 'pnpm': return ['pnpm', 'add', '-g', '--prefer-online', `${PKG}@latest`];
+        case 'bun':  return ['bun',  'add', '-g', '--force',         `${PKG}@latest`];
+        case 'aube': return ['aube', 'add', '-g', '--force',         `${PKG}@latest`];
         case 'deno': return ['deno', 'install', '-g', '-A', '-f', '-n', 'sh1pt', `npm:${PKG}`];
-        case 'npm':  return ['npm', 'install', '-g', `${PKG}@latest`];
+        case 'npm':  return ['npm',  'install', '-g', '--prefer-online', `${PKG}@latest`];
       }
     })();
     process.exit(run(argv));

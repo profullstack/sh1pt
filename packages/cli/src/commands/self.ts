@@ -8,28 +8,11 @@
 import { Command } from 'commander';
 import { spawnSync } from 'node:child_process';
 import { promises as fs } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import kleur from 'kleur';
 import prompts from 'prompts';
+import { detectPackageManager } from '../installer.js';
 
 const PKG = '@profullstack/sh1pt';
-
-type PM = 'pnpm' | 'bun' | 'aube' | 'npm' | 'deno';
-
-function detectPackageManager(): PM {
-  const self = fileURLToPath(import.meta.url);
-  // Look at install path — most accurate since globals live in PM-specific dirs
-  if (/[/\\](\.pnpm|pnpm[/\\]global)[/\\]/.test(self)) return 'pnpm';
-  if (/[/\\]\.bun[/\\]install[/\\]/.test(self)) return 'bun';
-  if (/[/\\](\.aube|aube[/\\]global)[/\\]/.test(self)) return 'aube';
-  if (/[/\\]\.deno[/\\]/.test(self)) return 'deno';
-  // Fallback: whichever tool is on PATH, preferring pnpm -> bun -> aube -> npm
-  for (const pm of ['pnpm', 'bun', 'aube', 'npm'] as const) {
-    const r = spawnSync(pm, ['--version'], { stdio: 'ignore' });
-    if (r.status === 0) return pm;
-  }
-  return 'npm';
-}
 
 function run(argv: string[]): number {
   console.log(kleur.cyan(`→ ${argv.join(' ')}`));

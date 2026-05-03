@@ -6,6 +6,7 @@ import { describeInput, resolveInput } from '../input.js';
 import { merchCmd } from './merch.js';
 import { shipCmd as shipSub } from './ship.js';
 import { makeCliSetupContext } from '../setup-context.js';
+import { ensureInstalled, loadInstalledPackage } from '../installer.js';
 
 export const promoteCmd = new Command('promote')
   .description('Run ads + ship swag. Reddit, Meta, TikTok, Google, YouTube, X, Apple Search, LinkedIn, Microsoft — plus Printful/Printify merch.')
@@ -238,15 +239,22 @@ socialCmd
       }
     }
 
+    const wanted = names.map((n) => `@profullstack/sh1pt-social-${n}`);
+    try {
+      await ensureInstalled(wanted);
+    } catch (err) {
+      console.error(kleur.red(err instanceof Error ? err.message : String(err)));
+      process.exit(1);
+    }
+
     const ctx = makeCliSetupContext();
     for (const name of names) {
       console.log();
       console.log(kleur.bold().underline(`social: ${name}`));
-      const adapter = await loadSocialAdapter(name);
-      if (!adapter) {
-        const pkg = `@profullstack/sh1pt-social-${name}`;
-        console.log(kleur.yellow(`  ${pkg} is not installed.`));
-        console.log(`    install: ${kleur.cyan(`pnpm add -g ${pkg}`)}  (or the npm/bun equivalent)`);
+      const pkg = `@profullstack/sh1pt-social-${name}`;
+      const adapter = await loadInstalledPackage<AdapterWithSetup>(pkg);
+      if (!adapter || typeof adapter !== 'object' || !('id' in adapter)) {
+        console.log(kleur.yellow(`  failed to load ${pkg} after install — file an issue.`));
         continue;
       }
       await runSetup(adapter, ctx);
@@ -255,16 +263,6 @@ socialCmd
 
 function stripSocialPrefix(p: string): string {
   return p.replace(/^social-/, '').toLowerCase();
-}
-
-async function loadSocialAdapter(name: string): Promise<AdapterWithSetup | undefined> {
-  try {
-    const mod = await import(`@profullstack/sh1pt-social-${name}`);
-    const def = (mod.default ?? mod) as AdapterWithSetup | undefined;
-    return def && typeof def === 'object' && 'id' in def ? def : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 socialCmd

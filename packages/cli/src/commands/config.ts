@@ -1,7 +1,8 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
 import prompts from 'prompts';
-import { runSetup, type SetupContext, type SetupPromptDef } from '@profullstack/sh1pt-core';
+import { runSetup, type SetupContext, type SetupPromptDef, type AdapterWithSetup } from '@profullstack/sh1pt-core';
+import { ensureInstalled, loadInstalledPackage } from '../installer.js';
 
 type Stack = 'node' | 'bun' | 'python' | 'rust' | 'cpp' | 'dotnet' | 'custom';
 
@@ -224,9 +225,16 @@ webhooksCmd
       console.log(kleur.yellow(`unknown target "${target}". Known: ${known.join(', ')}`));
       return;
     }
-    const adapter = await loadWebhookAdapter(target);
-    if (!adapter) {
-      console.log(kleur.yellow(`no adapter installed for webhook-${target} yet.`));
+    const pkg = `@profullstack/sh1pt-webhooks-${target}`;
+    try {
+      await ensureInstalled([pkg]);
+    } catch (err) {
+      console.error(kleur.red(err instanceof Error ? err.message : String(err)));
+      process.exit(1);
+    }
+    const adapter = await loadInstalledPackage<AdapterWithSetup>(pkg);
+    if (!adapter || typeof adapter !== 'object' || !('id' in adapter)) {
+      console.log(kleur.yellow(`failed to load ${pkg} after install — file an issue.`));
       return;
     }
     await runSetup(adapter, makeCliSetupContext());
@@ -327,11 +335,3 @@ function makeCliSetupContext(): SetupContext {
   };
 }
 
-async function loadWebhookAdapter(target: string): Promise<Parameters<typeof runSetup>[0] | undefined> {
-  try {
-    const mod = await import(`@profullstack/sh1pt-webhooks-${target}`);
-    return mod.default ?? mod;
-  } catch {
-    return undefined;
-  }
-}

@@ -23,6 +23,7 @@ import {
 } from '@profullstack/sh1pt-core';
 import type { AdapterCategory } from '../adapter-registry.js';
 import { packageFor } from '../adapter-registry.js';
+import { ensureInstalled, loadInstalledPackage } from '../installer.js';
 
 export function makeCategoryCmd(category: AdapterCategory): Command {
   const cmd = new Command(category.id).description(category.description);
@@ -45,10 +46,15 @@ export function makeCategoryCmd(category: AdapterCategory): Command {
       .description(`Run setup for ${category.id}/${name} (writes to ~/.config/sh1pt/config.json)`)
       .action(async () => {
         const pkgName = packageFor(category, name);
-        const adapter = await loadAdapter(pkgName);
-        if (!adapter) {
-          console.log(kleur.yellow(`${pkgName} is not installed.`));
-          console.log(`  run: ${kleur.cyan(`pnpm add -g ${pkgName}`)}  (or the npm/bun equivalent)`);
+        try {
+          await ensureInstalled([pkgName]);
+        } catch (err) {
+          console.error(kleur.red(err instanceof Error ? err.message : String(err)));
+          process.exit(1);
+        }
+        const adapter = await loadInstalledPackage<AdapterWithSetup>(pkgName);
+        if (!adapter || typeof adapter !== 'object' || !('id' in adapter)) {
+          console.log(kleur.yellow(`failed to load ${pkgName} after install — file an issue.`));
           return;
         }
         await runSetup(adapter, makeCliSetupContext());
@@ -65,16 +71,6 @@ export function makeCategoryCmd(category: AdapterCategory): Command {
   }
 
   return cmd;
-}
-
-async function loadAdapter(pkgName: string): Promise<AdapterWithSetup | undefined> {
-  try {
-    const mod = await import(pkgName);
-    const def = (mod.default ?? mod) as AdapterWithSetup | undefined;
-    return def && typeof def === 'object' && 'id' in def ? def : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 // Single SetupContext implementation used by every adapter category.

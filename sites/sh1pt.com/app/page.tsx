@@ -1,3 +1,5 @@
+import CopyableCommand from './components/CopyableCommand';
+
 export default function Home() {
   return (
     <main>
@@ -10,8 +12,12 @@ export default function Home() {
           <p className="muted" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.2rem)', maxWidth: 780 }}>
             One codebase → every store, registry, CDN, and channel. Ads on every network. Cloud infra on demand. AI agents tighten the loop. sh1pt is the single command between an idea and global distribution.
           </p>
+          <div style={{ maxWidth: 640, marginTop: '1.75rem' }}>
+            <CopyableCommand label="Install" command="curl -fsSL https://sh1pt.com/install.sh | sh" />
+          </div>
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
             <a className="btn" href="/waitlist">Join the waitlist — $244/yr locked in</a>
+            <a className="btn secondary" href="/getting-started">Getting started</a>
             <a className="btn secondary" href="/investors">For investors</a>
             <a className="btn secondary" href="/sh1pt-deck.pdf" download>Download deck (PDF)</a>
           </div>
@@ -35,11 +41,13 @@ export default function Home() {
 
       <section>
         <div className="container">
-          <div style={{ maxWidth: 640, marginBottom: '2.5rem' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Install the CLI</div>
-            <pre style={{ margin: 0 }}>curl -fsSL https://sh1pt.com/install.sh | sh</pre>
-            <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.4rem' }}>
-              Or: <code>pnpm add -g @profullstack/sh1pt</code> · <code>bun i -g @profullstack/sh1pt</code> · <code>npm i -g @profullstack/sh1pt</code>
+          <div style={{ maxWidth: 640, marginBottom: '2.5rem', display: 'grid', gap: '0.75rem' }}>
+            <CopyableCommand label="Install via shell" command="curl -fsSL https://sh1pt.com/install.sh | sh" />
+            <CopyableCommand label="bun" command="bun i -g @profullstack/sh1pt" />
+            <CopyableCommand label="pnpm" command="pnpm add -g @profullstack/sh1pt" />
+            <CopyableCommand label="npm" command="npm i -g @profullstack/sh1pt" />
+            <div style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
+              Need the full walkthrough? See <a href="/getting-started">getting started</a>.
             </div>
           </div>
           <h2>The solution — one manifest, every surface</h2>

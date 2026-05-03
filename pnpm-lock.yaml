@@ -920,7 +920,19 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/targets/browser-edge:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/targets/browser-firefox:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/targets/browser-safari:
     dependencies:
       '@profullstack/sh1pt-core':
         specifier: workspace:*
@@ -1046,6 +1058,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/targets/pkg-apt:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/targets/pkg-aube:
     dependencies:
       '@profullstack/sh1pt-core':
@@ -1106,13 +1124,31 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/targets/pkg-nix:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/targets/pkg-npm:
     dependencies:
       '@profullstack/sh1pt-core':
         specifier: workspace:*
         version: link:../../core
 
+  packages/targets/pkg-scoop:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/targets/pkg-snap:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/targets/pkg-winget:
     dependencies:
       '@profullstack/sh1pt-core':
         specifier: workspace:*

@@ -183,6 +183,139 @@ export function oauthSetup<C = unknown>(opts: OAuthSetupOpts<C>): SetupFn<C> {
   };
 }
 
+// Browser-mode adapters where the official API is locked behind a paid
+// tier (X v2), gated by ID checks (TikTok, Instagram), or simply absent
+// (most "social-*" surfaces). The user logs in with their normal browser
+// session and pastes the auth cookie(s) back; we save them to the vault
+// and the adapter's post() / connect() drives a Playwright session with
+// those cookies pre-loaded.
+//
+// Accepts three input shapes:
+//   1. A single value (the user knows the cookie name and pasted only the value)
+//   2. `name=value; name2=value2` — the raw `document.cookie` form
+//   3. JSON array of `{ name, value, ... }` — the format every browser
+//      cookie-export extension produces (Cookie Editor, EditThisCookie, …)
+// We pull whichever cookies the adapter declared as required and save
+// each under its own vault key.
+export interface CookieSetupOpts<C = unknown> {
+  label: string;                        // human name, e.g. 'X (Twitter)'
+  loginUrl: string;                     // where the user signs in (e.g. 'https://x.com/login')
+  // Cookies the adapter needs. Required cookies must all be present after
+  // parsing; optional ones are saved if found and skipped otherwise.
+  cookies: Array<{
+    name: string;                       // cookie name on the vendor domain (e.g. 'auth_token')
+    secretKey: string;                  // vault key to save under (e.g. 'X_AUTH_TOKEN')
+    description?: string;               // shown to the user, e.g. 'session token'
+    required?: boolean;                 // default: true
+  }>;
+  steps?: string[];                     // extra instructions before pasting
+  config?: C;                           // marker written to config.json
+}
+
+export function cookieSetup<C = unknown>(opts: CookieSetupOpts<C>): SetupFn<C> {
+  return async (ctx) => {
+    const required = opts.cookies.filter((c) => c.required !== false);
+    const allReadyInVault = required.every((c) => ctx.secret(c.secretKey));
+    if (allReadyInVault) {
+      const reuse = await ctx.prompt<boolean>({
+        type: 'confirm',
+        message: `${opts.label} cookies already in vault — reuse them?`,
+        initial: true,
+      });
+      if (reuse) return { ok: true, config: (opts.config ?? {}) as C };
+    }
+
+    ctx.log(`${opts.label} — sign in with your normal browser, then come back here.`);
+    ctx.log(`  1. Open ${opts.loginUrl} and sign in.`);
+    if (opts.cookies.length === 1) {
+      const c = opts.cookies[0]!;
+      ctx.log(`  2. Open DevTools → Application → Cookies, copy the value of "${c.name}"${c.description ? ` (${c.description})` : ''}.`);
+    } else {
+      ctx.log(`  2. Export your cookies for this domain. Either:`);
+      ctx.log(`       a) Use a "Cookie Editor" extension and copy the JSON export, or`);
+      ctx.log(`       b) Run \`document.cookie\` in the JS console and copy the whole string.`);
+      ctx.log(`     We need: ${opts.cookies.map((c) => c.name).join(', ')}.`);
+    }
+    if (opts.steps) for (const line of opts.steps) ctx.log(`  ${line}`);
+    ctx.log(`  3. Paste below. Nothing leaves your machine until it's encrypted.`);
+    await ctx.open(opts.loginUrl);
+
+    const raw = await ctx.prompt<string>({
+      type: 'password',
+      message:
+        opts.cookies.length === 1
+          ? `Paste ${opts.cookies[0]!.name} value (or the full document.cookie):`
+          : `Paste cookies (JSON export or "name=value; name2=value2"):`,
+    });
+    if (!raw) {
+      return { ok: false, config: (opts.config ?? {}) as C, manual: ['No cookies pasted — re-run setup when ready.'] };
+    }
+
+    const parsed = parseCookies(raw);
+    const found: Record<string, string> = {};
+
+    if (opts.cookies.length === 1 && Object.keys(parsed).length === 0) {
+      // User pasted the value alone for the single-cookie case.
+      found[opts.cookies[0]!.name] = raw.trim();
+    } else {
+      for (const c of opts.cookies) {
+        const v = parsed[c.name];
+        if (v) found[c.name] = v;
+      }
+    }
+
+    const missingRequired = required.filter((c) => !found[c.name]);
+    if (missingRequired.length > 0) {
+      return {
+        ok: false,
+        config: (opts.config ?? {}) as C,
+        manual: [
+          `Couldn't find required cookie(s): ${missingRequired.map((c) => c.name).join(', ')}.`,
+          `Make sure you're logged in at ${opts.loginUrl} before exporting cookies.`,
+        ],
+      };
+    }
+
+    for (const c of opts.cookies) {
+      const v = found[c.name];
+      if (v) await ctx.setSecret(c.secretKey, v);
+    }
+    return { ok: true, config: (opts.config ?? {}) as C };
+  };
+}
+
+// Best-effort cookie parser. Accepts either:
+//   - JSON array (Cookie Editor / EditThisCookie style: [{name, value, ...}])
+//   - "name=value; name2=value2" pairs (raw document.cookie)
+//   - "name=value" newline-separated pairs (curl --cookie style)
+function parseCookies(raw: string): Record<string, string> {
+  const trimmed = raw.trim();
+  if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+    try {
+      const data = JSON.parse(trimmed);
+      const arr = Array.isArray(data) ? data : [data];
+      const out: Record<string, string> = {};
+      for (const entry of arr) {
+        if (entry && typeof entry === 'object' && typeof entry.name === 'string' && typeof entry.value === 'string') {
+          out[entry.name] = entry.value;
+        }
+      }
+      return out;
+    } catch {
+      return {};
+    }
+  }
+  const out: Record<string, string> = {};
+  for (const pair of trimmed.split(/[;\n]/)) {
+    const eq = pair.indexOf('=');
+    if (eq <= 0) continue;
+    const name = pair.slice(0, eq).trim();
+    const value = pair.slice(eq + 1).trim().replace(/^"|"$/g, '');
+    if (name) out[name] = value;
+  }
+  return out;
+}
+
 // Pure instructions — no automation possible (App Store identity
 // verification, Google Play payment profile, Apple D-U-N-S, etc.).
 export interface ManualSetupOpts<C = unknown> {

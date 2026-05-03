@@ -1,4 +1,4 @@
-import { defineSocial, adaptPost, oauthSetup } from '@profullstack/sh1pt-core';
+import { defineSocial, adaptPost, cookieSetup } from '@profullstack/sh1pt-core';
 
 // X (Twitter). OAuth 1.0a or OAuth 2.0; tweet-create endpoint lives at
 // api.twitter.com/2/tweets. The v2 free tier shipped with a very low
@@ -37,14 +37,21 @@ export default defineSocial<Config>({
     return { id: `x_${Date.now()}`, url: 'https://x.com/', platform: 'x', publishedAt: new Date().toISOString() };
   },
 
-  setup: oauthSetup({
-    secretKey: "X_ACCESS_TOKEN",
-    label: "X (Twitter)",
-    vendorDocUrl: "https://developer.x.com/portal/dashboard",
+  // Browser-mode by default \u2014 the v2 free tier blocks posting and the paid
+  // tier is $200/mo+ for hobby use. cookieSetup grabs auth_token + ct0 from a
+  // signed-in browser; Playwright drives the post() flow with those cookies
+  // pre-loaded. Users who do have API access can `sh1pt secret set X_BEARER_TOKEN`
+  // separately and flip mode to 'api'.
+  setup: cookieSetup({
+    label: 'X (Twitter)',
+    loginUrl: 'https://x.com/login',
+    cookies: [
+      { name: 'auth_token', secretKey: 'X_AUTH_TOKEN', description: 'session token', required: true },
+      { name: 'ct0',        secretKey: 'X_CT0',        description: 'CSRF token',    required: true },
+    ],
     steps: [
-      "Open developer.x.com/portal \u2192 Projects \u2192 Create App",
-      "In User authentication settings enable OAuth 2.0 with Read+Write scope",
-      "Copy the Bearer / Access Token (paid tier required for posting)",
+      'Both cookies are HttpOnly \u2014 DevTools \u2192 Application \u2192 Cookies \u2192 x.com is the easiest path.',
+      'Or: install a "Cookie Editor" extension and paste the JSON export.',
     ],
   }),
 });

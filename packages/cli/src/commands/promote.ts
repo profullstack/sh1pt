@@ -1,8 +1,11 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
+import prompts from 'prompts';
+import { runSetup, type AdapterWithSetup } from '@profullstack/sh1pt-core';
 import { describeInput, resolveInput } from '../input.js';
 import { merchCmd } from './merch.js';
 import { shipCmd as shipSub } from './ship.js';
+import { makeCliSetupContext } from '../setup-context.js';
 
 export const promoteCmd = new Command('promote')
   .description('Run ads + ship swag. Reddit, Meta, TikTok, Google, YouTube, X, Apple Search, LinkedIn, Microsoft — plus Printful/Printify merch.')
@@ -195,13 +198,74 @@ const socialCmd = promoteCmd
   .command('social')
   .description('Post organically to X, LinkedIn, Instagram, Threads, TikTok, YouTube, Reddit, Mastodon, Bluesky');
 
+// All 34 social adapters declare a real setup() (cookieSetup / oauthSetup /
+// tokenSetup / manualSetup). This action fans them out: --platform picks
+// a subset, otherwise we prompt. Each adapter is lazy-imported so missing
+// packages print an install hint instead of crashing.
+const SOCIAL_PLATFORMS = [
+  '4claw', 'blossom', 'bluesky', 'codenewbie', 'devto', 'facebook', 'forem',
+  'hackernews', 'hackernoon', 'hashnode', 'indiehackers', 'instagram', 'klawdin',
+  'linkedin', 'mastodon', 'medium', 'moltbook', 'moltexchange', 'moltfounders',
+  'moltywork', 'openwork', 'primal', 'quora', 'reddit', 'secureclaw', 'stackernews',
+  'the-colony', 'threads', 'tikclawk', 'tiktok', 'toku-agency', 'ugig', 'x', 'youtube',
+];
+
 socialCmd
   .command('setup')
-  .description('Connect social accounts (OAuth where possible, app passwords elsewhere)')
-  .option('--platform <id...>', 'e.g. social-x social-linkedin social-instagram')
-  .action((opts: { platform?: string[] }) => {
-    console.log(kleur.cyan(`[stub] social setup · ${opts.platform?.join(', ') ?? 'all configured'}`));
+  .description('Connect social accounts — runs each platform adapter\'s setup (cookie paste / OAuth / token)')
+  .option('--platform <id...>', 'e.g. x linkedin instagram (or social-x, social-linkedin)')
+  .action(async (opts: { platform?: string[] }, cmd: Command) => {
+    // Parent `promote` declares its own --platform <id...>, so when the user
+    // types `sh1pt promote social setup --platform x y`, commander may bind
+    // the values to the parent. optsWithGlobals() merges parent + child opts.
+    const merged = cmd.optsWithGlobals() as { platform?: string[] };
+    const requested = merged.platform ?? opts.platform;
+    let names = (requested ?? []).map(stripSocialPrefix).filter(Boolean);
+
+    if (names.length === 0) {
+      const res = await prompts({
+        type: 'multiselect',
+        name: 'picks',
+        message: 'Which platforms to set up?',
+        choices: SOCIAL_PLATFORMS.map((p) => ({ title: p, value: p })),
+        instructions: false,
+        hint: 'space to select, return to confirm',
+      });
+      names = (res.picks as string[] | undefined) ?? [];
+      if (names.length === 0) {
+        console.log(kleur.dim('nothing selected — aborting.'));
+        return;
+      }
+    }
+
+    const ctx = makeCliSetupContext();
+    for (const name of names) {
+      console.log();
+      console.log(kleur.bold().underline(`social: ${name}`));
+      const adapter = await loadSocialAdapter(name);
+      if (!adapter) {
+        const pkg = `@profullstack/sh1pt-social-${name}`;
+        console.log(kleur.yellow(`  ${pkg} is not installed.`));
+        console.log(`    install: ${kleur.cyan(`pnpm add -g ${pkg}`)}  (or the npm/bun equivalent)`);
+        continue;
+      }
+      await runSetup(adapter, ctx);
+    }
   });
+
+function stripSocialPrefix(p: string): string {
+  return p.replace(/^social-/, '').toLowerCase();
+}
+
+async function loadSocialAdapter(name: string): Promise<AdapterWithSetup | undefined> {
+  try {
+    const mod = await import(`@profullstack/sh1pt-social-${name}`);
+    const def = (mod.default ?? mod) as AdapterWithSetup | undefined;
+    return def && typeof def === 'object' && 'id' in def ? def : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 socialCmd
   .command('post')

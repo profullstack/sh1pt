@@ -106,9 +106,9 @@ export default function GettingStartedPage() {
             sh1pt prompts for credentials the first time an adapter needs them and stores them in the encrypted vault — no <code>.env</code> juggling. Inspect or rotate at any time:
           </p>
           <div style={{ maxWidth: 640, display: 'grid', gap: '0.75rem' }}>
-            <CopyableCommand label="List stored secrets" command="sh1pt secrets ls" />
-            <CopyableCommand label="Set a secret manually" command="sh1pt secrets set OPENAI_API_KEY" />
-            <CopyableCommand label="Read or change config" command="sh1pt config get" />
+            <CopyableCommand label="List stored secrets" command="sh1pt secret list" />
+            <CopyableCommand label="Set a secret manually" command="sh1pt secret set OPENAI_API_KEY" />
+            <CopyableCommand label="Print resolved manifest" command="sh1pt config show" />
           </div>
         </div>
       </section>
@@ -117,6 +117,7 @@ export default function GettingStartedPage() {
         <div className="container">
           <h2>Where to go next</h2>
           <ul className="muted" style={{ paddingLeft: '1.2rem', maxWidth: 780 }}>
+            <li><a href="/docs">Full CLI reference</a> — every command, every option, every example.</li>
             <li><a href="https://github.com/profullstack/sh1pt">Browse the source on GitHub</a> — adapters live under <code>packages/</code>.</li>
             <li><a href="/#pricing">Lock in early-access pricing</a> ($244/yr, lifetime price-lock).</li>
             <li><a href="/investors">Read the investor brief</a> if you want the why behind the project.</li>

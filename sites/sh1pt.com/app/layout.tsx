@@ -39,6 +39,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             </a>
             <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
               <NavLink href="/getting-started" matchPrefix>Getting started</NavLink>
+              <NavLink href="/docs" matchPrefix>Docs</NavLink>
               <NavLink href="/#pricing">Pricing</NavLink>
               <NavLink href="/investors" matchPrefix>Investors</NavLink>
               <NavLink href="/deck" matchPrefix>Deck</NavLink>

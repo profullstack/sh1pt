@@ -1046,6 +1046,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/targets/mobile-android:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/targets/mobile-expo:
     dependencies:
       '@profullstack/sh1pt-core':
@@ -1149,6 +1155,18 @@ importers:
         version: link:../../core
 
   packages/targets/pkg-winget:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/targets/plugin-jetbrains:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/targets/plugin-vscode:
     dependencies:
       '@profullstack/sh1pt-core':
         specifier: workspace:*

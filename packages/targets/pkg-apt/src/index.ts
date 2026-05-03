@@ -31,8 +31,8 @@ export default defineTarget<Config>({
     };
   },
   async status(id) {
-    const [name] = id.split('@');
-    return { state: 'live', url: `https://apt.sh1pt.com/pool/main/${name[0]}/${name}/` };
+    const name = id.split('@')[0] ?? id;
+    return { state: 'live', url: `https://apt.sh1pt.com/pool/main/${name[0] ?? '_'}/${name}/` };
   },
   setup: manualSetup({
     label: 'apt repo / PPA',

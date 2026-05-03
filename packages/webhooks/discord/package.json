@@ -1,6 +1,6 @@
 {
   "name": "@profullstack/sh1pt-webhooks-discord",
-  "version": "0.1.0",
+  "version": "0.1.10",
   "description": "Discord channel-webhook target for sh1pt.",
   "license": "MIT",
   "repository": {
@@ -10,11 +10,17 @@
   },
   "homepage": "https://sh1pt.com",
   "bugs": "https://github.com/profullstack/sh1pt/issues",
-  "keywords": ["sh1pt", "webhook", "discord"],
+  "keywords": [
+    "sh1pt",
+    "webhook",
+    "discord"
+  ],
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public",
     "main": "./dist/index.js",

@@ -43,11 +43,13 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: Build publishable packages
+      - name: Build all publishable packages
         run: |
+          # core/policy/cli build first so adapters that import from
+          # @profullstack/sh1pt-core resolve to fresh dist/ output.
           pnpm --filter @profullstack/sh1pt-core build
           pnpm --filter @profullstack/sh1pt-policy build
-          pnpm --filter @profullstack/sh1pt build
+          pnpm -r --filter '!@profullstack/sh1pt-core' --filter '!@profullstack/sh1pt-policy' --filter '!sh1pt-dot-com' build
 
       - name: Publish packages if not already on npm
         env:
@@ -60,6 +62,13 @@ jobs:
             local package_json="$1"
             local package_name
             local package_version
+            local is_private
+
+            is_private=$(node -p "Boolean(require('./${package_json}').private)" 2>/dev/null || echo "false")
+            if [ "${is_private}" = "true" ]; then
+              return 0
+            fi
+
             package_name=$(node -p "require('./${package_json}').name")
             package_version=$(node -p "require('./${package_json}').version")
 
@@ -82,9 +91,31 @@ jobs:
               --access public \
               --no-git-checks \
               --provenance \
-              ${dry_run_arg}
+              ${dry_run_arg} || {
+                echo "::warning::publish failed for ${package_name}@${package_version} — continuing"
+                return 0
+              }
           }
 
+          # Order matters: core has to be on npm before adapters that
+          # depend on it, otherwise installs of an adapter on a fresh
+          # machine will 404 on its sh1pt-core dep.
           publish_if_missing packages/core/package.json
           publish_if_missing packages/policy/package.json
+
+          # All adapter packages, anything else (sdk, agent-providers,
+          # recipes, etc.). Skip top-level cli; we do it last so any
+          # bundled-via-publishConfig dep changes propagate first.
+          while IFS= read -r pkg_json; do
+            case "${pkg_json}" in
+              packages/core/package.json) continue ;;
+              packages/policy/package.json) continue ;;
+              packages/cli/package.json) continue ;;
+              packages/web/package.json) continue ;;
+              *) publish_if_missing "${pkg_json}" ;;
+            esac
+          done < <(git ls-files 'packages/**/package.json' | sort)
+
+          # cli last so users running \`bun add -g @profullstack/sh1pt\`
+          # get a self-consistent set of adapter versions.
           publish_if_missing packages/cli/package.json

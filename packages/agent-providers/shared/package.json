@@ -1,6 +1,31 @@
 {
   "name": "@profullstack/sh1pt-agent-provider-shared",
-  "version": "0.0.0",
+  "version": "0.1.10",
   "type": "module",
-  "main": "src/index.ts"
+  "main": "src/index.ts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/profullstack/sh1pt.git",
+    "directory": "packages/agent-providers/shared"
+  },
+  "homepage": "https://sh1pt.com",
+  "bugs": "https://github.com/profullstack/sh1pt/issues",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "prepublishOnly": "pnpm build"
+  }
 }

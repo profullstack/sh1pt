@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
+import { createRequire } from 'node:module';
 import { buildCmd } from './commands/build.js';
 import { promoteCmd } from './commands/promote.js';
 import { scaleCmd } from './commands/scale.js';
@@ -14,10 +15,16 @@ import { skillsCmd } from './commands/skills.js';
 
 const program = new Command();
 
+// Read the published version from package.json at runtime so `sh1pt -V`
+// always reflects what npm/bun/pnpm actually installed. The dist build
+// lives at packages/cli/dist/index.js, so '../package.json' resolves
+// to the package root in both dev (tsx) and prod (node dist).
+const pkg = createRequire(import.meta.url)('../package.json') as { version: string };
+
 program
   .name('sh1pt')
   .description('Build. Promote. Scale. Iterate…')
-  .version('0.1.0');
+  .version(pkg.version);
 
 // Four primary verbs — one per word of the tagline. Each accepts --from
 // <git|url|path|doc> to jump into the workflow against an existing asset.

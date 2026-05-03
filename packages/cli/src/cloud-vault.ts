@@ -16,10 +16,16 @@
 // The server stores opaque bytes. RLS scopes by user_id. A stolen
 // service-role key still can't decrypt secrets — the passphrase isn't there.
 
-import sodium from 'libsodium-wrappers';
+import { createRequire } from 'node:module';
 import prompts from 'prompts';
 import kleur from 'kleur';
 import { apiBaseUrl, ensureFreshAccess, readCredentials, type Credentials } from './credentials.js';
+
+// libsodium-wrappers ships a broken ESM build (its modules-esm/ entrypoint
+// references a sibling that isn't included in the npm tarball). The CJS
+// entry is intact, so we load via createRequire and avoid the ESM path.
+type Sodium = typeof import('libsodium-wrappers');
+const sodium = createRequire(import.meta.url)('libsodium-wrappers') as Sodium;
 
 let cachedKey: Uint8Array | null = null;
 

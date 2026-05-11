@@ -17,19 +17,19 @@ type SkillManifest = {
 };
 
 const MARKETPLACES = [
-  { id: 'ugig', name: 'uGig', method: 'CLI/API', command: (m: SkillManifest) => `ugig skills new --title ${q(m.title)} --description ${q(m.description)} --category ${q(m.category ?? 'Automation')} --price ${m.price} --tags ${q(m.tags.join(','))}${m.sourceUrl ? ` --source-url ${q(m.sourceUrl)}` : ''}` },
-  { id: 'clawhub', name: 'ClawHub', method: 'CLI', command: (m: SkillManifest) => `npm exec --package=clawhub@latest -- clawhub skill publish . --slug ${q(m.name)} --name ${q(m.title)} --version 1.0.0 --tags latest,automation` },
-  { id: 'skills-sh', name: 'skills.sh / OpenClaw skills index', method: 'GitHub PR', note: 'Submit to openclaw/skills when maintainers allow PRs, or share a compare branch. Public SKILL.md repo remains importable.' },
-  { id: 'lobehub', name: 'LobeHub / Lobe Chat Agents', method: 'GitHub PR', note: 'Submit a compatible Lobe Chat agent entry pointing at the public SKILL.md/repo; this is an agent index, not native SKILL.md hosting.' },
-  { id: 'goose', name: 'Goose Skills', method: 'GitHub PR', note: 'Add a skills/capabilities/<slug>/SKILL.md plus skill.meta.json entry to gooseworks-ai/goose-skills.' },
-  { id: 'kilo', name: 'Kilo Marketplace', method: 'GitHub PR', command: (m: SkillManifest) => `npx tsx bin/add-remote-skill.ts ${m.sourceUrl ?? m.skillFile}` },
-  { id: 'skillstore', name: 'AI Skillstore', method: 'GitHub PR', note: 'Add one skill directory per skill to aiskillstore/marketplace and run its validator before opening a PR.' },
-  { id: 'freemygent', name: 'FreeMyGent', method: 'Wallet/on-chain', note: 'Requires wallet connect/listing transaction; no normal public API-key path found.' },
-  { id: 'clawmart', name: 'ClawMart', method: 'Paid creator API', note: 'Requires shopclawmart.com Creator Membership and CLAWMART_API_KEY; then use the ClawMart publisher script/API.' },
-  { id: 'manus', name: 'Manus Agent Skills', method: 'GitHub import', note: 'Use a public GitHub repo containing SKILL.md files; Manus imports from GitHub.' },
-  { id: 'vscode-agent-skills', name: 'VS Code Agent Skills', method: 'GitHub PR', note: 'Submit repo/source entries to formulahendry/vscode-agent-skills for extension indexing.' },
-  { id: 'moltbook', name: 'Moltbook / NormieClaw', method: 'Issue/PR', note: 'Submit an index request or PR to Moltbook-Official/moltbook with public skill URLs.' },
-  { id: 'agenthub', name: 'AgentHub / agentskillsmarket.space', method: 'Account import', note: 'Requires account email confirmation, then import the public GitHub skill repo from the submit page.' },
+  { id: 'ugig', name: 'uGig', method: 'CLI/API', readiness: 'live', command: (m: SkillManifest) => `ugig skills new --title ${q(m.title)} --description ${q(m.description)} --category ${q(m.category ?? 'Automation')} --price ${m.price} --tags ${q(m.tags.join(','))}${m.sourceUrl ? ` --source-url ${q(m.sourceUrl)}` : ''}` },
+  { id: 'clawhub', name: 'ClawHub', method: 'CLI', readiness: 'live', command: (m: SkillManifest) => `npm exec --package=clawhub@latest -- clawhub skill publish . --slug ${q(m.name)} --name ${q(m.title)} --version 1.0.0 --tags latest,automation` },
+  { id: 'skills-sh', name: 'skills.sh / OpenClaw skills index', method: 'GitHub PR', readiness: 'manual', note: 'Submit to openclaw/skills when maintainers allow PRs, or share a compare branch. Public SKILL.md repo remains importable.' },
+  { id: 'lobehub', name: 'LobeHub / Lobe Chat Agents', method: 'GitHub PR', readiness: 'manual', note: 'Submit a compatible Lobe Chat agent entry pointing at the public SKILL.md/repo; this is an agent index, not native SKILL.md hosting.' },
+  { id: 'goose', name: 'Goose Skills', method: 'GitHub PR', readiness: 'manual', note: 'Add a skills/capabilities/<slug>/SKILL.md plus skill.meta.json entry to gooseworks-ai/goose-skills.' },
+  { id: 'kilo', name: 'Kilo Marketplace', method: 'GitHub PR', readiness: 'manual', command: (m: SkillManifest) => `npx tsx bin/add-remote-skill.ts ${m.sourceUrl ?? m.skillFile}` },
+  { id: 'skillstore', name: 'AI Skillstore', method: 'GitHub PR', readiness: 'manual', note: 'Add one skill directory per skill to aiskillstore/marketplace and run its validator before opening a PR.' },
+  { id: 'freemygent', name: 'FreeMyGent', method: 'Wallet/on-chain', readiness: 'constrained', note: 'Requires wallet connect/listing transaction; no normal public API-key path found.' },
+  { id: 'clawmart', name: 'ClawMart', method: 'Paid creator API', readiness: 'constrained', note: 'Requires shopclawmart.com Creator Membership and CLAWMART_API_KEY; then use the ClawMart publisher script/API.' },
+  { id: 'manus', name: 'Manus Agent Skills', method: 'GitHub import', readiness: 'manual', note: 'Use a public GitHub repo containing SKILL.md files; Manus imports from GitHub.' },
+  { id: 'vscode-agent-skills', name: 'VS Code Agent Skills', method: 'GitHub PR', readiness: 'manual', note: 'Submit repo/source entries to formulahendry/vscode-agent-skills for extension indexing.' },
+  { id: 'moltbook', name: 'Moltbook / NormieClaw', method: 'Issue/PR', readiness: 'manual', note: 'Submit an index request or PR to Moltbook-Official/moltbook with public skill URLs.' },
+  { id: 'agenthub', name: 'AgentHub / agentskillsmarket.space', method: 'Account import', readiness: 'manual', note: 'Requires account email confirmation, then import the public GitHub skill repo from the submit page.' },
 ] as const;
 
 function slugify(s: string): string {
@@ -113,7 +113,7 @@ skillsCmd
       const entry = manifest.marketplaces[mp.id] ?? { enabled: true, status: 'pending' as const };
       const cmd = entry.command ?? ('command' in mp && mp.command ? mp.command(manifest) : undefined);
       console.log();
-      console.log(kleur.bold(`${mp.name} (${mp.method})`));
+      console.log(kleur.bold(`${mp.name} (${mp.method} · ${mp.readiness})`));
       if (cmd) console.log(`  ${kleur.cyan(cmd)}`);
       if (entry.note || ('note' in mp && mp.note)) console.log(`  ${kleur.dim(entry.note ?? ('note' in mp ? mp.note : ''))}`);
       if (!opts.dryRun && cmd) {
@@ -126,5 +126,5 @@ skillsCmd
   .command('marketplaces')
   .description('List known skill marketplaces')
   .action(() => {
-    for (const mp of MARKETPLACES) console.log(`${mp.id}\t${mp.name}\t${mp.method}`);
+    for (const mp of MARKETPLACES) console.log(`${mp.id}\t${mp.name}\t${mp.method}\t${mp.readiness}`);
   });

@@ -175,7 +175,7 @@ See [`CLI_INTEGRATIONS.md`](./CLI_INTEGRATIONS.md) for the CLI-backed integratio
 ![Stacker News](https://img.shields.io/badge/Stacker_News-F7931A?logo=bitcoin&logoColor=white)
 ![Blossom](https://img.shields.io/badge/Blossom_Social-EC4899?logo=nostr&logoColor=white)
 
-**Niche / user-supplied social (stubs pending API docs)**
+**Niche / user-supplied social (some stubs pending API docs; separate from the skills marketplace matrix below)**
 ![Moltbook](https://img.shields.io/badge/Moltbook-475569?logoColor=white)
 ![uGig](https://img.shields.io/badge/uGig-475569?logoColor=white)
 ![OpenWork](https://img.shields.io/badge/OpenWork-475569?logoColor=white)
@@ -337,6 +337,43 @@ sh1pt skills marketplaces
 
 `sh1pt skills new` creates a `sh1pt.skill.json` promotion manifest from a local `SKILL.md`. `sh1pt skills publish --all --dry-run` prints the exact uGig/ClawHub/Goose/LobeHub/Kilo/Skillstore/etc. commands or manual steps so agents can register, verify credentials, and promote without guessing.
 
+Example dry-run shape:
+
+```bash
+$ sh1pt skills publish --marketplace ugig clawhub --dry-run
+
+uGig (CLI/API)
+  ugig skills new --title "My Skill" --description "..."
+
+ClawHub (CLI)
+  npm exec --package=clawhub@latest -- clawhub skill publish . --slug my-skill --name "My Skill" --version 1.0.0 --tags latest,automation
+```
+
+#### skills marketplace readiness
+
+| Marketplace / registry | Current status | Notes |
+| --- | --- | --- |
+| uGig | live | concrete CLI/API publish path + dedicated adapter package |
+| ClawHub | live | concrete CLI publish path |
+| Goose Skills | manual | GitHub PR flow documented by the CLI |
+| LobeHub | manual | GitHub PR / compatible agent entry flow |
+| Kilo Marketplace | manual | helper command scaffold exists, but still requires marketplace-side submission |
+| AI Skillstore | manual | GitHub PR flow documented by the CLI |
+| Manus Agent Skills | manual | public GitHub import flow |
+| VS Code Agent Skills | manual | GitHub PR / index submission flow |
+| Moltbook | manual | issue/PR submission path |
+| AgentHub | manual | account import flow |
+| FreeMyGent | constrained | wallet/on-chain listing flow, not a simple API-key publish path |
+| ClawMart | constrained | paid creator membership + API key required |
+
+Use `sh1pt skills publish --all --dry-run` when you want the exact next-step commands without guessing. The current rule of thumb is:
+
+- **live** = concrete command path exists today
+- **manual** = supported via PR/import/browser steps
+- **constrained** = blocked on paid membership, wallet flow, or platform-side requirements
+
+Important: the matrix above is specifically about **skills marketplace publishing**. If a platform name also appears elsewhere in sh1pt under outreach/social surfaces, treat that as a different integration path with its own readiness level.
+
 ### promote ship
 
 ```bash
@@ -365,6 +402,8 @@ sh1pt promote creatives
 ```
 
 Publishing alone is table stakes. `promote` closes the loop — one command runs install / traffic / awareness campaigns on Reddit, Meta, TikTok, Google, YouTube, X, Apple Search, LinkedIn, and Microsoft Ads at once.
+
+For launch surfaces like **Product Hunt**, sh1pt can prepare the launch workflow and metadata, but the final submission still runs through browser/manual steps to stay aligned with platform rules.
 
 ### scale deploy
 

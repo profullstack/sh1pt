@@ -116,6 +116,8 @@ skillsCmd
       console.log(kleur.bold(`${mp.name} (${mp.method} · ${mp.readiness})`));
       if (cmd) console.log(`  ${kleur.cyan(cmd)}`);
       if (entry.note || ('note' in mp && mp.note)) console.log(`  ${kleur.dim(entry.note ?? ('note' in mp ? mp.note : ''))}`);
+      if (mp.readiness === 'manual') console.log(kleur.yellow('  next step: open the required PR/import/browser flow after preparing the assets above'));
+      if (mp.readiness === 'constrained') console.log(kleur.yellow('  next step: satisfy the paid/wallet/platform requirement before attempting publication'));
       if (!opts.dryRun && cmd) {
         console.log(kleur.yellow('  not auto-executed yet; run the command above after login/API setup'));
       }

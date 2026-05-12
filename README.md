@@ -340,13 +340,17 @@ sh1pt skills marketplaces
 Example dry-run shape:
 
 ```bash
-$ sh1pt skills publish --marketplace ugig clawhub --dry-run
+$ sh1pt skills publish --marketplace ugig clawhub goose --dry-run
 
-uGig (CLI/API)
+uGig (CLI/API · live)
   ugig skills new --title "My Skill" --description "..."
 
-ClawHub (CLI)
+ClawHub (CLI · live)
   npm exec --package=clawhub@latest -- clawhub skill publish . --slug my-skill --name "My Skill" --version 1.0.0 --tags latest,automation
+
+Goose Skills (GitHub PR · manual)
+  Add a skills/capabilities/<slug>/SKILL.md plus skill.meta.json entry to gooseworks-ai/goose-skills.
+  next step: open the required PR/import/browser flow after preparing the assets above
 ```
 
 #### skills marketplace readiness
@@ -366,7 +370,7 @@ ClawHub (CLI)
 | FreeMyGent | constrained | wallet/on-chain listing flow, not a simple API-key publish path |
 | ClawMart | constrained | paid creator membership + API key required |
 
-Use `sh1pt skills publish --all --dry-run` when you want the exact next-step commands without guessing. The current rule of thumb is:
+Use `sh1pt skills publish --all --dry-run` when you want the exact next-step commands without guessing. The publish output now mirrors the matrix directly: live targets print concrete commands, manual targets print the documented PR/import step, and constrained targets print the blocking requirement before publication. The current rule of thumb is:
 
 - **live** = concrete command path exists today
 - **manual** = supported via PR/import/browser steps

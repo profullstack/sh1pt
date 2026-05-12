@@ -1,4 +1,4 @@
-import { defineDns, tokenSetup, type DnsRecord } from '@profullstack/sh1pt-core';
+import { defineDns, type DnsRecord } from '@sh1pt/core';
 
 // DNSimple DNS API v2. Auth: Bearer OAuth token or personal access token.
 // Endpoints (all under https://api.dnsimple.com/v2/:account_id):
@@ -15,18 +15,19 @@ interface Config {
 }
 
 const API = 'https://api.dnsimple.com/v2';
+let _secret: (k: string) => string | undefined = () => undefined;
 
-function authHeader(ctx: { secret(k: string): string | undefined }) {
+function authHeader() {
   return {
-    Authorization: `Bearer ${ctx.secret('DNSIMPLE_API_TOKEN')}`,
+    Authorization: `Bearer ${_secret('DNSIMPLE_API_TOKEN')}`,
     Accept: 'application/json',
     'Content-Type': 'application/json',
   };
 }
 
-async function resolveAccountId(ctx: { secret(k: string): string | undefined }, config: Config): Promise<string> {
+async function resolveAccountId(config: Config): Promise<string> {
   if (config.accountId) return config.accountId;
-  const res = await fetch(`${API}/whoami`, { headers: authHeader(ctx) });
+  const res = await fetch(`${API}/whoami`, { headers: authHeader() });
   if (!res.ok) throw new Error(`DNSimple whoami: ${res.status}`);
   const { data } = await res.json() as { data: { account?: { id: number } } };
   if (!data.account) throw new Error('DNSimple: not authenticated as an account (user token?)');
@@ -38,22 +39,23 @@ export default defineDns<Config>({
   label: 'DNSimple',
 
   async connect(ctx) {
+    _secret = (k) => ctx.secret(k);
     if (!ctx.secret('DNSIMPLE_API_TOKEN')) throw new Error('DNSIMPLE_API_TOKEN not set');
     return { accountId: 'dnsimple' };
   },
 
-  async listZones(ctx, config) {
-    const accountId = await resolveAccountId(ctx, config);
-    const res = await fetch(`${API}/${accountId}/domains?per_page=100`, { headers: authHeader(ctx) });
+  async listZones(config) {
+    const accountId = await resolveAccountId(config);
+    const res = await fetch(`${API}/${accountId}/domains?per_page=100`, { headers: authHeader() });
     if (!res.ok) throw new Error(`DNSimple listZones: ${res.status}`);
     const { data } = await res.json() as { data: { id: number; name: string }[] };
     return data.map(d => ({ id: d.name, name: d.name }));
   },
 
-  async listRecords(zoneId, ctx, config) {
-    const accountId = await resolveAccountId(ctx, config);
+  async listRecords(zoneId, config) {
+    const accountId = await resolveAccountId(config);
     const res = await fetch(`${API}/${accountId}/zones/${zoneId}/records?per_page=100`, {
-      headers: authHeader(ctx),
+      headers: authHeader(),
     });
     if (!res.ok) throw new Error(`DNSimple listRecords: ${res.status}`);
     const { data } = await res.json() as {
@@ -69,21 +71,21 @@ export default defineDns<Config>({
     }));
   },
 
-  async upsertRecord(zoneId, record, config, ctx) {
-    const accountId = await resolveAccountId(ctx, config);
+  async upsertRecord(zoneId, record, config) {
+    const accountId = await resolveAccountId(config);
     const ttl = record.ttl ?? config.defaultTtl ?? 3600;
     const name = record.name.endsWith(`.${zoneId}`)
       ? record.name.slice(0, -(zoneId.length + 1))
       : record.name === zoneId ? '' : record.name;
 
-    const existing = (await this.listRecords(zoneId, ctx, config)).find(
+    const existing = (await this.listRecords(zoneId, config)).find(
       r => r.name === record.name && r.type === record.type,
     );
 
     if (existing) {
       const res = await fetch(`${API}/${accountId}/zones/${zoneId}/records/${existing.id}`, {
         method: 'PATCH',
-        headers: authHeader(ctx),
+        headers: authHeader(),
         body: JSON.stringify({ content: record.value, ttl }),
       });
       if (!res.ok) throw new Error(`DNSimple upsertRecord (update): ${res.status}`);
@@ -92,7 +94,7 @@ export default defineDns<Config>({
 
     const res = await fetch(`${API}/${accountId}/zones/${zoneId}/records`, {
       method: 'POST',
-      headers: authHeader(ctx),
+      headers: authHeader(),
       body: JSON.stringify({ name, type: record.type, content: record.value, ttl }),
     });
     if (!res.ok) throw new Error(`DNSimple upsertRecord (create): ${res.status}`);
@@ -100,39 +102,28 @@ export default defineDns<Config>({
     return { ...record, id: String(data.id), zone: zoneId };
   },
 
-  async deleteRecord(zoneId, recordId, ctx, config) {
-    const accountId = await resolveAccountId(ctx, config);
+  async deleteRecord(zoneId, recordId, config) {
+    const accountId = await resolveAccountId(config);
     const res = await fetch(`${API}/${accountId}/zones/${zoneId}/records/${recordId}`, {
       method: 'DELETE',
-      headers: authHeader(ctx),
+      headers: authHeader(),
     });
     if (!res.ok && res.status !== 404) throw new Error(`DNSimple deleteRecord: ${res.status}`);
   },
 
-  async syncRoundRobin({ zoneId, name, ips, ttl }, config, ctx) {
+  async syncRoundRobin({ zoneId, name, ips, ttl }, config) {
     const ttlFinal = ttl ?? config.defaultTtl ?? 3600;
-    const existing = (await this.listRecords(zoneId, ctx, config)).filter(
+    const existing = (await this.listRecords(zoneId, config)).filter(
       r => r.name === name && r.type === 'A',
     );
     const toDelete = existing.filter(r => !ips.includes(r.value));
     const toCreate = ips.filter(ip => !existing.some(r => r.value === ip));
-    await Promise.all(toDelete.map(r => this.deleteRecord(zoneId, r.id, ctx, config)));
+    await Promise.all(toDelete.map(r => this.deleteRecord(zoneId, r.id, config)));
     const created = await Promise.all(
       toCreate.map(ip =>
-        this.upsertRecord(zoneId, { id: '', zone: zoneId, name, type: 'A', value: ip, ttl: ttlFinal }, config, ctx),
+        this.upsertRecord(zoneId, { zone: zoneId, name, type: 'A', value: ip, ttl: ttlFinal }, config),
       ),
     );
     return [...existing.filter(r => ips.includes(r.value)), ...created] as DnsRecord[];
   },
-
-  setup: tokenSetup<Config>({
-    secretKey: 'DNSIMPLE_API_TOKEN',
-    label: 'DNSimple',
-    vendorDocUrl: 'https://support.dnsimple.com/articles/api-access-token/',
-    steps: [
-      'Open dnsimple.com → your account → API Access Tokens → New Access Token',
-      'Give it a name and choose account-level access',
-      'Copy the token — shown only once',
-    ],
-  }),
 });

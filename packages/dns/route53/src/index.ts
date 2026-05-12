@@ -1,4 +1,4 @@
-import { defineDns, tokenSetup, type DnsRecord } from '@profullstack/sh1pt-core';
+import { defineDns, type DnsRecord } from '@sh1pt/core';
 
 // AWS Route 53 DNS. Auth: AWS IAM credentials (Access Key + Secret).
 // sh1pt uses the AWS SDK v3 @aws-sdk/client-route-53 under the hood
@@ -15,26 +15,32 @@ interface Config {
   defaultTtl?: number;
 }
 
+let _secret: (k: string) => string | undefined = () => undefined;
+
 export default defineDns<Config>({
   id: 'dns-route53',
   label: 'AWS Route 53',
 
   async connect(ctx) {
+    _secret = (k) => ctx.secret(k);
     if (!ctx.secret('AWS_ACCESS_KEY_ID') || !ctx.secret('AWS_SECRET_ACCESS_KEY')) {
       throw new Error('AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY not set');
     }
     return { accountId: 'route53' };
   },
 
-  async listZones(ctx) {
+  async listZones() {
     // TODO: use @aws-sdk/client-route-53 Route53Client + ListHostedZonesCommand
-    // const client = new Route53Client({ region: 'us-east-1', credentials });
+    // const client = new Route53Client({ region: 'us-east-1', credentials: {
+    //   accessKeyId: _secret('AWS_ACCESS_KEY_ID') ?? '',
+    //   secretAccessKey: _secret('AWS_SECRET_ACCESS_KEY') ?? '',
+    // }});
     // const { HostedZones } = await client.send(new ListHostedZonesCommand({}));
     // return HostedZones.map(z => ({ id: z.Id.replace('/hostedzone/', ''), name: z.Name }));
     return [];
   },
 
-  async listRecords(zoneId, ctx) {
+  async listRecords(_zoneId) {
     // TODO: ListResourceRecordSetsCommand({ HostedZoneId: zoneId })
     // Map RRSets to DnsRecord[]. ALIAS records map to type 'CNAME' with value = AliasTarget.DNSName.
     return [];
@@ -43,10 +49,10 @@ export default defineDns<Config>({
   async upsertRecord(zoneId, record, config) {
     // TODO: ChangeResourceRecordSetsCommand with ChangeBatch Action=UPSERT
     const ttl = record.ttl ?? config.defaultTtl ?? 300;
-    return { id: `r53-stub`, ...record, zone: zoneId, ttl };
+    return { id: 'r53-stub', ...record, zone: zoneId, ttl };
   },
 
-  async deleteRecord(zoneId, recordId) {
+  async deleteRecord(_zoneId, _recordId) {
     // TODO: ChangeResourceRecordSetsCommand with ChangeBatch Action=DELETE
     // Need to fetch the full RRSet first (name+type are required for DELETE).
   },
@@ -64,18 +70,4 @@ export default defineDns<Config>({
       ttl: ttlFinal,
     })) satisfies DnsRecord[];
   },
-
-  setup: tokenSetup<Config>({
-    secretKey: 'AWS_ACCESS_KEY_ID',
-    label: 'AWS Route 53',
-    vendorDocUrl: 'https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/access-control-overview.html',
-    steps: [
-      'Open AWS Console → IAM → Users → Add User',
-      'Attach AmazonRoute53FullAccess policy (or a scoped custom policy)',
-      'Create access key under Security Credentials → copy Key ID and Secret',
-    ],
-    fields: [
-      { key: 'AWS_SECRET_ACCESS_KEY', message: 'Paste the AWS Secret Access Key:', secret: true, required: true },
-    ],
-  }),
 });

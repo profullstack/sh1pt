@@ -1,5 +1,5 @@
 {
-  "name": "@profullstack/sh1pt-dns-googledns",
+  "name": "@sh1pt/dns-googledns",
   "version": "0.1.0",
   "type": "module",
   "main": "./src/index.ts",
@@ -9,7 +9,7 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@profullstack/sh1pt-core": "workspace:*"
+    "@sh1pt/core": "workspace:*"
   },
   "license": "MIT",
   "repository": {

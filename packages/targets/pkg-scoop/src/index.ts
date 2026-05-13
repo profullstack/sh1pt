@@ -1,27 +1,92 @@
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
-interface Shortcut {
-  target: string;
-  name: string;
-  arguments?: string;
+type ScoopArch = '64bit' | '32bit' | 'arm64';
+type ScoopShortcuts = [string, string][];
+
+interface ArchitectureConfig {
+  name: ScoopArch;
+  url?: string;
+  sha256?: string;
+  bin?: string | string[];
+  shortcuts?: ScoopShortcuts;
+  extractDir?: string;
 }
 
 interface Config {
   appName: string;          // e.g. "myapp"
   bucketRepo?: string;      // GitHub repo for your scoop bucket, e.g. "myorg/scoop-bucket"
   urlTemplate?: string;     // download URL template with {{version}}
-  url?: string;             // explicit download URL, wins over urlTemplate
-  hash?: string;            // sha256, or "sha256:<value>"
-  bin?: string | string[];  // executable(s) exposed by Scoop
+  downloadRepo?: string;    // GitHub release repo, e.g. "myorg/myapp"
+  sha256?: string;
+  description?: string;
   homepage?: string;
   license?: string;
-  description?: string;
-  architecture?: Record<string, { url: string; hash: string }>;
-  shortcuts?: Shortcut[];
-  notes?: string;
-  envAddPath?: string | string[];
+  bin?: string | string[];
+  shortcuts?: ScoopShortcuts;
+  architecture?: ArchitectureConfig[];
+  checkver?: string | Record<string, unknown>;
+  autoupdate?: {
+    url?: string;
+    hash?: { url: string };
+  };
+}
+
+function scoopVersion(version: string): string {
+  return version.replace(/^v/, '');
+}
+
+function templateValue(value: string, config: Config, version: string, arch: ScoopArch): string {
+  return value
+    .replaceAll('{{version}}', version)
+    .replaceAll('{version}', version)
+    .replaceAll('{{appName}}', config.appName)
+    .replaceAll('{appName}', config.appName)
+    .replaceAll('{{arch}}', arch)
+    .replaceAll('{arch}', arch);
+}
+
+function defaultUrlTemplate(config: Config): string {
+  const repo = config.downloadRepo ?? config.bucketRepo ?? `profullstack/${config.appName}`;
+  return `https://github.com/${repo}/releases/download/v{{version}}/${config.appName}-{{version}}-{{arch}}.zip`;
+}
+
+function architectureUrl(ctx: { version: string }, config: Config, arch: ArchitectureConfig): string {
+  return templateValue(arch.url ?? config.urlTemplate ?? defaultUrlTemplate(config), config, scoopVersion(ctx.version), arch.name);
+}
+
+function renderManifest(ctx: { version: string }, config: Config): string {
+  const version = scoopVersion(ctx.version);
+  const architectures = config.architecture ?? [{ name: '64bit' as const }];
+  const manifest: Record<string, unknown> = {
+    version,
+    description: config.description ?? `${config.appName} release`,
+    homepage: config.homepage ?? 'https://sh1pt.com',
+    license: config.license ?? 'MIT',
+    architecture: Object.fromEntries(architectures.map((arch) => {
+      const entry: Record<string, unknown> = {
+        url: architectureUrl(ctx, config, arch),
+        hash: arch.sha256 ?? config.sha256 ?? 'skip',
+      };
+      if (arch.extractDir) entry.extract_dir = arch.extractDir;
+      if (arch.bin ?? config.bin) entry.bin = arch.bin ?? config.bin;
+      if (arch.shortcuts ?? config.shortcuts) entry.shortcuts = arch.shortcuts ?? config.shortcuts;
+      return [arch.name, entry];
+    })),
+  };
+
+  if (config.checkver) manifest.checkver = config.checkver;
+  if (config.autoupdate) {
+    manifest.autoupdate = {
+      ...config.autoupdate,
+      ...(config.autoupdate.url ? {
+        url: templateValue(config.autoupdate.url, config, '$version', '64bit'),
+      } : {}),
+    };
+  }
+
+  return `${JSON.stringify(manifest, null, 2)}\n`;
 }
 
 export default defineTarget<Config>({
@@ -32,7 +97,7 @@ export default defineTarget<Config>({
     const manifestPath = join(ctx.outDir, `${config.appName}.json`);
     ctx.log(`generate scoop manifest ${config.appName}.json for v${ctx.version}`);
     await mkdir(ctx.outDir, { recursive: true });
-    await writeFile(manifestPath, JSON.stringify(createManifest(ctx.version, config), null, 2) + '\n');
+    await writeFile(manifestPath, renderManifest(ctx, config), 'utf-8');
     return { artifact: manifestPath };
   },
   async ship(ctx, config) {
@@ -61,47 +126,3 @@ export default defineTarget<Config>({
     ],
   }),
 });
-
-function createManifest(version: string, config: Config): Record<string, unknown> {
-  const url = resolveUrl(version, config);
-  const manifest: Record<string, unknown> = {
-    version,
-    description: config.description ?? `${config.appName} packaged by sh1pt`,
-    homepage: config.homepage,
-    license: config.license,
-    notes: config.notes,
-    url,
-    hash: normalizeHash(config.hash),
-    bin: config.bin ?? config.appName,
-    shortcuts: config.shortcuts?.map((shortcut) => [
-      shortcut.target,
-      shortcut.name,
-      ...(shortcut.arguments ? [shortcut.arguments] : []),
-    ]),
-    env_add_path: config.envAddPath,
-    architecture: normalizeArchitecture(config.architecture),
-  };
-
-  return Object.fromEntries(Object.entries(manifest).filter(([, value]) => value !== undefined));
-}
-
-function resolveUrl(version: string, config: Config): string {
-  const url = config.url ?? config.urlTemplate?.replaceAll('{{version}}', version);
-  if (!url) throw new Error('pkg-scoop requires config.url or config.urlTemplate');
-  return url;
-}
-
-function normalizeHash(hash: string | undefined): string | undefined {
-  if (!hash) return undefined;
-  return hash.startsWith('sha256:') ? hash.slice('sha256:'.length) : hash;
-}
-
-function normalizeArchitecture(
-  architecture: Config['architecture'],
-): Record<string, { url: string; hash: string }> | undefined {
-  if (!architecture) return undefined;
-  return Object.fromEntries(Object.entries(architecture).map(([key, value]) => [
-    key,
-    { url: value.url, hash: normalizeHash(value.hash) ?? value.hash },
-  ]));
-}

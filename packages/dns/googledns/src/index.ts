@@ -23,6 +23,8 @@ async function getAccessToken(): Promise<string> {
   const staticToken = _secret('GOOGLE_ACCESS_TOKEN');
   if (staticToken) return staticToken;
   // Fallback: metadata server (works on GCP Compute / Cloud Run)
+  // nosemgrep: typescript.react.security.react-insecure-request.react-insecure-request
+  // Google metadata service uses link-local HTTP endpoint by design.
   const res = await fetch(
     'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token',
     { headers: { 'Metadata-Flavor': 'Google' } },

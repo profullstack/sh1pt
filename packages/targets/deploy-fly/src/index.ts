@@ -1,4 +1,4 @@
-import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup, exec } from '@profullstack/sh1pt-core';
 
 interface Config {
   app: string;
@@ -18,12 +18,59 @@ export default defineTarget<Config>({
   async ship(ctx, config) {
     const strategy = config.strategy ?? (ctx.channel === 'stable' ? 'rolling' : 'canary');
     ctx.log(`flyctl deploy · app=${config.app} · strategy=${strategy}`);
+
     if (ctx.dryRun) return { id: 'dry-run' };
-    // TODO: `flyctl deploy --remote-only --strategy=${strategy}` with FLY_API_TOKEN
-    return {
-      id: `${config.app}@${ctx.version}`,
-      url: `https://${config.app}.fly.dev`,
-    };
+
+    // Check required API token
+    const token = ctx.secret('FLY_API_TOKEN');
+    if (!token) {
+      throw new Error(
+        'FLY_API_TOKEN is required for deployment. ' +
+        'Generate a deploy token via: flyctl tokens create deploy, ' +
+        'then set it: sh1pt secret set FLY_API_TOKEN <token>'
+      );
+    }
+
+    // Build flyctl arguments
+    const args: string[] = [
+      'deploy',
+      '--remote-only',
+      '--strategy', strategy,
+      '--app', config.app,
+    ];
+
+    // Add regions if specified
+    if (config.regions && config.regions.length > 0) {
+      for (const region of config.regions) {
+        args.push('--region', region);
+      }
+    }
+
+    // Add dockerfile if specified
+    if (config.dockerfile) {
+      args.push('--dockerfile', config.dockerfile);
+    }
+
+    // Execute flyctl deploy
+    const { stdout } = await exec('flyctl', args, {
+      log: ctx.log,
+      throwOnNonZero: true,
+    });
+
+    // Parse deploy URL from output — flyctl typically prints something like:
+    // "Visit your app at: https://<app>.fly.dev"
+    const urlMatch = stdout.match(/https:\/\/[a-zA-Z0-9.-]+\.fly\.dev/);
+    const url = urlMatch?.[0] ?? `https://${config.app}.fly.dev`;
+
+    // Extract deployment ID — flyctl often prints a "Deployment #<id>" or
+    // "v<version> deployed" line. Fall back to app@version.
+    const deployIdMatch = stdout.match(/Deployment\s+#?([a-zA-Z0-9-]+)/i);
+    const versionMatch = stdout.match(/v(\d+)\s+deployed/i);
+    const id = deployIdMatch?.[1] ?? (versionMatch ? `${config.app}@v${versionMatch[1]}` : `${config.app}@${ctx.version}`);
+
+    ctx.log(`flyctl deploy complete · id=${id} · url=${url}`);
+
+    return { id, url };
   },
 
   setup: manualSetup({

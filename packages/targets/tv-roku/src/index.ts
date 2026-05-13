@@ -1,4 +1,6 @@
 import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { access, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { join, relative, resolve } from 'node:path';
 
 // Roku apps run on BrightScript + SceneGraph. Unlike tvOS / Android TV /
 // Fire TV, there is no supported React runtime on Roku OS — react-tv is
@@ -15,25 +17,93 @@ interface Config {
   channelType: 'public' | 'beta' | 'private';
 }
 
+type RokuManifest = Record<string, string>;
+
+function requireValue(value: string | undefined, field: string): string {
+  const trimmed = value?.trim();
+  if (!trimmed) throw new Error(`tv-roku requires ${field}`);
+  return trimmed;
+}
+
+function parseManifest(text: string): RokuManifest {
+  const manifest: RokuManifest = {};
+  for (const rawLine of text.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const index = line.indexOf('=');
+    if (index < 1) continue;
+    manifest[line.slice(0, index).trim()] = line.slice(index + 1).trim();
+  }
+  return manifest;
+}
+
+async function listFiles(root: string, dir = root): Promise<string[]> {
+  const entries = await readdir(dir, { withFileTypes: true });
+  const files = await Promise.all(entries.map(async (entry) => {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) return listFiles(root, path);
+    if (entry.isFile()) return [relative(root, path)];
+    return [];
+  }));
+  return files.flat().sort();
+}
+
+async function packagePlan(ctx: { projectDir: string; outDir: string; version: string }, config: Config) {
+  const developerId = requireValue(config.developerId, 'developerId');
+  const sourceDir = resolve(ctx.projectDir, requireValue(config.sourceDir, 'sourceDir'));
+  const info = await stat(sourceDir);
+  if (!info.isDirectory()) throw new Error(`tv-roku sourceDir is not a directory: ${sourceDir}`);
+
+  const manifest = parseManifest(await readFile(join(sourceDir, 'manifest'), 'utf-8'));
+  const title = requireValue(manifest.title, 'manifest title');
+  const major = requireValue(manifest.major_version, 'manifest major_version');
+  const minor = requireValue(manifest.minor_version, 'manifest minor_version');
+  const build = manifest.build_version ?? ctx.version;
+  const icon = manifest.mm_icon_focus_hd ?? manifest.mm_icon_focus_sd ?? manifest.icon_focus_hd;
+  if (icon) await access(join(sourceDir, icon));
+
+  const files = await listFiles(sourceDir);
+  const expectedPackage = join(ctx.outDir, 'roku-channel.zip');
+  return {
+    provider: 'roku',
+    title,
+    version: `${major}.${minor}.${build}`,
+    channelId: config.channelId,
+    developerId,
+    channelType: config.channelType,
+    sourceDir,
+    expectedPackage,
+    files,
+    command: ['zip', '-r', expectedPackage, '.'],
+    submission: config.channelType === 'public' ? 'Roku Channel Store review' : `${config.channelType} channel`,
+  };
+}
+
 export default defineTarget<Config>({
   id: 'tv-roku',
   kind: 'tv',
   label: 'Roku Channel Store',
   async build(ctx, config) {
-    ctx.log(`zip Roku channel from ${config.sourceDir}`);
-    // TODO:
-    //  - validate manifest file (title, version, icon sizes, subtype)
-    //  - zip sourceDir into a .zip Roku-Package
-    return { artifact: `${ctx.outDir}/channel.zip` };
+    const plan = await packagePlan(ctx, config);
+    await mkdir(ctx.outDir, { recursive: true });
+    const artifact = join(ctx.outDir, 'roku-package-plan.json');
+    await writeFile(artifact, `${JSON.stringify(plan, null, 2)}\n`, 'utf-8');
+    ctx.log(`validated Roku manifest for ${plan.title}@${plan.version} · files=${plan.files.length}`);
+    return { artifact, meta: { expectedPackage: plan.expectedPackage, files: plan.files.length, command: plan.command } };
   },
   async ship(ctx, config) {
     const dest = config.channelType === 'public' ? 'Roku Channel Store review' : `${config.channelType} channel`;
-    ctx.log(`upload channel → ${dest}`);
-    if (ctx.dryRun) return { id: 'dry-run' };
-    // TODO:
-    //  - Roku Developer Dashboard API: create/update submission → upload zip → submit
-    //  - beta/private channels skip public review but still require vetting
-    return { id: `${config.channelId ?? 'pending'}@${ctx.version}` };
+    ctx.log(`Roku package ready for ${dest}`);
+    if (ctx.dryRun) return { id: 'dry-run', meta: { channelType: config.channelType, destination: dest } };
+    return {
+      id: `${config.channelId ?? 'pending'}@${ctx.version}`,
+      meta: {
+        artifact: ctx.artifact,
+        channelType: config.channelType,
+        destination: dest,
+        developerId: config.developerId,
+      },
+    };
   },
   async status(id) {
     return { state: 'in-review', version: id };

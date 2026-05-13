@@ -1,4 +1,4 @@
-import { defineTarget, tokenSetup } from '@profullstack/sh1pt-core';
+import { defineTarget, exec, tokenSetup } from '@profullstack/sh1pt-core';
 
 // Coolify — self-hosted PaaS that takes a git repo or docker-compose and
 // runs it on your own infra. Two paths sh1pt cares about:
@@ -29,10 +29,30 @@ export default defineTarget<Config>({
     const env = config.environmentName ?? (ctx.channel === 'stable' ? 'production' : 'staging');
     ctx.log(`coolify · deploy · project=${config.projectUuid} · env=${env}`);
     if (ctx.dryRun) return { id: 'dry-run' };
-    // TODO: POST {baseUrl}/api/v1/deploy with COOLIFY_API_TOKEN
+
+    const token = ctx.secret('COOLIFY_API_TOKEN');
+    if (!token) {
+      throw new Error('COOLIFY_API_TOKEN is required. Run: sh1pt secret set COOLIFY_API_TOKEN <token>');
+    }
+
+    const deployUuid = config.applicationUuid ?? config.projectUuid;
+    ctx.log(`coolify · POST ${config.baseUrl}/api/v1/deploy?uuid=${deployUuid}`);
+
+    const { stdout } = await exec('curl', [
+      '-s',
+      '-X', 'POST',
+      `${config.baseUrl}/api/v1/deploy?uuid=${deployUuid}`,
+      '-H', `Authorization: Bearer ${token}`,
+    ], {
+      log: ctx.log,
+      throwOnNonZero: true,
+    });
+
+    ctx.log(`coolify · deploy response: ${stdout.trim()}`);
+
     return {
-      id: `${config.applicationUuid ?? config.projectUuid}@${ctx.version}`,
-      meta: { baseUrl: config.baseUrl, environment: env },
+      id: `${deployUuid}@${ctx.version}`,
+      meta: { baseUrl: config.baseUrl, environment: env, rawResponse: stdout.trim() },
     };
   },
 

@@ -1,12 +1,82 @@
 import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 interface Config {
   appId: string;             // Reverse-DNS app ID, e.g. "com.example.MyApp"
   branch?: 'stable' | 'beta';
   runtime?: string;          // e.g. "org.freedesktop.Platform"
   runtimeVersion?: string;   // e.g. "23.08"
+  sdk?: string;              // e.g. "org.freedesktop.Sdk"
   sdkExtensions?: string[];  // e.g. ["org.freedesktop.Sdk.Extension.node20"]
   flathubRepo?: string;      // defaults to "https://github.com/flathub/flathub"
+  command?: string;
+  moduleName?: string;
+  buildsystem?: 'simple' | 'meson' | 'cmake' | 'autotools' | string;
+  buildCommands?: string[];
+  sourceUrl?: string;
+  sourceSha256?: string;
+  finishArgs?: string[];
+}
+
+function yamlString(value: string): string {
+  return JSON.stringify(value);
+}
+
+function renderList(values: string[], indent: string): string[] {
+  return values.map((value) => `${indent}- ${yamlString(value)}`);
+}
+
+function renderFlatpakManifest(ctx: { projectDir: string; version: string; channel: string }, config: Config): string {
+  const branch = config.branch ?? (ctx.channel === 'stable' ? 'stable' : 'beta');
+  const runtime = config.runtime ?? 'org.freedesktop.Platform';
+  const runtimeVersion = config.runtimeVersion ?? '23.08';
+  const sdk = config.sdk ?? 'org.freedesktop.Sdk';
+  const command = config.command ?? config.appId.split('.').at(-1) ?? config.appId;
+  const moduleName = config.moduleName ?? command;
+  const buildsystem = config.buildsystem ?? 'simple';
+  const buildCommands = config.buildCommands ?? ['install -D app "$FLATPAK_DEST/bin/app"'];
+  const finishArgs = config.finishArgs ?? ['--share=network'];
+  const sourceUrl = config.sourceUrl ?? ctx.projectDir;
+  const lines = [
+    `app-id: ${yamlString(config.appId)}`,
+    `runtime: ${yamlString(runtime)}`,
+    `runtime-version: ${yamlString(runtimeVersion)}`,
+    `sdk: ${yamlString(sdk)}`,
+    `command: ${yamlString(command)}`,
+    `branch: ${yamlString(branch)}`,
+  ];
+
+  if (config.sdkExtensions?.length) {
+    lines.push('sdk-extensions:');
+    lines.push(...renderList(config.sdkExtensions, '  '));
+  }
+
+  if (finishArgs.length) {
+    lines.push('finish-args:');
+    lines.push(...renderList(finishArgs, '  '));
+  }
+
+  lines.push('modules:');
+  lines.push(`  - name: ${yamlString(moduleName)}`);
+  lines.push(`    buildsystem: ${yamlString(buildsystem)}`);
+  lines.push('    build-commands:');
+  lines.push(...renderList(buildCommands, '      '));
+  lines.push('    sources:');
+
+  if (config.sourceUrl) {
+    lines.push('      - type: archive');
+    lines.push(`        url: ${yamlString(sourceUrl)}`);
+    if (config.sourceSha256) {
+      lines.push(`        sha256: ${yamlString(config.sourceSha256)}`);
+    }
+  } else {
+    lines.push('      - type: dir');
+    lines.push(`        path: ${yamlString(sourceUrl)}`);
+  }
+
+  lines.push('');
+  return lines.join('\n');
 }
 
 export default defineTarget<Config>({
@@ -17,14 +87,13 @@ export default defineTarget<Config>({
     const branch = config.branch ?? (ctx.channel === 'stable' ? 'stable' : 'beta');
     const runtime = config.runtime ?? 'org.freedesktop.Platform';
     const runtimeVersion = config.runtimeVersion ?? '23.08';
+    const manifestPath = join(ctx.outDir, `${config.appId}.yml`);
     ctx.log(`render ${config.appId}.yml manifest for v${ctx.version} (branch: ${branch})`);
     ctx.log(`runtime: ${runtime}//${runtimeVersion}`);
-    // TODO: render Flatpak manifest YAML from template:
-    //   app-id: ${appId}  runtime: ${runtime}  runtime-version: ${runtimeVersion}
-    //   sdk-extensions: ${sdkExtensions}
-    //   modules: [{ name: <appName>, sources: [{ type: archive, url: ..., sha256: ... }] }]
+    await mkdir(ctx.outDir, { recursive: true });
+    await writeFile(manifestPath, renderFlatpakManifest(ctx, config), 'utf-8');
     // TODO: run `flatpak-builder --repo=repo --force-clean builddir ${appId}.yml`
-    return { artifact: `${ctx.outDir}/${config.appId}.flatpak` };
+    return { artifact: manifestPath };
   },
   async ship(ctx, config) {
     const branch = config.branch ?? (ctx.channel === 'stable' ? 'stable' : 'beta');

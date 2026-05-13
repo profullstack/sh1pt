@@ -31,7 +31,8 @@ RUN corepack enable
 
 WORKDIR /app
 
-COPY --from=build /app /app
+COPY --from=build --chown=node:node /app /app
 
 EXPOSE 8080
+USER node
 CMD ["pnpm", "--filter", "sh1pt-dot-com", "start"]

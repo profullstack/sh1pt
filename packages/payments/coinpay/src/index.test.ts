@@ -11,17 +11,22 @@ describe('payment-coinpay', () => {
   });
 
   it('creates a CoinPayPortal payment request and returns its checkout URL', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      ok: true,
-      json: async () => ({
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(jsonResponse({
+        success: true,
+        coins: [
+          { symbol: 'BTC', is_active: true, has_wallet: true },
+          { symbol: 'USDC_SOL', is_active: true, has_wallet: true },
+        ],
+      }))
+      .mockResolvedValueOnce(jsonResponse({
         success: true,
         payment: {
           id: 'pay_123',
           checkout_url: 'https://coinpayportal.com/pay/pay_123',
           expires_at: '2026-05-13T08:00:00.000Z',
         },
-      }),
-    } as Response);
+      }));
 
     const session = await payment.createCheckout(ctx({ COINPAY_API_KEY: 'cp_live_test' }), {
       amount: 2440,
@@ -45,8 +50,15 @@ describe('payment-coinpay', () => {
       expiresAt: '2026-05-13T08:00:00.000Z',
     });
 
-    expect(fetchMock).toHaveBeenCalledOnce();
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    const [supportedUrl, supportedInit] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(supportedUrl.origin + supportedUrl.pathname).toBe('https://coinpayportal.test/api/supported-coins');
+    expect(supportedUrl.searchParams.get('business_id')).toBe('biz_123');
+    expect(supportedUrl.searchParams.get('active_only')).toBe('true');
+    expect(supportedInit.method).toBe('GET');
+
+    const [url, init] = fetchMock.mock.calls[1] as [string, RequestInit];
     expect(url).toBe('https://coinpayportal.test/api/payments/create');
     expect(init.method).toBe('POST');
     expect((init.headers as Record<string, string>).authorization).toBe('Bearer cp_live_test');
@@ -66,6 +78,60 @@ describe('payment-coinpay', () => {
         payment_rail: 'crypto',
       },
     });
+  });
+
+  it('uses the business supported coins endpoint when no currency is configured', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(jsonResponse({
+        success: true,
+        coins: [
+          { symbol: 'SOL', is_active: true, has_wallet: true },
+        ],
+      }))
+      .mockResolvedValueOnce(jsonResponse({
+        success: true,
+        payment: {
+          id: 'pay_sol',
+          checkout_url: 'https://coinpayportal.com/pay/pay_sol',
+        },
+      }));
+
+    await payment.createCheckout(ctx({ COINPAY_API_KEY: 'cp_live_test' }), {
+      amount: 500,
+      currency: 'USD',
+      kind: 'one-time',
+      successUrl: 'https://example.com/success',
+      cancelUrl: 'https://example.com/cancel',
+    }, {
+      businessId: 'biz_123',
+      apiBaseUrl: 'https://coinpayportal.test/api',
+    });
+
+    const [, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      currency: 'sol',
+    });
+  });
+
+  it('rejects configured currencies that are not enabled for the business', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(jsonResponse({
+      success: true,
+      coins: [
+        { symbol: 'SOL', is_active: true, has_wallet: true },
+      ],
+    }));
+
+    await expect(payment.createCheckout(ctx({ COINPAY_API_KEY: 'cp_live_test' }), {
+      amount: 500,
+      currency: 'USD',
+      kind: 'one-time',
+      successUrl: 'https://example.com/success',
+      cancelUrl: 'https://example.com/cancel',
+    }, {
+      businessId: 'biz_123',
+      currency: 'usdc_sol',
+      apiBaseUrl: 'https://coinpayportal.test/api',
+    })).rejects.toThrow('does not support configured currency usdc_sol');
   });
 
   it('verifies CoinPay webhook signatures and normalizes payment events', async () => {
@@ -121,4 +187,11 @@ function ctx(secrets: Record<string, string>) {
     },
     log: vi.fn(),
   };
+}
+
+function jsonResponse(json: unknown): Response {
+  return {
+    ok: true,
+    json: async () => json,
+  } as Response;
 }

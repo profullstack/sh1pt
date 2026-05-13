@@ -1,14 +1,14 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { definePayment, tokenSetup, type CheckoutRequest, type CheckoutSession, type Webhook } from '@profullstack/sh1pt-core';
 
-// CoinPayPortal — default crypto-accepting payment provider in sh1pt.
-// Accepts BTC / ETH / USDC / SOL, settles to the merchant wallet, and
-// signs all webhook events with X-CoinPay-Signature.
+// CoinPayPortal - default crypto-accepting payment provider in sh1pt.
+// Uses the business configured coin list from CoinPayPortal and signs all
+// webhook events with X-CoinPay-Signature.
 interface Config {
   businessId?: string;
   merchantId?: string;               // Back-compat alias for businessId.
-  acceptedCoins?: string[];          // e.g. ['BTC','USDC']
-  currency?: string;                 // CoinPay currency code, e.g. btc, eth, sol, usdc_sol.
+  acceptedCoins?: string[];          // Preferred business-enabled coins, e.g. ['USDC','SOL'].
+  currency?: string;                 // CoinPay currency code, e.g. sol, usdc_sol.
   paymentMethod?: 'crypto' | 'card' | 'both';
   apiBaseUrl?: string;
   checkoutBaseUrl?: string;
@@ -27,7 +27,7 @@ export default definePayment<Config>({
   async connect(ctx, config) {
     if (!ctx.secret('COINPAY_API_KEY')) throw new Error('COINPAY_API_KEY not in vault');
     const businessId = resolveBusinessId(config);
-    ctx.log(`coinpay connected · coins=${config.acceptedCoins?.join(',') ?? 'BTC,ETH,USDC,SOL'}`);
+    ctx.log(`coinpay connected · business=${businessId ?? 'api-key default'}`);
     return { accountId: businessId ?? 'coinpay' };
   },
 
@@ -40,11 +40,13 @@ export default definePayment<Config>({
     if (!apiKey) throw new Error('COINPAY_API_KEY not in vault');
 
     ctx.log(`coinpay checkout · ${req.amount} ${req.currency} · ${req.kind}`);
+    const supportedCurrencies = await fetchSupportedCurrencies(config, apiKey);
+    const paymentCurrency = resolvePaymentCurrency(config, supportedCurrencies);
     const response = await coinpayRequest<CoinPayCreatePaymentResponse>(
       config,
       '/payments/create',
       apiKey,
-      buildPaymentBody(req, config),
+      buildPaymentBody(req, config, paymentCurrency),
     );
 
     return checkoutSessionFromPayment(response, config);
@@ -74,11 +76,11 @@ export default definePayment<Config>({
   }),
 });
 
-function buildPaymentBody(req: CheckoutRequest, config: Config): Record<string, unknown> {
+function buildPaymentBody(req: CheckoutRequest, config: Config, paymentCurrency: string): Record<string, unknown> {
   const body: Record<string, unknown> = {
     business_id: resolveBusinessId(config),
     amount_usd: toUsdDecimal(req.amount, req.currency),
-    currency: resolvePaymentCurrency(req, config),
+    currency: paymentCurrency,
     payment_method: config.paymentMethod ?? 'crypto',
     redirect_url: req.successUrl,
     cancel_url: req.cancelUrl,
@@ -94,6 +96,39 @@ function buildPaymentBody(req: CheckoutRequest, config: Config): Record<string, 
   };
 
   return stripUndefined(body);
+}
+
+async function fetchSupportedCurrencies(config: Config, apiKey: string): Promise<string[]> {
+  const businessId = resolveBusinessId(config);
+  const query: Record<string, string> = { active_only: 'true' };
+  if (businessId) query.business_id = businessId;
+  const response = await coinpayGet<CoinPaySupportedCoinsResponse>(
+    config,
+    '/supported-coins',
+    apiKey,
+    query,
+  );
+  return supportedCurrenciesFromResponse(response);
+}
+
+async function coinpayGet<T>(
+  config: Config,
+  path: string,
+  apiKey: string,
+  query: Record<string, string>,
+): Promise<T> {
+  const url = new URL(`${apiBaseUrl(config)}${path}`);
+  for (const [key, value] of Object.entries(query)) url.searchParams.set(key, value);
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      authorization: `Bearer ${apiKey}`,
+      accept: 'application/json',
+    },
+  });
+
+  return readCoinPayJson<T>(response);
 }
 
 async function coinpayRequest<T>(
@@ -198,12 +233,32 @@ function normalizeStatus(status: string | undefined): Webhook['status'] | undefi
   return undefined;
 }
 
-function resolvePaymentCurrency(req: CheckoutRequest, config: Config): string {
-  if (config.currency) return config.currency.toLowerCase();
-  const requested = req.currency.toUpperCase();
-  if (CRYPTO_CURRENCY_MAP[requested]) return CRYPTO_CURRENCY_MAP[requested];
-  const [firstAccepted] = config.acceptedCoins ?? [];
-  return CRYPTO_CURRENCY_MAP[firstAccepted?.toUpperCase() ?? ''] ?? 'usdc_sol';
+function resolvePaymentCurrency(config: Config, supportedCurrencies: string[]): string {
+  if (!supportedCurrencies.length) {
+    throw new Error('CoinPayPortal business has no active supported coins');
+  }
+
+  if (config.currency) {
+    const configured = normalizeCurrency(config.currency);
+    if (!supportedCurrencies.includes(configured)) {
+      throw new Error(`CoinPayPortal business does not support configured currency ${configured}`);
+    }
+    return configured;
+  }
+
+  for (const preference of config.acceptedCoins ?? []) {
+    const preferred = normalizeCurrency(preference);
+    const match = supportedCurrencies.find((currency) => matchesCoinPreference(currency, preferred));
+    if (match) return match;
+  }
+
+  if (config.acceptedCoins?.length) {
+    throw new Error(`CoinPayPortal business does not support preferred coins: ${config.acceptedCoins.join(', ')}`);
+  }
+
+  const fallback = supportedCurrencies[0];
+  if (!fallback) throw new Error('CoinPayPortal business has no active supported coins');
+  return fallback;
 }
 
 function toUsdDecimal(amount: number, currency: string): string {
@@ -241,15 +296,28 @@ function stripUndefined<T>(value: T): T {
   return value;
 }
 
-const CRYPTO_CURRENCY_MAP: Record<string, string> = {
-  BTC: 'btc',
-  ETH: 'eth',
-  SOL: 'sol',
-  USDC: 'usdc_sol',
-  USDC_SOL: 'usdc_sol',
-  USDC_POL: 'usdc_pol',
-  USDC_ETH: 'usdc_eth',
-};
+function supportedCurrenciesFromResponse(response: CoinPaySupportedCoinsResponse): string[] {
+  const coins = coinsFromResponse(response);
+  return coins
+    .filter((coin) => coin.is_active !== false && coin.active !== false && coin.has_wallet !== false)
+    .map((coin) => coin.currency ?? coin.symbol ?? coin.code)
+    .filter((symbol): symbol is string => typeof symbol === 'string' && symbol.trim().length > 0)
+    .map(normalizeCurrency);
+}
+
+function coinsFromResponse(response: CoinPaySupportedCoinsResponse): CoinPaySupportedCoin[] {
+  if (response.coins) return response.coins;
+  if (Array.isArray(response.data)) return response.data;
+  return response.data?.coins ?? [];
+}
+
+function normalizeCurrency(value: string): string {
+  return value.trim().toLowerCase().replace(/-/g, '_');
+}
+
+function matchesCoinPreference(currency: string, preferred: string): boolean {
+  return currency === preferred || currency.startsWith(`${preferred}_`);
+}
 
 interface CoinPayErrorResponse {
   success?: boolean;
@@ -274,6 +342,22 @@ type CoinPayCreatePaymentResponse = CoinPayPayment & {
   payment?: CoinPayPayment;
   data?: CoinPayPayment & { payment?: CoinPayPayment };
 };
+
+interface CoinPaySupportedCoin {
+  symbol?: string;
+  currency?: string;
+  code?: string;
+  is_active?: boolean;
+  active?: boolean;
+  has_wallet?: boolean;
+}
+
+interface CoinPaySupportedCoinsResponse {
+  success?: boolean;
+  ok?: boolean;
+  coins?: CoinPaySupportedCoin[];
+  data?: CoinPaySupportedCoin[] | { coins?: CoinPaySupportedCoin[] };
+}
 
 interface CoinPayWebhookEvent {
   id?: string;

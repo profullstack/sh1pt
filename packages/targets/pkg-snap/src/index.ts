@@ -1,4 +1,6 @@
 import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 interface Config {
   snapName: string;          // e.g. "myapp"
@@ -7,6 +9,74 @@ interface Config {
   base?: 'core22' | 'core24' | 'bare';
   architectures?: ('amd64' | 'arm64' | 'armhf' | 'i386' | 'riscv64' | 's390x')[];
   channel?: 'stable' | 'candidate' | 'beta' | 'edge';
+  summary?: string;
+  description?: string;
+  command?: string;
+  source?: string;
+  plugin?: 'dump' | 'npm' | 'make' | 'nil' | string;
+  plugs?: string[];
+  stagePackages?: string[];
+}
+
+function yamlString(value: string): string {
+  return JSON.stringify(value);
+}
+
+function renderList(values: string[], indent: string): string[] {
+  return values.map((value) => `${indent}- ${yamlString(value)}`);
+}
+
+function renderDescription(description: string): string[] {
+  return [
+    'description: |',
+    ...description.split('\n').map((line) => `  ${line}`),
+  ];
+}
+
+function renderSnapcraftYaml(ctx: { projectDir: string; version: string; channel: string }, config: Config): string {
+  const grade = config.grade ?? (ctx.channel === 'stable' ? 'stable' : 'devel');
+  const confinement = config.confinement ?? 'strict';
+  const base = config.base ?? 'core22';
+  const arches = config.architectures ?? ['amd64', 'arm64'];
+  const command = config.command ?? `bin/${config.snapName}`;
+  const source = config.source ?? ctx.projectDir;
+  const plugin = config.plugin ?? 'dump';
+  const description = config.description ?? `${config.snapName} packaged by sh1pt.`;
+  const lines = [
+    `name: ${yamlString(config.snapName)}`,
+    `base: ${yamlString(base)}`,
+    `version: ${yamlString(ctx.version)}`,
+    `summary: ${yamlString(config.summary ?? `${config.snapName} release`)}`,
+    ...renderDescription(description),
+    `grade: ${yamlString(grade)}`,
+    `confinement: ${yamlString(confinement)}`,
+    'architectures:',
+    ...arches.flatMap((arch) => [
+      `  - build-on: ${yamlString(arch)}`,
+      `    build-for: ${yamlString(arch)}`,
+    ]),
+    'apps:',
+    `  ${config.snapName}:`,
+    `    command: ${yamlString(command)}`,
+  ];
+
+  if (config.plugs?.length) {
+    lines.push('    plugs:');
+    lines.push(...renderList(config.plugs, '      '));
+  }
+
+  lines.push('parts:');
+  lines.push(`  ${config.snapName}:`);
+  lines.push(`    plugin: ${yamlString(plugin)}`);
+  lines.push(`    source: ${yamlString(source)}`);
+
+  if (config.stagePackages?.length) {
+    lines.push('    stage-packages:');
+    lines.push(...renderList(config.stagePackages, '      '));
+  }
+
+  lines.push('');
+  return lines.join('\n');
 }
 
 export default defineTarget<Config>({
@@ -18,11 +88,13 @@ export default defineTarget<Config>({
     const confinement = config.confinement ?? 'strict';
     const base = config.base ?? 'core22';
     const arches = config.architectures ?? ['amd64', 'arm64'];
+    const manifestPath = join(ctx.outDir, 'snap', 'snapcraft.yaml');
     ctx.log(`render snapcraft.yaml for ${config.snapName} v${ctx.version} (${grade}/${confinement})`);
     ctx.log(`architectures: ${arches.join(', ')} | base: ${base}`);
-    // TODO: render snapcraft.yaml from template using ctx.projectDir metadata
+    await mkdir(join(ctx.outDir, 'snap'), { recursive: true });
+    await writeFile(manifestPath, renderSnapcraftYaml(ctx, config), 'utf-8');
     // TODO: run `snapcraft --destructive-mode` or `snapcraft remote-build`
-    return { artifact: `${ctx.outDir}/${config.snapName}_${ctx.version}_multi.snap` };
+    return { artifact: manifestPath };
   },
   async ship(ctx, config) {
     const trackChannel = config.channel ?? (ctx.channel === 'stable' ? 'stable' : 'edge');

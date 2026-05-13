@@ -564,7 +564,7 @@ sh1pt promote outreach status
 Drive AI coding CLIs — sh1pt wraps Claude Code, Codex, and Qwen so you can generate/iterate on a project from the same manifest.
 
 ```bash
-sh1pt iterate agents list                              # which CLIs are installed locally
+sh1pt iterate agents list --json                       # which CLIs are installed locally
 sh1pt iterate agents setup --agent claude codex qwen   # install + auth each one
 sh1pt iterate agents talk [agent] --recipe <id>        # interactive session with a preloaded recipe prompt
 sh1pt iterate agents run <agent> "add stripe checkout to /waitlist/checkout"
@@ -576,6 +576,7 @@ sh1pt iterate agents generate --recipe waitlist-crypto-investor --boilerplate ne
 ```bash
 sh1pt login                      # authenticate with sh1pt cloud (device-code flow)
 sh1pt secret set|get|list|rm     # manage credentials vault (used by every verb)
+sh1pt secret list --json         # machine-readable key metadata, never values
 sh1pt config show                # print the resolved manifest
 sh1pt config stack set           # prompts — node / bun / python / rust / custom
 sh1pt config payments add        # payment providers: CoinPay default, Stripe/PayPal opt-in

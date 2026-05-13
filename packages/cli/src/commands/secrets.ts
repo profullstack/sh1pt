@@ -114,28 +114,44 @@ secretsCmd
   .description('List secret keys (never values)')
   .option('--local', 'list only the local vault')
   .option('--cloud', 'list only the cloud vault')
-  .action(async (opts: ScopeOpts) => {
+  .option('--json')
+  .action(async (opts: ScopeOpts & { json?: boolean }) => {
     const showLocal = !opts.cloud;
     const showCloud = opts.cloud || (!opts.local && (await isSignedIn()));
+    const result: {
+      local?: { path: string; entries: Array<{ key: string }> };
+      cloud?: { entries: Array<{ key: string; updated_at?: string }> };
+    } = {};
 
     if (showLocal) {
       const entries = await listSecretsLocal();
+      if (opts.json) {
+        result.local = { path: localVaultPath(), entries };
+      } else {
       console.log(kleur.bold(`local (${localVaultPath()})`));
       if (entries.length === 0) {
         console.log(kleur.dim('  (empty)'));
       } else {
         for (const e of entries) console.log(`  ${kleur.cyan(e.key)}`);
       }
+      }
     }
     if (showCloud) {
+      const entries = await listSecretsFromCloud();
+      if (opts.json) {
+        result.cloud = { entries };
+      } else {
       if (showLocal) console.log();
       console.log(kleur.bold('cloud (sh1pt.com vault)'));
-      const entries = await listSecretsFromCloud();
       if (entries.length === 0) {
         console.log(kleur.dim('  (empty)'));
       } else {
         for (const e of entries) console.log(`  ${kleur.cyan(e.key)}  ${kleur.dim(e.updated_at)}`);
       }
+      }
+    }
+    if (opts.json) {
+      console.log(JSON.stringify(result, null, 2));
     }
   });
 

@@ -434,7 +434,7 @@ export default function DocsPage() {
           <CommandBlock signature="sh1pt iterate experiments" description="Active and recently-ended experiments with significance." examples={[{ command: 'sh1pt iterate experiments --json' }]} />
 
           <h3 style={{ marginTop: '2.5rem' }}>iterate agents — orchestrate AI coding CLIs</h3>
-          <CommandBlock signature="sh1pt iterate agents list" description="Which agent CLIs are installed on this machine." examples={[{ command: 'sh1pt iterate agents list' }]} />
+          <CommandBlock signature="sh1pt iterate agents list" description="Which agent CLIs are installed on this machine." examples={[{ command: 'sh1pt iterate agents list' }, { command: 'sh1pt iterate agents list --json' }]} />
           <CommandBlock signature="sh1pt iterate agents setup" description="Install + auth the agent CLIs you want sh1pt to drive." options={[{ flag: '--agent <id...>', description: 'subset (default: claude codex qwen)' }]} examples={[{ command: 'sh1pt iterate agents setup --agent claude codex' }]} />
           <CommandBlock
             signature="sh1pt iterate agents run <agent> <prompt...>"
@@ -481,7 +481,7 @@ export default function DocsPage() {
           </p>
           <CommandBlock signature="sh1pt secret set <key> [value]" description="Set a secret (value prompted if omitted)." examples={[{ command: 'sh1pt secret set OPENAI_API_KEY' }]} />
           <CommandBlock signature="sh1pt secret get <key>" description="Print a secret (requires interactive confirmation)." examples={[{ command: 'sh1pt secret get OPENAI_API_KEY' }]} />
-          <CommandBlock signature="sh1pt secret list" description="List secret keys (never values)." examples={[{ command: 'sh1pt secret list' }]} />
+          <CommandBlock signature="sh1pt secret list" description="List secret keys (never values)." examples={[{ command: 'sh1pt secret list' }, { command: 'sh1pt secret list --json' }]} />
           <CommandBlock signature="sh1pt secret rm <key>" description="Delete a secret." examples={[{ command: 'sh1pt secret rm OPENAI_API_KEY' }]} />
         </div>
       </section>
@@ -636,7 +636,7 @@ export default function DocsPage() {
           <div style={{ display: 'grid', gap: '0.75rem', maxWidth: 760 }}>
             <CopyableCommand label="Connect Discord bot credentials" command="sh1pt bots discord setup" />
             <CopyableCommand label="See what's known about deploy-vercel" command="sh1pt targets deploy-vercel info" />
-            <CopyableCommand label="List every cloud provider adapter" command="sh1pt cloud list" />
+            <CopyableCommand label="List every cloud provider adapter" command="sh1pt cloud list --json" />
             <CopyableCommand label="Wire a generic webhook target" command="sh1pt webhooks generic setup" />
           </div>
         </div>

@@ -10,8 +10,13 @@ export const agentsCmd = new Command('agents')
 agentsCmd
   .command('list')
   .description('Which agent CLIs are installed on this machine')
-  .action(() => {
+  .option('--json')
+  .action((opts: { json?: boolean }) => {
     const agents = ['claude', 'codex', 'qwen'];
+    if (opts.json) {
+      console.log(JSON.stringify({ agents: agents.map((id) => ({ id, installed: false })) }, null, 2));
+      return;
+    }
     for (const a of agents) {
       // TODO: resolve adapter, call check(), render real status
       console.log(`  ${kleur.gray('○')} ${kleur.bold(a)}  ${kleur.dim('run `sh1pt agents setup --agent ' + a + '`')}`);

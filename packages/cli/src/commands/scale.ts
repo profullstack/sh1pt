@@ -28,6 +28,7 @@ scaleCmd
   .option('--instances <n>', 'how many to add', Number)
   .option('--provider <id>', 'which cloud provider to add to (default: same as existing fleet)')
   .option('--max-hourly-price <usd>', 'abort if the new instances would push above this total/hr', Number)
+  .option('--dry-run', 'show the plan without provisioning instances')
   .action((opts) => {
     console.log(kleur.green(`[stub] scale up ${JSON.stringify(opts)}`));
     // TODO: resolve current fleet, call CloudProvider.provision() × N,
@@ -39,6 +40,7 @@ scaleCmd
   .description('Tear down instances (cheapest / least-healthy first)')
   .option('--instances <n>', 'number of instances to destroy', Number)
   .option('--provider <id>', 'cloud provider id')
+  .option('--dry-run', 'show the teardown plan without destroying instances')
   .action((opts) => {
     console.log(kleur.yellow(`[stub] scale down ${JSON.stringify(opts)}`));
     // TODO: pick N victims, CloudProvider.destroy() each, syncRoundRobin() with remaining IPs
@@ -51,6 +53,7 @@ scaleCmd
   .option('--max <n>', 'maximum instances', Number, 10)
   .option('--target-cpu <percent>', 'target CPU utilization to maintain', Number, 70)
   .option('--cooldown <seconds>', 'minimum time between scale events', Number, 300)
+  .option('--dry-run', 'validate the auto-scale rule without saving it')
   .action((opts) => {
     console.log(kleur.cyan(`[stub] scale auto ${JSON.stringify(opts)}`));
     // TODO: PUT /v1/scale/rules — sh1pt cloud evaluates periodically
@@ -62,6 +65,7 @@ scaleCmd
   .requiredOption('--provider <id>', 'dns-porkbun | dns-cloudflare')
   .requiredOption('--domain <fqdn>', 'e.g. api.example.com')
   .option('--ttl <seconds>', '', Number, 60)
+  .option('--dry-run', 'show DNS record changes without applying them')
   .option('--proxied', 'cloudflare only — route through the CF edge (orange cloud)')
   .action((opts) => {
     console.log(kleur.cyan(`[stub] scale dns ${JSON.stringify(opts)}`));
@@ -71,7 +75,8 @@ scaleCmd
 scaleCmd
   .command('rollout')
   .description('Stage a new version across the fleet (canary / blue-green)')
-  .requiredOption('--version <id>')
+  .requiredOption('--release <id>', 'release id to roll out')
+  .option('--dry-run', 'show the rollout plan without changing traffic')
   .option('--strategy <kind>', 'canary | blue-green | rolling', 'canary')
   .option('--percent <n>', 'canary only — start at N% of traffic', Number, 5)
   .action((opts) => {

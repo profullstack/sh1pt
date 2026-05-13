@@ -321,10 +321,11 @@ export default function DocsPage() {
               { flag: '--instances <n>', description: 'how many to add' },
               { flag: '--provider <id>', description: 'cloud provider (default: same as existing fleet)' },
               { flag: '--max-hourly-price <usd>', description: 'abort if total/hr would exceed this' },
+              { flag: '--dry-run', description: 'show the plan without provisioning instances' },
             ]}
-            examples={[{ command: 'sh1pt scale up --instances 3 --max-hourly-price 1.50' }]}
+            examples={[{ command: 'sh1pt scale up --instances 3 --max-hourly-price 1.50 --dry-run' }]}
           />
-          <CommandBlock signature="sh1pt scale down" description="Tear down instances (cheapest / least-healthy first)." examples={[{ command: 'sh1pt scale down --instances 1' }]} />
+          <CommandBlock signature="sh1pt scale down" description="Tear down instances (cheapest / least-healthy first)." options={[{ flag: '--dry-run', description: 'show the teardown plan without destroying instances' }]} examples={[{ command: 'sh1pt scale down --instances 1 --dry-run' }]} />
           <CommandBlock
             signature="sh1pt scale auto"
             description="Set auto-scale rules. sh1pt cloud polls metrics and runs scale up/down on your behalf."
@@ -332,8 +333,9 @@ export default function DocsPage() {
               { flag: '--min / --max', description: 'instance count bounds' },
               { flag: '--target-cpu <percent>', description: 'utilization to maintain (default: 70)' },
               { flag: '--cooldown <seconds>', description: 'minimum gap between scale events' },
+              { flag: '--dry-run', description: 'validate the rule without saving it' },
             ]}
-            examples={[{ command: 'sh1pt scale auto --min 2 --max 10 --target-cpu 65 --cooldown 300' }]}
+            examples={[{ command: 'sh1pt scale auto --min 2 --max 10 --target-cpu 65 --cooldown 300 --dry-run' }]}
           />
           <CommandBlock
             signature="sh1pt scale dns"
@@ -342,19 +344,21 @@ export default function DocsPage() {
               { flag: '--provider', description: 'dns-porkbun | dns-cloudflare' },
               { flag: '--domain <fqdn>', description: 'e.g. api.example.com' },
               { flag: '--ttl <seconds>', description: 'default 60' },
+              { flag: '--dry-run', description: 'show DNS changes without applying them' },
               { flag: '--proxied', description: 'cloudflare only — orange cloud' },
             ]}
-            examples={[{ command: 'sh1pt scale dns --provider dns-cloudflare --domain api.example.com --proxied' }]}
+            examples={[{ command: 'sh1pt scale dns --provider dns-cloudflare --domain api.example.com --proxied --dry-run' }]}
           />
           <CommandBlock
             signature="sh1pt scale rollout"
             description="Stage a new version across the fleet."
             options={[
-              { flag: '--version <id>', description: 'release id to roll out' },
+              { flag: '--release <id>', description: 'release id to roll out' },
+              { flag: '--dry-run', description: 'show the rollout plan without changing traffic' },
               { flag: '--strategy', description: 'canary | blue-green | rolling' },
               { flag: '--percent <n>', description: 'canary only — start at N% of traffic' },
             ]}
-            examples={[{ command: 'sh1pt scale rollout --version v1.4.2 --strategy canary --percent 10' }]}
+            examples={[{ command: 'sh1pt scale rollout --release v1.4.2 --strategy canary --percent 10 --dry-run' }]}
           />
           <CommandBlock signature="sh1pt scale cost" description="Spend totals + per-provider breakdown + rightsizing suggestions." examples={[{ command: 'sh1pt scale cost --json' }]} />
           <CommandBlock signature="sh1pt scale status" description="Current fleet: instance count, DNS records, load distribution." examples={[{ command: 'sh1pt scale status --json' }]} />
@@ -385,7 +389,7 @@ export default function DocsPage() {
             examples={[{ command: 'sh1pt scale deploy provision --provider cloud-runpod --kind gpu --gpu A100 --max-hourly-price 4.00' }]}
           />
           <CommandBlock signature="sh1pt scale deploy list" description="All instances sh1pt is tracking across providers." examples={[{ command: 'sh1pt scale deploy list --json' }]} />
-          <CommandBlock signature="sh1pt scale deploy destroy <instanceId> --provider <id>" description="Tear down an instance (stops billing)." examples={[{ command: 'sh1pt scale deploy destroy ix-abc123 --provider cloud-runpod' }]} />
+          <CommandBlock signature="sh1pt scale deploy destroy <instanceId> --provider <id>" description="Tear down an instance (stops billing)." options={[{ flag: '--dry-run', description: 'show the teardown plan without destroying the instance' }]} examples={[{ command: 'sh1pt scale deploy destroy ix-abc123 --provider cloud-runpod --dry-run' }]} />
           <CommandBlock signature="sh1pt scale deploy status <instanceId> --provider <id>" description="Health + hourly cost." examples={[{ command: 'sh1pt scale deploy status ix-abc123 --provider cloud-runpod' }]} />
         </div>
       </section>

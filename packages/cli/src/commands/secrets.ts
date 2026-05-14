@@ -62,10 +62,18 @@ secretsCmd
 
 secretsCmd
   .command('list')
-  .description('List secret keys (never values)')
-  .action(async () => {
+  .description('List secret keys and metadata (never values)')
+  .option('--json', 'machine-readable output — includes key and updated_at, never secret values')
+  .action(async (opts: { json?: boolean }) => {
     if (!(await requireSignedIn())) return;
     const entries = await listSecretsFromCloud();
+    if (opts.json) {
+      console.log(JSON.stringify(
+        { secrets: entries.map((e) => ({ key: e.key, updatedAt: e.updated_at })) },
+        null, 2,
+      ));
+      return;
+    }
     if (entries.length === 0) {
       console.log(kleur.dim('vault is empty.'));
       return;

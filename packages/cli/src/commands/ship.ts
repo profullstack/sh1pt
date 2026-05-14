@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import kleur from 'kleur';
 import prompts from 'prompts';
 import { lint } from '@profullstack/sh1pt-policy';
-import type { Manifest } from '@profullstack/sh1pt-core';
+import { loadManifest } from '../manifest.js';
 
 const CONFIG_TEMPLATE = (name: string) => `import { defineConfig } from '@profullstack/sh1pt-core';
 
@@ -16,11 +16,6 @@ export default defineConfig({
   },
 });
 `;
-
-async function loadManifest(): Promise<Manifest> {
-  // Stub — real impl dynamic-imports ./sh1pt.config.ts
-  return { name: 'stub', version: '0.0.0', channels: ['stable', 'beta', 'canary'], targets: {} };
-}
 
 export const shipCmd = new Command('ship')
   .description('Publish built artifacts to their target stores and registries')
@@ -104,7 +99,7 @@ shipCmd
   .option('--strict', 'exit non-zero on warnings as well as errors')
   .option('--json')
   .action(async (opts: { strict?: boolean; json?: boolean }) => {
-    const manifest = await loadManifest();
+    const { manifest } = await loadManifest();
     const result = await lint({ manifest, projectDir: process.cwd() });
     if (opts.json) {
       console.log(JSON.stringify(result, null, 2));

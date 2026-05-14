@@ -1,7 +1,13 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
 import prompts from 'prompts';
-import { runSetup, type AdapterWithSetup } from '@profullstack/sh1pt-core';
+import {
+  runSetup,
+  type AdapterWithSetup,
+  type SocialPlatform,
+  type SocialPost,
+  getAdapterConfig,
+} from '@profullstack/sh1pt-core';
 import { describeInput, resolveInput } from '../input.js';
 import { merchCmd } from './merch.js';
 import { shipCmd as shipSub } from './ship.js';
@@ -265,6 +271,13 @@ function stripSocialPrefix(p: string): string {
   return p.replace(/^social-/, '').toLowerCase();
 }
 
+function inferMediaKind(file: string): 'image' | 'video' | 'gif' {
+  const lower = file.toLowerCase();
+  if (lower.endsWith('.gif')) return 'gif';
+  if (/\.(mp4|mov|avi|webm|mkv)$/.test(lower)) return 'video';
+  return 'image';
+}
+
 socialCmd
   .command('post')
   .description('Cross-post to every connected platform with per-platform adaptation')
@@ -276,8 +289,92 @@ socialCmd
   .option('--platform <id...>', 'subset; default: all connected')
   .option('--schedule <iso>', 'publish at ISO timestamp; omit for now')
   .option('--dry-run')
-  .action((opts) => {
-    console.log(kleur.green(`[stub] social post ${JSON.stringify(opts)}`));
+  .action(async (opts: {
+    body: string;
+    title?: string;
+    hashtags?: string;
+    media?: string[];
+    link?: string;
+    platform?: string[];
+    schedule?: string;
+    dryRun?: boolean;
+  }) => {
+    const post: SocialPost = {
+      body: opts.body,
+      title: opts.title,
+      hashtags: opts.hashtags ? opts.hashtags.split(',').map((h) => h.trim()).filter(Boolean) : undefined,
+      media: opts.media?.map((file) => ({ file, kind: inferMediaKind(file) })),
+      link: opts.link,
+      schedule: opts.schedule ? new Date(opts.schedule) : undefined,
+    };
+
+    const names = (opts.platform ?? SOCIAL_PLATFORMS).map(stripSocialPrefix).filter(Boolean);
+
+    if (opts.dryRun) {
+      console.log(kleur.cyan('dry-run: social post preview\n'));
+      for (const name of names) {
+        const pkg = `@profullstack/sh1pt-social-${name}`;
+        let adapter: SocialPlatform<unknown> | null = null;
+        try {
+          adapter = await loadInstalledPackage<SocialPlatform<unknown>>(pkg);
+        } catch {
+          // not installed — skip
+        }
+        if (!adapter) {
+          console.log(kleur.dim(`  ${name}: not installed — run: sh1pt promote social setup --platform ${name}`));
+          continue;
+        }
+        const max = adapter.requires?.maxBodyChars;
+        const truncated = max && post.body.length > max ? post.body.slice(0, max - 3) + '...' : post.body;
+        console.log(kleur.bold(`  ${adapter.label ?? name}`));
+        console.log(`    body (${truncated.length} chars): ${truncated.slice(0, 80)}${truncated.length > 80 ? '…' : ''}`);
+        if (post.hashtags?.length) console.log(`    hashtags: ${post.hashtags.map((h) => `#${h}`).join(' ')}`);
+        if (post.link) console.log(`    link: ${post.link}`);
+        if (post.schedule) console.log(`    schedule: ${post.schedule.toISOString()}`);
+      }
+      return;
+    }
+
+    let anyPosted = false;
+    for (const name of names) {
+      const pkg = `@profullstack/sh1pt-social-${name}`;
+      let adapter: SocialPlatform<unknown> | null = null;
+      try {
+        adapter = await loadInstalledPackage<SocialPlatform<unknown>>(pkg);
+      } catch {
+        // not installed
+      }
+      if (!adapter) {
+        console.log(kleur.dim(`  ${name}: not installed — skipping`));
+        continue;
+      }
+
+      const adapterConfig = await getAdapterConfig(adapter.id);
+      if (!adapterConfig) {
+        console.log(kleur.yellow(`  ${name}: not configured — run: sh1pt promote social setup --platform ${name}`));
+        continue;
+      }
+
+      const ctx = {
+        secret: (k: string) => process.env[k],
+        log: (m: string) => console.log(kleur.dim(`    [${name}] ${m}`)),
+        dryRun: false,
+      };
+
+      try {
+        console.log(kleur.bold(`  posting to ${adapter.label ?? name}…`));
+        await adapter.connect(ctx, adapterConfig);
+        const result = await adapter.post(ctx, post, adapterConfig);
+        console.log(kleur.green(`  ✓ ${adapter.label ?? name} · ${result.url}`));
+        anyPosted = true;
+      } catch (err) {
+        console.error(kleur.red(`  ✗ ${name}: ${err instanceof Error ? err.message : String(err)}`));
+      }
+    }
+
+    if (!anyPosted) {
+      console.log(kleur.yellow('\nno platforms posted — set up accounts with: sh1pt promote social setup'));
+    }
   });
 
 socialCmd

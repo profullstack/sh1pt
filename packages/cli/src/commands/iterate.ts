@@ -1,7 +1,30 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import { configDir } from '@profullstack/sh1pt-core';
 import { describeInput, resolveInput } from '../input.js';
 import { agentsCmd } from './agents.js';
+
+const GOALS_FILE = () => path.join(configDir(), 'iterate-goals.json');
+
+async function loadGoals(): Promise<Record<string, string>> {
+  try {
+    const raw = await fs.readFile(GOALS_FILE(), 'utf8');
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {};
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return {};
+    throw err;
+  }
+}
+
+async function saveGoals(goals: Record<string, string>): Promise<void> {
+  await fs.mkdir(configDir(), { recursive: true, mode: 0o700 });
+  const tmp = `${GOALS_FILE()}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(goals, null, 2) + '\n', { mode: 0o600 });
+  await fs.rename(tmp, GOALS_FILE());
+}
 
 export const iterateCmd = new Command('iterate')
   .description('Observe metrics, have an agent propose changes, ship, measure. Powered by Claude / Codex / Qwen.')
@@ -56,13 +79,58 @@ iterateCmd
   .command('goals')
   .description('Declare the success metrics iterate steers toward')
   .argument('[kv...]', 'e.g. conversion=8% cpi=2.00 churn=5%')
-  .action((kv: string[]) => {
-    if (kv.length === 0) {
-      console.log(kleur.dim('[stub] iterate goals — list current goals'));
+  .option('--clear', 'remove all saved goals')
+  .option('--unset <key>', 'remove a single goal by key')
+  .option('--json', 'machine-readable output')
+  .action(async (kv: string[], opts: { clear?: boolean; unset?: string; json?: boolean }) => {
+    const goals = await loadGoals();
+
+    if (opts.clear) {
+      await saveGoals({});
+      console.log(kleur.yellow('all goals cleared'));
       return;
     }
-    console.log(kleur.cyan(`[stub] iterate goals set ${kv.join(' ')}`));
-    // TODO: persist goals; iterate run uses these as the optimization target
+
+    if (opts.unset) {
+      if (opts.unset in goals) {
+        delete goals[opts.unset];
+        await saveGoals(goals);
+        console.log(kleur.yellow(`unset: ${opts.unset}`));
+      } else {
+        console.log(kleur.dim(`goal "${opts.unset}" not set`));
+      }
+      return;
+    }
+
+    if (kv.length === 0) {
+      if (Object.keys(goals).length === 0) {
+        console.log(kleur.dim('no goals set — pass key=value pairs to set them'));
+        return;
+      }
+      if (opts.json) {
+        console.log(JSON.stringify(goals, null, 2));
+        return;
+      }
+      console.log(kleur.bold('current goals:'));
+      for (const [k, v] of Object.entries(goals)) {
+        console.log(`  ${kleur.cyan(k)} = ${v}`);
+      }
+      return;
+    }
+
+    for (const pair of kv) {
+      const idx = pair.indexOf('=');
+      if (idx === -1) {
+        console.error(kleur.red(`invalid goal "${pair}" — expected key=value`));
+        continue;
+      }
+      const key = pair.slice(0, idx).trim();
+      const value = pair.slice(idx + 1).trim();
+      if (!key) { console.error(kleur.red(`empty key in "${pair}"`)); continue; }
+      goals[key] = value;
+      console.log(kleur.green(`  set ${key} = ${value}`));
+    }
+    await saveGoals(goals);
   });
 
 iterateCmd

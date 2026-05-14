@@ -1,6 +1,13 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
 import { describeInput, resolveInput } from '../input.js';
+import {
+  formatIterateGoals,
+  iterateGoalsPath,
+  parseGoalAssignments,
+  readIterateGoals,
+  writeIterateGoals,
+} from '../iterate-goals.js';
 import { agentsCmd } from './agents.js';
 
 export const iterateCmd = new Command('iterate')
@@ -56,13 +63,47 @@ iterateCmd
   .command('goals')
   .description('Declare the success metrics iterate steers toward')
   .argument('[kv...]', 'e.g. conversion=8% cpi=2.00 churn=5%')
-  .action((kv: string[]) => {
-    if (kv.length === 0) {
-      console.log(kleur.dim('[stub] iterate goals — list current goals'));
-      return;
+  .option('--json', 'print goals as JSON')
+  .option('--clear', 'remove all saved iterate goals')
+  .action(async (kv: string[], opts: { json?: boolean; clear?: boolean }) => {
+    try {
+      if (opts.clear) {
+        await writeIterateGoals({});
+        if (opts.json) {
+          console.log(JSON.stringify({ goals: {} }, null, 2));
+          return;
+        }
+        console.log(kleur.yellow(`cleared iterate goals → ${iterateGoalsPath()}`));
+        return;
+      }
+
+      const existing = await readIterateGoals();
+      const updates = parseGoalAssignments(kv);
+      const goals = Object.keys(updates).length > 0 ? { ...existing, ...updates } : existing;
+
+      if (Object.keys(updates).length > 0) {
+        await writeIterateGoals(goals);
+      }
+
+      if (opts.json) {
+        console.log(JSON.stringify({ goals }, null, 2));
+        return;
+      }
+
+      const formatted = formatIterateGoals(goals);
+      if (formatted.length === 0) {
+        console.log(kleur.dim('no iterate goals set'));
+        return;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        console.log(kleur.green(`saved ${formatted.length} iterate goal${formatted.length === 1 ? '' : 's'} → ${iterateGoalsPath()}`));
+      }
+      for (const line of formatted) console.log(line);
+    } catch (err) {
+      console.error(kleur.red(err instanceof Error ? err.message : String(err)));
+      process.exitCode = 1;
     }
-    console.log(kleur.cyan(`[stub] iterate goals set ${kv.join(' ')}`));
-    // TODO: persist goals; iterate run uses these as the optimization target
   });
 
 iterateCmd

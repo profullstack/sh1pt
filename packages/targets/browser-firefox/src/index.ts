@@ -1,4 +1,6 @@
-import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { defineTarget, exec, manualSetup } from '@profullstack/sh1pt-core';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { isAbsolute, join } from 'node:path';
 
 interface Config {
   extensionId: string;       // AMO extension id, e.g. "{some-uuid}" or "myext@example.com"
@@ -6,16 +8,97 @@ interface Config {
   channel?: 'listed' | 'unlisted';
 }
 
+interface FirefoxPackagePlan {
+  provider: 'mozilla-addons';
+  extensionId: string;
+  version: string;
+  sourceDir: string;
+  artifact: string;
+  channel: 'listed' | 'unlisted';
+  build: {
+    command: 'web-ext';
+    args: string[];
+    cwd: string;
+  };
+}
+
+function sourceDir(ctx: { projectDir: string }, config: Config): string {
+  const dir = config.sourceDir ?? 'dist';
+  return isAbsolute(dir) ? dir : join(ctx.projectDir, dir);
+}
+
+function safeFileStem(value: string): string {
+  return value.replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-|-$/g, '') || 'firefox-extension';
+}
+
+function artifactName(ctx: { version: string }, config: Config): string {
+  return `${safeFileStem(config.extensionId)}-${safeFileStem(ctx.version)}.zip`;
+}
+
+function artifactPath(ctx: { outDir: string; version: string }, config: Config): string {
+  return join(ctx.outDir, artifactName(ctx, config));
+}
+
+function packagePlan(
+  ctx: { projectDir: string; outDir: string; version: string },
+  config: Config,
+): FirefoxPackagePlan {
+  const src = sourceDir(ctx, config);
+  const filename = artifactName(ctx, config);
+  return {
+    provider: 'mozilla-addons',
+    extensionId: config.extensionId,
+    version: ctx.version,
+    sourceDir: src,
+    artifact: join(ctx.outDir, filename),
+    channel: config.channel ?? 'listed',
+    build: {
+      command: 'web-ext',
+      args: ['build', '--source-dir', src, '--artifacts-dir', ctx.outDir, '--filename', filename],
+      cwd: ctx.projectDir,
+    },
+  };
+}
+
+function parseSubmittedId(id: string): string {
+  const marker = id.lastIndexOf('@');
+  return marker <= 0 ? id : id.slice(0, marker);
+}
+
 export default defineTarget<Config>({
   id: 'browser-firefox',
   kind: 'browser-ext',
   label: 'Firefox Add-ons (AMO)',
   async build(ctx, config) {
-    const src = config.sourceDir ?? 'dist/';
-    ctx.log(`pack Firefox extension from ${src} using web-ext build`);
-    // TODO: run `web-ext build --source-dir ${src} --artifacts-dir ${ctx.outDir}`
-    // Validates manifest.json (v2 or v3) and zips into ctx.outDir
-    return { artifact: `${ctx.outDir}/${config.extensionId.replace(/[{}@]/g, '_')}-${ctx.version}.zip` };
+    const plan = packagePlan(ctx, config);
+    ctx.log(`pack Firefox extension from ${plan.sourceDir} using web-ext build`);
+    await mkdir(ctx.outDir, { recursive: true });
+
+    if (ctx.dryRun) {
+      const planPath = join(ctx.outDir, `${safeFileStem(config.extensionId)}-${safeFileStem(ctx.version)}.firefox-plan.json`);
+      await writeFile(planPath, `${JSON.stringify(plan, null, 2)}\n`, 'utf-8');
+      return { artifact: planPath, meta: { artifact: plan.artifact, command: plan.build } };
+    }
+
+    const manifestPath = join(plan.sourceDir, 'manifest.json');
+    let manifestText: string;
+    try {
+      manifestText = await readFile(manifestPath, 'utf-8');
+    } catch {
+      throw new Error(`manifest.json not found at ${manifestPath} — run a build step first`);
+    }
+    const manifest = JSON.parse(manifestText) as { manifest_version?: number };
+    if (manifest.manifest_version !== 2 && manifest.manifest_version !== 3) {
+      ctx.log(`manifest_version is ${manifest.manifest_version ?? 'missing'}, Firefox expects v2 or v3`, 'warn');
+    }
+
+    await exec(plan.build.command, plan.build.args, {
+      cwd: plan.build.cwd,
+      log: ctx.log,
+      throwOnNonZero: true,
+    });
+
+    return { artifact: artifactPath(ctx, config) };
   },
   async ship(ctx, config) {
     const channel = config.channel ?? 'listed';
@@ -30,7 +113,7 @@ export default defineTarget<Config>({
     };
   },
   async status(id) {
-    const [extId] = id.split('@');
+    const extId = parseSubmittedId(id);
     return { state: 'live', url: `https://addons.mozilla.org/en-US/firefox/addon/${extId}/` };
   },
 

@@ -17,21 +17,79 @@ export default defineConfig({
 });
 `;
 
+function optionWithParents(command: Command): Record<string, unknown> {
+  const chain: Command[] = [];
+  for (let current: Command | null = command; current; current = current.parent) chain.unshift(current);
+  return Object.assign({}, ...chain.map((current) => current.opts()));
+}
+
+function manifestTargetSummary(manifest: Awaited<ReturnType<typeof loadManifest>>['manifest'], requested?: string[]) {
+  return Object.entries(manifest.targets ?? {})
+    .filter(([id, spec]) => spec.enabled !== false && (!requested?.length || requested.includes(id)))
+    .map(([id, spec]) => ({
+      id,
+      use: spec.use,
+      distribute: spec.distribute ?? [],
+      enabled: spec.enabled !== false,
+    }));
+}
+
 export const shipCmd = new Command('ship')
   .description('Publish built artifacts to their target stores and registries')
   .option('-t, --target <id...>', 'target ids to ship (default: all enabled)')
   .option('-c, --channel <name>', 'release channel', 'stable')
   .option('--dry-run', 'simulate without uploading')
   .option('--skip-lint', 'skip the pre-ship policy linter (not recommended)')
-  .action(async (opts: { target?: string[]; channel: string; dryRun?: boolean; skipLint?: boolean }) => {
-    const targets = opts.target?.join(', ') ?? 'all enabled';
-    const tag = opts.dryRun ? kleur.yellow('[dry-run]') : kleur.green('[live]');
-    if (!opts.skipLint) {
-      console.log(kleur.dim('running pre-ship policy linter…'));
-      // TODO: load manifest, call lint(ctx) — abort on errors unless --skip-lint
+  .option('--json', 'emit the resolved ship plan as JSON')
+  .action(async (opts: { target?: string[]; channel: string; dryRun?: boolean; skipLint?: boolean; json?: boolean }) => {
+    const { manifest, path } = await loadManifest();
+    if (!manifest.channels.includes(opts.channel)) {
+      throw new Error(`Unknown channel "${opts.channel}". Available channels: ${manifest.channels.join(', ')}`);
     }
-    console.log(`${tag} ship · channel=${opts.channel} · targets=${targets}`);
-    // TODO: load manifest, resolve latest build, invoke Target.ship(), record release
+
+    const selected = manifestTargetSummary(manifest, opts.target);
+    if (opts.target?.length) {
+      const known = new Set(selected.map((target) => target.id));
+      const missing = opts.target.filter((id) => !known.has(id));
+      if (missing.length) throw new Error(`Unknown or disabled target(s): ${missing.join(', ')}`);
+    }
+
+    const policyResult = opts.skipLint ? null : await lint({ manifest, projectDir: process.cwd() });
+    const plan = {
+      command: 'ship',
+      project: manifest.name,
+      version: manifest.version,
+      config: path,
+      channel: opts.channel,
+      dryRun: opts.dryRun ?? true,
+      lint: policyResult ? { errors: policyResult.errors, warnings: policyResult.warnings } : { skipped: true },
+      targets: selected,
+    };
+
+    if (opts.json) {
+      console.log(JSON.stringify(plan, null, 2));
+      return;
+    }
+
+    const tag = opts.dryRun ? kleur.yellow('[dry-run]') : kleur.green('[plan]');
+    console.log(`${tag} ship · ${manifest.name}@${manifest.version} · channel=${opts.channel}`);
+    console.log(kleur.dim(`config: ${path}`));
+    if (policyResult) {
+      console.log(kleur.dim(`policy: ${policyResult.errors} error(s), ${policyResult.warnings} warning(s)`));
+      if (policyResult.errors > 0) {
+        console.log(kleur.red('Policy errors block live shipping. Re-run sh1pt promote ship lint for details.'));
+        process.exit(1);
+      }
+    }
+    if (selected.length === 0) {
+      console.log(kleur.yellow('No enabled targets found. Add one with sh1pt promote ship target add <id>.'));
+      return;
+    }
+    for (const target of selected) {
+      const fanout = target.distribute.length ? kleur.dim(` → ${target.distribute.join(', ')}`) : '';
+      console.log(`  ${kleur.cyan(target.id)} ${kleur.dim(target.use)}${fanout}`);
+    }
+    console.log(kleur.dim('Target upload/release execution is intentionally gated behind adapter credentials and the next implementation slice.'));
   });
 
 shipCmd
@@ -74,13 +132,31 @@ shipCmd
   .description('Current release status across targets')
   .option('-t, --target <id>')
   .option('--json')
-  .action((opts: { target?: string; json?: boolean }) => {
+  .action(async (_opts: { target?: string; json?: boolean }, cmd: Command) => {
+    const opts = optionWithParents(cmd) as { target?: string; json?: boolean };
+    const { manifest, path } = await loadManifest();
+    const targets = manifestTargetSummary(manifest, opts.target ? [opts.target] : undefined);
+    if (opts.target && targets.length === 0) throw new Error(`Unknown or disabled target: ${opts.target}`);
+    const status = {
+      project: manifest.name,
+      version: manifest.version,
+      config: path,
+      targets: targets.map((target) => ({
+        ...target,
+        release: 'not-connected',
+        note: 'No cloud release record is configured in this local workspace yet.',
+      })),
+    };
     if (opts.json) {
-      console.log(JSON.stringify({ releases: [], live: {}, inReview: {} }, null, 2));
+      console.log(JSON.stringify(status, null, 2));
       return;
     }
-    console.log(kleur.dim(`[stub] ship status · target=${opts.target ?? 'all'}`));
-    // TODO: fetch per-target live state from cloud
+    console.log(kleur.cyan(`ship status · ${manifest.name}@${manifest.version}`));
+    console.log(kleur.dim(`config: ${path}`));
+    for (const target of status.targets) {
+      console.log(`  ${kleur.cyan(target.id)} ${kleur.dim(target.use)} — ${kleur.yellow(target.release)}`);
+      console.log(`    ${kleur.dim(target.note)}`);
+    }
   });
 
 shipCmd
@@ -144,13 +220,51 @@ targetSubCmd
 targetSubCmd
   .command('list')
   .description('List enabled targets for this project')
-  .action(() => {
-    console.log(kleur.dim('[stub] target list — read sh1pt.config.ts'));
+  .option('--json')
+  .action(async (_opts: { json?: boolean }, cmd: Command) => {
+    const opts = optionWithParents(cmd) as { json?: boolean };
+    const { manifest, path } = await loadManifest();
+    const targets = manifestTargetSummary(manifest);
+    if (opts.json) {
+      console.log(JSON.stringify({ project: manifest.name, config: path, targets }, null, 2));
+      return;
+    }
+    console.log(kleur.cyan(`targets · ${manifest.name}`));
+    console.log(kleur.dim(`config: ${path}`));
+    if (targets.length === 0) {
+      console.log(kleur.yellow('No enabled targets found.'));
+      return;
+    }
+    for (const target of targets) {
+      const fanout = target.distribute.length ? kleur.dim(` → ${target.distribute.join(', ')}`) : '';
+      console.log(`  ${kleur.cyan(target.id)} ${kleur.dim(target.use)}${fanout}`);
+    }
   });
+
+const AVAILABLE_TARGETS = [
+  { id: 'pkg-npm', use: 'target-pkg-npm', kind: 'package', status: 'implemented' },
+  { id: 'web-vercel', use: 'target-web-vercel', kind: 'web', status: 'adapter-required' },
+  { id: 'web-netlify', use: 'target-web-netlify', kind: 'web', status: 'adapter-required' },
+  { id: 'mobile-android', use: 'target-mobile-android', kind: 'mobile', status: 'adapter-required' },
+  { id: 'mobile-ios', use: 'target-mobile-ios', kind: 'mobile', status: 'adapter-required' },
+  { id: 'cdn-jsdelivr', use: 'target-cdn-jsdelivr', kind: 'cdn', status: 'implemented' },
+  { id: 'firebase', use: 'target-firebase', kind: 'cloud', status: 'implemented' },
+  { id: 'deno-land', use: 'target-deno-land', kind: 'package', status: 'implemented' },
+] as const;
 
 targetSubCmd
   .command('available')
   .description('List every target adapter available to install')
-  .action(() => {
-    console.log(kleur.dim('[stub] target available — fetch from registry'));
+  .option('--json')
+  .action((_opts: { json?: boolean }, cmd: Command) => {
+    const opts = optionWithParents(cmd) as { json?: boolean };
+    if (opts.json) {
+      console.log(JSON.stringify({ targets: AVAILABLE_TARGETS }, null, 2));
+      return;
+    }
+    console.log(kleur.cyan('available target adapters'));
+    for (const target of AVAILABLE_TARGETS) {
+      const color = target.status === 'implemented' ? kleur.green : kleur.yellow;
+      console.log(`  ${kleur.cyan(target.id)} ${kleur.dim(target.use)} ${kleur.dim(target.kind)} ${color(target.status)}`);
+    }
   });

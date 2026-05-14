@@ -29,6 +29,7 @@ These have real CLIs and map directly to existing or planned adapter surfaces.
 | Qwen Code | `qwen` | `agents/qwen` | Exists | `mise x npm:@qwen-code/qwen-code -- qwen --help` |
 | Railway | `railway` | `cloud/railway`, `targets/deploy-railway` | Exists | `mise x npm:@railway/cli -- railway --help` |
 | DigitalOcean | `doctl` | `cloud/digitalocean` | Exists, CLI-backed setup/logging | `brew install doctl` or `snap install doctl` |
+| exe.dev | `ssh` / HTTPS API | `cloud/exe-dev`, `targets/exe-dev` | Cloud adapter added, target exists | `ssh exe.dev help` |
 | Vultr | `vultr-cli` | `cloud/vultr` | Exists, CLI-backed setup/logging | `brew install vultr-cli` |
 | Supabase | `supabase` | `cloud/supabase` | Exists | `mise x npm:supabase -- supabase --help` |
 | Expo / EAS | `expo`, `eas` | `targets/mobile-expo` | Exists | `mise x npm:expo -- expo --help`; `mise x npm:eas-cli -- eas --help` |

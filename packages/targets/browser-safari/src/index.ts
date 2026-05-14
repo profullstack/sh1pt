@@ -1,8 +1,9 @@
-import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { defineTarget, exec, manualSetup } from '@profullstack/sh1pt-core';
 import { execSync } from 'node:child_process';
 import { createSign } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { isAbsolute, join } from 'node:path';
 
 interface Config {
   bundleId: string;          // e.g. "com.example.MyApp.Extension"
@@ -38,23 +39,84 @@ function b64url(buf: Buffer | string): string {
   return b.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
+function projectDirFor(ctx: { projectDir: string }, config: Config): string {
+  const dir = config.projectDir ?? '.';
+  return isAbsolute(dir) ? dir : join(ctx.projectDir, dir);
+}
+
+function schemeFor(config: Config): string {
+  return config.scheme ?? 'App';
+}
+
+function archivePath(ctx: { outDir: string; version: string }, config: Config): string {
+  return join(ctx.outDir, `${config.bundleId}-${ctx.version}.xcarchive`);
+}
+
+function converterArgs(ctx: { projectDir: string }, config: Config): string[] {
+  const projectDir = projectDirFor(ctx, config);
+  return [
+    'safari-web-extension-converter',
+    join(projectDir, 'dist'),
+    '--app-name',
+    config.bundleId.split('.').pop() ?? 'Extension',
+    '--bundle-identifier',
+    config.bundleId,
+    '--force',
+    '--no-open',
+  ];
+}
+
+function xcodeArgs(ctx: { outDir: string; projectDir: string; version: string }, config: Config): string[] {
+  const projectDir = projectDirFor(ctx, config);
+  const scheme = schemeFor(config);
+  const xcodeProj = join(projectDir, `${scheme}.xcodeproj`);
+  const xcWorkspace = join(projectDir, `${scheme}.xcworkspace`);
+  return [
+    ...existsSync(xcWorkspace) ? ['-workspace', xcWorkspace] : ['-project', xcodeProj],
+    '-scheme',
+    scheme,
+    '-archivePath',
+    archivePath(ctx, config),
+    '-destination',
+    'generic/platform=macos',
+    'archive',
+  ];
+}
+
+function renderPlan(ctx: { outDir: string; projectDir: string; version: string }, config: Config): string {
+  return `${JSON.stringify({
+    provider: 'safari-web-extension',
+    bundleId: config.bundleId,
+    version: ctx.version,
+    projectDir: projectDirFor(ctx, config),
+    scheme: schemeFor(config),
+    archivePath: archivePath(ctx, config),
+    commands: [
+      ['xcrun', ...converterArgs(ctx, config)],
+      ['xcodebuild', ...xcodeArgs(ctx, config)],
+    ],
+  }, null, 2)}\n`;
+}
+
 export default defineTarget<Config>({
   id: 'browser-safari',
   kind: 'browser-ext',
   label: 'App Store (Safari ext.)',
   async build(ctx, config) {
-    const projectDir = config.projectDir ?? '.';
-    const scheme = config.scheme ?? 'App';
-    const archivePath = `${ctx.outDir}/${config.bundleId}-${ctx.version}.xcarchive`;
+    const projectDir = projectDirFor(ctx, config);
+    const scheme = schemeFor(config);
+    const archive = archivePath(ctx, config);
 
     ctx.log(`build Safari Web Extension for ${config.bundleId} v${ctx.version}`);
+    if (ctx.dryRun) {
+      const planPath = join(ctx.outDir, 'safari-package-plan.json');
+      await mkdir(ctx.outDir, { recursive: true });
+      await writeFile(planPath, renderPlan(ctx, config), 'utf-8');
+      return { artifact: planPath };
+    }
 
     // Check for Xcode CLI tools
-    try {
-      execSync('xcode-select -p', { stdio: 'pipe' });
-    } catch {
-      throw new Error('Xcode CLI tools not found — run: xcode-select --install');
-    }
+    await exec('xcode-select', ['-p'], { log: ctx.log, throwOnNonZero: true });
 
     // Step 1: Check if a Safari extension wrapper already exists
     const xcodeProj = join(projectDir, `${scheme}.xcodeproj`);
@@ -63,14 +125,9 @@ export default defineTarget<Config>({
     if (!existsSync(xcodeProj) && !existsSync(xcWorkspace)) {
       ctx.log('no Xcode project found, attempting safari-web-extension-converter...');
       const converterCmd = [
-        'xcrun', 'safari-web-extension-converter',
-        join(projectDir, 'dist'),
-        '--app-name', (config.bundleId.split('.').pop()) ?? 'Extension',
-        '--bundle-identifier', config.bundleId,
-        '--force',
-        '--no-open',
+        ...converterArgs(ctx, config),
       ];
-      execSync(converterCmd.join(' '), { stdio: 'pipe', cwd: ctx.outDir });
+      await exec('xcrun', converterCmd, { cwd: ctx.outDir, log: ctx.log, throwOnNonZero: true });
       ctx.log('✓ Safari extension wrapper created');
     }
 
@@ -79,17 +136,14 @@ export default defineTarget<Config>({
     const xcArgs = [
       ...existsSync(xcWorkspace) ? ['-workspace', xcWorkspace] : ['-project', xcodeProj],
       '-scheme', scheme,
-      '-archivePath', archivePath,
+      '-archivePath', archive,
       '-destination', 'generic/platform=macos',
       'archive',
     ];
-    execSync(`xcodebuild ${xcArgs.map((a) => `"${a}"`).join(' ')}`, {
-      stdio: 'pipe',
-      cwd: projectDir,
-    });
+    await exec('xcodebuild', xcArgs, { cwd: projectDir, log: ctx.log, throwOnNonZero: true });
 
-    ctx.log(`✓ archive created at ${archivePath}`);
-    return { artifact: archivePath };
+    ctx.log(`✓ archive created at ${archive}`);
+    return { artifact: archive };
   },
   async ship(ctx, config) {
     ctx.log(`upload ${config.bundleId} to App Store Connect v${ctx.version}`);

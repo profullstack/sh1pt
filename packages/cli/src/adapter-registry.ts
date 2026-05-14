@@ -49,7 +49,7 @@ export const CATEGORIES: readonly AdapterCategory[] = [
     id: 'cloud',
     pkgPrefix: '@profullstack/sh1pt-cloud',
     description: 'Raw-compute cloud providers — VPS, GPU, rollouts',
-    adapters: ['atlantic', 'cloudflare', 'digitalocean', 'firebase', 'fly', 'hetzner', 'nvidia', 'railway', 'runpod', 'supabase', 'vultr'],
+    adapters: ['atlantic', 'cloudflare', 'digitalocean', 'exe-dev', 'firebase', 'fly', 'hetzner', 'nvidia', 'railway', 'runpod', 'supabase', 'vultr'],
   },
   {
     id: 'observability',

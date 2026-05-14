@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { spawnSync } from 'node:child_process';
 import kleur from 'kleur';
 import { describeInput, resolveInput } from '../input.js';
+import { createBuildPlan, formatBuildPlan } from './build-plan.js';
 import { entityCmd } from './entity.js';
 
 function run(argv: string[], env?: Record<string, string>): number {
@@ -21,14 +22,19 @@ export const buildCmd = new Command('build')
   .option('-c, --channel <name>', 'release channel', 'stable')
   .option('--cloud', 'run build in sh1pt cloud instead of locally')
   .option('--from <input>', 'existing git repo, live url, local path, or manifest doc to build from')
-  .action((opts: { target?: string[]; channel: string; cloud?: boolean; from?: string }) => {
+  .option('--json', 'print a build plan as JSON when used with --from')
+  .action((opts: { target?: string[]; channel: string; cloud?: boolean; from?: string; json?: boolean }) => {
     const targets = opts.target?.join(', ') ?? 'all enabled';
     const where = opts.cloud ? 'cloud' : 'local';
     if (opts.from) {
       const input = resolveInput(opts.from);
-      console.log(kleur.cyan(`[stub] build (${where}) · channel=${opts.channel} · from=${describeInput(input)}`));
-      // TODO: kind==='git' → clone and detect stack; kind==='path' → load manifest;
-      // kind==='doc' → parse manifest; kind==='url' → HEAD/fetch to infer stack.
+      const plan = createBuildPlan(input);
+      if (opts.json) {
+        console.log(JSON.stringify({ mode: where, channel: opts.channel, plan }, null, 2));
+        return;
+      }
+      console.log(kleur.cyan(`build (${where}) · channel=${opts.channel} · from=${describeInput(input)}`));
+      for (const line of formatBuildPlan(plan)) console.log(line);
       return;
     }
     console.log(kleur.cyan(`[stub] build (${where}) · channel=${opts.channel} · targets=${targets}`));

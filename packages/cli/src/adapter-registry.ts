@@ -22,6 +22,12 @@ export const CATEGORIES: readonly AdapterCategory[] = [
     adapters: ['claude', 'codex', 'qwen'],
   },
   {
+    id: 'autoblog',
+    pkgPrefix: '@profullstack/sh1pt-autoblog',
+    description: 'Autoblog providers — Outrank and CrawlProof webhook publishing',
+    adapters: ['crawlproof', 'outrank'],
+  },
+  {
     id: 'ai',
     pkgPrefix: '@profullstack/sh1pt-ai',
     description: 'AI API providers for content generation — Claude (Anthropic), OpenAI, Qwen, Gemini',

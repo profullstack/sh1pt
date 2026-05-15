@@ -542,6 +542,18 @@ importers:
         specifier: ^3.23.8
         version: 3.25.76
 
+  packages/autoblog/crawlproof:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/autoblog/outrank:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/bots/core:
     dependencies:
       zod:

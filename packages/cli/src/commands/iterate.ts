@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import kleur from 'kleur';
 import { describeInput, resolveInput } from '../input.js';
 import { agentsCmd } from './agents.js';
+import { parseGoalAssignments, readIterateGoals, saveIterateGoals } from './iterate-goals.js';
 
 export const iterateCmd = new Command('iterate')
   .description('Observe metrics, have an agent propose changes, ship, measure. Powered by Claude / Codex / Qwen.')
@@ -56,13 +57,26 @@ iterateCmd
   .command('goals')
   .description('Declare the success metrics iterate steers toward')
   .argument('[kv...]', 'e.g. conversion=8% cpi=2.00 churn=5%')
-  .action((kv: string[]) => {
-    if (kv.length === 0) {
-      console.log(kleur.dim('[stub] iterate goals — list current goals'));
+  .option('--json', 'print saved goals as JSON')
+  .action(async (kv: string[], opts: { json?: boolean }) => {
+    if (kv[0] === 'set') kv = kv.slice(1);
+    if (kv.length > 0) {
+      const saved = await saveIterateGoals(parseGoalAssignments(kv));
+      if (opts.json) {
+        console.log(JSON.stringify({ goals: saved }, null, 2));
+        return;
+      }
+      console.log(kleur.green(`✓ saved ${kv.length} iterate goal${kv.length === 1 ? '' : 's'}`));
+      printGoals(saved);
       return;
     }
-    console.log(kleur.cyan(`[stub] iterate goals set ${kv.join(' ')}`));
-    // TODO: persist goals; iterate run uses these as the optimization target
+
+    const goals = await readIterateGoals();
+    if (opts.json) {
+      console.log(JSON.stringify({ goals }, null, 2));
+      return;
+    }
+    printGoals(goals);
   });
 
 iterateCmd
@@ -75,6 +89,16 @@ iterateCmd
     console.log(kleur.cyan(`[stub] iterate test "${hypothesis}" ${JSON.stringify(opts)}`));
     // TODO: generate two Ship variants, wire feature flag, schedule analysis at min-sample
   });
+
+function printGoals(goals: { key: string; value: string }[]): void {
+  if (goals.length === 0) {
+    console.log(kleur.dim('No iterate goals saved yet.'));
+    return;
+  }
+  for (const goal of goals) {
+    console.log(`${kleur.cyan(goal.key)}=${goal.value}`);
+  }
+}
 
 iterateCmd
   .command('experiments')

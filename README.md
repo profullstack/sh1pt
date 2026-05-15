@@ -691,6 +691,7 @@ sh1pt config webhooks add telegram                      # bot token + chat_id
 sh1pt config webhooks add teams
 sh1pt config webhooks add generic                       # any HTTP URL; body is HMAC-signed
 sh1pt config webhooks test discord --event ship.published   # fire a stub event
+sh1pt config webhooks sub list --json                   # machine-readable subscriptions
 ```
 
 Sh1pt fires every configured target on the events you subscribe it to — `ship.published`, `promote.campaign.started`, `promote.merch.order.placed`, `scale.alarm.tripped`, `payments.checkout.completed`, `iterate.cycle.completed`, etc. Or use `*` to get everything.

@@ -530,6 +530,7 @@ export default function DocsPage() {
           <CommandBlock signature="sh1pt config webhooks remove <target>" description="Disable a webhook target." examples={[{ command: 'sh1pt config webhooks remove discord' }]} />
           <CommandBlock signature="sh1pt config webhooks test <target>" description="Fire a stub event at a registered target." examples={[{ command: 'sh1pt config webhooks test slack --event ship.published' }]} />
           <CommandBlock signature="sh1pt config webhooks list" description="All configured outbound targets + subscription URLs." examples={[{ command: 'sh1pt config webhooks list --json' }]} />
+          <CommandBlock signature="sh1pt config webhooks sub list" description="List configured event subscription URLs." examples={[{ command: 'sh1pt config webhooks sub list --json' }]} />
           <CommandBlock signature="sh1pt config webhooks sub add <url>" description="Subscribe an external URL to sh1pt events (HMAC-signed POSTs)." options={[{ flag: '--events <csv>', description: 'event names or * (default: *)' }, { flag: '--description <text>', description: 'human label' }]} examples={[{ command: 'sh1pt config webhooks sub add https://example.com/hooks/sh1pt --events ship.published,ship.rolled-back' }]} />
           <CommandBlock signature="sh1pt config webhooks sub remove <subscriptionId>" description="Remove a subscription." examples={[{ command: 'sh1pt config webhooks sub remove sub_abc123' }]} />
         </div>

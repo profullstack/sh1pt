@@ -271,6 +271,15 @@ const subCmd = webhooksCmd
   .action(() => { subCmd.help(); });
 
 subCmd
+  .command('list')
+  .description('List configured event subscriptions')
+  .option('--json')
+  .action((opts: { json?: boolean }) => {
+    if (opts.json) { console.log(JSON.stringify({ subscriptions: [] }, null, 2)); return; }
+    console.log(kleur.dim('[stub] webhooks sub list'));
+  });
+
+subCmd
   .command('add <url>')
   .description('Subscribe an external URL to sh1pt events (sh1pt POSTs to it with HMAC-signed bodies)')
   .option('--events <list>', 'comma-separated event names, or * for all', '*')

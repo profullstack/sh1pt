@@ -1,4 +1,5 @@
 import { defineTarget, setupGuide, exec } from '@profullstack/sh1pt-core';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 interface Config {
@@ -8,12 +9,45 @@ interface Config {
   target?: string;         // e.g. "linux-x64" for platform-specific packages
 }
 
+function packageDir(ctx: { projectDir: string }, config: Config): string {
+  return config.packageDir ? join(ctx.projectDir, config.packageDir) : ctx.projectDir;
+}
+
+function artifactPath(ctx: { outDir: string; version: string }, config: Config): string {
+  return join(ctx.outDir, `${config.extensionName}-${ctx.version}.vsix`);
+}
+
+function packageArgs(ctx: { outDir: string }, config: Config): string[] {
+  const args = ['--yes', 'vsce', 'package', '--out', ctx.outDir];
+  if (config.target) args.push('--target', config.target);
+  return args;
+}
+
+function renderPlan(ctx: { outDir: string; projectDir: string; version: string }, config: Config): string {
+  return `${JSON.stringify({
+    provider: 'vscode-marketplace',
+    extensionId: `${config.publisher}.${config.extensionName}`,
+    version: ctx.version,
+    packageDir: packageDir(ctx, config),
+    target: config.target ?? null,
+    expectedArtifact: artifactPath(ctx, config),
+    command: ['npx', ...packageArgs(ctx, config)],
+  }, null, 2)}\n`;
+}
+
 export default defineTarget<Config>({
   id: 'plugin-vscode',
   kind: 'plugin',
   label: 'VS Code Marketplace',
 
   async build(ctx, config) {
+    if (ctx.dryRun) {
+      const planPath = join(ctx.outDir, 'vscode-package-plan.json');
+      await mkdir(ctx.outDir, { recursive: true });
+      await writeFile(planPath, renderPlan(ctx, config), 'utf-8');
+      return { artifact: planPath };
+    }
+
     ctx.log('vsce: verifying CLI availability');
 
     try {
@@ -25,19 +59,16 @@ export default defineTarget<Config>({
       });
     }
 
-    const pkgDir = config.packageDir ? join(ctx.projectDir, config.packageDir) : ctx.projectDir;
+    const pkgDir = packageDir(ctx, config);
     ctx.log(`vsce: packaging ${config.publisher}.${config.extensionName} v${ctx.version}`);
 
-    const args = ['--yes', 'vsce', 'package', '--out', ctx.outDir];
-    if (config.target) args.push('--target', config.target);
-
-    const { stdout } = await exec('npx', args, {
+    await exec('npx', packageArgs(ctx, config), {
       cwd: pkgDir,
       log: ctx.log,
       throwOnNonZero: true,
     });
 
-    return { artifact: `${ctx.outDir}/${config.extensionName}-${ctx.version}.vsix` };
+    return { artifact: artifactPath(ctx, config) };
   },
 
   async ship(ctx, config) {

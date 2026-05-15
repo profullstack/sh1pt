@@ -1,6 +1,7 @@
-import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
-import { execSync } from 'node:child_process';
-import { readFileSync, existsSync } from 'node:fs';
+import { defineTarget, exec, manualSetup } from '@profullstack/sh1pt-core';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { existsSync, readFileSync } from 'node:fs';
+import { isAbsolute, join } from 'node:path';
 
 interface Config {
   productId: string;         // Edge Partner Center product ID
@@ -8,18 +9,48 @@ interface Config {
   notes?: string;            // release notes for reviewer
 }
 
+function sourceDir(ctx: { projectDir: string }, config: Config): string {
+  const src = config.sourceDir ?? 'dist';
+  return isAbsolute(src) ? src : join(ctx.projectDir, src);
+}
+
+function zipPath(ctx: { outDir: string; version: string }, config: Config): string {
+  return join(ctx.outDir, `${config.productId}-${ctx.version}.zip`);
+}
+
+function zipArgs(ctx: { outDir: string; projectDir: string; version: string }, config: Config): string[] {
+  return ['-r', zipPath(ctx, config), '.'];
+}
+
+function renderPlan(ctx: { outDir: string; projectDir: string; version: string }, config: Config): string {
+  return `${JSON.stringify({
+    provider: 'microsoft-edge-addons',
+    productId: config.productId,
+    version: ctx.version,
+    sourceDir: sourceDir(ctx, config),
+    expectedArtifact: zipPath(ctx, config),
+    command: ['zip', ...zipArgs(ctx, config)],
+  }, null, 2)}\n`;
+}
+
 export default defineTarget<Config>({
   id: 'browser-edge',
   kind: 'browser-ext',
   label: 'Microsoft Edge Add-ons',
   async build(ctx, config) {
-    const src = config.sourceDir ?? 'dist/';
-    const zipPath = `${ctx.outDir}/${config.productId}-${ctx.version}.zip`;
+    const src = sourceDir(ctx, config);
+    const artifact = zipPath(ctx, config);
+    const planPath = join(ctx.outDir, 'edge-package-plan.json');
 
     ctx.log(`pack Edge extension from ${src} for v${ctx.version}`);
+    if (ctx.dryRun) {
+      await mkdir(ctx.outDir, { recursive: true });
+      await writeFile(planPath, renderPlan(ctx, config), 'utf-8');
+      return { artifact: planPath };
+    }
 
     // Validate manifest.json exists and is manifest_version 3
-    const manifestPath = `${src}/manifest.json`;
+    const manifestPath = join(src, 'manifest.json');
     if (!existsSync(manifestPath)) {
       throw new Error(`manifest.json not found at ${manifestPath} — run a build step first`);
     }
@@ -29,11 +60,15 @@ export default defineTarget<Config>({
     }
 
     // Zip the extension directory
-    execSync(`mkdir -p ${JSON.stringify(ctx.outDir)}`, { stdio: 'ignore' });
-    execSync(`cd ${JSON.stringify(src)} && zip -r ${JSON.stringify(zipPath)} .`, { stdio: 'pipe' });
+    await mkdir(ctx.outDir, { recursive: true });
+    await exec('zip', zipArgs(ctx, config), {
+      cwd: src,
+      log: ctx.log,
+      throwOnNonZero: true,
+    });
 
-    ctx.log(`created ${zipPath}`);
-    return { artifact: zipPath };
+    ctx.log(`created ${artifact}`);
+    return { artifact, meta: { command: ['zip', ...zipArgs(ctx, config)] } };
   },
   async ship(ctx, config) {
     ctx.log(`upload ${config.productId} to Edge Partner Center (v${ctx.version})`);
@@ -77,7 +112,7 @@ export default defineTarget<Config>({
     // Step 2: Upload the package (zip) as a draft submission
     ctx.log('uploading package...');
     const uploadUrl = `https://api.addons.microsoftedge.microsoft.com/v1/products/${config.productId}/submissions/draft/package`;
-    const zipBuf = readFileSync(ctx.artifact);
+    const zipBuf = await readFile(ctx.artifact);
 
     const uploadRes = await fetch(uploadUrl, {
       method: 'PUT',

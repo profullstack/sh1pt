@@ -1,7 +1,18 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
 import prompts from 'prompts';
-import { runSetup, type AdapterWithSetup } from '@profullstack/sh1pt-core';
+import {
+  adaptPost,
+  getAdapterConfig,
+  readConfig,
+  runSetup,
+  type AdapterWithSetup,
+  type MediaAttachment,
+  type MediaKind,
+  type PostResult,
+  type SocialPlatform,
+  type SocialPost,
+} from '@profullstack/sh1pt-core';
 import { describeInput, resolveInput } from '../input.js';
 import { merchCmd } from './merch.js';
 import { shipCmd as shipSub } from './ship.js';
@@ -279,8 +290,17 @@ socialCmd
   .option('--platform <id...>', 'subset; default: all connected')
   .option('--schedule <iso>', 'publish at ISO timestamp; omit for now')
   .option('--dry-run')
-  .action((opts) => {
-    console.log(kleur.green(`[stub] social post ${JSON.stringify(opts)}`));
+  .action(async (opts: SocialPostCliOptions, cmd: Command) => {
+    const post = buildSocialPost(opts);
+    const platforms = await resolveSocialPlatforms(opts, cmd);
+
+    if (opts.dryRun) {
+      await printSocialDryRun(platforms, post);
+      return;
+    }
+
+    const results = await publishSocialPost(platforms, post);
+    console.log(JSON.stringify({ results }, null, 2));
   });
 
 socialCmd
@@ -292,6 +312,148 @@ socialCmd
     if (opts.json) { console.log(JSON.stringify({ posts: [], totals: {} }, null, 2)); return; }
     console.log(kleur.dim('[stub] social metrics'));
   });
+
+interface SocialPostCliOptions {
+  body: string;
+  title?: string;
+  hashtags?: string;
+  media?: string[];
+  link?: string;
+  platform?: string[];
+  schedule?: string;
+  dryRun?: boolean;
+}
+
+interface ResolvedSocialPlatform {
+  name: string;
+  adapterId: string;
+}
+
+function buildSocialPost(opts: SocialPostCliOptions): SocialPost {
+  const body = opts.body.trim();
+  if (!body) throw new Error('--body requires non-empty text');
+
+  const link = opts.link ? normalizeHttpUrl(opts.link, '--link') : undefined;
+  const schedule = opts.schedule ? parseSchedule(opts.schedule) : undefined;
+
+  return {
+    body,
+    title: opts.title?.trim() || undefined,
+    hashtags: parseHashtags(opts.hashtags),
+    link,
+    media: (opts.media ?? []).map(toMediaAttachment),
+    schedule,
+  };
+}
+
+async function resolveSocialPlatforms(opts: SocialPostCliOptions, cmd: Command): Promise<ResolvedSocialPlatform[]> {
+  const merged = cmd.optsWithGlobals() as { platform?: string[] };
+  const requested = (opts.platform ?? merged.platform ?? []).map(stripSocialPrefix).filter(Boolean);
+  const names = requested.length > 0 ? requested : await configuredSocialPlatformNames();
+  if (names.length === 0) {
+    throw new Error('no social platforms configured; run `sh1pt promote social setup --platform <id>` or pass `--platform <id...>` with --dry-run');
+  }
+  return [...new Set(names)].map((name) => ({ name, adapterId: `social-${name}` }));
+}
+
+async function configuredSocialPlatformNames(): Promise<string[]> {
+  const cfg = await readConfig();
+  return Object.keys(cfg.adapters)
+    .filter((id) => id.startsWith('social-'))
+    .map((id) => stripSocialPrefix(id))
+    .sort();
+}
+
+async function printSocialDryRun(platforms: ResolvedSocialPlatform[], post: SocialPost): Promise<void> {
+  const plans = [];
+  for (const p of platforms) {
+    const adapter = await tryLoadSocialAdapter(p.name);
+    const adapted = adapter ? adaptPost(post, adapter) : { body: post.body, hashtags: post.hashtags ?? [] };
+    plans.push({
+      platform: p.name,
+      adapter: p.adapterId,
+      body: adapted.body,
+      hashtags: adapted.hashtags,
+      link: post.link,
+      media: post.media?.map((m) => m.file) ?? [],
+      schedule: post.schedule?.toISOString(),
+      configured: Boolean(await getAdapterConfig(p.adapterId)),
+      packageInstalled: Boolean(adapter),
+    });
+  }
+  console.log(JSON.stringify({ dryRun: true, posts: plans }, null, 2));
+}
+
+async function publishSocialPost(platforms: ResolvedSocialPlatform[], post: SocialPost): Promise<PostResult[]> {
+  const results: PostResult[] = [];
+  const ctx = makeCliSetupContext();
+  for (const p of platforms) {
+    const adapter = await loadSocialAdapter(p.name);
+    const config = await getAdapterConfig(p.adapterId);
+    if (config === undefined) {
+      throw new Error(`${p.adapterId} is not configured; run \`sh1pt promote social setup --platform ${p.name}\``);
+    }
+    await adapter.connect?.(ctx, config);
+    results.push(await adapter.post({ ...ctx, dryRun: false }, post, config));
+  }
+  return results;
+}
+
+async function tryLoadSocialAdapter(name: string): Promise<SocialPlatform | null> {
+  const adapter = await loadInstalledPackage<SocialPlatform>(`@profullstack/sh1pt-social-${name}`);
+  return adapter && typeof adapter === 'object' && 'post' in adapter ? adapter : null;
+}
+
+async function loadSocialAdapter(name: string): Promise<SocialPlatform> {
+  const pkg = `@profullstack/sh1pt-social-${name}`;
+  await ensureInstalled([pkg]);
+  const adapter = await loadInstalledPackage<SocialPlatform>(pkg);
+  if (!adapter || typeof adapter !== 'object' || !('post' in adapter)) {
+    throw new Error(`failed to load ${pkg} after install — file an issue.`);
+  }
+  return adapter;
+}
+
+function parseHashtags(raw?: string): string[] | undefined {
+  const tags = (raw ?? '')
+    .split(',')
+    .map((tag) => tag.trim().replace(/^#+/, ''))
+    .filter(Boolean);
+  return tags.length > 0 ? [...new Set(tags)] : undefined;
+}
+
+function normalizeHttpUrl(raw: string, label: string): string {
+  const value = raw.trim();
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error(`${label} must be a valid URL`);
+  }
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error(`${label} must be an http(s) URL`);
+  }
+  return parsed.toString();
+}
+
+function parseSchedule(raw: string): Date {
+  const date = new Date(raw);
+  if (Number.isNaN(date.valueOf())) throw new Error('--schedule must be a valid ISO timestamp');
+  return date;
+}
+
+function toMediaAttachment(file: string): MediaAttachment {
+  const value = file.trim();
+  if (!value) throw new Error('--media received an empty path');
+  return { file: value, kind: inferMediaKind(value) };
+}
+
+function inferMediaKind(file: string): MediaKind {
+  const lower = file.toLowerCase().split(/[?#]/)[0] ?? file.toLowerCase();
+  if (/\.(mp4|mov|webm|m4v)$/.test(lower)) return 'video';
+  if (/\.gif$/.test(lower)) return 'gif';
+  return 'image';
+}
 
 // AI providers — generate ad copy / social bodies / taglines from a
 // prompt. Distinct from `agents/` (which wraps installed CLI binaries

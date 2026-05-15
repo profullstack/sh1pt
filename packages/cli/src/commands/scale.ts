@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import kleur from 'kleur';
 import { describeInput, resolveInput } from '../input.js';
 import { deployCmd } from './deploy.js';
+import { loadScaleState, summarizeScaleCost, summarizeScaleStatus } from './scale-state.js';
 
 export const scaleCmd = new Command('scale')
   .description('Provision + scale cloud infra. DNS round-robin, rollouts, rightsizing — all the capacity ops.')
@@ -85,25 +86,62 @@ scaleCmd
 scaleCmd
   .command('cost')
   .description('Current spend, per-provider breakdown, and rightsizing suggestions')
+  .option('--state <path>', 'scale state file to read', '.sh1pt/scale.json')
   .option('--json')
-  .action((opts: { json?: boolean }) => {
+  .action(async (opts: { state?: string; json?: boolean }) => {
+    const state = await loadScaleState(opts.state);
+    const summary = summarizeScaleCost(state);
     if (opts.json) {
-      console.log(JSON.stringify({ hourly: 0, monthly: 0, byProvider: {}, suggestions: [] }, null, 2));
+      console.log(JSON.stringify(summary, null, 2));
       return;
     }
-    console.log(kleur.dim('[stub] scale cost — hourly/monthly + rightsizing hints'));
-    // TODO: aggregate Instance.hourlyRate across fleet; compare utilization
-    // vs SKU size; suggest downsizing underused boxes or moving to spot/reserved.
+    console.log(kleur.cyan(`scale cost · ${summary.currency}`));
+    console.log(`  hourly:  ${summary.hourly.toFixed(2)}`);
+    console.log(`  monthly: ${summary.monthly.toFixed(2)} ${kleur.dim('(730h estimate)')}`);
+    const providers = Object.entries(summary.byProvider);
+    if (providers.length > 0) {
+      console.log('\nproviders:');
+      for (const [provider, cost] of providers) {
+        console.log(`  ${provider}: ${cost.hourly.toFixed(2)}/hr · ${cost.monthly.toFixed(2)}/mo · ${cost.instances} instance(s)`);
+      }
+    }
+    if (summary.suggestions.length > 0) {
+      console.log('\nsuggestions:');
+      for (const suggestion of summary.suggestions) console.log(`  - ${suggestion}`);
+    }
   });
 
 scaleCmd
   .command('status')
   .description('Current fleet: instance count, DNS records, load distribution')
+  .option('--state <path>', 'scale state file to read', '.sh1pt/scale.json')
   .option('--json')
-  .action((opts: { json?: boolean }) => {
+  .action(async (opts: { state?: string; json?: boolean }) => {
+    const state = await loadScaleState(opts.state);
+    const summary = summarizeScaleStatus(state);
     if (opts.json) {
-      console.log(JSON.stringify({ instances: [], dns: [], autoRules: null }, null, 2));
+      console.log(JSON.stringify(summary, null, 2));
       return;
     }
-    console.log(kleur.dim('[stub] scale status'));
+    console.log(kleur.cyan(`scale status · ${summary.instances.length} instance(s)`));
+    const statuses = Object.entries(summary.byStatus).map(([status, count]) => `${status}=${count}`).join(' ');
+    if (statuses) console.log(`  ${statuses}`);
+    if (summary.publicIps.length > 0) console.log(`  public IPs: ${summary.publicIps.join(', ')}`);
+    if (summary.dns.length > 0) {
+      console.log('\ndns:');
+      for (const entry of summary.dns) {
+        const provider = entry.provider ? ` · ${entry.provider}` : '';
+        const ttl = entry.ttl ? ` · ttl=${entry.ttl}` : '';
+        console.log(`  ${entry.domain}${provider}${ttl}`);
+        for (const record of entry.records ?? []) {
+          const weight = record.weight === undefined ? '' : ` · weight=${record.weight}`;
+          console.log(`    ${record.type ?? 'A'} ${record.name} -> ${record.value}${weight}`);
+        }
+      }
+    }
+    if (summary.autoRules) {
+      console.log(`\nauto: min=${summary.autoRules.min} max=${summary.autoRules.max}` +
+        `${summary.autoRules.targetCpu ? ` targetCpu=${summary.autoRules.targetCpu}%` : ''}` +
+        `${summary.autoRules.cooldown ? ` cooldown=${summary.autoRules.cooldown}s` : ''}`);
+    }
   });

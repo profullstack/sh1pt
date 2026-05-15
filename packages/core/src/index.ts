@@ -23,6 +23,7 @@ export * from './secrets.js';
 export * from './observability.js';
 export * from './security.js';
 export * from './w3c.js';
+export * from './mcp-server.js';
 export * from './exec.js';
 export * from './config-store.js';
 export * from './setup.js';

@@ -117,6 +117,12 @@ export const CATEGORIES: readonly AdapterCategory[] = [
     adapters: ['printful', 'printify'],
   },
   {
+    id: 'mcp-servers',
+    pkgPrefix: '@profullstack/sh1pt-mcp-server',
+    description: 'MCP server callers - tool calls over configured MCP transports',
+    adapters: ['penpot'],
+  },
+  {
     id: 'outreach',
     pkgPrefix: '@profullstack/sh1pt-outreach',
     description: 'Email + podcast + launch outreach',

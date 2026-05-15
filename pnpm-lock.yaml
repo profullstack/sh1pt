@@ -1101,6 +1101,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/mcp-servers/penpot:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/merch/printful:
     dependencies:
       '@profullstack/sh1pt-core':

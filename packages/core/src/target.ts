@@ -19,6 +19,7 @@ export type TargetKind =
   | 'api'
   | 'sdk'
   | 'webhook'
+  | 'payment'
   | 'package-manager';
 
 export type Channel = 'stable' | 'beta' | 'canary' | (string & {});

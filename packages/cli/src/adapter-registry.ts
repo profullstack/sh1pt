@@ -136,6 +136,12 @@ export const CATEGORIES: readonly AdapterCategory[] = [
     adapters: ['gitea', 'github', 'gitlab'],
   },
   {
+    id: 'w3c',
+    pkgPrefix: '@profullstack/sh1pt-w3c',
+    description: 'W3C social web namespaces — ActivityPub, Micropub, WebSub',
+    adapters: ['activitypub', 'micropub', 'websub'],
+  },
+  {
     id: 'webhooks',
     pkgPrefix: '@profullstack/sh1pt-webhooks',
     description: 'Webhook targets — Discord, Slack, Teams, Telegram, generic HTTP',

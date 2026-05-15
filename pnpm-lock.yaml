@@ -1898,6 +1898,24 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/w3c/activitypub:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/w3c/micropub:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/w3c/websub:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/web: {}
 
   packages/webhooks/discord:

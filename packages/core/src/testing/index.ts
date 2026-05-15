@@ -24,5 +24,6 @@ export * from './contract-bridge.js';
 export * from './contract-docs.js';
 export * from './contract-jurisdiction.js';
 export * from './contract-bot.js';
+export * from './contract-mcp-server.js';
 export * from './smoke.js';
 export * from './harness.js';

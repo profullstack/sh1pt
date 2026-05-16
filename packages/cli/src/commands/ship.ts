@@ -22,6 +22,31 @@ async function loadManifest(): Promise<Manifest> {
   return { name: 'stub', version: '0.0.0', channels: ['stable', 'beta', 'canary'], targets: {} };
 }
 
+export function createInitCmd(): Command {
+  return new Command('init')
+    .description('Scaffold sh1pt.config.ts in the current project')
+    .action(async () => {
+      const cfgPath = join(process.cwd(), 'sh1pt.config.ts');
+      try {
+        await access(cfgPath);
+        console.log(kleur.yellow('sh1pt.config.ts already exists — aborting.'));
+        return;
+      } catch {
+        // expected
+      }
+      const { name } = await prompts({
+        type: 'text',
+        name: 'name',
+        message: 'Project name',
+        initial: process.cwd().split('/').pop() ?? 'my-app',
+      });
+      if (!name) return;
+      await writeFile(cfgPath, CONFIG_TEMPLATE(name), 'utf8');
+      console.log(kleur.green(`✓ wrote sh1pt.config.ts`));
+      console.log(`  next: ${kleur.cyan('sh1pt ship target add <id>')}`);
+    });
+}
+
 export const shipCmd = new Command('ship')
   .description('Publish built artifacts to their target stores and registries')
   .option('-t, --target <id...>', 'target ids to ship (default: all enabled)')
@@ -39,29 +64,7 @@ export const shipCmd = new Command('ship')
     // TODO: load manifest, resolve latest build, invoke Target.ship(), record release
   });
 
-shipCmd
-  .command('init')
-  .description('Scaffold sh1pt.config.ts in the current project')
-  .action(async () => {
-    const cfgPath = join(process.cwd(), 'sh1pt.config.ts');
-    try {
-      await access(cfgPath);
-      console.log(kleur.yellow('sh1pt.config.ts already exists — aborting.'));
-      return;
-    } catch {
-      // expected
-    }
-    const { name } = await prompts({
-      type: 'text',
-      name: 'name',
-      message: 'Project name',
-      initial: process.cwd().split('/').pop() ?? 'my-app',
-    });
-    if (!name) return;
-    await writeFile(cfgPath, CONFIG_TEMPLATE(name), 'utf8');
-    console.log(kleur.green(`✓ wrote sh1pt.config.ts`));
-    console.log(`  next: ${kleur.cyan('sh1pt ship target add <id>')}`);
-  });
+shipCmd.addCommand(createInitCmd());
 
 shipCmd
   .command('setup')

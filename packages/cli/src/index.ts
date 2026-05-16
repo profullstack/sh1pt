@@ -12,6 +12,7 @@ import { updateCmd, removeCmd } from './commands/self.js';
 import { makeCategoryCmd } from './commands/adapter-cmd.js';
 import { CATEGORIES } from './adapter-registry.js';
 import { skillsCmd } from './commands/skills.js';
+import { createInitCmd } from './commands/ship.js';
 
 const program = new Command();
 
@@ -40,6 +41,7 @@ program.addCommand(logoutCmd);
 program.addCommand(secretsCmd);
 program.addCommand(configCmd);
 program.addCommand(skillsCmd);      // skills   · package/promote SKILL.md agent skills across marketplaces
+program.addCommand(createInitCmd()); // init     · documented shortcut for scaffolding sh1pt.config.ts
 
 // Self-management — sh1pt update / upgrade / remove / uninstall.
 program.addCommand(updateCmd);

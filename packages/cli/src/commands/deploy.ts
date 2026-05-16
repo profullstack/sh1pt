@@ -71,7 +71,12 @@ deployCmd
   .command('destroy <instanceId>')
   .description('Tear down an instance (stops billing)')
   .requiredOption('--provider <id>')
-  .action((id: string, opts: { provider: string }) => {
+  .option('--dry-run', 'validate without tearing down the instance')
+  .action((id: string, opts: { provider: string; dryRun?: boolean }) => {
+    if (opts.dryRun) {
+      console.log(kleur.yellow(`[dry-run] deploy destroy · instance=${id} provider=${opts.provider}`));
+      return;
+    }
     console.log(kleur.red(`[stub] deploy destroy ${id} on ${opts.provider}`));
   });
 

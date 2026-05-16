@@ -123,14 +123,24 @@ complianceCmd
   .command('list <slug>')
   .description('Show open / overdue / upcoming compliance tasks')
   .option('--status <status>', 'filter by status (open, blocked, submitted, complete, overdue)')
-  .action((slug: string, opts: { status?: string }) => {
+  .option('--json', 'machine-readable output')
+  .action((slug: string, opts: { status?: string; json?: boolean }) => {
+    if (opts.json) {
+      console.log(JSON.stringify({ slug, tasks: [], filter: opts.status ?? null }, null, 2));
+      return;
+    }
     console.log(kleur.dim(`[stub] entity compliance list ${slug}${opts.status ? ` · ${opts.status}` : ''}`));
   });
 
 entityCmd
   .command('status <slug>')
   .description('Show the entity lifecycle state (draft → planned → packet-ready → ... → active)')
-  .action((slug: string) => {
+  .option('--json', 'machine-readable output')
+  .action((slug: string, opts: { json?: boolean }) => {
+    if (opts.json) {
+      console.log(JSON.stringify({ slug, state: 'draft', states: ['draft', 'planned', 'packet-ready', 'filed', 'active'] }, null, 2));
+      return;
+    }
     console.log(kleur.dim(`[stub] entity status ${slug}`));
   });
 

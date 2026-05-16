@@ -79,6 +79,11 @@ deployCmd
   .command('status <instanceId>')
   .description('Check instance health + hourly cost')
   .requiredOption('--provider <id>')
-  .action((id: string, opts: { provider: string }) => {
+  .option('--json', 'machine-readable output')
+  .action((id: string, opts: { provider: string; json?: boolean }) => {
+    if (opts.json) {
+      console.log(JSON.stringify({ instanceId: id, provider: opts.provider, status: 'unknown', hourlyRate: null }, null, 2));
+      return;
+    }
     console.log(kleur.dim(`[stub] deploy status ${id} on ${opts.provider}`));
   });

@@ -149,7 +149,12 @@ targetSubCmd
 targetSubCmd
   .command('list')
   .description('List enabled targets for this project')
-  .action(() => {
+  .option('--json', 'machine-readable output')
+  .action((opts: { json?: boolean }) => {
+    if (opts.json) {
+      console.log(JSON.stringify({ targets: [] }, null, 2));
+      return;
+    }
     console.log(kleur.dim('[stub] target list — read sh1pt.config.ts'));
   });
 

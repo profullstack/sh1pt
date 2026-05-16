@@ -43,7 +43,12 @@ const paymentsCmd = configCmd
 paymentsCmd
   .command('list')
   .description('Show enabled providers and which is the default')
-  .action(() => {
+  .option('--json', 'machine-readable output')
+  .action((opts: { json?: boolean }) => {
+    if (opts.json) {
+      console.log(JSON.stringify({ providers: [], defaultProvider: null }, null, 2));
+      return;
+    }
     console.log(kleur.dim('[stub] config payments list — read manifest.payments'));
   });
 
@@ -86,7 +91,12 @@ const stackCmd = configCmd
 stackCmd
   .command('list')
   .description('Supported and planned stacks')
-  .action(() => {
+  .option('--json', 'machine-readable output')
+  .action((opts: { json?: boolean }) => {
+    if (opts.json) {
+      console.log(JSON.stringify({ stacks: STACKS }, null, 2));
+      return;
+    }
     for (const s of STACKS) {
       const icon = s.supported ? kleur.green('●') : kleur.gray('○');
       const label = s.supported ? kleur.bold(s.title) : kleur.dim(s.title);

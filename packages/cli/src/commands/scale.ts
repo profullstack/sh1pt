@@ -1,7 +1,26 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describeInput, resolveInput } from '../input.js';
 import { deployCmd } from './deploy.js';
+
+// Known provider pricing references — sourced from each adapter's
+// inline doc when real-time quote() isn't available (no API key).
+// Values are approximate USD/hour for the cheapest comparable SKU.
+const DEFAULT_PRICING: Record<string, { label: string; hourly: number }> = {
+  'cloud-runpod':       { label: 'RunPod (GPU)',        hourly: 0.34 },
+  'cloud-digitalocean': { label: 'DigitalOcean (VPS)',  hourly: 0.007 },
+  'cloud-vultr':        { label: 'Vultr (VPS)',          hourly: 0.007 },
+  'cloud-hetzner':      { label: 'Hetzner Cloud (VPS)',  hourly: 0.005 },
+  'cloud-atlantic':     { label: 'Atlantic.Net (VPS)',   hourly: 0.008 },
+  'cloud-railway':      { label: 'Railway (hosting)',    hourly: 0.017 },
+  'cloud-cloudflare':   { label: 'Cloudflare (Workers)', hourly: 0.0   },
+  'cloud-fly':          { label: 'Fly.io (hosting)',     hourly: 0.007 },
+  'cloud-supabase':     { label: 'Supabase (DB)',        hourly: 0.021 },
+  'cloud-nvidia':       { label: 'NVIDIA (build.nvidia)',hourly: 0.0   },
+  'cloud-firebase':     { label: 'Firebase (hosting)',   hourly: 0.0   },
+};
 
 export const scaleCmd = new Command('scale')
   .description('Provision + scale cloud infra. DNS round-robin, rollouts, rightsizing — all the capacity ops.')
@@ -87,13 +106,124 @@ scaleCmd
   .description('Current spend, per-provider breakdown, and rightsizing suggestions')
   .option('--json')
   .action((opts: { json?: boolean }) => {
+    // Try loading sh1pt cloud credentials to fetch real fleet state
+    let fleetState: { provider: string; hourlyRate: number }[] = [];
+    try {
+      const credPath = resolve(process.cwd(), '.sh1pt', 'credentials.json');
+      if (existsSync(credPath)) {
+        const creds = JSON.parse(readFileSync(credPath, 'utf-8'));
+        if (creds.fleet && Array.isArray(creds.fleet)) {
+          fleetState = creds.fleet;
+        }
+      }
+    } catch { /* no credentials — use defaults */ }
+
+    // Aggregate by provider
+    const providerMap = new Map<string, { label: string; instances: number; hourly: number }>();
+    for (const inst of fleetState) {
+      const p = inst.provider;
+      if (!providerMap.has(p)) {
+        const info = DEFAULT_PRICING[p] ?? { label: p, hourly: 0 };
+        providerMap.set(p, { label: info.label, instances: 0, hourly: info.hourly });
+      }
+      providerMap.get(p)!.instances++;
+    }
+
+    // Fill in providers with known pricing even if no fleet data
+    const pricingEntries = Object.entries(DEFAULT_PRICING);
+    for (const [id, info] of pricingEntries) {
+      if (!providerMap.has(id)) {
+        providerMap.set(id, { label: info.label, instances: 0, hourly: info.hourly });
+      }
+    }
+
+    const byProvider: Record<string, { label: string; instances: number; hourly: number; monthly: number }> = {};
+    let totalHourly = 0;
+
+    // Sort by hourly rate descending (most expensive first)
+    const sorted = [...providerMap.entries()].sort((a, b) => b[1].hourly - a[1].hourly);
+
+    // Build enriched array with monthly cost computed
+    const enriched = sorted.map(([id, info]) => ({
+      id,
+      label: info.label,
+      instances: info.instances,
+      hourly: info.hourly,
+      monthly: info.hourly * 730,
+    }));
+
+    for (const e of enriched) {
+      byProvider[e.id] = {
+        label: e.label,
+        instances: e.instances,
+        hourly: e.hourly,
+        monthly: e.monthly,
+      };
+      totalHourly += e.hourly * Math.max(1, e.instances);
+    }
+
+    const totalMonthly = totalHourly * 730;
+
+    // Generate rightsizing suggestions
+    const suggestions: string[] = [];
+    for (const e of enriched) {
+      if (e.instances === 0) continue;
+      if (e.hourly > 0.10) {
+        suggestions.push(`Consider spot/preemptible instances on ${e.id} to reduce GPU costs by 50-70%`);
+      }
+    }
+
     if (opts.json) {
-      console.log(JSON.stringify({ hourly: 0, monthly: 0, byProvider: {}, suggestions: [] }, null, 2));
+      console.log(JSON.stringify({
+        hourly: totalHourly,
+        monthly: totalMonthly,
+        byProvider,
+        suggestions,
+        currency: 'USD',
+      }, null, 2));
       return;
     }
-    console.log(kleur.dim('[stub] scale cost — hourly/monthly + rightsizing hints'));
-    // TODO: aggregate Instance.hourlyRate across fleet; compare utilization
-    // vs SKU size; suggest downsizing underused boxes or moving to spot/reserved.
+
+    console.log();
+    console.log(kleur.bold('→ Cost Summary'));
+    console.log(kleur.dim('  (approximate — based on known provider pricing; actual spend depends on usage)'));
+    console.log();
+
+    let hasInstances = false;
+    for (const e of enriched) {
+      if (e.instances === 0 && e.id !== enriched[0]?.id) continue;
+      if (e.instances > 0) hasInstances = true;
+      const instLabel = e.instances > 0
+        ? kleur.white(`${e.instances} instance(s)`)
+        : kleur.dim('no instances');
+      console.log(
+        `  ${kleur.cyan(e.label.padEnd(30))} ` +
+        `${instLabel.padEnd(20)} ` +
+        `${kleur.yellow(`$${e.hourly.toFixed(3)}/hr`).padEnd(18)} ` +
+        `${kleur.yellow(`$${e.monthly.toFixed(2)}/mo`)}`
+      );
+    }
+
+    if (!hasInstances) {
+      console.log(kleur.dim('  (all providers show 0 running instances — connect a provider via `sh1pt scale deploy setup`)'));
+    }
+
+    console.log();
+    console.log(`  ${kleur.bold('Total')}: ${kleur.green(`$${totalHourly.toFixed(2)}/hr`)}  ${kleur.green(`$${totalMonthly.toFixed(2)}/mo`)}`);
+
+    if (suggestions.length > 0) {
+      console.log();
+      console.log(kleur.bold('→ Rightsizing Suggestions'));
+      for (const s of suggestions) {
+        console.log(`  ${kleur.yellow('⚡')} ${s}`);
+      }
+    }
+
+    if (fleetState.length === 0) {
+      console.log();
+      console.log(kleur.dim('  Tip: connect cloud providers and provision instances to see live cost data.'));
+      console.log(kleur.dim('  See `sh1pt scale deploy --help` for available providers.'));
+    }
   });
 
 scaleCmd

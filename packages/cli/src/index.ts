@@ -12,6 +12,7 @@ import { updateCmd, removeCmd } from './commands/self.js';
 import { makeCategoryCmd } from './commands/adapter-cmd.js';
 import { CATEGORIES } from './adapter-registry.js';
 import { skillsCmd } from './commands/skills.js';
+import { agentsCmd } from './commands/agents.js';
 
 const program = new Command();
 
@@ -40,6 +41,7 @@ program.addCommand(logoutCmd);
 program.addCommand(secretsCmd);
 program.addCommand(configCmd);
 program.addCommand(skillsCmd);      // skills   · package/promote SKILL.md agent skills across marketplaces
+program.addCommand(agentsCmd);      // agents   · generate/run/talk with AI coding CLIs
 
 // Self-management — sh1pt update / upgrade / remove / uninstall.
 program.addCommand(updateCmd);
@@ -48,6 +50,7 @@ program.addCommand(removeCmd);
 // Filesystem-mirrored adapter commands. One top-level command per
 // packages/<category>/ directory → `sh1pt <category> <name> setup`.
 for (const cat of CATEGORIES) {
+  if (cat.id === 'agents') continue;
   program.addCommand(makeCategoryCmd(cat));
 }
 

@@ -1,5 +1,5 @@
 {
-  "name": "@sh1pt/agent-vu1nz",
+  "name": "@profullstack/sh1pt-agent-vu1nz",
   "version": "0.0.0",
   "type": "module",
   "main": "./src/index.ts",

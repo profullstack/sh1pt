@@ -3,7 +3,7 @@ import { contractTestAgent } from "@profullstack/sh1pt-core/testing";
 
 import agent from "./index.js";
 
-describe("@sh1pt/agent-vu1nz", () => {
+describe("@profullstack/sh1pt-agent-vu1nz", () => {
   it("has required agent metadata", () => {
     expect(agent.id).toBe("agent-vu1nz");
     expect(agent.label).toBe("vu1nz Actions Security Scanner");

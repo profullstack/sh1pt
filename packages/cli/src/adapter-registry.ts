@@ -16,6 +16,17 @@ export interface AdapterCategory {
 
 export const CATEGORIES: readonly AdapterCategory[] = [
   {
+    id: 'affiliates',
+    pkgPrefix: '@profullstack/sh1pt-affiliate',
+    description: 'Affiliate networks — CJ, Rakuten, ShareASale, Awin, Impact, Amazon Associates, ClickBank…',
+    adapters: [
+      'admitad', 'amazon-associates', 'avangate', 'awin', 'cj', 'clickbank',
+      'digistore24', 'ebay-partner', 'everflow', 'flexoffers', 'impact',
+      'jvzoo', 'partnerstack', 'rakuten', 'refersion', 'shareasale',
+      'skimlinks', 'sovrn', 'tapfiliate', 'tradedoubler',
+    ],
+  },
+  {
     id: 'agents',
     pkgPrefix: '@profullstack/sh1pt-agent',
     description: 'AI coding CLIs — Claude Code, Codex, Qwen',

@@ -60,8 +60,8 @@ export const CATEGORIES: readonly AdapterCategory[] = [
   {
     id: 'dns',
     pkgPrefix: '@profullstack/sh1pt-dns',
-    description: 'DNS providers — Porkbun, Cloudflare',
-    adapters: ['cloudflare', 'porkbun'],
+    description: 'DNS providers — Cloudflare, Porkbun, Route 53, Azure, Google, DigitalOcean, DNSimple, Namecheap',
+    adapters: ['azure', 'cloudflare', 'digitalocean', 'dnsimple', 'googledns', 'namecheap', 'porkbun', 'route53'],
   },
   {
     id: 'secrets',

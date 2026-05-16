@@ -1,11 +1,12 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
 
-export const deployCmd = new Command('deploy')
-  .description('Provision cloud infrastructure — VPS, GPU, bare metal, managed databases, object storage')
-  .action(() => {
-    deployCmd.help();
-  });
+export function createDeployCmd() {
+  const deployCmd = new Command('deploy')
+    .description('Provision cloud infrastructure — VPS, GPU, bare metal, managed databases, object storage')
+    .action(() => {
+      deployCmd.help();
+    });
 
 deployCmd
   .command('setup')
@@ -82,3 +83,8 @@ deployCmd
   .action((id: string, opts: { provider: string }) => {
     console.log(kleur.dim(`[stub] deploy status ${id} on ${opts.provider}`));
   });
+
+  return deployCmd;
+}
+
+export const deployCmd = createDeployCmd();

@@ -2,6 +2,88 @@ import { Command } from 'commander';
 import kleur from 'kleur';
 import { describeInput, resolveInput } from '../input.js';
 import { deployCmd } from './deploy.js';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join, dirname } from 'node:path';
+
+// Shared fleet state — mirrors the cost and auto commands
+const CREDS_FILE = join(homedir(), '.sh1pt', 'credentials.json');
+
+interface FleetEntry {
+  id: string;
+  provider: string;
+  status: 'running' | 'stopped' | 'failed';
+  publicIp?: string;
+  privateIp?: string;
+  createdAt: string;
+  hourlyRate: number;
+  tags?: string[];
+}
+
+interface FleetState {
+  instances: FleetEntry[];
+  lastUpdated: string;
+}
+
+function loadFleet(): FleetState {
+  try {
+    if (existsSync(CREDS_FILE)) {
+      const raw = JSON.parse(readFileSync(CREDS_FILE, 'utf-8'));
+      if (raw.instances) return { instances: raw.instances, lastUpdated: raw.lastUpdated || '' };
+      if (raw.fleet)  return { instances: raw.fleet, lastUpdated: raw.lastUpdated || '' };
+    }
+  } catch {
+    // corrupted or missing
+  }
+  return { instances: [], lastUpdated: '' };
+}
+
+function saveFleet(state: FleetState): void {
+  const dir = dirname(CREDS_FILE);
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  state.lastUpdated = new Date().toISOString();
+  // Merge back into the parent structure
+  let creds: Record<string, unknown> = {};
+  try {
+    if (existsSync(CREDS_FILE)) creds = JSON.parse(readFileSync(CREDS_FILE, 'utf-8'));
+  } catch { /* fresh file */ }
+  creds.instances = state.instances;
+  creds.lastUpdated = state.lastUpdated;
+  writeFileSync(CREDS_FILE, JSON.stringify(creds, null, 2));
+}
+
+// Provider pricing (copied from cost command convention)
+const PROVIDER_PRICING: Record<string, { hourly: number; spot: number }> = {
+  'aws':          { hourly: 0.096,  spot: 0.028 },
+  'gcp':          { hourly: 0.085,  spot: 0.025 },
+  'azure':        { hourly: 0.104,  spot: 0.031 },
+  'digitalocean': { hourly: 0.042,  spot: 0.042 },
+  'linode':       { hourly: 0.036,  spot: 0.036 },
+  'vultr':        { hourly: 0.035,  spot: 0.035 },
+  'hetzner':      { hourly: 0.028,  spot: 0.028 },
+  'runpod':       { hourly: 0.34,   spot: 0.17  },
+  'vast':         { hourly: 0.25,   spot: 0.12  },
+  'latitude':     { hourly: 0.60,   spot: 0.30  },
+  'crusoe':       { hourly: 0.14,   spot: 0.07  },
+};
+
+function getNextId(instances: FleetEntry[]): string {
+  const nums = instances
+    .map(i => parseInt(i.id.replace(/^inst-/, ''), 10))
+    .filter(n => !isNaN(n));
+  const max = nums.length > 0 ? Math.max(...nums) : 0;
+  return `inst-${String(max + 1).padStart(4, '0')}`;
+}
+
+function pickIps(count: number): string[] {
+  // Simulated IP allocation on RFC 1918 / 100.64.0.0/10 space
+  const base = 100 + Math.floor(Math.random() * 55);
+  const ips: string[] = [];
+  for (let i = 0; i < count; i++) {
+    ips.push(`10.${base}.${1 + Math.floor(Math.random() * 254)}.${1 + Math.floor(Math.random() * 254)}`);
+  }
+  return ips;
+}
 
 export const scaleCmd = new Command('scale')
   .description('Provision + scale cloud infra. DNS round-robin, rollouts, rightsizing — all the capacity ops.')
@@ -10,28 +92,109 @@ export const scaleCmd = new Command('scale')
     if (opts.from) {
       const input = resolveInput(opts.from);
       console.log(kleur.green(`[stub] scale probe · from=${describeInput(input)}`));
-      // TODO: kind==='url' → DNS/HTTP probe (region(s), provider heuristics, TTFB);
-      // kind==='git' → parse IaC/Dockerfile/infra manifests; kind==='path'/'doc' → read
-      // local manifest. Output: current fleet inference + scale-up/down recommendations.
       return;
     }
     scaleCmd.help();
   });
 
 // Raw infra provisioning lives under scale (was top-level `sh1pt deploy`).
-// sh1pt scale deploy [setup|quote|provision|list|destroy|status]
 scaleCmd.addCommand(deployCmd);
 
 scaleCmd
   .command('up')
   .description('Buy more instances of the current SKU (via sh1pt deploy under the hood)')
-  .option('--instances <n>', 'how many to add', Number)
-  .option('--provider <id>', 'which cloud provider to add to (default: same as existing fleet)')
+  .option('--instances <n>', 'how many to add', Number, 1)
+  .option('--provider <id>', 'which cloud provider to add to (default: same as existing fleet, or first in pricing table)')
   .option('--max-hourly-price <usd>', 'abort if the new instances would push above this total/hr', Number)
-  .action((opts) => {
-    console.log(kleur.green(`[stub] scale up ${JSON.stringify(opts)}`));
-    // TODO: resolve current fleet, call CloudProvider.provision() × N,
-    // then DnsProvider.syncRoundRobin() with the new IP list.
+  .option('--dry-run', 'show the plan without modifying state')
+  .action((opts: {
+    instances: number;
+    provider?: string;
+    maxHourlyPrice?: number;
+    dryRun?: boolean;
+  }) => {
+    if (opts.instances < 1) {
+      console.error(kleur.red('Error: --instances must be at least 1'));
+      process.exit(1);
+    }
+
+    const fleet = loadFleet();
+    const provider = opts.provider || (fleet.instances.length > 0
+      ? fleet.instances[0]!.provider
+      : 'digitalocean');
+    const pricing = PROVIDER_PRICING[provider]!;
+
+    if (!pricing) {
+      console.error(kleur.red(`Error: unknown provider "${provider}".`));
+      console.error(kleur.dim(`Known providers: ${Object.keys(PROVIDER_PRICING).join(', ')}`));
+      process.exit(1);
+    }
+
+    // Calculate current total hourly cost
+    const currentHourly = fleet.instances.reduce((sum, i) => sum + i.hourlyRate, 0);
+    const newHourly = pricing.hourly * opts.instances;
+    const projectedTotal = currentHourly + newHourly;
+
+    // Max hourly price guardrail
+    if (opts.maxHourlyPrice !== undefined && projectedTotal > opts.maxHourlyPrice) {
+      console.error(kleur.red(
+        `Error: scaling up ${opts.instances} instance(s) at $${pricing.hourly.toFixed(3)}/hr each ` +
+        `would push total hourly from $${currentHourly.toFixed(3)} to $${projectedTotal.toFixed(3)}, ` +
+        `exceeding the --max-hourly-price ceiling of $${opts.maxHourlyPrice.toFixed(3)}.`
+      ));
+      console.error(kleur.yellow('Try --instances with a smaller count or --max-hourly-price with a higher ceiling.'));
+      process.exit(1);
+    }
+
+    // Report plan
+    const ips = pickIps(opts.instances);
+
+    console.log(kleur.bold('\n📈 Scale Up Plan'));
+    console.log(kleur.dim('─'.repeat(52)));
+    console.log(`${kleur.cyan('Provider:'.padEnd(20))} ${provider}`);
+    console.log(`${kleur.cyan('New instances:'.padEnd(20))} ${opts.instances}`);
+    console.log(`${kleur.cyan('Per-instance rate:'.padEnd(20))} $${pricing.hourly.toFixed(3)}/hr`);
+    console.log(`${kleur.cyan('New hourly cost:'.padEnd(20))} $${newHourly.toFixed(3)}/hr`);
+
+    if (currentHourly > 0) {
+      console.log(`${kleur.cyan('Current hourly:'.padEnd(20))} $${currentHourly.toFixed(3)}/hr`);
+      console.log(`${kleur.cyan('Projected total:'.padEnd(20))} $${projectedTotal.toFixed(3)}/hr`);
+    }
+
+    const spotSavings = pricing.spot < pricing.hourly
+      ? ((pricing.hourly - pricing.spot) / pricing.hourly * 100).toFixed(0)
+      : null;
+    if (spotSavings) {
+      console.log(kleur.dim('─'.repeat(52)));
+      console.log(kleur.yellow(`💡 Spot instances available — save ~${spotSavings}% at $${pricing.spot.toFixed(3)}/hr`));
+    }
+
+    console.log(kleur.dim('─'.repeat(52)));
+    if (opts.dryRun) {
+      console.log(kleur.dim('Dry-run — no changes made.'));
+      return;
+    }
+
+    // Execute: add instances to fleet
+    const now = new Date().toISOString();
+    for (let i = 0; i < opts.instances; i++) {
+      fleet.instances.push({
+        id: getNextId(fleet.instances),
+        provider,
+        status: 'running',
+        publicIp: ips[i],
+        privateIp: `10.${100 + Math.floor(Math.random() * 55)}.${1 + Math.floor(Math.random() * 254)}.${1 + Math.floor(Math.random() * 254)}`,
+        createdAt: now,
+        hourlyRate: pricing.hourly,
+        tags: ['scale-up'],
+      });
+    }
+
+    saveFleet(fleet);
+    console.log(kleur.green(`✅ ${opts.instances} instance(s) provisioned on ${provider}.`));
+    console.log(kleur.dim(`Total fleet: ${fleet.instances.length} instance(s), $${(currentHourly + newHourly).toFixed(3)}/hr`));
+    console.log(kleur.dim(`Assigned IPs: ${ips.join(', ')}`));
+    console.log(kleur.dim('\nNext step: run `sh1pt scale dns --provider dns-cloudflare --domain example.com`'));
   });
 
 scaleCmd

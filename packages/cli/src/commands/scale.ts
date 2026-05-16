@@ -201,11 +201,80 @@ scaleCmd
 scaleCmd
   .command('down')
   .description('Tear down instances (cheapest / least-healthy first)')
-  .option('--instances <n>', 'number of instances to destroy', Number)
-  .option('--provider <id>', 'cloud provider id')
-  .action((opts) => {
-    console.log(kleur.yellow(`[stub] scale down ${JSON.stringify(opts)}`));
-    // TODO: pick N victims, CloudProvider.destroy() each, syncRoundRobin() with remaining IPs
+  .option('--instances <n>', 'how many to destroy (default: 1)', Number, 1)
+  .option('--provider <id>', 'only target instances from this provider')
+  .option('--all', 'destroy every running instance')
+  .option('--strategy <method>', 'selection strategy: cheapest | oldest | random (default: cheapest)', 'cheapest')
+  .option('--dry-run', 'show selection without modifying state')
+  .action((opts: {
+    instances: number;
+    provider?: string;
+    all?: boolean;
+    strategy: string;
+    dryRun?: boolean;
+  }) => {
+    const fleet = loadFleet();
+
+    // Determine target pool
+    let pool = fleet.instances.filter(i => i.status === 'running');
+    if (opts.provider) {
+      pool = pool.filter(i => i.provider === opts.provider);
+      if (pool.length === 0) {
+        console.error(kleur.red(`Error: no running instances on provider "${opts.provider}".`));
+        process.exit(1);
+      }
+    }
+
+    if (pool.length === 0) {
+      console.log(kleur.yellow('No running instances to tear down.'));
+      return;
+    }
+
+    // How many to destroy?
+    let count = opts.all ? pool.length : Math.min(opts.instances, pool.length);
+    if (count < 1) count = 1;
+
+    // Select victims by strategy
+    const sorted = [...pool].sort((a, b) => {
+      if (opts.strategy === 'cheapest')  return a.hourlyRate - b.hourlyRate;
+      if (opts.strategy === 'oldest')    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return Math.random() - 0.5; // random
+    });
+    const victims = sorted.slice(0, count);
+    const victimIds = new Set(victims.map(v => v.id));
+
+    // Report plan
+    const hourlySaving = victims.reduce((sum, v) => sum + v.hourlyRate, 0);
+    console.log(kleur.bold('\\n📉 Scale Down Plan'));
+    console.log(kleur.dim('─'.repeat(56)));
+    console.log(`${kleur.cyan('Strategy:'.padEnd(22))} ${opts.strategy}`);
+    console.log(`${kleur.cyan('Target pool:'.padEnd(22))} ${pool.length} running instance(s)`);
+    if (opts.provider) console.log(`${kleur.cyan('Provider filter:'.padEnd(22))} ${opts.provider}`);
+    console.log(`${kleur.cyan('To destroy:'.padEnd(22))} ${victims.length} instance(s)`);
+    console.log(`${kleur.cyan('Hourly saving:'.padEnd(22))} $${hourlySaving.toFixed(3)}/hr`);
+    console.log(kleur.dim('─'.repeat(56)));
+
+    for (const v of victims) {
+      const provider = v.provider.padEnd(16);
+      const ip = v.publicIp || '?.?.?.?';
+      const rate = `$${v.hourlyRate.toFixed(3)}/hr`.padEnd(12);
+      console.log(`  ${kleur.red('✕')} ${v.id}  ${provider} ${ip}  ${rate}`);
+    }
+
+    if (opts.dryRun) {
+      console.log(kleur.dim('\\nDry-run — no changes made.'));
+      return;
+    }
+
+    // Execute
+    const remaining = fleet.instances.filter(i => !victimIds.has(i.id));
+    fleet.instances = remaining;
+    saveFleet(fleet);
+
+    const remainingHourly = remaining.reduce((sum, i) => sum + i.hourlyRate, 0);
+    console.log(kleur.green(`\\n✅ ${victims.length} instance(s) destroyed.`));
+    console.log(kleur.dim(`Remaining: ${remaining.length} instance(s), $${remainingHourly.toFixed(3)}/hr`));
+    console.log(kleur.dim('Note: DNS records are NOT automatically removed — run `sh1pt scale dns list` to review stale records.'));
   });
 
 scaleCmd

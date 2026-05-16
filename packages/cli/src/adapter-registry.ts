@@ -121,7 +121,43 @@ export const CATEGORIES: readonly AdapterCategory[] = [
     id: 'targets',
     pkgPrefix: '@profullstack/sh1pt-target',
     description: 'Distribution targets — stores, registries, CDNs, deploy platforms',
-    adapters: ['browser-chrome', 'chat-discord', 'chat-signal', 'chat-slack', 'chat-telegram', 'chat-whatsapp', 'console-steam', 'deploy-denodeploy', 'deploy-firebase', 'deploy-fly', 'deploy-netlify', 'deploy-railway', 'deploy-render', 'deploy-vercel', 'deploy-workers', 'desktop-linux', 'desktop-mac', 'desktop-steamos', 'desktop-win', 'mobile-expo', 'mobile-ios', 'pkg-aube', 'pkg-cdn', 'pkg-deno', 'pkg-docker', 'pkg-fdroid', 'pkg-ghpackages', 'pkg-homebrew', 'pkg-jsr', 'pkg-npm', 'tv-androidtv', 'tv-firetv', 'tv-roku', 'tv-tvos', 'tv-webos', 'web-static', 'xr-meta-quest', 'xr-pico', 'xr-sidequest', 'xr-steamvr', 'xr-visionos', 'xr-webxr'],
+    // Synced with packages/targets/* directories. Run `ls packages/targets/` to regenerate.
+    adapters: [
+      // Browsers
+      'browser-chrome', 'browser-edge', 'browser-firefox', 'browser-safari',
+      // Chat / messaging platforms
+      'chat-discord', 'chat-signal', 'chat-slack', 'chat-telegram', 'chat-whatsapp',
+      // Consoles
+      'console-steam',
+      // Deploy / hosting
+      'deploy-coolify', 'deploy-denodeploy', 'deploy-firebase', 'deploy-fly',
+      'deploy-lambda', 'deploy-netlify', 'deploy-railway', 'deploy-render',
+      'deploy-vercel', 'deploy-workers',
+      // Desktop
+      'desktop-linux', 'desktop-mac', 'desktop-steamos', 'desktop-win',
+      // Specialty runtimes
+      'exe-dev',
+      // Mobile
+      'mobile-android', 'mobile-expo', 'mobile-ios',
+      // Payment targets
+      'payment-adyen', 'payment-coinpay', 'payment-paypal', 'payment-square', 'payment-stripe',
+      // Packages & registries
+      'pkg-apt', 'pkg-aube', 'pkg-aur', 'pkg-cdn', 'pkg-deno', 'pkg-docker',
+      'pkg-fdroid', 'pkg-flatpak', 'pkg-ghpackages', 'pkg-homebrew', 'pkg-jsr',
+      'pkg-nix', 'pkg-npm', 'pkg-perry', 'pkg-scoop', 'pkg-snap', 'pkg-winget',
+      // Editor / IDE plugins
+      'plugin-jetbrains', 'plugin-vscode',
+      // QA targets
+      'qa-geisterhand',
+      // SDK registries
+      'sdk-pypi',
+      // Smart TV
+      'tv-androidtv', 'tv-firetv', 'tv-roku', 'tv-tvos', 'tv-webos',
+      // Web
+      'web-static',
+      // XR / VR / AR
+      'xr-meta-quest', 'xr-pico', 'xr-sidequest', 'xr-steamvr', 'xr-visionos', 'xr-webxr',
+    ],
   },
   {
     id: 'vcs',

@@ -24,8 +24,20 @@ export const CATEGORIES: readonly AdapterCategory[] = [
   {
     id: 'ai',
     pkgPrefix: '@profullstack/sh1pt-ai',
-    description: 'AI API providers for content generation — Claude (Anthropic), OpenAI, Qwen, Gemini',
-    adapters: ['claude', 'gemini', 'openai', 'qwen'],
+    description: 'AI API providers for content generation — Claude (Anthropic), OpenAI, Qwen, Gemini, and BYOK providers',
+    adapters: [
+      'ai21', 'aionlabs', 'akashml', 'alibaba-cloud', 'amazon-bedrock',
+      'arcee', 'atlascloud', 'azure', 'baidu', 'baseten', 'cerebras',
+      'chutes', 'clarifai', 'claude', 'cloudflare', 'cohere', 'deepinfra',
+      'deepseek', 'featherless', 'fireworks', 'friendli', 'gemini',
+      'gmicloud', 'google-vertex', 'groq', 'inception', 'inceptron',
+      'infermatic', 'inflection', 'ionet', 'kimi', 'liquid', 'mancer',
+      'minimax', 'mistral', 'moonshot', 'morph', 'nebius', 'nextbit',
+      'novita', 'openai', 'openinference', 'parasail', 'perceptron',
+      'perplexity', 'phala', 'qwen', 'reka', 'relace', 'sambanova',
+      'siliconflow', 'stepfun', 'switchpoint', 'together', 'venice',
+      'wandb', 'xai', 'xiaomi', 'zai',
+    ],
   },
   {
     id: 'bots',

@@ -5,6 +5,7 @@ import { buildCmd } from './commands/build.js';
 import { promoteCmd } from './commands/promote.js';
 import { scaleCmd } from './commands/scale.js';
 import { iterateCmd } from './commands/iterate.js';
+import { shipCmd } from './commands/ship.js';
 import { loginCmd, logoutCmd } from './commands/login.js';
 import { secretsCmd } from './commands/secrets.js';
 import { configCmd } from './commands/config.js';
@@ -31,6 +32,7 @@ program
 // Entity-ops lives under `build` (see docs/prd/entityctl.md).
 program.addCommand(buildCmd);      // build    · compile · entity-ops nested
 program.addCommand(promoteCmd);    // promote  · publish (ship), ads, merch — anything that gets users
+program.addCommand(shipCmd);       // ship     · publish built artifacts to stores and registries
 program.addCommand(scaleCmd);      // scale    · provision (deploy), DNS, rollouts, cost
 program.addCommand(iterateCmd);    // iterate  · observe + agent-propose + ship + measure (agents nested)
 

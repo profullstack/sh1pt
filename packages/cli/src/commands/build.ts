@@ -1,7 +1,19 @@
 import { Command } from 'commander';
+import { spawnSync } from 'node:child_process';
 import kleur from 'kleur';
 import { describeInput, resolveInput } from '../input.js';
 import { entityCmd } from './entity.js';
+
+function run(argv: string[], env?: Record<string, string>): number {
+  console.log(kleur.cyan(`→ ${argv.join(' ')}`));
+  const [cmd, ...rest] = argv;
+  if (!cmd) throw new Error('empty command');
+  const r = spawnSync(cmd, rest, {
+    stdio: 'inherit',
+    env: env ? { ...process.env, ...env } : process.env,
+  });
+  return r.status ?? 0;
+}
 
 export const buildCmd = new Command('build')
   .description('Build one or more targets locally or in the sh1pt cloud')
@@ -27,3 +39,21 @@ export const buildCmd = new Command('build')
 // packet, checklist) is an artifact the CLI produces, so it fits the build
 // verb. See docs/prd/entityctl.md.
 buildCmd.addCommand(entityCmd);
+
+// Maintainer ops — lockstep version bump for the three published sh1pt
+// packages (core / policy / cli). Wraps the root-level `pnpm version:*`
+// scripts; only works from inside the sh1pt repo. The matching publish
+// flow lives under `sh1pt promote publish npm` (publishing IS promotion).
+
+for (const bump of ['patch', 'minor', 'major'] as const) {
+  buildCmd
+    .command(`version:${bump}`)
+    .description(`Bump ${bump} version of core/policy/cli in lockstep + regenerate pnpm-lock`)
+    .action(() => {
+      process.exit(run(['pnpm', `version:${bump}`]));
+    });
+}
+
+// Re-export the `run` helper so promote.ts can shell out without
+// duplicating the spawnSync wiring.
+export { run as runShell };

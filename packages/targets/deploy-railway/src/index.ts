@@ -1,4 +1,4 @@
-import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { defineTarget, manualSetup, exec } from '@profullstack/sh1pt-core';
 
 interface Config {
   projectId: string;
@@ -19,7 +19,23 @@ export default defineTarget<Config>({
     const env = config.environment ?? (ctx.channel === 'stable' ? 'production' : 'staging');
     ctx.log(`railway up · service=${config.serviceId} · env=${env}`);
     if (ctx.dryRun) return { id: 'dry-run' };
-    // TODO: `railway up --service ${serviceId} --environment ${env}` with RAILWAY_TOKEN
+
+    const token = ctx.secret('RAILWAY_TOKEN');
+    if (!token) {
+      throw new Error('RAILWAY_TOKEN secret is required — run: sh1pt secret set RAILWAY_TOKEN <token>');
+    }
+
+    const args = ['up', '--ci'];
+    if (config.serviceId) args.push('--service', config.serviceId);
+    if (env) args.push('--environment', env);
+
+    ctx.log(`running: railway ${args.join(' ')}`);
+    await exec('railway', args, {
+      log: ctx.log,
+      throwOnNonZero: true,
+      env: { RAILWAY_TOKEN: token },
+    });
+
     return {
       id: `${config.serviceId}@${ctx.version}`,
       meta: { projectId: config.projectId, environment: env },

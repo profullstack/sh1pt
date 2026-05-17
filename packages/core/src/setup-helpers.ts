@@ -23,6 +23,55 @@ export function autoSetup<T extends { label: string; setup?: SetupFn<any> }>(ada
   return { ...adapter, setup: adapter.setup ?? stubSetup(adapter.label) };
 }
 
+// Polymorphic guide helper. Two call sites:
+//
+//   1. As an adapter `setup:` value — `setupGuide({ label, vendorDocUrl?, steps })`
+//      returns a SetupFn that just logs the steps (the manual-paste fallback).
+//   2. From inside `ship()` / `build()` when the adapter detects unmet
+//      prerequisites — `return setupGuide({ title, steps })` produces a
+//      ShipResult-shaped object the caller can return directly.
+//
+// Discriminated on whether `label` or `title` is supplied.
+export interface SetupGuideAsSetupOpts<C = unknown> {
+  label: string;
+  vendorDocUrl?: string;
+  steps: string[];
+  config?: C;
+}
+export interface SetupGuideAsResultOpts {
+  title: string;
+  steps: string[];
+}
+export interface SetupGuideResult {
+  id: string;
+  artifact: string;
+  status: 'needs-setup';
+  title: string;
+  steps: string[];
+}
+export function setupGuide<C = unknown>(opts: SetupGuideAsSetupOpts<C>): SetupFn<C>;
+export function setupGuide(opts: SetupGuideAsResultOpts): SetupGuideResult;
+export function setupGuide<C = unknown>(
+  opts: SetupGuideAsSetupOpts<C> | SetupGuideAsResultOpts,
+): SetupFn<C> | SetupGuideResult {
+  if ('label' in opts) {
+    const o = opts;
+    return async (ctx) => {
+      ctx.log(`${o.label}: setup steps`);
+      for (const line of o.steps) ctx.log(`  ${line}`);
+      if (o.vendorDocUrl) await ctx.open(o.vendorDocUrl);
+      return { ok: false, config: (o.config ?? {}) as C, manual: o.steps };
+    };
+  }
+  return {
+    id: 'setup-needed',
+    artifact: 'setup-needed',
+    status: 'needs-setup',
+    title: opts.title,
+    steps: opts.steps,
+  };
+}
+
 // Default fallback for adapters that haven't declared a real setup yet.
 // Emitted automatically by every defineXxx() so `sh1pt <cat> <name> setup`
 // is always available.
@@ -154,20 +203,53 @@ export function tokenSetup<C = unknown>(opts: TokenSetupOpts<C>): SetupFn<C> {
   };
 }
 
-// OAuth adapters — until the cloud redirect flow lands, we fall back to
-// the manual-token-paste path with explicit steps for the vendor's
-// developer console.
+// OAuth adapters. Two paths:
+//
+//   1. Loopback PKCE (RFC 8252) — the good UX. CLI starts a tiny HTTP
+//      server on localhost:<port>, opens the vendor's auth URL with that
+//      as redirect_uri, captures the ?code= callback, exchanges it for a
+//      token. No client secret needed (PKCE). Used by `gh auth login`,
+//      `gcloud auth login`, Claude Code login, etc.
+//
+//   2. Manual paste — the universal fallback. Vendor app not registered
+//      yet, port can't bind, callback never arrives, token exchange 4xx,
+//      etc. → log the reason, print the steps, prompt for a token.
+//
+// Adapter authors opt in by populating `loopback`. Without it, oauthSetup
+// behaves exactly like before (paste-only).
 export interface OAuthSetupOpts<C = unknown> {
   secretKey: string;
   label: string;
   vendorDocUrl?: string;
   steps: string[];
   config?: C;
+  // Provide to enable the loopback PKCE flow. clientId is public (PKCE
+  // means no secret); read from env first to allow per-deploy overrides
+  // without touching adapter code: `SH1PT_<UPPER_LABEL>_CLIENT_ID`.
+  loopback?: {
+    clientId: string;                          // public OAuth client ID
+    authUrl: string;                           // e.g. 'https://accounts.google.com/o/oauth2/v2/auth'
+    tokenUrl: string;                          // e.g. 'https://oauth2.googleapis.com/token'
+    scopes: string[];                          // requested scopes
+    redirectUri?: string;                      // default 'http://127.0.0.1:8765/callback'
+    refreshSecretKey?: string;                 // vault key for refresh_token; default `${secretKey}_REFRESH`
+    extraAuthParams?: Record<string, string>;  // e.g. Google's { access_type: 'offline', prompt: 'consent' }
+    // Some providers (Reddit) require Basic-auth on the token endpoint.
+    // Most don't — leave undefined to use straight form-encoded POST.
+    tokenAuthHeader?: string;
+  };
 }
 
 export function oauthSetup<C = unknown>(opts: OAuthSetupOpts<C>): SetupFn<C> {
   return async (ctx) => {
-    ctx.log(`${opts.label} uses OAuth. Automated OAuth flow isn't wired yet — capturing a token manually.`);
+    if (opts.loopback) {
+      const ok = await runLoopbackOAuth(ctx, opts);
+      if (ok) return { ok: true, config: (opts.config ?? {}) as C };
+      ctx.log(`  loopback flow didn't complete — falling back to manual paste.`);
+    } else {
+      ctx.log(`${opts.label} uses OAuth. Automated OAuth flow not wired for this adapter — capturing a token manually.`);
+    }
+
     for (const line of opts.steps) ctx.log(`  ${line}`);
     if (opts.vendorDocUrl) await ctx.open(opts.vendorDocUrl);
 
@@ -181,6 +263,154 @@ export function oauthSetup<C = unknown>(opts: OAuthSetupOpts<C>): SetupFn<C> {
     await ctx.setSecret(opts.secretKey, token);
     return { ok: true, config: (opts.config ?? {}) as C };
   };
+}
+
+// Returns true on successful token capture (access_token saved to vault),
+// false on any failure (caller falls through to paste flow).
+async function runLoopbackOAuth(ctx: SetupContext, opts: OAuthSetupOpts<unknown>): Promise<boolean> {
+  const lb = opts.loopback!;
+  const { createServer } = await import('node:http');
+  const { randomBytes, createHash } = await import('node:crypto');
+
+  const verifier = base64url(randomBytes(32));
+  const challenge = base64url(createHash('sha256').update(verifier).digest());
+  const state = base64url(randomBytes(16));
+
+  const redirectUri = lb.redirectUri ?? 'http://127.0.0.1:8765/callback';
+  let port: number;
+  let callbackPath: string;
+  try {
+    const u = new URL(redirectUri);
+    port = u.port ? Number(u.port) : 80;
+    callbackPath = u.pathname || '/callback';
+  } catch {
+    ctx.log(`  invalid redirectUri: ${redirectUri}`);
+    return false;
+  }
+
+  const authUrl = new URL(lb.authUrl);
+  authUrl.searchParams.set('client_id', lb.clientId);
+  authUrl.searchParams.set('redirect_uri', redirectUri);
+  authUrl.searchParams.set('response_type', 'code');
+  authUrl.searchParams.set('scope', lb.scopes.join(' '));
+  authUrl.searchParams.set('code_challenge', challenge);
+  authUrl.searchParams.set('code_challenge_method', 'S256');
+  authUrl.searchParams.set('state', state);
+  for (const [k, v] of Object.entries(lb.extraAuthParams ?? {})) {
+    authUrl.searchParams.set(k, v);
+  }
+
+  ctx.log(`${opts.label}: starting loopback OAuth on ${redirectUri}`);
+  ctx.log(`  Click to authenticate: ${authUrl.toString()}`);
+
+  // Race: callback wins, timeout loses, server-bind error loses.
+  const codePromise = new Promise<{ code: string } | { error: string }>((resolve) => {
+    const server = createServer((req, res) => {
+      if (!req.url) return;
+      const reqUrl = new URL(req.url, `http://127.0.0.1:${port}`);
+      if (reqUrl.pathname !== callbackPath) {
+        res.writeHead(404).end();
+        return;
+      }
+      const recvState = reqUrl.searchParams.get('state');
+      const code = reqUrl.searchParams.get('code');
+      const errorParam = reqUrl.searchParams.get('error');
+
+      const finish = (status: number, body: string, payload: { code: string } | { error: string }) => {
+        res.writeHead(status, { 'content-type': 'text/html; charset=utf-8' }).end(body);
+        // Defer close so the response actually flushes to the browser.
+        setTimeout(() => server.close(), 50);
+        resolve(payload);
+      };
+
+      if (errorParam) {
+        finish(400, htmlPage(`✗ ${escapeHtml(errorParam)}`, 'You can close this tab.'), { error: errorParam });
+        return;
+      }
+      if (recvState !== state) {
+        finish(400, htmlPage('✗ state mismatch', 'Possible CSRF — re-run setup.'), { error: 'state mismatch' });
+        return;
+      }
+      if (!code) {
+        finish(400, htmlPage('✗ missing code', 'No authorization code in callback.'), { error: 'missing code' });
+        return;
+      }
+      finish(200, htmlPage('✓ Logged in', 'You can close this tab and return to the terminal.'), { code });
+    });
+
+    server.on('error', (err) => resolve({ error: `bind: ${err.message}` }));
+    server.listen(port, '127.0.0.1');
+  });
+
+  await ctx.open(authUrl.toString());
+
+  const result = await Promise.race<{ code: string } | { error: string }>([
+    codePromise,
+    new Promise((resolve) => setTimeout(() => resolve({ error: 'timeout (5m)' }), 5 * 60 * 1000)),
+  ]);
+
+  if ('error' in result) {
+    ctx.log(`  ${result.error}`);
+    return false;
+  }
+
+  const tokenBody = new URLSearchParams({
+    grant_type: 'authorization_code',
+    code: result.code,
+    redirect_uri: redirectUri,
+    client_id: lb.clientId,
+    code_verifier: verifier,
+  });
+
+  const headers: Record<string, string> = {
+    'content-type': 'application/x-www-form-urlencoded',
+    accept: 'application/json',
+  };
+  if (lb.tokenAuthHeader) headers.authorization = lb.tokenAuthHeader;
+
+  let tokenRes: Response;
+  try {
+    tokenRes = await fetch(lb.tokenUrl, { method: 'POST', headers, body: tokenBody });
+  } catch (err) {
+    ctx.log(`  token exchange network error: ${err instanceof Error ? err.message : String(err)}`);
+    return false;
+  }
+
+  if (!tokenRes.ok) {
+    const body = await tokenRes.text().catch(() => '');
+    ctx.log(`  token exchange ${tokenRes.status}: ${body.slice(0, 200)}`);
+    return false;
+  }
+
+  const data = (await tokenRes.json().catch(() => ({}))) as {
+    access_token?: string;
+    refresh_token?: string;
+    expires_in?: number;
+  };
+
+  if (!data.access_token) {
+    ctx.log(`  token response missing access_token`);
+    return false;
+  }
+
+  await ctx.setSecret(opts.secretKey, data.access_token);
+  if (data.refresh_token) {
+    await ctx.setSecret(lb.refreshSecretKey ?? `${opts.secretKey}_REFRESH`, data.refresh_token);
+  }
+  ctx.log(`  ✓ ${opts.label} authorized.`);
+  return true;
+}
+
+function base64url(buf: Buffer): string {
+  return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+}
+
+function htmlPage(heading: string, body: string): string {
+  return `<!doctype html><html><body style="font-family:-apple-system,system-ui,sans-serif;max-width:420px;margin:4em auto;text-align:center;color:#222"><h1 style="font-weight:500">${escapeHtml(heading)}</h1><p>${escapeHtml(body)}</p></body></html>`;
 }
 
 // Browser-mode adapters where the official API is locked behind a paid

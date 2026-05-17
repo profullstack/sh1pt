@@ -19,6 +19,7 @@ export function fakeBuildContext(overrides: Record<string, unknown> = {}) {
     env: {},
     secret: makeVault({}),
     log: fakeLog(),
+    dryRun: true,
     ...overrides,
   };
 }

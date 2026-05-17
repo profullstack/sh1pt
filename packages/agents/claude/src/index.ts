@@ -19,13 +19,13 @@ export default defineAgent<Config>({
         installed: result.exitCode === 0,
         version,
         authenticated: true, // real impl: `claude --check-auth` or similar
-        installHint: 'mise use npm:@anthropic-ai/claude-code',
+        installHint: 'install with mise: mise use npm:@anthropic-ai/claude-code',
       };
     } catch {
       return {
         installed: false,
         authenticated: false,
-        installHint: 'mise use npm:@anthropic-ai/claude-code',
+        installHint: 'install with mise: mise use npm:@anthropic-ai/claude-code',
         authHint: 'run `claude /login` after install',
       };
     }

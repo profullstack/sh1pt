@@ -1,6 +1,6 @@
 {
   "name": "@profullstack/sh1pt-social-moltexchange",
-  "version": "0.1.11",
+  "version": "0.1.15",
   "type": "module",
   "main": "./src/index.ts",
   "scripts": {
@@ -21,16 +21,5 @@
   "bugs": "https://github.com/profullstack/sh1pt/issues",
   "files": [
     "dist"
-  ],
-  "publishConfig": {
-    "access": "public",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
-      }
-    }
-  }
+  ]
 }

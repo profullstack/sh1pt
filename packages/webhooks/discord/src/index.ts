@@ -18,20 +18,7 @@ export default defineWebhookTarget<Config>({
   label: 'Discord (channel webhook)',
 
   format(payload, config) {
-    // Discord accepts { content, embeds, username, avatar_url }.
-    const prefix = config.mention ? `${config.mention} ` : '';
-    const summary = summarize(payload);
-    return {
-      username: config.username ?? 'sh1pt',
-      avatar_url: config.avatarUrl,
-      content: `${prefix}${summary}`,
-      embeds: [{
-        title: payload.event,
-        description: '```json\n' + JSON.stringify(payload.data, null, 2).slice(0, 1800) + '\n```',
-        timestamp: payload.timestamp,
-        color: colorFor(payload.event),
-      }],
-    };
+    return formatDiscordPayload(payload, config);
   },
 
   async send(ctx, payload, config): Promise<WebhookResult> {
@@ -40,9 +27,22 @@ export default defineWebhookTarget<Config>({
     if (!url) throw new Error(`${urlKey} not in vault — paste the Discord webhook URL via \`sh1pt secret set ${urlKey}\``);
     ctx.log(`discord webhook · event=${payload.event}`);
     if (ctx.dryRun) return { ok: true, url };
-    // TODO: POST url with Content-Type application/json; body = this.format(payload, config).
-    // Discord returns 204 on success, 429 with retry_after on rate limit.
-    return { ok: true, url };
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(formatDiscordPayload(payload, config)),
+    });
+    if (!res.ok) {
+      return {
+        ok: false,
+        status: res.status,
+        error: await readDiscordError(res),
+        url,
+      };
+    }
+
+    return { ok: true, status: res.status, url };
   },
 
   async setup(ctx: SetupContext): Promise<SetupResult<Config>> {
@@ -84,6 +84,36 @@ export default defineWebhookTarget<Config>({
     return { ok: true, config: { urlKey } };
   },
 });
+
+function formatDiscordPayload(
+  payload: { event: string; timestamp: string; data: Record<string, unknown> },
+  config: Config,
+): unknown {
+  const prefix = config.mention ? `${config.mention} ` : '';
+  const summary = summarize(payload);
+  return {
+    username: config.username ?? 'sh1pt',
+    avatar_url: config.avatarUrl,
+    content: `${prefix}${summary}`,
+    embeds: [{
+      title: payload.event,
+      description: '```json\n' + JSON.stringify(payload.data, null, 2).slice(0, 1800) + '\n```',
+      timestamp: payload.timestamp,
+      color: colorFor(payload.event),
+    }],
+  };
+}
+
+async function readDiscordError(res: Response): Promise<string> {
+  const text = await res.text().catch(() => '');
+  if (!text) return res.statusText;
+  try {
+    const data = JSON.parse(text) as { message?: string };
+    return data.message ?? text;
+  } catch {
+    return text;
+  }
+}
 
 function summarize(p: { event: string; data: Record<string, unknown> }): string {
   if (p.event.startsWith('ship.')) return `🚀 ship ${p.event.replace('ship.', '')}: ${p.data.target ?? ''}`;

@@ -15,6 +15,7 @@ export default defineTarget<Config>({
   label: 'npm',
   async build(ctx, config) {
     const pkgDir = config.packageDir ? join(ctx.projectDir, config.packageDir) : ctx.projectDir;
+    if (ctx.dryRun) return { artifact: `${ctx.outDir}/package.tgz` };
     ctx.log(`npm pack in ${pkgDir}`);
     await exec('npm', ['pack', '--pack-destination', ctx.outDir], {
       cwd: pkgDir,

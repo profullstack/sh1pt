@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
+import { Suspense } from 'react';
 import './globals.css';
 import NavLink from './components/NavLink';
+import RobautoPixel from './components/RobautoPixel';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata = {
@@ -31,6 +33,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <Suspense fallback={null}>
+          <RobautoPixel />
+        </Suspense>
         <div className="brand-stripe" aria-hidden />
         <header className="site-header">
           <nav className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem' }}>

@@ -11,7 +11,8 @@ export default defineTarget<Config>({
   kind: 'payment',
   label: 'PayPal (CLI wrapper)',
 
-  async build(ctx, config) {
+  async build(ctx, _config) {
+    if (ctx.dryRun) return { artifact: 'dry-run' };
     ctx.log('paypal: verifying CLI availability');
     try {
       await exec('paypal', ['--version'], { log: ctx.log, throwOnNonZero: false });

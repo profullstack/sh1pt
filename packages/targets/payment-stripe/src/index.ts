@@ -11,7 +11,8 @@ export default defineTarget<Config>({
   kind: 'payment',
   label: 'Stripe (CLI wrapper)',
 
-  async build(ctx, config) {
+  async build(ctx, _config) {
+    if (ctx.dryRun) return { artifact: 'dry-run' };
     ctx.log('stripe: verifying CLI availability');
 
     // 1. Auto-install CLI if missing
@@ -27,7 +28,7 @@ export default defineTarget<Config>({
     // 2. Check and set API key
     const key = ctx.secret('STRIPE_API_KEY');
     if (!key) {
-      throw new Error('STRIPE_API_KEY not set. Run: sh1pt secret set STRIPE_API_KEY <key>');
+      throw new Error('STRIPE_API_KEY not set — run `sh1pt secret set STRIPE_API_KEY <key>` (required)');
     }
 
     try {

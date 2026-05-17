@@ -1,4 +1,4 @@
-import { defineSocial, tokenSetup } from '@profullstack/sh1pt-core';
+import { defineSocial, tokenSetup, type SocialPost } from '@profullstack/sh1pt-core';
 
 // Telegram Bot API. Bots auth with a bot token from @BotFather; channel /
 // group posting requires the bot to be added as admin to the target chat.
@@ -6,6 +6,8 @@ import { defineSocial, tokenSetup } from '@profullstack/sh1pt-core';
 // for sign-in only, not posting.
 interface Config {
   chatId: string;
+  parseMode?: 'MarkdownV2' | 'HTML';
+  disableNotification?: boolean;
 }
 
 export default defineSocial<Config>({
@@ -14,16 +16,32 @@ export default defineSocial<Config>({
   requires: { maxBodyChars: 4096, maxHashtags: 0, hashtagsInBody: true },
 
   async connect(ctx, config) {
-    if (!ctx.secret('TELEGRAM_BOT_TOKEN')) throw new Error('TELEGRAM_BOT_TOKEN not in vault');
+    if (!ctx.secret('TELEGRAM_BOT_TOKEN')) throw new Error('TELEGRAM_BOT_TOKEN not in vault — run: sh1pt secret set TELEGRAM_BOT_TOKEN <bot-token>');
     return { accountId: config.chatId };
   },
 
   async post(ctx, post, config) {
+    const token = ctx.secret('TELEGRAM_BOT_TOKEN');
+    if (!token) throw new Error('TELEGRAM_BOT_TOKEN not in vault — run: sh1pt secret set TELEGRAM_BOT_TOKEN <bot-token>');
     ctx.log(`telegram message · chat=${config.chatId} · ${post.body.length} chars`);
     if (ctx.dryRun) return { id: 'dry-run', url: 'https://t.me/', platform: 'telegram', publishedAt: new Date().toISOString() };
-    // TODO: POST https://api.telegram.org/bot{token}/sendMessage with { chat_id, text, parse_mode: 'MarkdownV2' }
-    // For media, use sendPhoto / sendVideo / sendMediaGroup.
-    return { id: `tg_${Date.now()}`, url: 'https://t.me/', platform: 'telegram', publishedAt: new Date().toISOString() };
+
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(formatTelegramMessage(post, config)),
+    });
+    const data = await parseTelegramResponse(res);
+    if (!res.ok || !data.ok || !data.result) {
+      throw new Error(data.description ?? res.statusText);
+    }
+
+    return {
+      id: String(data.result.message_id),
+      url: messageUrl(data.result, config),
+      platform: 'telegram',
+      publishedAt: new Date(data.result.date * 1000).toISOString(),
+    };
   },
 
   setup: tokenSetup({
@@ -41,3 +59,38 @@ export default defineSocial<Config>({
     ],
   }),
 });
+
+interface TelegramResponse {
+  ok?: boolean;
+  description?: string;
+  result?: {
+    message_id: number;
+    date: number;
+    chat?: {
+      username?: string;
+    };
+  };
+}
+
+function formatTelegramMessage(post: SocialPost, config: Config): unknown {
+  const link = post.link ? `\n${post.link}` : '';
+  return {
+    chat_id: config.chatId,
+    text: `${post.body}${link}`.slice(0, 4096),
+    parse_mode: config.parseMode,
+    disable_notification: config.disableNotification,
+  };
+}
+
+async function parseTelegramResponse(res: Response): Promise<TelegramResponse> {
+  try {
+    return await res.json() as TelegramResponse;
+  } catch {
+    return { ok: res.ok, description: res.statusText };
+  }
+}
+
+function messageUrl(result: NonNullable<TelegramResponse['result']>, config: Config): string {
+  const username = result.chat?.username ?? (config.chatId.startsWith('@') ? config.chatId.slice(1) : undefined);
+  return username ? `https://t.me/${username}/${result.message_id}` : 'https://t.me/';
+}

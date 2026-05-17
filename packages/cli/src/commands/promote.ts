@@ -10,7 +10,7 @@ import { ensureInstalled, loadInstalledPackage } from '../installer.js';
 import { runShell } from './build.js';
 
 export const promoteCmd = new Command('promote')
-  .description('Run ads + ship swag. Reddit, Meta, TikTok, Google, YouTube, X, Apple Search, LinkedIn, Microsoft — plus Printful/Printify merch.')
+  .description('Run ads + ship swag + list in affiliate marketplaces. Reddit, Meta, TikTok, Google, YouTube, X, Apple Search, LinkedIn, Microsoft — plus Printful/Printify merch and CJ/Rakuten/Impact/etc affiliate programs.')
   .option('--platform <id...>', 'only launch on these platforms')
   .option('--budget <amount>', 'per-platform budget override', Number)
   .option('--duration <span>', 'e.g. 7d, 14d, 30d, ongoing')
@@ -297,11 +297,25 @@ socialCmd
 // prompt. Distinct from `agents/` (which wraps installed CLI binaries
 // like `claude` / `codex`); this is HTTP-API-based content generation
 // keyed off provider API keys held in the vault.
-const AI_PLATFORMS = ['claude', 'openai', 'qwen', 'gemini'];
+const AI_PLATFORMS = [
+  // Real integrations
+  'claude', 'openai', 'qwen', 'gemini',
+  // BYOK stubs (OpenRouter-compatible providers — implementations land
+  // case-by-case; setup() collects the API key into the vault today)
+  'ai21', 'aionlabs', 'akashml', 'alibaba-cloud', 'amazon-bedrock', 'arcee',
+  'atlascloud', 'azure', 'baidu', 'baseten', 'cerebras', 'chutes', 'clarifai',
+  'cloudflare', 'cohere', 'deepinfra', 'deepseek', 'featherless', 'fireworks',
+  'friendli', 'gmicloud', 'google-vertex', 'groq', 'inception', 'inceptron',
+  'infermatic', 'inflection', 'ionet', 'kimi', 'liquid', 'mancer', 'minimax',
+  'mistral', 'moonshot', 'morph', 'nebius', 'nextbit', 'novita',
+  'openinference', 'parasail', 'perceptron', 'perplexity', 'phala', 'reka',
+  'relace', 'sambanova', 'siliconflow', 'stepfun', 'switchpoint', 'together',
+  'venice', 'wandb', 'xai', 'xiaomi', 'zai',
+];
 
 const aiCmd = promoteCmd
   .command('ai')
-  .description('Configure AI providers (Claude, OpenAI, Qwen, Gemini) used to draft ad copy and post bodies');
+  .description('Configure AI providers (Claude, OpenAI, Qwen, Gemini + 50+ BYOK stubs) used to draft ad copy and post bodies');
 
 aiCmd
   .command('setup')
@@ -353,6 +367,113 @@ aiCmd
 function stripAiPrefix(p: string): string {
   return p.replace(/^ai-/, '').toLowerCase();
 }
+
+// Affiliate-network marketplaces — sister of `social` and `ai` but for
+// performance partners. sh1pt user is typically the merchant (listing
+// their product in the network so publishers can promote it for a
+// commission), though many networks support both sides.
+const AFFILIATE_NETWORKS = [
+  'cj', 'rakuten', 'shareasale', 'awin', 'impact', 'partnerstack', 'refersion',
+  'amazon-associates', 'ebay-partner', 'clickbank', 'skimlinks', 'sovrn',
+  'flexoffers', 'avangate', 'tradedoubler', 'jvzoo', 'digistore24',
+  'tapfiliate', 'everflow', 'admitad',
+];
+
+const affiliatesCmd = promoteCmd
+  .command('affiliates')
+  .description('Affiliate network marketplaces — CJ, Rakuten, ShareASale, Awin, Impact, Amazon Associates, ClickBank, and more');
+
+affiliatesCmd
+  .command('setup')
+  .description("Connect affiliate networks — runs each network adapter's setup (API key paste)")
+  .option('--network <id...>', 'e.g. cj rakuten impact (or affiliate-cj, affiliate-impact)')
+  .action(async (opts: { network?: string[] }, cmd: Command) => {
+    const merged = cmd.optsWithGlobals() as { network?: string[]; platform?: string[] };
+    const requested = merged.network ?? opts.network ?? merged.platform;
+    let names = (requested ?? []).map(stripAffiliatePrefix).filter(Boolean);
+
+    if (names.length === 0) {
+      const res = await prompts({
+        type: 'multiselect',
+        name: 'picks',
+        message: 'Which affiliate networks to set up?',
+        choices: AFFILIATE_NETWORKS.map((p) => ({ title: p, value: p })),
+        instructions: false,
+        hint: 'space to select, return to confirm',
+      });
+      names = (res.picks as string[] | undefined) ?? [];
+      if (names.length === 0) {
+        console.log(kleur.dim('nothing selected — aborting.'));
+        return;
+      }
+    }
+
+    const wanted = names.map((n) => `@profullstack/sh1pt-affiliate-${n}`);
+    try {
+      await ensureInstalled(wanted);
+    } catch (err) {
+      console.error(kleur.red(err instanceof Error ? err.message : String(err)));
+      process.exit(1);
+    }
+
+    const ctx = makeCliSetupContext();
+    for (const name of names) {
+      console.log();
+      console.log(kleur.bold().underline(`affiliate: ${name}`));
+      const pkg = `@profullstack/sh1pt-affiliate-${name}`;
+      const adapter = await loadInstalledPackage<AdapterWithSetup>(pkg);
+      if (!adapter || typeof adapter !== 'object' || !('id' in adapter)) {
+        console.log(kleur.yellow(`  failed to load ${pkg} after install — file an issue.`));
+        continue;
+      }
+      await runSetup(adapter, ctx);
+    }
+  });
+
+function stripAffiliatePrefix(p: string): string {
+  return p.replace(/^affiliate-/, '').toLowerCase();
+}
+
+affiliatesCmd
+  .command('list')
+  .description('List available affiliate network adapters')
+  .option('--json')
+  .action((opts: { json?: boolean }) => {
+    if (opts.json) {
+      console.log(JSON.stringify({ networks: AFFILIATE_NETWORKS }, null, 2));
+      return;
+    }
+    console.log(kleur.dim(`available: ${AFFILIATE_NETWORKS.join(', ')}`));
+  });
+
+affiliatesCmd
+  .command('create-program')
+  .description('List your product as a merchant program in a connected network')
+  .requiredOption('--network <id>', 'e.g. cj, impact, partnerstack')
+  .requiredOption('--name <text>', 'program name')
+  .requiredOption('--destination <url>', 'where clicks should land')
+  .option('--commission <rate>', 'numeric — 30 = 30% (percentage) or 30 = $30 (flat)', Number, 20)
+  .option('--commission-type <kind>', 'percentage | flat | tiered', 'percentage')
+  .option('--cookie-days <n>', 'attribution window', Number, 30)
+  .option('--category <kind>', 'saas | ecommerce | finance | other', 'saas')
+  .option('--currency <code>', 'ISO 4217 (for flat commissions)', 'USD')
+  .option('--dry-run')
+  .action((opts) => {
+    console.log(kleur.green(`[stub] affiliates create-program ${JSON.stringify(opts)}`));
+  });
+
+affiliatesCmd
+  .command('stats')
+  .description('Aggregated clicks / conversions / commissions across networks')
+  .option('--network <id>', 'filter to one network')
+  .option('--json')
+  .action((opts: { network?: string; json?: boolean }) => {
+    if (opts.json) {
+      console.log(JSON.stringify({ networks: [], totals: { publishers: 0, clicks: 0, conversions: 0, revenue: 0, commissionsPaid: 0 } }, null, 2));
+      return;
+    }
+    console.log(kleur.dim(`[stub] affiliates stats · network=${opts.network ?? 'all'}`));
+  });
 
 aiCmd
   .command('list')

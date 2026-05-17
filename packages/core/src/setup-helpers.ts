@@ -23,6 +23,55 @@ export function autoSetup<T extends { label: string; setup?: SetupFn<any> }>(ada
   return { ...adapter, setup: adapter.setup ?? stubSetup(adapter.label) };
 }
 
+// Polymorphic guide helper. Two call sites:
+//
+//   1. As an adapter `setup:` value — `setupGuide({ label, vendorDocUrl?, steps })`
+//      returns a SetupFn that just logs the steps (the manual-paste fallback).
+//   2. From inside `ship()` / `build()` when the adapter detects unmet
+//      prerequisites — `return setupGuide({ title, steps })` produces a
+//      ShipResult-shaped object the caller can return directly.
+//
+// Discriminated on whether `label` or `title` is supplied.
+export interface SetupGuideAsSetupOpts<C = unknown> {
+  label: string;
+  vendorDocUrl?: string;
+  steps: string[];
+  config?: C;
+}
+export interface SetupGuideAsResultOpts {
+  title: string;
+  steps: string[];
+}
+export interface SetupGuideResult {
+  id: string;
+  artifact: string;
+  status: 'needs-setup';
+  title: string;
+  steps: string[];
+}
+export function setupGuide<C = unknown>(opts: SetupGuideAsSetupOpts<C>): SetupFn<C>;
+export function setupGuide(opts: SetupGuideAsResultOpts): SetupGuideResult;
+export function setupGuide<C = unknown>(
+  opts: SetupGuideAsSetupOpts<C> | SetupGuideAsResultOpts,
+): SetupFn<C> | SetupGuideResult {
+  if ('label' in opts) {
+    const o = opts;
+    return async (ctx) => {
+      ctx.log(`${o.label}: setup steps`);
+      for (const line of o.steps) ctx.log(`  ${line}`);
+      if (o.vendorDocUrl) await ctx.open(o.vendorDocUrl);
+      return { ok: false, config: (o.config ?? {}) as C, manual: o.steps };
+    };
+  }
+  return {
+    id: 'setup-needed',
+    artifact: 'setup-needed',
+    status: 'needs-setup',
+    title: opts.title,
+    steps: opts.steps,
+  };
+}
+
 // Default fallback for adapters that haven't declared a real setup yet.
 // Emitted automatically by every defineXxx() so `sh1pt <cat> <name> setup`
 // is always available.

@@ -3,7 +3,6 @@ import {
   AgentProviderNotImplementedError,
   AgentProviderConfigError,
 } from "@profullstack/sh1pt-agent-provider-shared";
-import axios from "axios";
 
 export const openrouterProvider: AgentProviderAdapter = {
   id: "openrouter",
@@ -37,27 +36,24 @@ export const openrouterProvider: AgentProviderAdapter = {
 
     const baseURL = process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1";
 
-    const res = await axios.post(
-      `${baseURL}/chat/completions`,
-      {
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    };
+    if (process.env.OPENROUTER_HTTP_REFERER) headers["HTTP-Referer"] = process.env.OPENROUTER_HTTP_REFERER;
+    if (process.env.OPENROUTER_X_TITLE) headers["X-Title"] = process.env.OPENROUTER_X_TITLE;
+
+    const res = await fetch(`${baseURL}/chat/completions`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
         model: process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini",
         messages: req.messages,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          ...(process.env.OPENROUTER_HTTP_REFERER
-            ? { "HTTP-Referer": process.env.OPENROUTER_HTTP_REFERER }
-            : {}),
-          ...(process.env.OPENROUTER_X_TITLE
-            ? { "X-Title": process.env.OPENROUTER_X_TITLE }
-            : {}),
-        },
-      }
-    );
-
-    const content = res.data?.choices?.[0]?.message?.content;
+      }),
+    });
+    if (!res.ok) throw new Error(`OpenRouter chat ${res.status}`);
+    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const content = data.choices?.[0]?.message?.content;
     if (!content) {
       throw new Error("OpenRouter empty response");
     }

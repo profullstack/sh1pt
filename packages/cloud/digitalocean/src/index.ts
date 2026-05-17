@@ -94,7 +94,13 @@ export default defineCloud<Config>({
   async quote(ctx, spec, config) {
     ctx.log(`do quote · kind=${spec.kind} · region=${spec.region ?? config.defaultRegion ?? 'nyc3'}`);
     const region = spec.region ?? config.defaultRegion ?? 'nyc3';
-    const sizes = await fetchSizes(ctx);
+    let sizes: DoSize[];
+    try {
+      sizes = await fetchSizes(ctx);
+    } catch (e) {
+      ctx.log(`do quote · could not fetch sizes (${e instanceof Error ? e.message : String(e)}) — returning stub`, 'warn');
+      return { hourly: 0, monthly: 0, currency: 'USD', provider: 'digitalocean', sku: 'unknown', spot: false };
+    }
 
     const match = pickSize(sizes, spec, region);
     if (!match) {
@@ -116,10 +122,13 @@ export default defineCloud<Config>({
     const region = spec.region ?? config.defaultRegion ?? 'nyc3';
     const name = `sh1pt-${spec.kind}-${Date.now()}`;
 
+    // Short-circuit dryRun before any network calls (the droplet path
+    // below calls fetchSizes unconditionally).
+    if (ctx.dryRun) return { ...stubInstance('dry-run', 'provisioning', spec.kind), region };
+
     // Managed DB uses a different endpoint
     if (spec.kind === 'managed-db') {
       ctx.log(`do provision · managed database · region=${region}`);
-      if (ctx.dryRun) return stubInstance('dry-run', 'provisioning', spec.kind);
       const db = await doRequest<DoDatabaseResponse>(ctx, 'POST', '/databases', {
         name,
         engine: spec.image ?? 'pg',

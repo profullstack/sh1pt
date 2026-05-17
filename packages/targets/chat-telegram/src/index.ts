@@ -11,25 +11,57 @@ interface Config {
   commands?: { command: string; description: string }[];
   description?: string;
   shortDescription?: string;
+  tokenKey?: string;                 // defaults to TELEGRAM_BOT_TOKEN
+  webhookSecretKey?: string;         // optional secret_token value for setWebhook
   directoryListings?: ('storebot.me' | 'combot.org')[];
 }
+
+interface TelegramResponse<T> {
+  ok: boolean;
+  result?: T;
+  description?: string;
+  error_code?: number;
+}
+
+type TelegramCommand = { command: string; description: string };
 
 export default defineTarget<Config>({
   id: 'chat-telegram',
   kind: 'chat',
   label: 'Telegram Bot',
-  async build(ctx) {
-    ctx.log(`no-op build — bot code is hosted separately (pair with deploy-workers/fly/etc.)`);
-    return { artifact: ctx.projectDir };
+  async build(ctx, config) {
+    ctx.log(`telegram · prepare bot manifest for @${config.botUsername}`);
+    return { artifact: `${ctx.outDir}/telegram-${config.botUsername}.json` };
   },
   async ship(ctx, config) {
-    ctx.log(`telegram · setWebhook + setMyCommands for @${config.botUsername}`);
+    const username = normalizeUsername(config.botUsername);
+    ctx.log(`telegram · setWebhook + setMyCommands for @${username}`);
     if (ctx.dryRun) return { id: 'dry-run' };
-    // TODO: Bot API calls using TELEGRAM_BOT_TOKEN
-    //  - setWebhook(url=config.webhookUrl, secret_token=random)
-    //  - setMyCommands(commands=config.commands)
-    //  - setMyDescription / setMyShortDescription
-    return { id: `@${config.botUsername}@${ctx.version}`, url: `https://t.me/${config.botUsername}` };
+
+    const tokenKey = config.tokenKey ?? 'TELEGRAM_BOT_TOKEN';
+    const token = ctx.secret(tokenKey);
+    if (!token) throw new Error(`${tokenKey} not in vault — run: sh1pt secret set ${tokenKey} <bot-token>`);
+
+    await callTelegram(ctx.log, token, 'setWebhook', {
+      url: config.webhookUrl,
+      ...(config.webhookSecretKey ? { secret_token: requireSecret(ctx, config.webhookSecretKey) } : {}),
+    });
+
+    if (config.commands?.length) {
+      await callTelegram(ctx.log, token, 'setMyCommands', {
+        commands: config.commands.map(normalizeCommand),
+      });
+    }
+
+    if (config.description) {
+      await callTelegram(ctx.log, token, 'setMyDescription', { description: config.description });
+    }
+
+    if (config.shortDescription) {
+      await callTelegram(ctx.log, token, 'setMyShortDescription', { short_description: config.shortDescription });
+    }
+
+    return { id: `@${username}@${ctx.version}`, url: `https://t.me/${username}` };
   },
   async status(id) {
     return { state: 'live', version: id };
@@ -45,3 +77,42 @@ export default defineTarget<Config>({
     ],
   }),
 });
+
+async function callTelegram<T>(
+  log: (msg: string, level?: 'info' | 'warn' | 'error') => void,
+  token: string,
+  method: string,
+  body: Record<string, unknown>,
+): Promise<T | undefined> {
+  log(`telegram · ${method}`);
+  const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const data = await res.json() as TelegramResponse<T>;
+  if (!res.ok || !data.ok) {
+    throw new Error(data.description ?? `Telegram ${method} failed (${res.status})`);
+  }
+  return data.result;
+}
+
+function normalizeUsername(username: string): string {
+  const clean = username.replace(/^@/, '').trim();
+  if (!clean) throw new Error('botUsername is required');
+  return clean;
+}
+
+function normalizeCommand(command: TelegramCommand): TelegramCommand {
+  return {
+    command: command.command.replace(/^\//, ''),
+    description: command.description,
+  };
+}
+
+function requireSecret(ctx: { secret(key: string): string | undefined }, key: string): string {
+  const value = ctx.secret(key);
+  if (!value) throw new Error(`${key} not in vault — run: sh1pt secret set ${key} <value>`);
+  return value;
+}

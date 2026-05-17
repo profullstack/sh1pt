@@ -1,6 +1,6 @@
 {
   "name": "@profullstack/sh1pt-webhooks-discord",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "Discord channel-webhook target for sh1pt.",
   "license": "MIT",
   "repository": {
@@ -21,11 +21,6 @@
   "files": [
     "dist"
   ],
-  "publishConfig": {
-    "access": "public",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts"
-  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",

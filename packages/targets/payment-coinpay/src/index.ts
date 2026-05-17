@@ -12,7 +12,8 @@ export default defineTarget<Config>({
   kind: 'payment',
   label: 'CoinPay (CLI wrapper)',
 
-  async build(ctx, config) {
+  async build(ctx, _config) {
+    if (ctx.dryRun) return { artifact: 'dry-run' };
     ctx.log('coinpay: verifying CLI availability');
 
     // 1. Auto-install CLI if missing

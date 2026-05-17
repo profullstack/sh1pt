@@ -1,10 +1,26 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
 import prompts from 'prompts';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { runSetup, type SetupContext, type SetupPromptDef, type AdapterWithSetup } from '@profullstack/sh1pt-core';
 import { ensureInstalled, loadInstalledPackage } from '../installer.js';
 
 type Stack = 'node' | 'bun' | 'python' | 'rust' | 'cpp' | 'dotnet' | 'custom';
+
+type PaymentProviderSummary = {
+  key: string;
+  use: string;
+  enabled: boolean;
+  isDefault: boolean;
+};
+
+type PaymentsSummary = {
+  path: string;
+  defaultProvider?: string;
+  platformFeeBps?: number;
+  providers: PaymentProviderSummary[];
+};
 
 const STACKS: Array<{ value: Stack; title: string; description: string; supported: boolean }> = [
   { value: 'node',   title: 'Node + TypeScript + React',  description: 'Next.js / Expo / Tauri / Chrome ext', supported: true  },
@@ -43,8 +59,20 @@ const paymentsCmd = configCmd
 paymentsCmd
   .command('list')
   .description('Show enabled providers and which is the default')
-  .action(() => {
-    console.log(kleur.dim('[stub] config payments list — read manifest.payments'));
+  .option('--json', 'print machine-readable output')
+  .option('--config <path>', 'config file to read', 'sh1pt.config.ts')
+  .action((opts: { json?: boolean; config: string }) => {
+    try {
+      const summary = readPaymentsSummary(process.cwd(), opts.config);
+      if (opts.json) {
+        console.log(JSON.stringify(summary, null, 2));
+        return;
+      }
+      renderPaymentsSummary(summary);
+    } catch (err) {
+      console.error(kleur.red(err instanceof Error ? err.message : String(err)));
+      process.exit(1);
+    }
   });
 
 paymentsCmd
@@ -297,6 +325,124 @@ function urlKeyFor(target: string): string {
   } as Record<string, string>)[target] ?? 'WEBHOOK_URL';
 }
 
+export function parsePaymentsSummary(source: string, path = 'sh1pt.config.ts'): PaymentsSummary | undefined {
+  const payments = readObjectBody(source, 'payments');
+  if (!payments) return undefined;
+  const providers = readObjectBody(payments, 'providers');
+  const defaultProvider = readStringProperty(payments, 'defaultProvider');
+  const fee = readNumberProperty(payments, 'platformFeeBps');
+  const providerBlocks = providers ? readTopLevelObjectEntries(providers) : [];
+  return {
+    path,
+    defaultProvider,
+    platformFeeBps: fee,
+    providers: providerBlocks.map(({ key, body }) => {
+      const use = readStringProperty(body, 'use') ?? key;
+      const enabled = readBooleanProperty(body, 'enabled') ?? true;
+      return { key, use, enabled, isDefault: use === defaultProvider || key === defaultProvider };
+    }),
+  };
+}
+
+function readPaymentsSummary(cwd: string, configPath: string): PaymentsSummary {
+  const path = configPath.startsWith('/') ? configPath : join(cwd, configPath);
+  if (!existsSync(path)) {
+    throw new Error(`No ${configPath} found. Run sh1pt ship init first or pass --config <path>.`);
+  }
+  const summary = parsePaymentsSummary(readFileSync(path, 'utf8'), path);
+  if (!summary) {
+    throw new Error(`No payments block found in ${configPath}.`);
+  }
+  return summary;
+}
+
+function renderPaymentsSummary(summary: PaymentsSummary): void {
+  if (summary.providers.length === 0) {
+    console.log(kleur.yellow('No payment providers configured.'));
+    return;
+  }
+  console.log(kleur.bold('Payment providers'));
+  for (const provider of summary.providers) {
+    const icon = provider.enabled ? kleur.green('●') : kleur.gray('○');
+    const status = provider.enabled ? kleur.green('enabled') : kleur.gray('disabled');
+    const defaultLabel = provider.isDefault ? kleur.cyan(' default') : '';
+    console.log(`  ${icon} ${kleur.bold(provider.key)}  ${kleur.dim(provider.use)}  ${status}${defaultLabel}`);
+  }
+  if (summary.platformFeeBps !== undefined) {
+    console.log(kleur.dim(`platformFeeBps: ${summary.platformFeeBps}`));
+  }
+}
+
+function readObjectBody(source: string, property: string): string | undefined {
+  const match = new RegExp(`(?:^|[,{\\s])${escapeRegExp(property)}\\s*:`).exec(source);
+  if (!match) return undefined;
+  const open = source.indexOf('{', match.index + match[0].length);
+  if (open === -1) return undefined;
+  const close = findMatchingBrace(source, open);
+  return close === -1 ? undefined : source.slice(open + 1, close);
+}
+
+function readTopLevelObjectEntries(source: string): Array<{ key: string; body: string }> {
+  const entries: Array<{ key: string; body: string }> = [];
+  const keyRe = /(?:^|,)\s*(['"]?[A-Za-z0-9_-]+['"]?)\s*:/g;
+  let match: RegExpExecArray | null;
+  while ((match = keyRe.exec(source))) {
+    const rawKey = match[1];
+    if (!rawKey) continue;
+    const open = source.indexOf('{', keyRe.lastIndex);
+    if (open === -1) continue;
+    const between = source.slice(keyRe.lastIndex, open).trim();
+    if (between.length > 0) continue;
+    const close = findMatchingBrace(source, open);
+    if (close === -1) continue;
+    entries.push({ key: rawKey.replace(/^['"]|['"]$/g, ''), body: source.slice(open + 1, close) });
+    keyRe.lastIndex = close + 1;
+  }
+  return entries;
+}
+
+function findMatchingBrace(source: string, open: number): number {
+  let depth = 0;
+  let quote: '"' | "'" | '`' | undefined;
+  for (let i = open; i < source.length; i += 1) {
+    const ch = source[i];
+    const prev = source[i - 1];
+    if (quote) {
+      if (ch === quote && prev !== '\\') quote = undefined;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === '`') {
+      quote = ch;
+      continue;
+    }
+    if (ch === '{') depth += 1;
+    if (ch === '}') {
+      depth -= 1;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+function readStringProperty(source: string, key: string): string | undefined {
+  const match = new RegExp(`${escapeRegExp(key)}\\s*:\\s*['"]([^'"]+)['"]`).exec(source);
+  return match?.[1];
+}
+
+function readNumberProperty(source: string, key: string): number | undefined {
+  const match = new RegExp(`${escapeRegExp(key)}\\s*:\\s*(\\d+)`).exec(source);
+  return match?.[1] ? Number(match[1]) : undefined;
+}
+
+function readBooleanProperty(source: string, key: string): boolean | undefined {
+  const match = new RegExp(`${escapeRegExp(key)}\\s*:\\s*(true|false)`).exec(source);
+  return match?.[1] === undefined ? undefined : match[1] === 'true';
+}
+
+function escapeRegExp(input: string): string {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // Build the SetupContext the CLI hands to every adapter.setup(). Today
 // secrets live in-process + logged; a real vault lands once `sh1pt login`
 // has an API to write against.
@@ -334,4 +480,3 @@ function makeCliSetupContext(): SetupContext {
     },
   };
 }
-

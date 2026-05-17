@@ -1,13 +1,13 @@
 // Shared SetupContext for every CLI-driven adapter setup.
 //
-// When the user is signed in (`sh1pt login` succeeded), setSecret writes
-// through the encrypted cloud vault — the server only sees ciphertext.
-// secret() reads decrypt-on-demand: the first miss triggers a passphrase
-// prompt, the derived key is cached for the rest of the process.
+// Storage layers, write order: local file → cloud (best-effort if signed in).
+// Read order: memCache → process.env (falls back through local-loaded entries
+// pre-populated into memCache at construction).
 //
-// When the user is NOT signed in, we fall back to in-process memory +
-// process.env. That's enough to drive a one-shot setup → connect → post
-// run from a single shell session, but the secrets evaporate on exit.
+// Local file (`~/.config/sh1pt/secrets.json`, mode 0600) is the always-on
+// persistence layer — secrets survive across CLI invocations even offline.
+// Cloud vault (encrypted via libsodium) syncs on top when `sh1pt login`
+// has succeeded; the server only ever sees ciphertext.
 
 import kleur from 'kleur';
 import prompts from 'prompts';
@@ -17,11 +17,17 @@ import {
   isSignedIn,
   setSecretInCloud,
 } from './cloud-vault.js';
+import {
+  loadLocalVaultSync,
+  setSecretInLocal,
+} from './local-vault.js';
 
 export function makeCliSetupContext(): SetupContext {
   // Per-process cache so a single setup() that reads/writes the same key
-  // doesn't re-hit the network.
-  const memCache = new Map<string, string>();
+  // doesn't re-hit disk or the network. Pre-populated from the local
+  // vault so adapter `connect()` calls in a fresh process find their
+  // saved secrets without a setup() round-trip.
+  const memCache = new Map<string, string>(loadLocalVaultSync());
   let signedInPromise: Promise<boolean> | null = null;
 
   async function authedOnce(): Promise<boolean> {
@@ -31,25 +37,34 @@ export function makeCliSetupContext(): SetupContext {
 
   return {
     secret: (key) => {
-      // Synchronous read — adapters that genuinely need cloud values must
-      // request them through their setup() flow first (where setSecret
-      // primes memCache). Outside setup, falling back to env is fine.
+      // Synchronous read — memCache holds local-vault entries (pre-loaded
+      // at construction) and any setSecret() calls from this session.
+      // process.env is the final fallback for ad-hoc dev / one-shot env
+      // overrides without touching the vault.
       return memCache.get(key) ?? process.env[key];
     },
     async setSecret(key, value) {
       memCache.set(key, value);
       process.env[key] = value;
+
+      // Local persistence first — guarantees the secret survives the
+      // process even if cloud / network is unavailable.
+      try {
+        await setSecretInLocal(key, value);
+        console.log(kleur.dim(`  ✓ ${key} → ~/.config/sh1pt/secrets.json`));
+      } catch (err) {
+        console.log(kleur.yellow(`  ⚠ local vault write failed (${err instanceof Error ? err.message : 'unknown'}). Kept in process memory only.`));
+      }
+
+      // Best-effort cloud sync when signed in.
       if (await authedOnce()) {
         try {
           await setSecretInCloud(key, value);
           console.log(kleur.dim(`  ✓ ${key} encrypted → sh1pt.com vault`));
-          return;
         } catch (err) {
-          console.log(kleur.yellow(`  ⚠ cloud vault write failed (${err instanceof Error ? err.message : 'unknown'}). Kept in process memory only.`));
-          return;
+          console.log(kleur.dim(`  · cloud sync skipped (${err instanceof Error ? err.message : 'unknown'}); local copy is authoritative`));
         }
       }
-      console.log(kleur.dim(`  ${key} kept in process memory (run \`sh1pt login\` to sync to your sh1pt.com vault)`));
     },
     log: (m) => console.log(m),
     async prompt<T>(def: SetupPromptDef<T>): Promise<T> {

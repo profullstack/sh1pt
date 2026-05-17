@@ -31,6 +31,9 @@ export interface BuildContext {
   env: Record<string, string>;
   secret(key: string): string | undefined;
   log(msg: string, level?: 'info' | 'warn' | 'error'): void;
+  // Set by the contract test harness (and by callers running validation
+  // builds) so adapters can short-circuit network/exec calls.
+  dryRun?: boolean;
 }
 
 export interface ShipContext extends BuildContext {

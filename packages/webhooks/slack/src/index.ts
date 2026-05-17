@@ -15,27 +15,27 @@ export default defineWebhookTarget<Config>({
   label: 'Slack (incoming webhook)',
 
   format(payload, config) {
-    return {
-      username: config.username ?? 'sh1pt',
-      icon_emoji: config.iconEmoji ?? ':ship:',
-      channel: config.channelOverride,
-      text: `*${payload.event}*`,
-      blocks: [
-        { type: 'section', text: { type: 'mrkdwn', text: `*${payload.event}* · _${payload.project ?? 'sh1pt'}_` } },
-        { type: 'section', text: { type: 'mrkdwn', text: '```' + JSON.stringify(payload.data, null, 2).slice(0, 2800) + '```' } },
-        { type: 'context', elements: [{ type: 'mrkdwn', text: payload.timestamp }] },
-      ],
-    };
+    return formatSlackPayload(payload, config);
   },
 
   async send(ctx, payload, config): Promise<WebhookResult> {
     const urlKey = config.urlKey ?? 'SLACK_WEBHOOK_URL';
     const url = ctx.secret(urlKey);
-    if (!url) throw new Error(`${urlKey} not in vault`);
+    if (!url) throw new Error(`${urlKey} not in vault — run: sh1pt secret set ${urlKey} <webhook-url>`);
     ctx.log(`slack webhook · ${payload.event}`);
     if (ctx.dryRun) return { ok: true, url };
-    // TODO: POST url with the formatted block payload; 200 "ok" on success
-    return { ok: true, url };
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(formatSlackPayload(payload, config)),
+    });
+    const text = await res.text().catch(() => res.statusText);
+    if (!res.ok || text.trim() !== 'ok') {
+      return { ok: false, status: res.status, error: text, url };
+    }
+
+    return { ok: true, status: res.status, url };
   },
 
   setup: webhookUrlSetup<Config>({
@@ -50,3 +50,20 @@ export default defineWebhookTarget<Config>({
     ],
   }),
 });
+
+function formatSlackPayload(
+  payload: { event: string; timestamp: string; project?: string; data: Record<string, unknown> },
+  config: Config,
+): unknown {
+  return {
+    username: config.username ?? 'sh1pt',
+    icon_emoji: config.iconEmoji ?? ':ship:',
+    channel: config.channelOverride,
+    text: `*${payload.event}*`,
+    blocks: [
+      { type: 'section', text: { type: 'mrkdwn', text: `*${payload.event}* · _${payload.project ?? 'sh1pt'}_` } },
+      { type: 'section', text: { type: 'mrkdwn', text: '```' + JSON.stringify(payload.data, null, 2).slice(0, 2800) + '```' } },
+      { type: 'context', elements: [{ type: 'mrkdwn', text: payload.timestamp }] },
+    ],
+  };
+}

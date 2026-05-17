@@ -22,6 +22,12 @@ export const CATEGORIES: readonly AdapterCategory[] = [
     adapters: ['claude', 'codex', 'qwen'],
   },
   {
+    id: 'ai',
+    pkgPrefix: '@profullstack/sh1pt-ai',
+    description: 'AI API providers for content generation — Claude (Anthropic), OpenAI, Qwen, Gemini',
+    adapters: ['claude', 'gemini', 'openai', 'qwen'],
+  },
+  {
     id: 'bots',
     pkgPrefix: '@profullstack/sh1pt-bot',
     description: 'Chat bots — Discord, Telegram, Slack, Signal, Matrix…',
@@ -115,7 +121,7 @@ export const CATEGORIES: readonly AdapterCategory[] = [
     id: 'social',
     pkgPrefix: '@profullstack/sh1pt-social',
     description: 'Organic social — X, LinkedIn, Bluesky, Mastodon, TikTok, Reddit…',
-    adapters: ['4claw', 'blossom', 'bluesky', 'codenewbie', 'devto', 'facebook', 'forem', 'hackernews', 'hackernoon', 'hashnode', 'indiehackers', 'instagram', 'klawdin', 'linkedin', 'mastodon', 'medium', 'moltbook', 'moltexchange', 'moltfounders', 'moltywork', 'openwork', 'primal', 'quora', 'reddit', 'secureclaw', 'stackernews', 'the-colony', 'threads', 'tikclawk', 'tiktok', 'toku-agency', 'ugig', 'x', 'youtube'],
+    adapters: ['4claw', 'blossom', 'bluesky', 'codenewbie', 'devto', 'discord', 'facebook', 'forem', 'hackernews', 'hackernoon', 'hashnode', 'indiehackers', 'instagram', 'klawdin', 'linkedin', 'mastodon', 'medium', 'moltbook', 'moltexchange', 'moltfounders', 'moltywork', 'nostr', 'openwork', 'pinterest', 'primal', 'quora', 'reddit', 'secureclaw', 'snapchat', 'spotify', 'stackernews', 'telegram', 'the-colony', 'threads', 'tikclawk', 'tiktok', 'toku-agency', 'tumblr', 'twitch', 'ugig', 'vimeo', 'x', 'youtube'],
   },
   {
     id: 'targets',

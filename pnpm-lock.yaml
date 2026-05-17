@@ -173,6 +173,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/agents/vu1nz:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/ai/ai21:
     dependencies:
       '@profullstack/sh1pt-core':
@@ -540,6 +546,57 @@ importers:
         version: 4.12.14
       zod:
         specifier: ^3.23.8
+        version: 3.25.76
+
+  packages/bot/core:
+    dependencies:
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+
+  packages/bot/discord:
+    dependencies:
+      '@sh1pt/bot-core':
+        specifier: workspace:*
+        version: link:../core
+      discord.js:
+        specifier: ^14.26.3
+        version: 14.26.3
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+
+  packages/bot/signal:
+    dependencies:
+      '@sh1pt/bot-core':
+        specifier: workspace:*
+        version: link:../core
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+
+  packages/bot/telegram:
+    dependencies:
+      '@sh1pt/bot-core':
+        specifier: workspace:*
+        version: link:../core
+      grammy:
+        specifier: ^1.21.0
+        version: 1.42.0
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+
+  packages/bot/whatsapp:
+    dependencies:
+      '@sh1pt/bot-core':
+        specifier: workspace:*
+        version: link:../core
+      baileys:
+        specifier: ^6.10.0
+        version: 6.17.16(eslint@9.39.4)(typescript@5.9.3)
+      zod:
+        specifier: ^3.24.0
         version: 3.25.76
 
   packages/bots/core:

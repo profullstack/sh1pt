@@ -152,8 +152,19 @@ jobs:
           print(f"::notice::vu1nz review: {total} finding(s), no high/critical issues")
           PYEOF
 
-      - name: Comment on PR
+      - name: Write report to job summary
         if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/vu1nz-comment.md" ]; then
+            cat "$RUNNER_TEMP/vu1nz-comment.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## vu1nz Security Review" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Scan completed but could not read results." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Comment on PR
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@v7
         with:
           script: |
@@ -166,28 +177,36 @@ jobs:
               body = '## vu1nz Security Review\n\nScan completed but could not read results.';
             }
 
-            const { data: comments } = await github.rest.issues.listComments({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            });
-
-            const existing = comments.find(c =>
-              c.user.type === 'Bot' && c.body.includes('vu1nz Security Review')
-            );
-
-            if (existing) {
-              await github.rest.issues.updateComment({
-                comment_id: existing.id,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: body,
-              });
-            } else {
-              await github.rest.issues.createComment({
+            try {
+              const { data: comments } = await github.rest.issues.listComments({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: body,
               });
+
+              const existing = comments.find(c =>
+                c.user.type === 'Bot' && c.body.includes('vu1nz Security Review')
+              );
+
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  comment_id: existing.id,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: body,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: body,
+                });
+              }
+            } catch (err) {
+              if (err.status === 403) {
+                core.warning(`Cannot post PR comment (read-only token): ${err.message}. Findings are in the job summary.`);
+              } else {
+                throw err;
+              }
             }

@@ -14,6 +14,7 @@ import { makeCategoryCmd } from './commands/adapter-cmd.js';
 import { CATEGORIES } from './adapter-registry.js';
 import { skillsCmd } from './commands/skills.js';
 import { agentsCmd } from './commands/agents.js';
+import { deployCmd } from './commands/deploy.js';
 
 const program = new Command();
 
@@ -44,6 +45,7 @@ program.addCommand(secretsCmd);
 program.addCommand(configCmd);
 program.addCommand(skillsCmd);      // skills   · package/promote SKILL.md agent skills across marketplaces
 program.addCommand(agentsCmd);      // agents   · generate/run/talk with AI coding CLIs
+program.addCommand(deployCmd);      // deploy   · provision cloud infrastructure
 
 // Self-management — sh1pt update / upgrade / remove / uninstall.
 program.addCommand(updateCmd);

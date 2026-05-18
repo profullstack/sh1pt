@@ -1,7 +1,8 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
 import { describeInput, resolveInput } from '../input.js';
-import { agentsCmd } from './agents.js';
+
+// agentsCmd moved to root level — see https://github.com/profullstack/sh1pt/issues/235
 
 export const iterateCmd = new Command('iterate')
   .description('Observe metrics, have an agent propose changes, ship, measure. Powered by Claude / Codex / Qwen.')
@@ -18,10 +19,7 @@ export const iterateCmd = new Command('iterate')
     iterateCmd.help();
   });
 
-// AI-CLI orchestration lives under iterate (was top-level `sh1pt agents`).
-// sh1pt iterate agents [list|setup|talk|run|generate]
-iterateCmd.addCommand(agentsCmd);
-
+// AI-CLI agents moved to root level — see #235.
 iterateCmd
   .command('run')
   .description('Single-shot cycle: pull metrics → have agent propose changes → apply (with confirmation) → ship')

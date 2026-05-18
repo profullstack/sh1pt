@@ -283,13 +283,46 @@ webhooksCmd
     console.log(kleur.green(`[stub] webhooks test ${target} · event=${opts.event}`));
   });
 
-webhooksCmd
+const webhooksListCmd = webhooksCmd
   .command('list')
   .description('All configured outbound targets + subscription URLs')
   .option('--json')
-  .action((opts: { json?: boolean }) => {
-    if (opts.json) { console.log(JSON.stringify({ targets: [], subscriptions: [] }, null, 2)); return; }
-    console.log(kleur.dim('[stub] webhooks list'));
+  .action(async (opts: { json?: boolean }) => {
+    // Read registered targets from the sh1pt config
+    let targets: string[] = [];
+    let subscriptions: Array<{ url: string; events: string; description?: string }> = [];
+    try {
+      const { loadSync } = await import('../local-vault.js');
+      const vault = loadSync();
+      const raw = vault.get('webhooks');
+      if (raw) {
+        const parsed = JSON.parse(typeof raw === 'string' ? raw : String(raw));
+        if (Array.isArray(parsed.targets)) targets = parsed.targets;
+        if (Array.isArray(parsed.subscriptions)) subscriptions = parsed.subscriptions;
+      }
+    } catch {
+      // Vault not available — show empty state silently
+    }
+    if (opts.json) {
+      console.log(JSON.stringify({ targets, subscriptions }, null, 2));
+      return;
+    }
+    if (targets.length === 0 && subscriptions.length === 0) {
+      console.log(kleur.dim('No webhook targets or subscriptions configured.'));
+      console.log(`  Add one: ${kleur.cyan('sh1pt config webhooks add <target>')}`);
+      return;
+    }
+    if (targets.length > 0) {
+      console.log(kleur.bold('\nTargets:'));
+      for (const t of targets) console.log(`  • ${t}`);
+    }
+    if (subscriptions.length > 0) {
+      console.log(kleur.bold('\nSubscriptions:'));
+      for (const s of subscriptions) {
+        const desc = s.description ? `  (${s.description})` : '';
+        console.log(`  • ${s.url}  events: ${s.events}${desc}`);
+      }
+    }
   });
 
 // Customer-supplied subscriptions — sh1pt cloud fires these on events.

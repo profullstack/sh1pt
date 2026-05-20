@@ -1,4 +1,6 @@
-import { defineTarget, setupGuide, exec } from '@profullstack/sh1pt-core';
+import { defineTarget, exec, manualSetup } from '@profullstack/sh1pt-core';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 interface Config {
   functionName: string;
@@ -7,6 +9,121 @@ interface Config {
   role?: string;
   zipFile?: string;
   invokePayload?: string;
+  region?: string;
+  description?: string;
+  environment?: Record<string, string>;
+  layers?: string[];
+  memorySize?: number;
+  timeout?: number;
+  publish?: boolean;
+}
+
+function functionName(config: Config): string {
+  const fn = config.functionName?.trim();
+  if (!fn) throw new Error('functionName is required');
+  return fn;
+}
+
+function region(ctx: { secret(key: string): string | undefined }, config: Config): string {
+  return config.region ?? ctx.secret('AWS_REGION') ?? 'us-east-1';
+}
+
+function zipFile(ctx: { outDir: string }, config: Config): string {
+  return config.zipFile ?? join(ctx.outDir, 'function.zip');
+}
+
+function applyOptionalCreateArgs(args: string[], config: Config): string[] {
+  if (config.description) args.push('--description', config.description);
+  if (config.timeout !== undefined) args.push('--timeout', String(config.timeout));
+  if (config.memorySize !== undefined) args.push('--memory-size', String(config.memorySize));
+  if (config.layers?.length) args.push('--layers', ...config.layers);
+  if (config.environment) {
+    args.push('--environment', JSON.stringify({ Variables: config.environment }));
+  }
+  if (config.publish) args.push('--publish');
+  return args;
+}
+
+function updateArgs(config: Config, artifact: string, awsRegion: string): string[] {
+  const args = [
+    'lambda',
+    'update-function-code',
+    '--function-name',
+    functionName(config),
+    '--zip-file',
+    `fileb://${artifact}`,
+    '--region',
+    awsRegion,
+  ];
+  if (config.publish) args.push('--publish');
+  return args;
+}
+
+function createArgs(config: Config, artifact: string, awsRegion: string, role: string): string[] {
+  return applyOptionalCreateArgs([
+    'lambda',
+    'create-function',
+    '--function-name',
+    functionName(config),
+    '--runtime',
+    config.runtime ?? 'nodejs20.x',
+    '--role',
+    role,
+    '--handler',
+    config.handler ?? 'index.handler',
+    '--zip-file',
+    `fileb://${artifact}`,
+    '--region',
+    awsRegion,
+  ], config);
+}
+
+function renderPlan(
+  ctx: { outDir: string; version: string; secret(key: string): string | undefined },
+  config: Config
+): string {
+  const artifact = zipFile(ctx, config);
+  const awsRegion = region(ctx, config);
+  const plannedRole = config.role ?? '<AWS_LAMBDA_ROLE>';
+  return `${JSON.stringify({
+    provider: 'aws-lambda',
+    functionName: functionName(config),
+    region: awsRegion,
+    handler: config.handler ?? 'index.handler',
+    runtime: config.runtime ?? 'nodejs20.x',
+    role: config.role ?? null,
+    roleSecret: config.role ? null : 'AWS_LAMBDA_ROLE',
+    artifact,
+    environment: config.environment ?? {},
+    layers: config.layers ?? [],
+    memorySize: config.memorySize ?? null,
+    timeout: config.timeout ?? null,
+    publish: config.publish ?? false,
+    version: ctx.version,
+    commands: {
+      update: ['aws', ...updateArgs(config, artifact, awsRegion)],
+      create: ['aws', ...createArgs(config, artifact, awsRegion, plannedRole)],
+    },
+  }, null, 2)}\n`;
+}
+
+function parseLambda(stdout: string): Record<string, unknown> {
+  try {
+    return JSON.parse(stdout) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+function regionFromId(id: string, fallback: string): string {
+  const parts = id.split(':');
+  return id.startsWith('arn:') && parts[3] ? parts[3] : fallback;
+}
+
+function functionPathFromId(id: string): string {
+  const marker = ':function:';
+  const index = id.indexOf(marker);
+  return index === -1 ? id : id.slice(index + marker.length);
 }
 
 export default defineTarget<Config>({
@@ -15,106 +132,89 @@ export default defineTarget<Config>({
   label: 'AWS Lambda',
 
   async build(ctx, config) {
-    ctx.log('lambda: verifying AWS CLI availability');
-
-    try {
-      await exec('aws', ['--version'], { log: ctx.log, throwOnNonZero: false });
-    } catch {
-      throw new Error(
-        'AWS CLI not found. Install it from https://aws.amazon.com/cli/'
-      );
-    }
-
-    // Check credentials are configured
-    try {
-      await exec('aws', ['sts', 'get-caller-identity'], {
-        log: ctx.log,
-        throwOnNonZero: false,
-      });
-    } catch {
-      throw new Error(
-        'AWS credentials not configured. Run: aws configure'
-      );
-    }
-
-    const fn = config.functionName;
-    ctx.log(`lambda: preparing deployment for function "${fn}"`);
-
-    return { artifact: config.zipFile ?? `${ctx.outDir}/function.zip` };
+    const fn = functionName(config);
+    const planPath = join(ctx.outDir, 'lambda-deploy.json');
+    ctx.log(`lambda plan - function=${fn} region=${region(ctx, config)}`);
+    await mkdir(ctx.outDir, { recursive: true });
+    await writeFile(planPath, renderPlan(ctx, config), 'utf-8');
+    return { artifact: planPath };
   },
 
   async ship(ctx, config) {
-    const fn = config.functionName;
-    const region = ctx.secret('AWS_REGION') ?? 'us-east-1';
+    const fn = functionName(config);
+    const awsRegion = region(ctx, config);
+    const artifact = zipFile(ctx, config);
+    const updateCommand = ['aws', ...updateArgs(config, artifact, awsRegion)];
+    const role = config.role ?? ctx.secret('AWS_LAMBDA_ROLE');
+    const createCommand = ['aws', ...createArgs(config, artifact, awsRegion, role ?? '<AWS_LAMBDA_ROLE>')];
 
-    if (!fn) throw new Error('functionName is required');
+    if (ctx.dryRun) {
+      ctx.log(`lambda: dry-run would deploy "${fn}"`);
+      return {
+        id: 'dry-run',
+        meta: {
+          functionName: fn,
+          region: awsRegion,
+          commands: {
+            update: updateCommand,
+            create: createCommand,
+          },
+        },
+      };
+    }
 
-    // Check if function exists
     ctx.log(`lambda: checking if function "${fn}" exists`);
     const { exitCode } = await exec(
       'aws',
-      ['lambda', 'get-function', '--function-name', fn, '--region', region],
-      { log: ctx.log, throwOnNonZero: false }
+      ['lambda', 'get-function', '--function-name', fn, '--region', awsRegion],
+      { env: ctx.env, log: ctx.log, throwOnNonZero: false }
     );
 
-    if (ctx.dryRun) {
-      const action = exitCode === 0 ? 'update-function-code' : 'create-function';
-      ctx.log(`lambda: dry-run — would ${action} "${fn}"`);
-      return { id: 'dry-run', meta: { functionName: fn, region, action } };
-    }
-
     if (exitCode === 0) {
-      // Update existing function code
       ctx.log(`lambda: updating code for "${fn}"`);
       const { stdout } = await exec(
         'aws',
-        [
-          'lambda', 'update-function-code',
-          '--function-name', fn,
-          '--zip-file', `fileb://${ctx.artifact}`,
-          '--region', region,
-        ],
-        { log: ctx.log, throwOnNonZero: true }
+        updateArgs(config, artifact, awsRegion),
+        { env: ctx.env, log: ctx.log, throwOnNonZero: true }
       );
-      const info = JSON.parse(stdout) as { FunctionArn?: string; Version?: string };
+      const info = parseLambda(stdout);
       return {
-        id: info.FunctionArn ?? fn,
-        meta: { functionName: fn, region, version: info.Version },
-      };
-    } else {
-      // Create new function
-      ctx.log(`lambda: creating function "${fn}"`);
-      const handler = config.handler ?? 'index.handler';
-      const runtime = config.runtime ?? 'nodejs20.x';
-      const role = config.role ?? ctx.secret('AWS_LAMBDA_ROLE');
-      if (!role) throw new Error('role required. Set AWS_LAMBDA_ROLE secret or pass in config');
-
-      const { stdout } = await exec(
-        'aws',
-        [
-          'lambda', 'create-function',
-          '--function-name', fn,
-          '--runtime', runtime,
-          '--role', role,
-          '--handler', handler,
-          '--zip-file', `fileb://${ctx.artifact}`,
-          '--region', region,
-        ],
-        { log: ctx.log, throwOnNonZero: true }
-      );
-      const info = JSON.parse(stdout) as { FunctionArn?: string };
-      return {
-        id: info.FunctionArn ?? fn,
-        meta: { functionName: fn, region },
+        id: typeof info.FunctionArn === 'string' ? info.FunctionArn : fn,
+        meta: {
+          functionName: fn,
+          region: awsRegion,
+          version: typeof info.Version === 'string' ? info.Version : undefined,
+        },
       };
     }
+
+    ctx.log(`lambda: creating function "${fn}"`);
+    if (!role) {
+      throw new Error('AWS_LAMBDA_ROLE not in vault - run: sh1pt secret set AWS_LAMBDA_ROLE <arn>');
+    }
+
+    const { stdout } = await exec(
+      'aws',
+      createArgs(config, artifact, awsRegion, role),
+      { env: ctx.env, log: ctx.log, throwOnNonZero: true }
+    );
+    const info = parseLambda(stdout);
+    return {
+      id: typeof info.FunctionArn === 'string' ? info.FunctionArn : fn,
+      meta: { functionName: fn, region: awsRegion },
+    };
   },
 
-  async status(id) {
-    return { state: 'live', url: `https://console.aws.amazon.com/lambda/home?region=us-east-1#/functions/${id}` };
+  async status(id, config) {
+    const awsRegion = regionFromId(id, config.region ?? 'us-east-1');
+    const fn = functionPathFromId(id);
+    return {
+      state: 'live',
+      url: `https://console.aws.amazon.com/lambda/home?region=${encodeURIComponent(awsRegion)}#/functions/${encodeURIComponent(fn)}`,
+    };
   },
 
-  setup: setupGuide({
+  setup: manualSetup({
     label: 'AWS Lambda',
     vendorDocUrl: 'https://aws.amazon.com/cli/',
     steps: [

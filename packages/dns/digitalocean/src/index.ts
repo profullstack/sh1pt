@@ -1,22 +1,204 @@
 import { defineDns, type DnsRecord } from '@profullstack/sh1pt-core';
 
 // DigitalOcean DNS API v2. Auth: Bearer personal access token.
-// Endpoints:
-//   GET  /v2/domains                         — list all domains
-//   GET  /v2/domains/:domain/records          — list DNS records
-//   POST /v2/domains/:domain/records          — create a record
-//   PUT  /v2/domains/:domain/records/:id      — update a record
-//   DELETE /v2/domains/:domain/records/:id    — delete a record
-// DigitalOcean uses A records (not ALIAS) for domain apex pointing.
+// Core endpoints:
+//   GET    /v2/domains
+//   GET    /v2/domains/:domain/records
+//   POST   /v2/domains/:domain/records
+//   PUT    /v2/domains/:domain/records/:id
+//   DELETE /v2/domains/:domain/records/:id
 interface Config {
+  baseUrl?: string;
   defaultTtl?: number;
+  pageSize?: number;
 }
 
-const API = 'https://api.digitalocean.com/v2';
-let _secret: (k: string) => string | undefined = () => undefined;
+const DEFAULT_API = 'https://api.digitalocean.com/v2';
+let _secret: (key: string) => string | undefined = () => undefined;
 
-function authHeader() {
-  return { Authorization: `Bearer ${_secret('DO_API_TOKEN')}` };
+type DigitalOceanLinks = {
+  pages?: {
+    next?: string;
+  };
+};
+
+type DigitalOceanDomain = {
+  name: string;
+};
+
+type DigitalOceanRecord = {
+  id: number | string;
+  name: string;
+  type: string;
+  data: string;
+  ttl?: number | null;
+};
+
+type DigitalOceanListResponse = Record<string, unknown> & {
+  links?: DigitalOceanLinks;
+};
+
+function baseUrl(config: Config): string {
+  return (config.baseUrl ?? DEFAULT_API).replace(/\/+$/, '');
+}
+
+function token(): string | undefined {
+  return _secret('DO_API_TOKEN');
+}
+
+function hasToken(): boolean {
+  return !!token();
+}
+
+function authHeader(): Record<string, string> {
+  const apiToken = token();
+  if (!apiToken) {
+    throw new Error('DO_API_TOKEN not in vault - run `sh1pt secret set DO_API_TOKEN ...`');
+  }
+  return { Authorization: `Bearer ${apiToken}` };
+}
+
+function jsonHeader(): Record<string, string> {
+  return { ...authHeader(), 'Content-Type': 'application/json' };
+}
+
+function ttlValue(ttl: number | undefined, config: Config): number {
+  return ttl ?? config.defaultTtl ?? 1800;
+}
+
+function pageSize(config: Config): number {
+  return config.pageSize ?? 200;
+}
+
+function normalizeRecordName(zoneId: string, name: string): string {
+  const trimmed = name.replace(/\.$/, '');
+  if (!trimmed || trimmed === '@') return zoneId;
+  if (trimmed === zoneId || trimmed.endsWith(`.${zoneId}`)) return trimmed;
+  return `${trimmed}.${zoneId}`;
+}
+
+function toDigitalOceanName(zoneId: string, name: string): string {
+  const normalized = normalizeRecordName(zoneId, name);
+  if (normalized === zoneId) return '@';
+  return normalized.slice(0, -(zoneId.length + 1));
+}
+
+function errorDetail(payload: Record<string, unknown>, fallback: string): string {
+  const message = payload.message ?? payload.id;
+  if (typeof message === 'string') return message;
+  return fallback;
+}
+
+function mapRecord(zoneId: string, record: DigitalOceanRecord, config: Config): DnsRecord {
+  return {
+    id: String(record.id),
+    zone: zoneId,
+    name: normalizeRecordName(zoneId, record.name),
+    type: record.type as DnsRecord['type'],
+    value: record.data,
+    ttl: record.ttl ?? ttlValue(undefined, config),
+  };
+}
+
+async function digitalOceanRequest<T>(
+  config: Config,
+  pathOrUrl: string,
+  init: RequestInit = {},
+): Promise<T> {
+  const url = pathOrUrl.startsWith('http') ? pathOrUrl : `${baseUrl(config)}${pathOrUrl}`;
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      ...authHeader(),
+      ...init.headers,
+    },
+  });
+  const text = await res.text();
+  let payload: Record<string, unknown>;
+  try {
+    payload = text ? JSON.parse(text) as Record<string, unknown> : {};
+  } catch {
+    payload = { message: text.slice(0, 200) };
+  }
+
+  if (!res.ok) {
+    throw new Error(`DigitalOcean ${res.status}: ${errorDetail(payload, text.slice(0, 200))}`);
+  }
+
+  return payload as T;
+}
+
+async function listAll<T>(
+  config: Config,
+  path: string,
+  key: string,
+): Promise<T[]> {
+  const separator = path.includes('?') ? '&' : '?';
+  let next: string | undefined = `${path}${separator}per_page=${pageSize(config)}`;
+  const items: T[] = [];
+
+  while (next) {
+    const response: DigitalOceanListResponse = await digitalOceanRequest<DigitalOceanListResponse>(
+      config,
+      next,
+    );
+    const page = response[key];
+    if (Array.isArray(page)) items.push(...page as T[]);
+    next = response.links?.pages?.next;
+  }
+
+  return items;
+}
+
+async function createRecord(
+  zoneId: string,
+  record: Omit<DnsRecord, 'id'>,
+  config: Config,
+): Promise<DnsRecord> {
+  const ttl = ttlValue(record.ttl, config);
+  const response = await digitalOceanRequest<{ domain_record?: DigitalOceanRecord }>(
+    config,
+    `/domains/${encodeURIComponent(zoneId)}/records`,
+    {
+      method: 'POST',
+      headers: jsonHeader(),
+      body: JSON.stringify({
+        type: record.type,
+        name: toDigitalOceanName(zoneId, record.name),
+        data: record.value,
+        ttl,
+      }),
+    },
+  );
+  return response.domain_record
+    ? mapRecord(zoneId, response.domain_record, config)
+    : { ...record, id: '', zone: zoneId, name: normalizeRecordName(zoneId, record.name), ttl };
+}
+
+async function editRecord(
+  zoneId: string,
+  recordId: string,
+  record: Omit<DnsRecord, 'id'>,
+  config: Config,
+): Promise<DnsRecord> {
+  const ttl = ttlValue(record.ttl, config);
+  const response = await digitalOceanRequest<{ domain_record?: DigitalOceanRecord }>(
+    config,
+    `/domains/${encodeURIComponent(zoneId)}/records/${encodeURIComponent(recordId)}`,
+    {
+      method: 'PUT',
+      headers: jsonHeader(),
+      body: JSON.stringify({
+        type: record.type,
+        name: toDigitalOceanName(zoneId, record.name),
+        data: record.value,
+        ttl,
+      }),
+    },
+  );
+  return response.domain_record
+    ? mapRecord(zoneId, response.domain_record, config)
+    : { ...record, id: recordId, zone: zoneId, name: normalizeRecordName(zoneId, record.name), ttl };
 }
 
 export default defineDns<Config>({
@@ -24,86 +206,106 @@ export default defineDns<Config>({
   label: 'DigitalOcean DNS',
 
   async connect(ctx) {
-    _secret = (k) => ctx.secret(k);
+    _secret = (key) => ctx.secret(key);
     if (!ctx.secret('DO_API_TOKEN')) {
-      throw new Error('DO_API_TOKEN not set — run `sh1pt secret set DO_API_TOKEN ...` (required)');
+      throw new Error('DO_API_TOKEN not in vault - run `sh1pt secret set DO_API_TOKEN ...`');
     }
+    ctx.log('digitalocean dns connected');
     return { accountId: 'digitalocean' };
   },
 
-  async listZones() {
-    const res = await fetch(`${API}/domains`, { headers: authHeader() });
-    if (!res.ok) throw new Error(`DigitalOcean listZones: ${res.status}`);
-    const { domains } = await res.json() as { domains: { name: string }[] };
-    return domains.map(d => ({ id: d.name, name: d.name }));
+  async listZones(config) {
+    const domains = await listAll<DigitalOceanDomain>(config, '/domains', 'domains');
+    return domains.map((domain) => ({ id: domain.name, name: domain.name }));
   },
 
-  async listRecords(zoneId) {
-    const res = await fetch(`${API}/domains/${zoneId}/records?per_page=200`, {
-      headers: authHeader(),
-    });
-    if (!res.ok) throw new Error(`DigitalOcean listRecords: ${res.status}`);
-    const { domain_records } = await res.json() as {
-      domain_records: { id: number; name: string; type: string; data: string; ttl: number }[];
-    };
-    return domain_records.map(r => ({
-      id: String(r.id),
-      zone: zoneId,
-      name: r.name === '@' ? zoneId : `${r.name}.${zoneId}`,
-      type: r.type as DnsRecord['type'],
-      value: r.data,
-      ttl: r.ttl,
-    }));
+  async listRecords(zoneId, config) {
+    const records = await listAll<DigitalOceanRecord>(
+      config,
+      `/domains/${encodeURIComponent(zoneId)}/records`,
+      'domain_records',
+    );
+    return records.map((record) => mapRecord(zoneId, record, config));
   },
 
   async upsertRecord(zoneId, record, config) {
-    const ttl = record.ttl ?? config.defaultTtl ?? 1800;
-    const subdomain = record.name.endsWith(`.${zoneId}`)
-      ? record.name.slice(0, -(zoneId.length + 1))
-      : record.name === zoneId ? '@' : record.name;
+    const existing = (await this.listRecords(zoneId, config)).find((candidate) => (
+      candidate.type === record.type
+      && normalizeRecordName(zoneId, candidate.name) === normalizeRecordName(zoneId, record.name)
+    ));
 
-    const existing = await this.listRecords(zoneId, config);
-    const match = existing.find(r => r.name === record.name && r.type === record.type);
-
-    if (match) {
-      const res = await fetch(`${API}/domains/${zoneId}/records/${match.id}`, {
-        method: 'PUT',
-        headers: { ...authHeader(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: record.value, ttl }),
-      });
-      if (!res.ok) throw new Error(`DigitalOcean upsertRecord (update): ${res.status}`);
-      return { ...record, id: match.id, zone: zoneId };
+    if (existing) {
+      return editRecord(zoneId, existing.id, record, config);
     }
 
-    const res = await fetch(`${API}/domains/${zoneId}/records`, {
-      method: 'POST',
-      headers: { ...authHeader(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: record.type, name: subdomain, data: record.value, ttl }),
-    });
-    if (!res.ok) throw new Error(`DigitalOcean upsertRecord (create): ${res.status}`);
-    const { domain_record } = await res.json() as { domain_record: { id: number } };
-    return { ...record, id: String(domain_record.id), zone: zoneId };
+    return createRecord(zoneId, record, config);
   },
 
-  async deleteRecord(zoneId, recordId) {
-    const res = await fetch(`${API}/domains/${zoneId}/records/${recordId}`, {
-      method: 'DELETE',
-      headers: authHeader(),
-    });
-    if (!res.ok && res.status !== 404) throw new Error(`DigitalOcean deleteRecord: ${res.status}`);
+  async deleteRecord(zoneId, recordId, config) {
+    const res = await fetch(
+      `${baseUrl(config)}/domains/${encodeURIComponent(zoneId)}/records/${encodeURIComponent(recordId)}`,
+      {
+        method: 'DELETE',
+        headers: authHeader(),
+      },
+    );
+    if (!res.ok && res.status !== 404) {
+      const text = await res.text();
+      throw new Error(`DigitalOcean deleteRecord ${res.status}: ${text.slice(0, 200)}`);
+    }
   },
 
   async syncRoundRobin({ zoneId, name, ips, ttl }, config) {
-    // Stubbed: shape-only return. Real impl diffs existing A records at
-    // `name` against `ips` via listRecords/upsertRecord/deleteRecord.
-    const ttlFinal = ttl ?? config.defaultTtl ?? 1800;
-    return ips.map((ip, i) => ({
-      id: `do-rr-${i}`,
-      zone: zoneId,
-      name,
-      type: 'A' as const,
-      value: ip,
-      ttl: ttlFinal,
-    })) satisfies DnsRecord[];
+    const ttlFinal = ttlValue(ttl, config);
+    const normalizedName = normalizeRecordName(zoneId, name);
+    const desiredIps = [...new Set(ips)];
+
+    if (!hasToken()) {
+      return desiredIps.map((ip, index) => ({
+        id: `do-rr-${index}`,
+        zone: zoneId,
+        name: normalizedName,
+        type: 'A' as const,
+        value: ip,
+        ttl: ttlFinal,
+      })) satisfies DnsRecord[];
+    }
+
+    const desired = new Set(desiredIps);
+    const current = (await this.listRecords(zoneId, config)).filter((record) => (
+      record.type === 'A' && normalizeRecordName(zoneId, record.name) === normalizedName
+    ));
+    const kept = new Map<string, DnsRecord>();
+
+    for (const record of current) {
+      if (desired.has(record.value) && !kept.has(record.value)) {
+        const next = record.ttl === ttlFinal && record.name === normalizedName
+          ? { ...record, ttl: ttlFinal }
+          : await editRecord(zoneId, record.id, {
+            zone: zoneId,
+            name: normalizedName,
+            type: 'A',
+            value: record.value,
+            ttl: ttlFinal,
+          }, config);
+        kept.set(record.value, next);
+      } else {
+        await this.deleteRecord(zoneId, record.id, config);
+      }
+    }
+
+    for (const ip of desiredIps) {
+      if (!kept.has(ip)) {
+        kept.set(ip, await createRecord(zoneId, {
+          zone: zoneId,
+          name: normalizedName,
+          type: 'A',
+          value: ip,
+          ttl: ttlFinal,
+        }, config));
+      }
+    }
+
+    return desiredIps.map((ip) => kept.get(ip)).filter((record): record is DnsRecord => !!record);
   },
 });

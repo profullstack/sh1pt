@@ -10,7 +10,7 @@ export interface CaptchaContractOptions {
 export function contractTestCaptcha(c: CaptchaSolver<any>, opts: CaptchaContractOptions): void {
   describe(`CaptchaSolver contract · ${c.id}`, () => {
     it('declares required fields', () => {
-      expect(c.id).toMatch(/^captcha-[a-z][a-z0-9-]*$/);
+      expect(c.id).toMatch(/^captcha-[a-z0-9][a-z0-9-]*$/);
       expect(c.label).toBeTruthy();
       expect(c.supports.length).toBeGreaterThan(0);
     });

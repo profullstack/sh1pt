@@ -64,7 +64,7 @@ export default defineCloud<Config>({
   },
 
   setup: tokenSetup({
-    secretKey: 'NVIDIA_API_KEY',
+    secretKey: 'NGC_API_KEY',
     label: 'NVIDIA (build.nvidia.com)',
     vendorDocUrl: 'https://build.nvidia.com/',
     steps: [

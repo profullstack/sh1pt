@@ -24,7 +24,9 @@ export default defineMerch<Config>({
   ],
 
   async connect(ctx) {
-    if (!ctx.secret('PRINTIFY_TOKEN')) throw new Error('PRINTIFY_TOKEN not set');
+    if (!ctx.secret('PRINTIFY_TOKEN')) {
+      throw new Error('PRINTIFY_TOKEN not in vault — run `sh1pt secret set PRINTIFY_TOKEN <token>`');
+    }
     return { accountId: 'printify' };
   },
 

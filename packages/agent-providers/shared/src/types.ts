@@ -37,7 +37,7 @@ export interface AgentProviderAdapter {
   getRequiredEnv(): AgentProviderEnvRequirement[];
   validateEnv(env: Record<string, string | undefined>): void;
 
-  listModels(): Promise<never>;
+  listModels(): Promise<string[]>;
   chat(req: AgentProviderChatRequest): Promise<AgentProviderChatResponse>;
   healthcheck(): Promise<AgentProviderHealthcheckResult>;
 }

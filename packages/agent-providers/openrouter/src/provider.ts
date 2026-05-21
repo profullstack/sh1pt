@@ -1,8 +1,8 @@
 import {
-  AgentProviderAdapter,
   AgentProviderNotImplementedError,
   AgentProviderConfigError,
 } from "@profullstack/sh1pt-agent-provider-shared";
+import type { AgentProviderAdapter } from "@profullstack/sh1pt-agent-provider-shared";
 
 export const openrouterProvider: AgentProviderAdapter = {
   id: "openrouter",

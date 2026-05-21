@@ -1,26 +1,80 @@
-import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { defineTarget, exec, manualSetup } from '@profullstack/sh1pt-core';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { isAbsolute, join } from 'node:path';
 
-// F-Droid — FOSS Android app repo. Two modes:
+// F-Droid: FOSS Android app repo. Two modes:
 //   - 'main-repo': submit metadata PR to fdroiddata; F-Droid's servers
 //     reproducibly build from source. No prebuilt APKs accepted.
 //   - 'self-hosted': publish your own repo that users add as a source.
-//     Like Homebrew taps — less friction, less reach.
+//     Like Homebrew taps: less friction, less reach.
 interface Config {
-  packageName: string;              // e.g. com.acme.myapp
+  packageName: string; // e.g. com.acme.myapp
   mode: 'main-repo' | 'self-hosted';
-  // main-repo: metadata file inputs (category, license, sourceRepo, issueTracker…)
   metadata?: {
     categories: string[];
-    license: string;               // SPDX id, must be FSF-free
+    license: string; // SPDX id, must be FSF-free
     sourceRepo: string;
     issueTracker?: string;
     authorName?: string;
+    name?: string;
+    summary?: string;
+    description?: string;
+    webSite?: string;
+    repoType?: 'git' | 'git-svn' | 'hg' | 'bzr' | 'srclib';
   };
-  // self-hosted: where to publish the generated fdroid repo
   selfHosted?: {
-    repoDir: string;               // local path for the generated repo
+    repoDir: string;
     uploadTo: 'github-pages' | 'cdn' | 's3';
   };
+}
+
+function yamlString(value: string): string {
+  return JSON.stringify(value);
+}
+
+function renderList(key: string, values: string[]): string[] {
+  return [key, ...values.map((value) => `  - ${yamlString(value)}`)];
+}
+
+function renderBlock(key: string, value: string): string[] {
+  const lines = value.trim().split(/\r?\n/);
+  return [`${key}: |-`, ...lines.map((line) => `  ${line}`)];
+}
+
+function renderMetadata(config: Config): string {
+  if (!config.metadata) {
+    throw new Error('pkg-fdroid main-repo mode requires metadata');
+  }
+
+  const metadata = config.metadata;
+  const lines: string[] = [];
+  lines.push(...renderList('Categories:', metadata.categories));
+  lines.push(`License: ${yamlString(metadata.license)}`);
+  if (metadata.authorName) lines.push(`AuthorName: ${yamlString(metadata.authorName)}`);
+  if (metadata.name) lines.push(`Name: ${yamlString(metadata.name)}`);
+  if (metadata.webSite) lines.push(`WebSite: ${yamlString(metadata.webSite)}`);
+  lines.push(`SourceCode: ${yamlString(metadata.sourceRepo)}`);
+  if (metadata.issueTracker) lines.push(`IssueTracker: ${yamlString(metadata.issueTracker)}`);
+  if (metadata.summary) lines.push(`Summary: ${yamlString(metadata.summary)}`);
+  if (metadata.description) lines.push(...renderBlock('Description', metadata.description));
+  lines.push(`RepoType: ${yamlString(metadata.repoType ?? 'git')}`);
+  lines.push(`Repo: ${yamlString(metadata.sourceRepo)}`);
+  lines.push('UpdateCheckMode: None');
+  lines.push('AutoUpdateMode: None');
+  lines.push('');
+  return lines.join('\n');
+}
+
+function repoDir(config: Config): string {
+  if (!config.selfHosted?.repoDir) {
+    throw new Error('pkg-fdroid self-hosted mode requires selfHosted.repoDir');
+  }
+  return config.selfHosted.repoDir;
+}
+
+function resolveRepoDir(ctx: { projectDir: string }, config: Config): string {
+  const dir = repoDir(config);
+  return isAbsolute(dir) ? dir : join(ctx.projectDir, dir);
 }
 
 export default defineTarget<Config>({
@@ -30,33 +84,58 @@ export default defineTarget<Config>({
   async build(ctx, config) {
     if (config.mode === 'main-repo') {
       ctx.log(`render fdroiddata metadata for ${config.packageName}`);
-      // TODO: render YAML metadata file targeting fdroiddata repo
-      return { artifact: `${ctx.outDir}/${config.packageName}.yml` };
+      const metadataPath = join(ctx.outDir, `${config.packageName}.yml`);
+      await mkdir(ctx.outDir, { recursive: true });
+      await writeFile(metadataPath, renderMetadata(config), 'utf-8');
+      return { artifact: metadataPath };
     }
-    ctx.log(`fdroid update · self-hosted repo at ${config.selfHosted?.repoDir}`);
-    // TODO: `fdroid update -c` on a prepared repo dir containing the APK
-    return { artifact: config.selfHosted!.repoDir };
+
+    const cwd = resolveRepoDir(ctx, config);
+    const args = ['update', '-c'];
+    ctx.log(`fdroid ${args.join(' ')} self-hosted repo at ${cwd}`);
+    if (ctx.dryRun) {
+      const planPath = join(ctx.outDir, 'fdroid-update-plan.json');
+      await mkdir(ctx.outDir, { recursive: true });
+      await writeFile(planPath, `${JSON.stringify({ cwd, command: ['fdroid', ...args] }, null, 2)}\n`, 'utf-8');
+      return { artifact: planPath, meta: { repoDir: cwd, command: ['fdroid', ...args] } };
+    }
+
+    await exec('fdroid', args, {
+      cwd,
+      env: ctx.env,
+      log: ctx.log,
+      throwOnNonZero: true,
+    });
+    return { artifact: cwd };
   },
   async ship(ctx, config) {
     if (config.mode === 'main-repo') {
       ctx.log(`open PR against fdroiddata for ${config.packageName}`);
-      if (ctx.dryRun) return { id: 'dry-run' };
-      // TODO: clone fdroiddata, commit metadata, push branch, open PR via GH_TOKEN
+      if (ctx.dryRun) {
+        return {
+          id: 'dry-run',
+          meta: {
+            repository: 'fdroid/fdroiddata',
+            metadataFile: `metadata/${config.packageName}.yml`,
+          },
+        };
+      }
       return { id: `${config.packageName}@${ctx.version}`, url: `https://f-droid.org/packages/${config.packageName}` };
     }
-    ctx.log(`publish self-hosted repo → ${config.selfHosted?.uploadTo}`);
-    if (ctx.dryRun) return { id: 'dry-run' };
-    // TODO: sync repo dir to github-pages / cdn / s3 with correct index-v1.jar signatures
+
+    const target = config.selfHosted?.uploadTo;
+    ctx.log(`publish self-hosted repo -> ${target}`);
+    if (ctx.dryRun) return { id: 'dry-run', meta: { repoDir: repoDir(config), uploadTo: target } };
     return { id: `${config.packageName}@${ctx.version}` };
   },
 
   setup: manualSetup({
-    label: "F-Droid",
-    vendorDocUrl: "https://f-droid.org/docs/",
+    label: 'F-Droid',
+    vendorDocUrl: 'https://f-droid.org/docs/Build_Metadata_Reference/',
     steps: [
-      "F-Droid builds from source \u2014 no upload, just a metadata PR",
-      "Fork f-droid/fdroiddata \u2192 add your app metadata \u2192 submit MR",
-      "Manual review 1-4 weeks",
+      'F-Droid builds from source: no upload, just a metadata PR',
+      'Fork f-droid/fdroiddata, add metadata/<packageName>.yml, and submit a merge request',
+      'Manual review often takes 1-4 weeks',
     ],
   }),
 });

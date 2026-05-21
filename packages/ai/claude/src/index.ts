@@ -39,7 +39,7 @@ export default defineAi<Config>({
         ...opts.extra,
       }),
     });
-    if (!res.ok) throw new Error(`Anthropic ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    if (!res.ok) throw new Error(`Anthropic ${res.status}: ${redact((await res.text()).slice(0, 200), apiKey)}`);
     const data = (await res.json()) as {
       content: Array<{ type: string; text?: string }>;
       model: string;
@@ -65,3 +65,9 @@ export default defineAi<Config>({
     ],
   }),
 });
+
+function redact(value: string, apiKey: string): string {
+  return value
+    .replaceAll(apiKey, '[redacted]')
+    .replace(/sk-ant-[A-Za-z0-9._~+/=-]{12,}/g, '[redacted]');
+}

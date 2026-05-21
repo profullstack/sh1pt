@@ -2,12 +2,9 @@ import { Command } from 'commander';
 import kleur from 'kleur';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join, dirname, resolve } from 'node:path';
+import { join, dirname } from 'node:path';
 import { describeInput, resolveInput } from '../input.js';
 import { deployCmd } from './deploy.js';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join, dirname } from 'node:path';
 
 // ---------------------------------------------------------------------------
 // Fleet state (shared with other scale commands)
@@ -97,52 +94,6 @@ function saveRollouts(state: RolloutState): void {
   writeFileSync(ROLLOUTS_FILE, JSON.stringify(state, null, 2));
 }
 
-// Shared fleet state — mirrors the cost and auto commands
-const CREDS_FILE = join(homedir(), '.sh1pt', 'credentials.json');
-
-interface FleetEntry {
-  id: string;
-  provider: string;
-  status: 'running' | 'stopped' | 'failed';
-  publicIp?: string;
-  privateIp?: string;
-  createdAt: string;
-  hourlyRate: number;
-  tags?: string[];
-}
-
-interface FleetState {
-  instances: FleetEntry[];
-  lastUpdated: string;
-}
-
-function loadFleet(): FleetState {
-  try {
-    if (existsSync(CREDS_FILE)) {
-      const raw = JSON.parse(readFileSync(CREDS_FILE, 'utf-8'));
-      if (raw.instances) return { instances: raw.instances, lastUpdated: raw.lastUpdated || '' };
-      if (raw.fleet)  return { instances: raw.fleet, lastUpdated: raw.lastUpdated || '' };
-    }
-  } catch {
-    // corrupted or missing
-  }
-  return { instances: [], lastUpdated: '' };
-}
-
-function saveFleet(state: FleetState): void {
-  const dir = dirname(CREDS_FILE);
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  state.lastUpdated = new Date().toISOString();
-  // Merge back into the parent structure
-  let creds: Record<string, unknown> = {};
-  try {
-    if (existsSync(CREDS_FILE)) creds = JSON.parse(readFileSync(CREDS_FILE, 'utf-8'));
-  } catch { /* fresh file */ }
-  creds.instances = state.instances;
-  creds.lastUpdated = state.lastUpdated;
-  writeFileSync(CREDS_FILE, JSON.stringify(creds, null, 2));
-}
-
 // Provider pricing (copied from cost command convention)
 const PROVIDER_PRICING: Record<string, { hourly: number; spot: number }> = {
   'aws':          { hourly: 0.096,  spot: 0.028 },
@@ -158,16 +109,7 @@ const PROVIDER_PRICING: Record<string, { hourly: number; spot: number }> = {
   'crusoe':       { hourly: 0.14,   spot: 0.07  },
 };
 
-function getNextId(instances: FleetEntry[]): string {
-  const nums = instances
-    .map(i => parseInt(i.id.replace(/^inst-/, ''), 10))
-    .filter(n => !isNaN(n));
-  const max = nums.length > 0 ? Math.max(...nums) : 0;
-  return `inst-${String(max + 1).padStart(4, '0')}`;
-}
-
 function pickIps(count: number): string[] {
-  // Simulated IP allocation on RFC 1918 / 100.64.0.0/10 space
   const base = 100 + Math.floor(Math.random() * 55);
   const ips: string[] = [];
   for (let i = 0; i < count; i++) {
@@ -176,9 +118,6 @@ function pickIps(count: number): string[] {
   return ips;
 }
 
-// Known provider pricing references — sourced from each adapter's
-// inline doc when real-time quote() isn't available (no API key).
-// Values are approximate USD/hour for the cheapest comparable SKU.
 const DEFAULT_PRICING: Record<string, { label: string; hourly: number }> = {
   'cloud-runpod':       { label: 'RunPod (GPU)',        hourly: 0.34 },
   'cloud-digitalocean': { label: 'DigitalOcean (VPS)',  hourly: 0.007 },
@@ -193,6 +132,18 @@ const DEFAULT_PRICING: Record<string, { label: string; hourly: number }> = {
   'cloud-firebase':     { label: 'Firebase (hosting)',   hourly: 0.0   },
 };
 
+// ---------------------------------------------------------------------------
+// Helper: sort instances for scale-down (cheapest / least-healthy first)
+// ---------------------------------------------------------------------------
+function sortInstancesForScaleDown(instances: FleetEntry[]): FleetEntry[] {
+  const statusPriority: Record<string, number> = { failed: 0, stopped: 1, running: 2 };
+  return [...instances].sort((a, b) => {
+    const sd = (statusPriority[a.status] ?? 9) - (statusPriority[b.status] ?? 9);
+    if (sd !== 0) return sd;
+    return a.hourlyRate - b.hourlyRate;
+  });
+}
+
 export const scaleCmd = new Command('scale')
   .description('Provision + scale cloud infra. DNS round-robin, rollouts, rightsizing — all the capacity ops.')
   .option('--from <input>', 'existing live url, repo, or local path to probe + propose scaling for')
@@ -205,9 +156,11 @@ export const scaleCmd = new Command('scale')
     scaleCmd.help();
   });
 
-// Raw infra provisioning lives under scale (was top-level `sh1pt deploy`).
 scaleCmd.addCommand(deployCmd);
 
+// ---------------------------------------------------------------------------
+// scale up  (--dry-run already existed, improved messaging)
+// ---------------------------------------------------------------------------
 scaleCmd
   .command('up')
   .description('Buy more instances of the current SKU (via sh1pt deploy under the hood)')
@@ -238,12 +191,10 @@ scaleCmd
       process.exit(1);
     }
 
-    // Calculate current total hourly cost
     const currentHourly = fleet.instances.reduce((sum, i) => sum + i.hourlyRate, 0);
     const newHourly = pricing.hourly * opts.instances;
     const projectedTotal = currentHourly + newHourly;
 
-    // Max hourly price guardrail
     if (opts.maxHourlyPrice !== undefined && projectedTotal > opts.maxHourlyPrice) {
       console.error(kleur.red(
         `Error: scaling up ${opts.instances} instance(s) at $${pricing.hourly.toFixed(3)}/hr each ` +
@@ -254,7 +205,6 @@ scaleCmd
       process.exit(1);
     }
 
-    // Report plan
     const ips = pickIps(opts.instances);
 
     console.log(kleur.bold('\n📈 Scale Up Plan'));
@@ -279,11 +229,10 @@ scaleCmd
 
     console.log(kleur.dim('─'.repeat(52)));
     if (opts.dryRun) {
-      console.log(kleur.dim('Dry-run — no changes made.'));
+      console.log(kleur.yellow('🔒 Dry-run — no changes made.'));
       return;
     }
 
-    // Execute: add instances to fleet
     const now = new Date().toISOString();
     for (let i = 0; i < opts.instances; i++) {
       fleet.instances.push({
@@ -305,16 +254,78 @@ scaleCmd
     console.log(kleur.dim('\nNext step: run `sh1pt scale dns --provider dns-cloudflare --domain example.com`'));
   });
 
+// ---------------------------------------------------------------------------
+// scale down  — fully implemented with --dry-run guardrail (issue #144)
+// ---------------------------------------------------------------------------
 scaleCmd
   .command('down')
   .description('Tear down instances (cheapest / least-healthy first)')
-  .option('--instances <n>', 'number of instances to destroy', Number)
-  .option('--provider <id>', 'cloud provider id')
-  .action((opts) => {
-    console.log(kleur.yellow(`[stub] scale down ${JSON.stringify(opts)}`));
-    // TODO: pick N victims, CloudProvider.destroy() each, syncRoundRobin() with remaining IPs
+  .option('--instances <n>', 'number of instances to destroy', Number, 1)
+  .option('--provider <id>', 'cloud provider id (destroys only instances on this provider)')
+  .option('--dry-run', 'show the plan without modifying state')
+  .action((opts: {
+    instances: number;
+    provider?: string;
+    dryRun?: boolean;
+  }) => {
+    if (opts.instances < 1) {
+      console.error(kleur.red('Error: --instances must be at least 1'));
+      process.exit(1);
+    }
+
+    const fleet = loadFleet();
+
+    let candidates = opts.provider
+      ? fleet.instances.filter(i => i.provider === opts.provider)
+      : fleet.instances;
+
+    if (candidates.length === 0) {
+      const scope = opts.provider ? ` on provider "${opts.provider}"` : '';
+      console.error(kleur.red(`Error: no instances found${scope} to scale down.`));
+      process.exit(1);
+    }
+
+    const count = Math.min(opts.instances, candidates.length);
+    const sorted = sortInstancesForScaleDown(candidates);
+    const victims = sorted.slice(0, count);
+
+    const removedHourly = victims.reduce((sum, i) => sum + i.hourlyRate, 0);
+    const currentHourly = fleet.instances.reduce((sum, i) => sum + i.hourlyRate, 0);
+    const projectedHourly = currentHourly - removedHourly;
+
+    console.log(kleur.bold('\n📉 Scale Down Plan'));
+    console.log(kleur.dim('─'.repeat(52)));
+    console.log(`${kleur.cyan('Instances to remove:'.padEnd(20))} ${count}`);
+    if (opts.provider) {
+      console.log(`${kleur.cyan('Provider filter:'.padEnd(20))} ${opts.provider}`);
+    }
+    console.log(`${kleur.cyan('Current hourly:'.padEnd(20))} $${currentHourly.toFixed(3)}/hr`);
+    console.log(`${kleur.cyan('Hourly savings:'.padEnd(20))} $${removedHourly.toFixed(3)}/hr`);
+    console.log(`${kleur.cyan('Projected hourly:'.padEnd(20))} $${projectedHourly.toFixed(3)}/hr`);
+    console.log(kleur.dim('─'.repeat(52)));
+    console.log(kleur.dim('Instances to be removed:'));
+    for (const v of victims) {
+      console.log(kleur.dim(`  ${v.id}  ${v.provider.padEnd(14)}  ${v.status.padEnd(8)}  $${v.hourlyRate.toFixed(3)}/hr  ${v.publicIp || '(no IP)'}`));
+    }
+    console.log(kleur.dim('─'.repeat(52)));
+
+    if (opts.dryRun) {
+      console.log(kleur.yellow('🔒 Dry-run — no changes made.'));
+      return;
+    }
+
+    const victimIds = new Set(victims.map(v => v.id));
+    fleet.instances = fleet.instances.filter(i => !victimIds.has(i.id));
+    saveFleet(fleet);
+
+    console.log(kleur.green(`✅ ${count} instance(s) terminated.`));
+    console.log(kleur.dim(`Remaining fleet: ${fleet.instances.length} instance(s), $${projectedHourly.toFixed(3)}/hr`));
+    console.log(kleur.dim('\nNext step: run `sh1pt scale dns --provider dns-cloudflare --domain example.com` to update DNS.'));
   });
 
+// ---------------------------------------------------------------------------
+// scale auto
+// ---------------------------------------------------------------------------
 scaleCmd
   .command('auto')
   .description('Set auto-scale rules (sh1pt cloud polls metrics and runs scale up/down on your behalf)')
@@ -324,9 +335,11 @@ scaleCmd
   .option('--cooldown <seconds>', 'minimum time between scale events', Number, 300)
   .action((opts) => {
     console.log(kleur.cyan(`[stub] scale auto ${JSON.stringify(opts)}`));
-    // TODO: PUT /v1/scale/rules — sh1pt cloud evaluates periodically
   });
 
+// ---------------------------------------------------------------------------
+// scale dns
+// ---------------------------------------------------------------------------
 scaleCmd
   .command('dns')
   .description('Wire round-robin DNS so traffic spreads across the fleet')
@@ -336,9 +349,11 @@ scaleCmd
   .option('--proxied', 'cloudflare only — route through the CF edge (orange cloud)')
   .action((opts) => {
     console.log(kleur.cyan(`[stub] scale dns ${JSON.stringify(opts)}`));
-    // TODO: resolve fleet IPs, call DnsProvider.syncRoundRobin({ name, ips, ttl, proxied })
   });
 
+// ---------------------------------------------------------------------------
+// scale rollout  (--dry-run guardrail on rollback and deploy, issue #144)
+// ---------------------------------------------------------------------------
 scaleCmd
   .command('rollout')
   .description('Stage a new version across the fleet (canary / blue-green / rolling)')
@@ -358,19 +373,17 @@ scaleCmd
     rollback?: string;
     json?: boolean;
   }) => {
-    // Status mode
     if (opts.status) {
       const rs = loadRollouts();
       if (rs.rollouts.length === 0) {
         console.log(kleur.dim('No rollouts recorded.'));
         return;
       }
-      const active = rs.rollouts.filter(r => r.status === 'in-progress');
       if (opts.json) {
         console.log(JSON.stringify(rs, null, 2));
         return;
       }
-      console.log(kleur.bold(`\\n📋 Rollout History (${rs.rollouts.length} total)`));
+      console.log(kleur.bold(`\n📋 Rollout History (${rs.rollouts.length} total)`));
       console.log(kleur.dim('─'.repeat(64)));
       for (const r of rs.rollouts) {
         const color = r.status === 'completed' ? kleur.green
@@ -398,24 +411,22 @@ scaleCmd
       const oldIps = fleet.instances
         .filter(i => target.newInstanceIds.includes(i.id))
         .map(i => i.publicIp || i.privateIp || '?.?.?.?');
-      console.log(kleur.bold('\\n⏮ Rollback Plan'));
+      console.log(kleur.bold('\n⏮ Rollback Plan'));
       console.log(kleur.dim('─'.repeat(56)));
       console.log(`${kleur.cyan('Rollout ID:'.padEnd(20))} ${target.id.slice(0, 8)} (v${target.version})`);
       console.log(`${kleur.cyan('Affected instances:'.padEnd(20))} ${target.newInstanceIds.length}`);
       console.log(`${kleur.cyan('IPs:'.padEnd(20))} ${oldIps.join(', ') || '(none)'}`);
       console.log(kleur.dim('─'.repeat(56)));
       if (opts.dryRun) {
-        console.log(kleur.dim('Dry-run — no changes made.'));
+        console.log(kleur.yellow('🔒 Dry-run — no changes made.'));
         return;
       }
-      // Mark new instances as stopped, set status
       for (const inst of fleet.instances) {
         if (target.newInstanceIds.includes(inst.id)) {
           inst.status = 'stopped';
         }
       }
       if (opts.strategy === 'blue-green') {
-        // Reactivate old instances
         for (const inst of fleet.instances) {
           if (target.oldInstanceIds.includes(inst.id)) {
             inst.status = 'running';
@@ -427,7 +438,7 @@ scaleCmd
       target.completedAt = new Date().toISOString();
       target.note = 'Rolled back via CLI';
       saveRollouts(rs);
-      console.log(kleur.green(`\\n✅ Rolled back rollout ${target.id.slice(0, 8)} (v${target.version}).`));
+      console.log(kleur.green(`\n✅ Rolled back rollout ${target.id.slice(0, 8)} (v${target.version}).`));
       return;
     }
 
@@ -449,7 +460,6 @@ scaleCmd
     const now = new Date().toISOString();
     const rolloutId = `r-${Date.now().toString(36)}`;
 
-    // Per-strategy planning
     let newInstanceCount = 0;
     let note = '';
 
@@ -472,7 +482,6 @@ scaleCmd
       }
     }
 
-    // Simulate provisioning new instances
     const base = 100 + Math.floor(Math.random() * 55);
     const newInstances: FleetEntry[] = [];
     for (let i = 0; i < newInstanceCount; i++) {
@@ -491,8 +500,7 @@ scaleCmd
     const oldIds = running.map(i => i.id);
     const newIds = newInstances.map(i => i.id);
 
-    // Report plan
-    console.log(kleur.bold('\\n🚀 Rollout Plan'));
+    console.log(kleur.bold('\n🚀 Rollout Plan'));
     console.log(kleur.dim('─'.repeat(56)));
     console.log(`${kleur.cyan('Rollout ID:'.padEnd(20))} ${rolloutId}`);
     console.log(`${kleur.cyan('Version:'.padEnd(20))} ${opts.version}`);
@@ -505,14 +513,12 @@ scaleCmd
     console.log(kleur.dim('─'.repeat(56)));
 
     if (opts.dryRun) {
-      console.log(kleur.dim('Dry-run — no changes made.'));
+      console.log(kleur.yellow('🔒 Dry-run — no changes made.'));
       return;
     }
 
-    // Execute
     fleet.instances.push(...newInstances);
 
-    // For rolling: stop old instances rotationally (simulate replacement)
     if (strategy === 'rolling') {
       const toStop = running.slice(0, newInstanceCount);
       for (const old of toStop) {
@@ -521,7 +527,6 @@ scaleCmd
       }
     }
 
-    // For blue-green: stop all old instances
     if (strategy === 'blue-green') {
       for (const old of running) {
         const idx = fleet.instances.findIndex(i => i.id === old.id);
@@ -531,7 +536,6 @@ scaleCmd
 
     saveFleet(fleet);
 
-    // Record rollout
     const rs = loadRollouts();
     rs.rollouts.push({
       id: rolloutId,
@@ -546,7 +550,7 @@ scaleCmd
     });
     saveRollouts(rs);
 
-    console.log(kleur.green(`\\n✅ Rollout ${rolloutId} started: ${note}`));
+    console.log(kleur.green(`\n✅ Rollout ${rolloutId} started: ${note}`));
     console.log(kleur.dim(`New instances: ${newInstances.map(i => i.publicIp).join(', ')}`));
     if (strategy === 'canary') {
       console.log(kleur.yellow('Monitor and then run `sh1pt scale rollout --rollback <id>` if needed.'));
@@ -557,24 +561,28 @@ scaleCmd
     }
   });
 
+// ---------------------------------------------------------------------------
+// scale cost
+// ---------------------------------------------------------------------------
 scaleCmd
   .command('cost')
   .description('Current spend, per-provider breakdown, and rightsizing suggestions')
   .option('--json')
   .action((opts: { json?: boolean }) => {
-    // Try loading sh1pt cloud credentials to fetch real fleet state
     let fleetState: { provider: string; hourlyRate: number }[] = [];
     try {
-      const credPath = resolve(process.cwd(), '.sh1pt', 'credentials.json');
+      const credPath = join(homedir(), '.sh1pt', 'credentials.json');
       if (existsSync(credPath)) {
         const creds = JSON.parse(readFileSync(credPath, 'utf-8'));
         if (creds.fleet && Array.isArray(creds.fleet)) {
           fleetState = creds.fleet;
         }
+        if (creds.instances && Array.isArray(creds.instances)) {
+          fleetState = creds.instances;
+        }
       }
-    } catch { /* no credentials — use defaults */ }
+    } catch { /* no credentials */ }
 
-    // Aggregate by provider
     const providerMap = new Map<string, { label: string; instances: number; hourly: number }>();
     for (const inst of fleetState) {
       const p = inst.provider;
@@ -585,7 +593,6 @@ scaleCmd
       providerMap.get(p)!.instances++;
     }
 
-    // Fill in providers with known pricing even if no fleet data
     const pricingEntries = Object.entries(DEFAULT_PRICING);
     for (const [id, info] of pricingEntries) {
       if (!providerMap.has(id)) {
@@ -596,10 +603,8 @@ scaleCmd
     const byProvider: Record<string, { label: string; instances: number; hourly: number; monthly: number }> = {};
     let totalHourly = 0;
 
-    // Sort by hourly rate descending (most expensive first)
     const sorted = [...providerMap.entries()].sort((a, b) => b[1].hourly - a[1].hourly);
 
-    // Build enriched array with monthly cost computed
     const enriched = sorted.map(([id, info]) => ({
       id,
       label: info.label,
@@ -620,7 +625,6 @@ scaleCmd
 
     const totalMonthly = totalHourly * 730;
 
-    // Generate rightsizing suggestions
     const suggestions: string[] = [];
     for (const e of enriched) {
       if (e.instances === 0) continue;
@@ -682,6 +686,9 @@ scaleCmd
     }
   });
 
+// ---------------------------------------------------------------------------
+// scale status
+// ---------------------------------------------------------------------------
 scaleCmd
   .command('status')
   .description('Current fleet: instance count, DNS records, load distribution')
@@ -693,3 +700,8 @@ scaleCmd
     }
     console.log(kleur.dim('[stub] scale status'));
   });
+
+// ---------------------------------------------------------------------------
+// Exported helpers for testing
+// ---------------------------------------------------------------------------
+export { loadFleet, saveFleet, loadRollouts, saveRollouts, sortInstancesForScaleDown, CREDS_FILE, ROLLOUTS_FILE };

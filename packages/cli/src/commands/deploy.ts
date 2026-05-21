@@ -67,12 +67,19 @@ deployCmd
     console.log(kleur.dim(`[stub] deploy list · provider=${opts.provider ?? 'all'}`));
   });
 
+// deploy destroy — added --dry-run guardrail (issue #144)
 deployCmd
   .command('destroy <instanceId>')
   .description('Tear down an instance (stops billing)')
   .requiredOption('--provider <id>')
-  .action((id: string, opts: { provider: string }) => {
+  .option('--dry-run', 'show the plan without actually destroying the instance')
+  .action((id: string, opts: { provider: string; dryRun?: boolean }) => {
+    if (opts.dryRun) {
+      console.log(kleur.yellow(`🔒 Dry-run — would destroy instance ${id} on ${opts.provider}. No changes made.`));
+      return;
+    }
     console.log(kleur.red(`[stub] deploy destroy ${id} on ${opts.provider}`));
+    // TODO: call CloudProvider.destroy(instanceId)
   });
 
 deployCmd

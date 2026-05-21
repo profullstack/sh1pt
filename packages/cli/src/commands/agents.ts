@@ -10,11 +10,21 @@ export const agentsCmd = new Command('agents')
 agentsCmd
   .command('list')
   .description('Which agent CLIs are installed on this machine')
-  .action(() => {
+  .option('--json', 'output as JSON')
+  .action((opts: { json?: boolean }) => {
     const agents = ['claude', 'codex', 'qwen'];
+    if (opts.json) {
+      const output = agents.map((id) => ({
+        id,
+        package: `@profullstack/sh1pt-agent-${id}`,
+        setupCommand: `sh1pt agents setup --agent ${id}`,
+      }));
+      console.log(JSON.stringify(output, null, 2));
+      return;
+    }
     for (const a of agents) {
       // TODO: resolve adapter, call check(), render real status
-      console.log(`  ${kleur.gray('○')} ${kleur.bold(a)}  ${kleur.dim('run `sh1pt agents setup --agent ' + a + '`')}`);
+      console.log(`  ${kleur.gray('○')} ${kleur.bold(a)}  ${kleur.dim('run \`sh1pt agents setup --agent ' + a + '\`')}`);
     }
   });
 

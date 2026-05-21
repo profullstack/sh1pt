@@ -31,7 +31,17 @@ export function makeCategoryCmd(category: AdapterCategory): Command {
   cmd
     .command('list')
     .description(`List all ${category.id} adapters`)
-    .action(() => {
+    .option('--json', 'output as JSON')
+    .action((opts: { json?: boolean }) => {
+      if (opts.json) {
+        const output = category.adapters.map((name) => ({
+          name,
+          package: packageFor(category, name),
+          setupCommand: `sh1pt ${category.id} ${name} setup`,
+        }));
+        console.log(JSON.stringify(output, null, 2));
+        return;
+      }
       for (const name of category.adapters) {
         console.log(`  ${kleur.cyan(name)}  ${kleur.dim(packageFor(category, name))}`);
       }

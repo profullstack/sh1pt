@@ -127,6 +127,17 @@ skillsCmd
 skillsCmd
   .command('marketplaces')
   .description('List known skill marketplaces')
-  .action(() => {
+  .option('--json', 'output as JSON')
+  .action((opts: { json?: boolean }) => {
+    if (opts.json) {
+      const output = MARKETPLACES.map((mp) => ({
+        id: mp.id,
+        name: mp.name,
+        method: mp.method,
+        readiness: mp.readiness,
+      }));
+      console.log(JSON.stringify(output, null, 2));
+      return;
+    }
     for (const mp of MARKETPLACES) console.log(`${mp.id}\t${mp.name}\t${mp.method}\t${mp.readiness}`);
   });

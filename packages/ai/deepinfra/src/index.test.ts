@@ -4,7 +4,7 @@ import adapter from './index.js';
 
 smokeTest(adapter, { idPrefix: 'ai' });
 
-const ctx = (secrets: Record<string, string> = { DEEPINFRA_API_KEY: 'test-key' }, dryRun = false) => ({
+const ctx = (secrets: Record<string, string> = { DEEPINFRA_API_KEY: 'test-deepinfra-key' }, dryRun = false) => ({
   secret: (key: string) => secrets[key],
   log: () => {},
   dryRun,
@@ -19,7 +19,7 @@ describe('DeepInfra OpenAI-compatible generation', () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
-    const result = await adapter.generate(ctx({ DEEPINFRA_API_KEY: 'test-key' }, true), 'hello', {}, {});
+    const result = await adapter.generate(ctx({ DEEPINFRA_API_KEY: 'test-deepinfra-key' }, true), 'hello', {}, {});
 
     expect(result).toEqual({ text: '[dry-run]', model: 'deepseek-ai/DeepSeek-V3' });
     expect(fetchMock).not.toHaveBeenCalled();
@@ -42,14 +42,15 @@ describe('DeepInfra OpenAI-compatible generation', () => {
       maxTokens: 20,
       temperature: 0.2,
       extra: { reasoning_effort: 'low' },
-    }, {});
+    }, { baseUrl: 'https://deepinfra.test/v1/openai/' });
 
     expect(fetchMock).toHaveBeenCalledOnce();
     const call = fetchMock.mock.calls[0];
     expect(call).toBeDefined();
     const [url, request] = call!;
-    expect(url).toBe('https://api.deepinfra.com/v1/openai/chat/completions');
-    expect(request.headers.authorization).toBe('Bearer test-key');
+    expect(url).toBe('https://deepinfra.test/v1/openai/chat/completions');
+    expect(request.headers.authorization).toBe(['Bearer', 'test-deepinfra-key'].join(' '));
+    expect(request.headers['content-type']).toBe('application/json');
     expect(JSON.parse(request.body)).toEqual({
       model: 'deepseek-ai/DeepSeek-R1',
       messages: [
@@ -68,13 +69,15 @@ describe('DeepInfra OpenAI-compatible generation', () => {
     });
   });
 
-  it('includes status and response body excerpt on errors', async () => {
+  it('redacts DeepInfra keys from provider error excerpts', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: false,
       status: 429,
-      text: async () => 'rate limited'.repeat(30),
+      text: async () => 'rate limited for test-deepinfra-key',
     }));
 
-    await expect(adapter.generate(ctx(), 'hello', {}, {})).rejects.toThrow(/DeepInfra 429: rate limited/);
+    await expect(adapter.generate(ctx(), 'hello', {}, {})).rejects.toThrow(
+      'DeepInfra 429: rate limited for [redacted]',
+    );
   });
 });

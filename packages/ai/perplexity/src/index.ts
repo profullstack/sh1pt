@@ -5,6 +5,7 @@ interface Config {
 }
 
 const DEFAULT_BASE = 'https://api.perplexity.ai';
+const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '');
 
 export default defineAi<Config>({
   id: 'ai-perplexity',
@@ -28,7 +29,8 @@ export default defineAi<Config>({
     if (opts.system) messages.push({ role: 'system', content: opts.system });
     messages.push({ role: 'user', content: prompt });
 
-    const res = await fetch(`${config.baseUrl ?? DEFAULT_BASE}/v1/sonar`, {
+    const baseUrl = trimTrailingSlash(config.baseUrl ?? DEFAULT_BASE);
+    const res = await fetch(`${baseUrl}/v1/sonar`, {
       method: 'POST',
       headers: {
         authorization: `Bearer ${apiKey}`,
@@ -42,7 +44,7 @@ export default defineAi<Config>({
         ...opts.extra,
       }),
     });
-    if (!res.ok) throw new Error(`Perplexity ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    if (!res.ok) throw new Error(`Perplexity ${res.status}: ${redact((await res.text()).slice(0, 200), apiKey)}`);
     const data = (await res.json()) as {
       choices: Array<{ message?: { content?: string } }>;
       model: string;
@@ -67,3 +69,9 @@ export default defineAi<Config>({
     ],
   }),
 });
+
+function redact(value: string, apiKey: string): string {
+  return value
+    .replaceAll(apiKey, '[redacted]')
+    .replace(/pplx-[A-Za-z0-9._~+/=-]{12,}/g, '[redacted]');
+}

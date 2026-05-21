@@ -1,4 +1,6 @@
 import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 // Steam — desktop (Windows/macOS/Linux) and Steam Deck (SteamOS).
 // The Deck is Arch-based Linux; apps run natively on Linux or through
@@ -20,8 +22,17 @@ export default defineTarget<Config>({
   async build(ctx, config) {
     const platforms = config.depotIds.map((d) => d.platform).join(',');
     ctx.log(`prepare Steam depots · platforms=${platforms}`);
-    // TODO: generate app_build.vdf + per-depot depot_build_*.vdf referencing config.binariesDir
-    return { artifact: config.binariesDir };
+    const artifactDir = join(ctx.outDir, 'steam');
+    const planPath = join(artifactDir, 'steam-build-plan.json');
+    await mkdir(artifactDir, { recursive: true });
+    await writeFile(planPath, `${JSON.stringify({
+      steamAppId: config.steamAppId,
+      depotIds: config.depotIds,
+      branch: config.branch,
+      binariesDir: config.binariesDir,
+      submitDeckVerification: !!config.submitDeckVerification,
+    }, null, 2)}\n`, 'utf-8');
+    return { artifact: planPath };
   },
   async ship(ctx, config) {
     ctx.log(`steamcmd run_app_build · app=${config.steamAppId} · branch=${config.branch}`);

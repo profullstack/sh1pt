@@ -1,4 +1,6 @@
 import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 // SteamOS / Steam Deck — Desktop Mode path that bypasses Steam entirely.
 // The Deck runs KDE Plasma on Arch in Desktop Mode and installs Flatpaks
@@ -29,11 +31,20 @@ export default defineTarget<Config>({
   label: 'SteamOS / Steam Deck (Desktop Mode / Flatpak)',
   async build(ctx, config) {
     ctx.log(`flatpak-builder · appId=${config.appId}`);
-    // TODO:
-    //  - flatpak-builder --repo=repo build-dir <manifest>
-    //  - flatpak build-bundle repo <appId>.flatpak <appId>
-    //  - if gamingModeLauncher: generate Steam shortcuts.vdf entry + artwork
-    return { artifact: `${ctx.outDir}/${config.appId}.flatpak` };
+    const artifactDir = join(ctx.outDir, 'steamos');
+    const planPath = join(artifactDir, 'steamos-flatpak-plan.json');
+    await mkdir(artifactDir, { recursive: true });
+    await writeFile(planPath, `${JSON.stringify({
+      appId: config.appId,
+      version: ctx.version,
+      sourceDir: config.sourceDir,
+      distribution: config.distribution,
+      flatpakManifest: config.flatpakManifest,
+      gamingModeLauncher: config.gamingModeLauncher,
+      selfHosted: config.selfHosted,
+      outputArtifact: `${config.appId}.flatpak`,
+    }, null, 2)}\n`, 'utf-8');
+    return { artifact: planPath };
   },
   async ship(ctx, config) {
     const dest = config.distribution === 'flathub' ? 'Flathub PR' : `self-hosted (${config.selfHosted?.uploadTo})`;

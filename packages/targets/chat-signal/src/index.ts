@@ -1,4 +1,6 @@
 import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 // Signal has no official bot platform and no app directory. Bots are
 // built by running `signal-cli` (or the `signald` daemon) as a registered
@@ -23,8 +25,16 @@ export default defineTarget<Config>({
   label: 'Signal (signal-cli / signald)',
   async build(ctx, config) {
     ctx.log(`prepare ${config.runtime} config for ${config.phoneNumber}`);
-    // TODO: render signal-cli / signald config + dockerfile to ctx.outDir
-    return { artifact: `${ctx.outDir}/signal-runtime/` };
+    const artifactDir = join(ctx.outDir, 'signal-runtime');
+    const planPath = join(artifactDir, 'signal-runtime-plan.json');
+    await mkdir(artifactDir, { recursive: true });
+    await writeFile(planPath, `${JSON.stringify({
+      phoneNumber: config.phoneNumber,
+      runtime: config.runtime,
+      deviceName: config.deviceName,
+      captchaTokenPresent: !!config.captchaToken,
+    }, null, 2)}\n`, 'utf-8');
+    return { artifact: planPath };
   },
   async ship(ctx, config) {
     ctx.log(`register Signal number ${config.phoneNumber} (${config.runtime})`);

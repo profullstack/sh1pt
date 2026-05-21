@@ -1,4 +1,6 @@
 import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 interface Config {
   bundleId: string;
@@ -16,14 +18,19 @@ export default defineTarget<Config>({
   label: 'macOS (Mac App Store / notarized DMG)',
   async build(ctx, config) {
     ctx.log(`xcodebuild archive · distribution=${config.distribution}`);
-    // TODO:
-    //  - xcodebuild archive → exportArchive
-    //  - if 'dmg' or 'both': create-dmg + notarytool submit --wait + staple
-    //  - if 'mas' or 'both': export as mac-app-store .pkg for App Store Connect
-    // Requires macOS runner; cloud builds route to a mac worker.
-    return {
-      artifact: config.distribution === 'dmg' ? `${ctx.outDir}/app.dmg` : `${ctx.outDir}/app.pkg`,
-    };
+    const artifactDir = join(ctx.outDir, 'macos');
+    const planPath = join(artifactDir, 'macos-build-plan.json');
+    await mkdir(artifactDir, { recursive: true });
+    await writeFile(planPath, `${JSON.stringify({
+      bundleId: config.bundleId,
+      teamId: config.teamId,
+      scheme: config.scheme,
+      distribution: config.distribution,
+      entitlements: config.entitlements,
+      signingIdentity: config.signingIdentity,
+      outputArtifact: config.distribution === 'dmg' ? 'app.dmg' : 'app.pkg',
+    }, null, 2)}\n`, 'utf-8');
+    return { artifact: planPath };
   },
   async ship(ctx, config) {
     const targets = config.distribution === 'both' ? ['App Store', 'DMG host'] : [config.distribution === 'mas' ? 'App Store' : 'DMG host'];

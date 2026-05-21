@@ -1,4 +1,6 @@
 import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 type Format = 'appimage' | 'snap' | 'flatpak' | 'deb' | 'rpm' | 'tar.gz';
 
@@ -21,14 +23,22 @@ export default defineTarget<Config>({
   async build(ctx, config) {
     const arches = config.architectures ?? ['x64', 'arm64'];
     ctx.log(`build ${config.formats.join(',')} · arches=${arches.join(',')}`);
-    // TODO, per format:
-    //  - appimage: appimagetool → .AppImage
-    //  - snap:     snapcraft build → .snap
-    //  - flatpak:  flatpak-builder → .flatpak
-    //  - deb:      dpkg-deb or fpm → .deb
-    //  - rpm:      rpmbuild or fpm → .rpm
-    //  - tar.gz:   tar czf bin + desktop entry + icon
-    return { artifact: `${ctx.outDir}/linux/` };
+    const artifactDir = join(ctx.outDir, 'linux');
+    const planPath = join(artifactDir, 'linux-package-plan.json');
+    await mkdir(artifactDir, { recursive: true });
+    await writeFile(planPath, `${JSON.stringify({
+      appId: config.appId,
+      version: ctx.version,
+      channel: ctx.channel,
+      formats: config.formats,
+      architectures: arches,
+      snap: config.snap,
+      flatpak: config.flatpak,
+      apt: config.apt,
+      rpm: config.rpm,
+      direct: config.direct,
+    }, null, 2)}\n`, 'utf-8');
+    return { artifact: planPath };
   },
   async ship(ctx, config) {
     const channels = config.formats

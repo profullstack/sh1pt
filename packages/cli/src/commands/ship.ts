@@ -1,21 +1,9 @@
 import { Command } from 'commander';
-import { writeFile, access } from 'node:fs/promises';
 import { join } from 'node:path';
 import kleur from 'kleur';
-import prompts from 'prompts';
 import { lint } from '@profullstack/sh1pt-policy';
 import type { Manifest } from '@profullstack/sh1pt-core';
-
-const CONFIG_TEMPLATE = (name: string) => `import { defineConfig } from '@profullstack/sh1pt-core';
-
-export default defineConfig({
-  name: '${name}',
-  version: '0.0.0',
-  targets: {
-    // add targets with \`sh1pt ship target add <id>\`
-  },
-});
-`;
+import { initAction } from './init.js';
 
 async function loadManifest(): Promise<Manifest> {
   // Stub — real impl dynamic-imports ./sh1pt.config.ts
@@ -42,26 +30,7 @@ export const shipCmd = new Command('ship')
 shipCmd
   .command('init')
   .description('Scaffold sh1pt.config.ts in the current project')
-  .action(async () => {
-    const cfgPath = join(process.cwd(), 'sh1pt.config.ts');
-    try {
-      await access(cfgPath);
-      console.log(kleur.yellow('sh1pt.config.ts already exists — aborting.'));
-      return;
-    } catch {
-      // expected
-    }
-    const { name } = await prompts({
-      type: 'text',
-      name: 'name',
-      message: 'Project name',
-      initial: process.cwd().split('/').pop() ?? 'my-app',
-    });
-    if (!name) return;
-    await writeFile(cfgPath, CONFIG_TEMPLATE(name), 'utf8');
-    console.log(kleur.green(`✓ wrote sh1pt.config.ts`));
-    console.log(`  next: ${kleur.cyan('sh1pt ship target add <id>')}`);
-  });
+  .action(initAction);
 
 shipCmd
   .command('setup')

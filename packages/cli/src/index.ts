@@ -6,6 +6,7 @@ import { promoteCmd } from './commands/promote.js';
 import { scaleCmd } from './commands/scale.js';
 import { iterateCmd } from './commands/iterate.js';
 import { shipCmd } from './commands/ship.js';
+import { initCmd } from './commands/init.js';
 import { loginCmd, logoutCmd } from './commands/login.js';
 import { secretsCmd } from './commands/secrets.js';
 import { configCmd } from './commands/config.js';
@@ -38,6 +39,9 @@ program.addCommand(promoteCmd);    // promote  · publish (ship), ads, merch —
 program.addCommand(shipCmd);       // ship     · publish built artifacts to stores and registries
 program.addCommand(scaleCmd);      // scale    · provision (deploy), DNS, rollouts, cost
 program.addCommand(iterateCmd);    // iterate  · observe + agent-propose + ship + measure (agents nested)
+
+// Top-level init — `sh1pt init` scaffolds sh1pt.config.ts (alias for `sh1pt ship init`).
+program.addCommand(initCmd);
 
 // Auth + config utilities — cross-cutting, kept top-level for convention.
 program.addCommand(loginCmd);

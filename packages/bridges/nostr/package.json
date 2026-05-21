@@ -9,7 +9,8 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@profullstack/sh1pt-core": "workspace:*"
+    "@profullstack/sh1pt-core": "workspace:*",
+    "nostr-tools": "^2.23.5"
   },
   "license": "MIT",
   "repository": {

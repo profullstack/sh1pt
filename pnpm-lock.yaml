@@ -765,6 +765,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/cloud/exe-dev:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/cloud/firebase:
     dependencies:
       '@profullstack/sh1pt-core':

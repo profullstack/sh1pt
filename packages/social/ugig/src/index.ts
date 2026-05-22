@@ -10,7 +10,7 @@ import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 //   GET  /api/gigs          — list gigs
 //   POST /api/applications  — apply to a gig
 //   POST /api/auth/login    — authenticate (email + password)
-//   GET  /api/users/me      — get authenticated user profile
+//   GET  /api/profile       — get authenticated user profile
 //
 // Rate limits: not publicly documented; avoid bursting > ~10 req/min.
 
@@ -34,12 +34,13 @@ export default defineSocial<Config>({
     const token = ctx.secret('UGIG_TOKEN');
     if (!token) throw new Error('UGIG_TOKEN not in vault — see setup()');
 
-    const res = await fetch(`${UGIG_API}/users/me`, {
+    const res = await fetch(`${UGIG_API}/profile`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error(`ugig auth check failed: HTTP ${res.status}`);
-    const data = await res.json() as { username?: string; id?: string };
-    const username = data.username ?? config.username ?? 'ugig';
+    const data = await res.json() as { profile?: { username?: string; id?: string }; username?: string; id?: string };
+    const profile = data.profile ?? data;
+    const username = profile.username ?? config.username ?? 'ugig';
     ctx.log(`ugig connected · @${username}`);
     return { accountId: username };
   },

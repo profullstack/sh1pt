@@ -270,6 +270,307 @@ socialCmd
     }
   });
 
+// OAuth app registration guide — many social platforms require you to
+// register an OAuth application before you can obtain API tokens.
+// This command shows the per-platform registration steps + stores the
+// resulting client_id / client_secret in the vault.
+interface OAuthRegistrationGuide {
+  platform: string;
+  label: string;
+  url: string;
+  docUrl: string;
+  redirectUris: string[];
+  scopes: string[];
+  steps: string[];
+}
+
+const OAUTH_REGISTRATION_GUIDES: OAuthRegistrationGuide[] = [
+  {
+    platform: 'facebook',
+    label: 'Facebook / Meta',
+    url: 'https://developers.facebook.com/apps/',
+    docUrl: 'https://developers.facebook.com/docs/development/create-an-app/',
+    redirectUris: ['http://127.0.0.1:8765/callback', 'https://sh1pt.com/auth/callback'],
+    scopes: ['pages_manage_posts', 'pages_read_engagement', 'pages_show_list'],
+    steps: [
+      'Go to https://developers.facebook.com/apps/ and click "Create App"',
+      'Choose "Business" as the app type',
+      'Add the "Facebook Page" and "Instagram Basic Display" products',
+      'Under "Settings → Basic", note your App ID and App Secret',
+      'Add the redirect URIs listed below to "Settings → Advanced → OAuth Settings"',
+      'Submit "pages_manage_posts", "pages_read_engagement", and "pages_show_list" for App Review',
+    ],
+  },
+  {
+    platform: 'x',
+    label: 'X (Twitter)',
+    url: 'https://developer.x.com/en/portal/projects-and-apps',
+    docUrl: 'https://developer.x.com/en/docs/authentication/oauth-2-0/user-access-token',
+    redirectUris: ['http://127.0.0.1:8765/callback', 'https://sh1pt.com/auth/callback'],
+    scopes: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'],
+    steps: [
+      'Go to https://developer.x.com/en/portal/projects-and-apps',
+      'Create a Project, then create an App within it',
+      'Under "User authentication settings", enable OAuth 2.0 with PKCE',
+      'Add the redirect URIs listed below under "Callback URI / Redirect URL"',
+      'Select "Read and Write" (and "Read and Write and Direct Message" if needed) permissions',
+      'Copy your Client ID (no client secret for PKCE)',
+    ],
+  },
+  {
+    platform: 'linkedin',
+    label: 'LinkedIn',
+    url: 'https://www.linkedin.com/developers/apps/new',
+    docUrl: 'https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api',
+    redirectUris: ['http://127.0.0.1:8765/callback', 'https://sh1pt.com/auth/callback'],
+    scopes: ['w_member_social', 'r_liteprofile', 'r_emailaddress'],
+    steps: [
+      'Go to https://www.linkedin.com/developers/apps/new and create an app',
+      'Under "Auth" tab, note your Client ID and Client Secret',
+      'Add the redirect URIs listed below under "Authorized redirect URLs for your app"',
+      'Request the "Share on LinkedIn" (w_member_social) product on the "Products" tab',
+    ],
+  },
+  {
+    platform: 'instagram',
+    label: 'Instagram (Basic Display)',
+    url: 'https://developers.facebook.com/apps/',
+    docUrl: 'https://developers.facebook.com/docs/instagram-basic-display-api/getting-started',
+    redirectUris: ['http://127.0.0.1:8765/callback', 'https://sh1pt.com/auth/callback'],
+    scopes: ['instagram_basic', 'instagram_content_publish', 'pages_show_list'],
+    steps: [
+      'Create or use an existing Meta Business app at https://developers.facebook.com/apps/',
+      'Add the "Instagram Basic Display" product',
+      'Under Instagram Basic Display → "Basic Display", configure OAuth redirect URIs',
+      'Note your App ID and App Secret from Settings → Basic',
+    ],
+  },
+  {
+    platform: 'tiktok',
+    label: 'TikTok',
+    url: 'https://developers.tiktok.com/apps/',
+    docUrl: 'https://developers.tiktok.com/documentation/login-kit-web/manage-user-tokens/',
+    redirectUris: ['http://127.0.0.1:8765/callback', 'https://sh1pt.com/auth/callback'],
+    scopes: ['user.info.basic', 'video.publish', 'video.upload'],
+    steps: [
+      'Go to https://developers.tiktok.com/apps/ and click "Create App"',
+      'Fill in your app name, description, and upload icons',
+      'Add the redirect URIs listed below under "Redirect URL"',
+      'Enable the "Login Kit" and "Content Publishing" permissions',
+      'Copy your Client Key (App ID) and Client Secret',
+    ],
+  },
+  {
+    platform: 'reddit',
+    label: 'Reddit',
+    url: 'https://www.reddit.com/prefs/apps',
+    docUrl: 'https://github.com/reddit-archive/reddit/wiki/OAuth2',
+    redirectUris: ['http://127.0.0.1:8765/callback', 'https://sh1pt.com/auth/callback'],
+    scopes: ['identity', 'submit', 'read', 'edit'],
+    steps: [
+      'Go to https://www.reddit.com/prefs/apps and click "create another app…"',
+      'Choose "web app" type',
+      'Set the redirect URI to http://127.0.0.1:8765/callback',
+      'Note your Client ID (the string under the app name) and Client Secret',
+    ],
+  },
+  {
+    platform: 'google',
+    label: 'Google (YouTube)',
+    url: 'https://console.cloud.google.com/apis/credentials',
+    docUrl: 'https://developers.google.com/youtube/registering_an_application',
+    redirectUris: ['http://127.0.0.1:8765/callback', 'https://sh1pt.com/auth/callback'],
+    scopes: ['https://www.googleapis.com/auth/youtube.force-ssl', 'https://www.googleapis.com/auth/youtube.upload'],
+    steps: [
+      'Go to https://console.cloud.google.com/apis/credentials and create a project',
+      'Enable the YouTube Data API v3 from "Library"',
+      'Create OAuth 2.0 Client ID → "Web application"',
+      'Add the redirect URIs listed below under "Authorized redirect URIs"',
+      'Copy your Client ID and Client Secret',
+    ],
+  },
+  {
+    platform: 'github',
+    label: 'GitHub',
+    url: 'https://github.com/settings/developers',
+    docUrl: 'https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app',
+    redirectUris: ['http://127.0.0.1:8765/callback', 'https://sh1pt.com/auth/callback'],
+    scopes: ['repo', 'workflow', 'user'],
+    steps: [
+      'Go to https://github.com/settings/developers and click "New OAuth App"',
+      'Fill in Application name, Homepage URL, and Authorization callback URL',
+      'Add the redirect URIs listed below',
+      'Click "Register application"',
+      'Copy your Client ID and generate + copy a Client Secret',
+    ],
+  },
+  {
+    platform: 'discord',
+    label: 'Discord',
+    url: 'https://discord.com/developers/applications',
+    docUrl: 'https://discord.com/developers/docs/topics/oauth2',
+    redirectUris: ['http://127.0.0.1:8765/callback', 'https://sh1pt.com/auth/callback'],
+    scopes: ['identify', 'guilds', 'bot', 'webhook.incoming'],
+    steps: [
+      'Go to https://discord.com/developers/applications and click "New Application"',
+      'Go to the "OAuth2" page and note your Client ID and Client Secret',
+      'Add the redirect URIs listed below',
+      'If using a bot, go to "Bot" page and create + copy the bot token',
+    ],
+  },
+  {
+    platform: 'pinterest',
+    label: 'Pinterest',
+    url: 'https://developers.pinterest.com/apps/',
+    docUrl: 'https://developers.pinterest.com/docs/getting-started/set-up-app/',
+    redirectUris: ['http://127.0.0.1:8765/callback', 'https://sh1pt.com/auth/callback'],
+    scopes: ['boards:read', 'boards:write', 'pins:read', 'pins:write', 'user_accounts:read'],
+    steps: [
+      'Go to https://developers.pinterest.com/apps/ and click "Create app"',
+      'Fill in your app name and description',
+      'Add the redirect URIs listed below under "Redirect URIs"',
+      'Copy your App ID and App Secret',
+    ],
+  },
+  {
+    platform: 'spotify',
+    label: 'Spotify',
+    url: 'https://developer.spotify.com/dashboard',
+    docUrl: 'https://developer.spotify.com/documentation/web-api/tutorials/getting-started',
+    redirectUris: ['http://127.0.0.1:8765/callback', 'https://sh1pt.com/auth/callback'],
+    scopes: ['user-read-private', 'user-read-email', 'playlist-modify-public', 'playlist-modify-private'],
+    steps: [
+      'Go to https://developer.spotify.com/dashboard and click "Create App"',
+      'Fill in the app name and description',
+      'Add the redirect URIs listed below under "Redirect URIs"',
+      'Copy your Client ID and Client Secret',
+    ],
+  },
+  {
+    platform: 'snapchat',
+    label: 'Snapchat',
+    url: 'https://kit.snapchat.com/portal',
+    docUrl: 'https://docs.snap.com/snap-kit/snap-kit-overview',
+    redirectUris: ['http://127.0.0.1:8765/callback', 'https://sh1pt.com/auth/callback'],
+    scopes: ['snapchat-marketing-api', 'business_manager'],
+    steps: [
+      'Go to https://kit.snapchat.com/portal and log in with a Business account',
+      'Create a new app under the Business portal',
+      'Enable the OAuth2.0 Client and add the redirect URIs listed below',
+      'Copy your OAuth Client ID and Client Secret',
+    ],
+  },
+  {
+    platform: 'twitch',
+    label: 'Twitch',
+    url: 'https://dev.twitch.tv/console/apps',
+    docUrl: 'https://dev.twitch.tv/docs/authentication/register-app/',
+    redirectUris: ['http://127.0.0.1:8765/callback', 'https://sh1pt.com/auth/callback'],
+    scopes: ['user:read:email', 'chat:read', 'chat:edit', 'channel:manage:broadcast'],
+    steps: [
+      'Go to https://dev.twitch.tv/console/apps and click "Register Your Application"',
+      'Enter a name, add the redirect URIs listed below, and select "Chat Bot" or "Other" category',
+      'Copy your Client ID',
+      'Click "New Secret" to generate and copy a Client Secret',
+    ],
+  },
+  {
+    platform: 'microsoft',
+    label: 'Microsoft (Azure AD / LinkedIn)',
+    url: 'https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade',
+    docUrl: 'https://learn.microsoft.com/en-us/azure/active-directory/develop/quickstart-register-app',
+    redirectUris: ['http://127.0.0.1:8765/callback', 'https://sh1pt.com/auth/callback'],
+    scopes: ['User.Read', 'Mail.Send', 'Files.ReadWrite'],
+    steps: [
+      'Go to Azure Portal → App Registrations → "New Registration"',
+      'Enter a name and select "Accounts in any organizational directory"',
+      'Add the redirect URIs listed below (type: Web)',
+      'Copy your Application (Client) ID',
+      'Create a Client Secret under "Certificates & Secrets" and copy it',
+    ],
+  },
+];
+
+socialCmd
+  .command('register')
+  .description('Walk through registering an OAuth app on a social platform (creates client_id / client_secret in vault)')
+  .option('--platform <id>', 'which platform to register on (e.g. facebook, x, linkedin, tiktok, reddit, google, github, discord, pinterest, spotify, twitch)')
+  .option('--list', 'list all platforms with registration guides')
+  .action(async (opts: { platform?: string; list?: boolean }) => {
+    if (opts.list) {
+      console.log(kleur.bold('\nOAuth App Registration Guides\n'));
+      for (const guide of OAUTH_REGISTRATION_GUIDES) {
+        console.log(`  ${kleur.cyan(guide.platform.padEnd(12))} ${guide.label}`);
+      }
+      console.log(kleur.dim(`\nRun: sh1pt promote social register --platform <id>`));
+      return;
+    }
+
+    let target = opts.platform;
+    if (!target) {
+      const res = await prompts({
+        type: 'select',
+        name: 'platform',
+        message: 'Which platform do you need to register an OAuth app on?',
+        choices: OAUTH_REGISTRATION_GUIDES.map((g) => ({ title: `${g.label} (${g.platform})`, value: g.platform })),
+      });
+      target = res.platform as string;
+    }
+
+    const guide = OAUTH_REGISTRATION_GUIDES.find((g) => g.platform === target || g.platform === target.replace(/^social-/, ''));
+    if (!guide) {
+      console.log(kleur.red(`No registration guide for "${target}".`));
+      console.log(kleur.dim(`Run: sh1pt promote social register --list`));
+      return;
+    }
+
+    console.log();
+    console.log(kleur.bold().underline(`Register a ${guide.label} OAuth App`));
+    console.log();
+
+    for (const step of guide.steps) {
+      console.log(`  ${kleur.cyan('‣')} ${step}`);
+    }
+
+    console.log();
+    console.log(kleur.dim(`  Required redirect URIs:`));
+    for (const uri of guide.redirectUris) {
+      console.log(`    ${kleur.yellow(uri)}`);
+    }
+    console.log();
+    console.log(kleur.dim(`  Required OAuth scopes:`));
+    for (const scope of guide.scopes) {
+      console.log(`    ${kleur.green(scope)}`);
+    }
+
+    console.log();
+    const docUrl = guide.docUrl;
+    console.log(kleur.dim(`  Docs: ${docUrl}`));
+    console.log(kleur.dim(`  Portal: ${guide.url}`));
+    console.log();
+
+    const ctx = makeCliSetupContext();
+    const clientId = await ctx.prompt<string>({
+      type: 'text',
+      message: 'Enter the Client ID / App ID from the platform:',
+    });
+    if (clientId) {
+      await ctx.setSecret(`${guide.platform.toUpperCase()}_CLIENT_ID`, clientId);
+    }
+
+    const clientSecret = await ctx.prompt<string>({
+      type: 'password',
+      message: 'Enter the Client Secret / App Secret (or leave blank if PKCE):',
+    });
+    if (clientSecret) {
+      await ctx.setSecret(`${guide.platform.toUpperCase()}_CLIENT_SECRET`, clientSecret);
+    }
+
+    console.log();
+    console.log(kleur.green(`  ✓ OAuth app registration details saved for ${guide.label}.`));
+    console.log(kleur.dim(`  Next step: run "sh1pt promote social setup --platform ${guide.platform}" to complete the OAuth flow.`));
+  });
+
 function stripSocialPrefix(p: string): string {
   return p.replace(/^social-/, '').toLowerCase();
 }

@@ -15,15 +15,11 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
 import prompts from 'prompts';
-import {
-  runSetup,
-  type SetupContext,
-  type SetupPromptDef,
-  type AdapterWithSetup,
-} from '@profullstack/sh1pt-core';
+import { runSetup, type AdapterWithSetup } from '@profullstack/sh1pt-core';
 import type { AdapterCategory } from '../adapter-registry.js';
 import { packageFor } from '../adapter-registry.js';
 import { ensureInstalled, loadInstalledPackage } from '../installer.js';
+import { makeCliSetupContext } from '../setup-context.js';
 
 export function makeCategoryCmd(category: AdapterCategory): Command {
   const cmd = new Command(category.id).description(category.description);
@@ -81,42 +77,4 @@ export function makeCategoryCmd(category: AdapterCategory): Command {
   }
 
   return cmd;
-}
-
-// Single SetupContext implementation used by every adapter category.
-// Secrets are stubbed (logged, kept in-process) until `sh1pt login` wires
-// a real vault — the config side (./config.json) is live.
-function makeCliSetupContext(): SetupContext {
-  const memSecrets = new Map<string, string>();
-  return {
-    secret: (key) => process.env[key] ?? memSecrets.get(key),
-    async setSecret(key, value) {
-      memSecrets.set(key, value);
-      process.env[key] = value;
-      console.log(kleur.dim(`  [vault-stub] would persist ${key}=*** (vault not wired yet)`));
-    },
-    log: (m) => console.log(m),
-    async prompt<T>(def: SetupPromptDef<T>): Promise<T> {
-      const promptType =
-        def.type === 'confirm' ? 'confirm' :
-        def.type === 'select' ? 'select' :
-        def.type === 'password' ? 'password' :
-        'text';
-      const res = await prompts({
-        type: promptType as 'text' | 'password' | 'confirm' | 'select',
-        name: 'v',
-        message: def.message,
-        initial: def.initial as unknown as string | number | boolean,
-        choices: def.choices?.map((c) => ({ title: c.title, value: c.value })) as prompts.Choice[] | undefined,
-        validate: def.validate ? (v: unknown) => {
-          const r = def.validate!(v as T);
-          return r === true ? true : r;
-        } : undefined,
-      });
-      return res.v as T;
-    },
-    async open(url) {
-      console.log(kleur.dim(`  → ${url}`));
-    },
-  };
 }

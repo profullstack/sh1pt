@@ -74,15 +74,6 @@ export async function POST(
   if (!entry.manifest.compatibility.providers.includes('github')) {
     return NextResponse.json({ error: 'Action does not support GitHub' }, { status: 400 });
   }
-  if (requiresWorkflowWrite(entry.manifest.files) && !hasWorkflowWrite(auth.installation.permissions)) {
-    return NextResponse.json(
-      {
-        error:
-          'GitHub App needs Workflows: write permission to install actions into .github/workflows. Update the sh1pt GitHub App permissions, accept the installation update in GitHub, then retry.',
-      },
-      { status: 403 },
-    );
-  }
 
   let render;
   try {
@@ -101,6 +92,24 @@ export async function POST(
   const token = await mintInstallationToken(auth.installation.installation_id);
   if (!token.ok || !token.data) {
     return NextResponse.json({ error: token.error ?? 'Could not mint installation token' }, { status: token.status || 500 });
+  }
+  if (token.data.permissions) {
+    await admin
+      .from('github_installations')
+      .update({ permissions: token.data.permissions, updated_at: new Date().toISOString() })
+      .eq('id', auth.installation.id);
+  }
+  if (
+    requiresWorkflowWrite(entry.manifest.files) &&
+    !hasFreshWorkflowWrite(token.data.permissions, auth.installation.permissions)
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          'GitHub App needs Workflows: write permission to install actions into .github/workflows. Update the sh1pt GitHub App permissions, accept the installation update in GitHub, then retry.',
+      },
+      { status: 403 },
+    );
   }
 
   const outcome = await openPackPullRequest({
@@ -143,6 +152,14 @@ function requiresWorkflowWrite(files: Array<{ destination: string }>): boolean {
 
 function hasWorkflowWrite(permissions: Record<string, string> | null | undefined): boolean {
   return permissions?.workflows === 'write';
+}
+
+function hasFreshWorkflowWrite(
+  tokenPermissions: Record<string, string> | null | undefined,
+  storedPermissions: Record<string, string> | null | undefined,
+): boolean {
+  if (tokenPermissions) return hasWorkflowWrite(tokenPermissions);
+  return hasWorkflowWrite(storedPermissions);
 }
 
 function normalizeInputs(value: unknown): { ok: true; value: RenderInputs } | { ok: false; error: string } {

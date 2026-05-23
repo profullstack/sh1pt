@@ -412,3 +412,13 @@ s3_region = "env(S3_REGION)"
 s3_access_key = "env(S3_ACCESS_KEY)"
 # Configures AWS_SECRET_ACCESS_KEY for S3 bucket
 s3_secret_key = "env(S3_SECRET_KEY)"
+
+# Configure brute-force lockout protection. Without explicit settings,
+# Supabase GoTrue uses aggressive exponential backoff defaults that
+# can lock users out for 5+ hours after repeated failed sign-in attempts.
+[auth.security]
+# Maximum failed login attempts before lockout kicks in.
+max_failed_login_attempts = 10
+# Duration of the lockout after exceeding max failed attempts.
+lockout_duration = "15m"
+

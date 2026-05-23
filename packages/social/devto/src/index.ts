@@ -37,6 +37,7 @@ export default defineSocial<Config>({
     }
 
     const article = await res.json() as DevtoArticle;
+    if (article.id === undefined) throw new Error('dev.to publish response did not include an article id');
     return {
       id: String(article.id),
       url: article.url ?? 'https://dev.to/',

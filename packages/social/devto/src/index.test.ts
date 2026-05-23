@@ -77,4 +77,23 @@ describe('social-devto posting', () => {
     await expect(adapter.post(ctx as any, { title: 'Release shipped', body: 'Article body' }, {}))
       .rejects.toThrow('Title has already been taken');
   });
+
+  it('throws when DEV omits the article id from a successful response', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        url: 'https://dev.to/sh1pt/release-shipped',
+        published_at: '2026-05-11T20:00:00Z',
+      }),
+    } as any);
+
+    const ctx = {
+      ...fakeConnectContext({ DEVTO_API_KEY: 'dev-key' }),
+      dryRun: false,
+    };
+
+    await expect(adapter.post(ctx as any, { title: 'Release shipped', body: 'Article body' }, {}))
+      .rejects.toThrow('dev.to publish response did not include an article id');
+  });
 });

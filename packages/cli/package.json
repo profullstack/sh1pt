@@ -26,7 +26,8 @@
   "types": "./dist/index.d.ts",
   "files": [
     "bin",
-    "dist"
+    "dist",
+    "skills"
   ],
   "publishConfig": {
     "access": "public"

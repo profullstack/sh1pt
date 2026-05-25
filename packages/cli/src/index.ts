@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import kleur from 'kleur';
 import { createRequire } from 'node:module';
 import { buildCmd } from './commands/build.js';
+import { createActionsCmd } from './commands/build-actions.js';
 import { promoteCmd } from './commands/promote.js';
 import { scaleCmd } from './commands/scale.js';
 import { iterateCmd } from './commands/iterate.js';
@@ -48,7 +49,8 @@ program.addCommand(loginCmd);
 program.addCommand(logoutCmd);
 program.addCommand(secretsCmd);
 program.addCommand(configCmd);
-program.addCommand(skillsCmd);      // skills   · package/promote SKILL.md agent skills across marketplaces
+program.addCommand(createActionsCmd()); // actions  · install/audit GitHub Actions workflow packs
+program.addCommand(skillsCmd);          // skills   · package/promote SKILL.md agent skills across marketplaces
 program.addCommand(agentsCmd);      // agents   · generate/run/talk with AI coding CLIs
 program.addCommand(deployCmd);      // deploy   · provision cloud infrastructure
 program.addCommand(openapiCmd);     // openapi  · spec → SDK + MCP server + docs site (Stainless-style)

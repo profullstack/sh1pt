@@ -328,6 +328,10 @@ sh1pt automation stagehand setup                    AI browser automation (Brows
 
 sh1pt login                                         (auxiliary)
 sh1pt secret set|get|list|rm                        (auxiliary — credentials vault)
+sh1pt actions list|search|info                      discover built-in GitHub Actions packs
+sh1pt actions plan|install|audit                    preview, install, and audit workflow packs
+sh1pt skills list|search|info|retrieve             discover built-in agent skills
+sh1pt skills install <name> [--target T]            install guidance into AGENTS.md / CLAUDE.md / Copilot
 sh1pt skills new|create                             create sh1pt.skill.json from SKILL.md
 sh1pt skills publish --all [--dry-run]              promote agent skills to uGig/ClawHub/etc.
 sh1pt skills marketplaces                           list supported skill marketplaces
@@ -336,13 +340,18 @@ sh1pt skills marketplaces                           list supported skill marketp
 ### skills
 
 ```bash
+sh1pt skills list
+sh1pt skills info modern-web
+sh1pt skills retrieve modern-web
+sh1pt skills install modern-web --target agents-md
+sh1pt skills install modern-web --target copilot --yes
 sh1pt skills new --skill-file ./SKILL.md --source-url https://raw.example/SKILL.md --price 0
 sh1pt skills publish --all --dry-run
 sh1pt skills publish --marketplace ugig clawhub goose
 sh1pt skills marketplaces
 ```
 
-`sh1pt skills new` creates a `sh1pt.skill.json` promotion manifest from a local `SKILL.md`. `sh1pt skills publish --all --dry-run` prints the exact uGig/ClawHub/Goose/LobeHub/Kilo/Skillstore/etc. commands or manual steps so agents can register, verify credentials, and promote without guessing.
+`sh1pt skills list|info|retrieve|install` works against the CLI's built-in skill catalog, starting with the `modern-web` guidance pack. Install uses a managed block so sh1pt can append or update agent instructions in `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, and similar target files without overwriting unrelated content. `sh1pt skills new` still creates a `sh1pt.skill.json` promotion manifest from a local `SKILL.md`, and `sh1pt skills publish --all --dry-run` prints the exact uGig/ClawHub/Goose/LobeHub/Kilo/Skillstore/etc. commands or manual steps so agents can register, verify credentials, and promote without guessing.
 
 Example dry-run shape:
 

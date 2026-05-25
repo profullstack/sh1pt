@@ -1,0 +1,19 @@
+{
+  "name": "modern-web",
+  "publisher": "profullstack",
+  "type": "skill",
+  "version": "0.1.0",
+  "title": "Modern Web Guidance",
+  "description": "Install reviewable coding-agent guidance for safe, modern web app changes.",
+  "trustLevel": "verified",
+  "guide": "guides/modern-web.md",
+  "targets": [
+    "agents-md",
+    "claude",
+    "copilot",
+    "cursor",
+    "codex",
+    "openclaw",
+    "goose"
+  ]
+}

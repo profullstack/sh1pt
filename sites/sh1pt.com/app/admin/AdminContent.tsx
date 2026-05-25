@@ -15,8 +15,22 @@ type Integration = {
   request_count: number;
 };
 
+type TelnyxVoiceConfig = {
+  webhookUrl: string;
+  status: {
+    apiKeySet: boolean;
+    publicKeySet: boolean;
+    signatureVerificationDisabled: boolean;
+    assistantWebhookSet: boolean;
+    assistantWebhookSigningSet: boolean;
+    voice: string;
+    language: string;
+  };
+};
+
 export default function AdminContent({ ghStatus }: { ghStatus: GithubAppStatus }) {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [telnyxVoice, setTelnyxVoice] = useState<TelnyxVoiceConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('Crawlproof');
@@ -53,6 +67,21 @@ export default function AdminContent({ ghStatus }: { ghStatus: GithubAppStatus }
   useEffect(() => {
     void fetchIntegrations();
   }, [fetchIntegrations]);
+
+  const fetchTelnyxVoice = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/telnyx/voice', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = (await res.json()) as TelnyxVoiceConfig;
+      setTelnyxVoice(data);
+    } catch {
+      // The admin page still has other useful integration controls.
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchTelnyxVoice();
+  }, [fetchTelnyxVoice]);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -106,7 +135,7 @@ export default function AdminContent({ ghStatus }: { ghStatus: GithubAppStatus }
     <main className="container" style={{ paddingTop: 80, paddingBottom: 80, maxWidth: 760 }}>
       <h1 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', margin: 0 }}>Admin</h1>
       <p className="muted" style={{ marginTop: 8 }}>
-        Platform integrations: Crawlproof Autoblog webhook + Actions Fleet GitHub App.
+        Platform integrations: Crawlproof Autoblog webhook, Telnyx Voice AI, and Actions Fleet GitHub App.
       </p>
 
       {error && (
@@ -161,6 +190,61 @@ export default function AdminContent({ ghStatus }: { ghStatus: GithubAppStatus }
             {copied === 'url' ? 'Copied' : 'Copy'}
           </button>
         </div>
+      </section>
+
+      <section
+        style={{
+          marginTop: 24,
+          padding: 20,
+          border: '1px solid var(--border, rgba(255,255,255,0.1))',
+          borderRadius: 12,
+        }}
+      >
+        <h2 style={{ marginTop: 0 }}>Telnyx Voice AI webhook</h2>
+        <p className="muted" style={{ fontSize: '0.9rem' }}>
+          Set this as the primary URL on the Telnyx Voice API connection for the phone-number assistant.
+        </p>
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <code
+            style={{
+              flex: 1,
+              padding: '8px 12px',
+              background: 'rgba(0,0,0,0.4)',
+              borderRadius: 6,
+              fontSize: '0.85rem',
+              wordBreak: 'break-all',
+            }}
+          >
+            {telnyxVoice?.webhookUrl ?? 'https://sh1pt.com/api/webhooks/telnyx/voice'}
+          </code>
+          <button
+            className="btn secondary"
+            onClick={() =>
+              copy('telnyx-url', telnyxVoice?.webhookUrl ?? 'https://sh1pt.com/api/webhooks/telnyx/voice')
+            }
+          >
+            {copied === 'telnyx-url' ? 'Copied' : 'Copy'}
+          </button>
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gap: 8,
+            marginTop: 16,
+            fontSize: '0.8rem',
+          }}
+        >
+          <StatusPill label="TELNYX_API_KEY" ok={telnyxVoice?.status.apiKeySet ?? false} />
+          <StatusPill label="TELNYX_PUBLIC_KEY" ok={telnyxVoice?.status.publicKeySet ?? false} />
+          <StatusPill label="Assistant URL" ok={telnyxVoice?.status.assistantWebhookSet ?? false} />
+          <StatusPill label="Assistant signing" ok={telnyxVoice?.status.assistantWebhookSigningSet ?? false} />
+        </div>
+        {telnyxVoice?.status.signatureVerificationDisabled && (
+          <p style={{ color: '#fbbf24', marginTop: 12, fontSize: '0.8rem' }}>
+            Signature verification is disabled by TELNYX_VERIFY_SIGNATURE=false.
+          </p>
+        )}
       </section>
 
       <section
@@ -297,5 +381,25 @@ export default function AdminContent({ ghStatus }: { ghStatus: GithubAppStatus }
         </Link>
       </p>
     </main>
+  );
+}
+
+function StatusPill({ label, ok }: { label: string; ok: boolean }) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
+        padding: '6px 8px',
+        border: '1px solid var(--border, rgba(255,255,255,0.08))',
+        borderRadius: 6,
+        background: 'rgba(0,0,0,0.2)',
+      }}
+    >
+      <span className="muted">{label}</span>
+      <strong style={{ color: ok ? '#22c55e' : '#f87171' }}>{ok ? 'Set' : 'Missing'}</strong>
+    </span>
   );
 }

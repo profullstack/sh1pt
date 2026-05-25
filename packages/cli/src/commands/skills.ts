@@ -1,6 +1,7 @@
 import { Command } from 'commander';
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
-import { basename, dirname, resolve } from 'node:path';
+import { access, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { basename, dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import kleur from 'kleur';
 
 type SkillManifest = {
@@ -14,6 +15,34 @@ type SkillManifest = {
   skillFile: string;
   sourceUrl?: string;
   marketplaces: Record<string, { enabled: boolean; status: 'pending' | 'published' | 'manual' | 'skipped'; url?: string; command?: string; note?: string }>;
+};
+
+export type BuiltinSkillManifest = {
+  name: string;
+  publisher: string;
+  type: 'skill';
+  version: string;
+  title: string;
+  description: string;
+  trustLevel: 'official' | 'verified' | 'community' | 'experimental' | 'untrusted';
+  guide: string;
+  targets: string[];
+};
+
+export type BuiltinSkillEntry = {
+  manifest: BuiltinSkillManifest;
+  skillDir: string;
+  guidePath: string;
+  content: string;
+};
+
+export type SkillInstallAction = 'create' | 'append' | 'update-managed';
+
+export type SkillInstallPlan = {
+  destination: string;
+  target: string;
+  action: SkillInstallAction;
+  content: string;
 };
 
 const MARKETPLACES = [
@@ -31,6 +60,18 @@ const MARKETPLACES = [
   { id: 'moltbook', name: 'Moltbook / NormieClaw', method: 'Issue/PR', readiness: 'manual', note: 'Submit an index request or PR to Moltbook-Official/moltbook with public skill URLs.' },
   { id: 'agenthub', name: 'AgentHub / agentskillsmarket.space', method: 'Account import', readiness: 'manual', note: 'Requires account email confirmation, then import the public GitHub skill repo from the submit page.' },
 ] as const;
+
+const BUILTIN_SKILLS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'skills');
+
+const SKILL_TARGETS = {
+  'agents-md': 'AGENTS.md',
+  claude: 'CLAUDE.md',
+  copilot: '.github/copilot-instructions.md',
+  cursor: '.cursor/rules/{{name}}.mdc',
+  codex: '.codex/{{name}}.md',
+  openclaw: '.openclaw/{{name}}.md',
+  goose: '.goose/{{name}}.md',
+} as const;
 
 function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 64) || 'my-skill';
@@ -57,8 +98,236 @@ async function saveManifest(path: string, manifest: SkillManifest): Promise<void
   await writeFile(path, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 }
 
+function normalizeText(text: string): string {
+  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  return normalized.endsWith('\n') ? normalized : `${normalized}\n`;
+}
+
+export async function loadBuiltinSkills(): Promise<Map<string, BuiltinSkillEntry>> {
+  const catalog = new Map<string, BuiltinSkillEntry>();
+  const entries = await readdir(BUILTIN_SKILLS_DIR, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const skillDir = join(BUILTIN_SKILLS_DIR, entry.name);
+    const manifestPath = join(skillDir, 'sh1pt.skill.json');
+    if (!(await exists(manifestPath))) continue;
+    const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as BuiltinSkillManifest;
+    const guidePath = join(skillDir, manifest.guide);
+    const content = normalizeText(await readFile(guidePath, 'utf8'));
+    catalog.set(manifest.name, { manifest, skillDir, guidePath, content });
+  }
+  return catalog;
+}
+
+async function getBuiltinSkill(name: string): Promise<BuiltinSkillEntry> {
+  const catalog = await loadBuiltinSkills();
+  const entry = catalog.get(name);
+  if (!entry) {
+    const available = [...catalog.keys()].sort().join(', ') || '(none)';
+    throw new Error(`skill "${name}" not found. Available: ${available}`);
+  }
+  return entry;
+}
+
+function formatSkillRows(entries: BuiltinSkillEntry[], json?: boolean): void {
+  const rows = entries
+    .map(({ manifest }) => ({
+      name: manifest.name,
+      title: manifest.title,
+      version: manifest.version,
+      trustLevel: manifest.trustLevel,
+      description: manifest.description,
+      targets: manifest.targets,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  if (json) {
+    console.log(JSON.stringify(rows, null, 2));
+    return;
+  }
+
+  if (rows.length === 0) {
+    console.log(kleur.dim('(no built-in skills)'));
+    return;
+  }
+
+  for (const row of rows) {
+    console.log(`${kleur.bold(row.name)} ${kleur.dim(`v${row.version}`)} ${kleur.cyan(`[${row.trustLevel}]`)}`);
+    console.log(`  ${row.title} — ${row.description}`);
+    console.log(`  ${kleur.dim('targets:')} ${row.targets.join(', ')}`);
+    console.log();
+  }
+}
+
+function skillMarkers(name: string): { start: string; end: string } {
+  return {
+    start: `<!-- sh1pt-skill:${name} start -->`,
+    end: `<!-- sh1pt-skill:${name} end -->`,
+  };
+}
+
+export function resolveSkillTargetPath(target: string, skillName: string): string {
+  const template = SKILL_TARGETS[target as keyof typeof SKILL_TARGETS];
+  if (!template) {
+    const available = Object.keys(SKILL_TARGETS).sort().join(', ');
+    throw new Error(`unknown skill target "${target}". Available: ${available}`);
+  }
+  return template.replaceAll('{{name}}', skillName);
+}
+
+function renderSkillBlock(entry: BuiltinSkillEntry): string {
+  const { manifest, content } = entry;
+  const { start, end } = skillMarkers(manifest.name);
+  return normalizeText([
+    start,
+    `## sh1pt skill: ${manifest.title}`,
+    '',
+    `_Installed from ${manifest.publisher}/${manifest.name}@${manifest.version} · trust: ${manifest.trustLevel}_`,
+    '',
+    content.trim(),
+    end,
+    '',
+  ].join('\n'));
+}
+
+export function planSkillInstall(entry: BuiltinSkillEntry, target: string, existingContent?: string): SkillInstallPlan {
+  const destination = resolveSkillTargetPath(target, entry.manifest.name);
+  const block = renderSkillBlock(entry);
+  const existing = existingContent === undefined ? undefined : normalizeText(existingContent);
+  const { start, end } = skillMarkers(entry.manifest.name);
+
+  if (existing === undefined) {
+    return { destination, target, action: 'create', content: block };
+  }
+
+  if (existing.includes(start) && existing.includes(end)) {
+    const pattern = new RegExp(`${escapeRegExp(start)}[\\s\\S]*?${escapeRegExp(end)}\\n?`, 'm');
+    return {
+      destination,
+      target,
+      action: 'update-managed',
+      content: normalizeText(existing.replace(pattern, block)),
+    };
+  }
+
+  const separator = existing.endsWith('\n\n') ? '' : existing.endsWith('\n') ? '\n' : '\n\n';
+  return {
+    destination,
+    target,
+    action: 'append',
+    content: normalizeText(`${existing}${separator}${block}`),
+  };
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function printSkillStatusLine(destination: string, action: SkillInstallAction): void {
+  const colorize = action === 'create' ? kleur.green : action === 'append' ? kleur.yellow : kleur.cyan;
+  console.log(`  ${colorize(action.padEnd(20))} ${destination}`);
+}
+
 export const skillsCmd = new Command('skills')
-  .description('Package and promote SKILL.md agent skills across marketplaces');
+  .description('Package, install, and promote SKILL.md agent skills across marketplaces');
+
+skillsCmd
+  .command('list')
+  .description('List built-in skill packages available for installation')
+  .option('--json', 'output as JSON')
+  .action(async (opts: { json?: boolean }) => {
+    const catalog = await loadBuiltinSkills();
+    formatSkillRows([...catalog.values()], opts.json);
+  });
+
+skillsCmd
+  .command('search')
+  .description('Search built-in skill packages')
+  .argument('<query>', 'search text')
+  .option('--json', 'output as JSON')
+  .action(async (query: string, opts: { json?: boolean }) => {
+    const needle = query.trim().toLowerCase();
+    const catalog = await loadBuiltinSkills();
+    const matches = [...catalog.values()].filter(({ manifest }) =>
+      [manifest.name, manifest.title, manifest.description, manifest.trustLevel, ...manifest.targets]
+        .some((value) => value.toLowerCase().includes(needle)));
+    formatSkillRows(matches, opts.json);
+  });
+
+skillsCmd
+  .command('info')
+  .description('Show details for a built-in skill package')
+  .argument('<name>', 'skill name')
+  .option('--json', 'output as JSON')
+  .action(async (name: string, opts: { json?: boolean }) => {
+    const { manifest } = await getBuiltinSkill(name);
+    if (opts.json) {
+      console.log(JSON.stringify(manifest, null, 2));
+      return;
+    }
+
+    console.log(kleur.bold(`${manifest.title} (${manifest.name}@${manifest.version})`));
+    console.log(manifest.description);
+    console.log();
+    console.log(`${kleur.dim('publisher:')}   ${manifest.publisher}`);
+    console.log(`${kleur.dim('trust level:')} ${manifest.trustLevel}`);
+    console.log(`${kleur.dim('targets:')}     ${manifest.targets.join(', ')}`);
+  });
+
+skillsCmd
+  .command('retrieve')
+  .description('Print the contents of a built-in skill guide')
+  .argument('<name>', 'skill name')
+  .option('--json', 'output as JSON')
+  .action(async (name: string, opts: { json?: boolean }) => {
+    const entry = await getBuiltinSkill(name);
+    if (opts.json) {
+      console.log(JSON.stringify({ manifest: entry.manifest, content: entry.content }, null, 2));
+      return;
+    }
+    process.stdout.write(entry.content);
+  });
+
+skillsCmd
+  .command('install')
+  .description('Install a built-in skill into an agent instruction file')
+  .argument('<name>', 'skill name')
+  .option('-r, --repo <dir>', 'target repo directory', '.')
+  .option('--target <id>', 'install target (agents-md, claude, copilot, cursor, codex, openclaw, goose)', 'agents-md')
+  .option('--dry-run', 'show planned changes without writing (default unless --yes)')
+  .option('-y, --yes', 'actually write files')
+  .option('--json', 'output as JSON')
+  .action(async (name: string, opts: { repo: string; target: string; yes?: boolean; json?: boolean }) => {
+    const entry = await getBuiltinSkill(name);
+    const repoDir = resolve(opts.repo);
+    const destination = join(repoDir, resolveSkillTargetPath(opts.target, entry.manifest.name));
+    const existingContent = await exists(destination) ? await readFile(destination, 'utf8') : undefined;
+    const plan = planSkillInstall(entry, opts.target, existingContent);
+    const dryRun = !opts.yes;
+
+    if (!dryRun) {
+      await mkdir(dirname(destination), { recursive: true });
+      await writeFile(destination, plan.content, 'utf8');
+    }
+
+    const result = { repoDir, ...plan, dryRun };
+    if (opts.json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    const header = dryRun
+      ? kleur.yellow(`Dry-run: ${entry.manifest.name}@${entry.manifest.version} → ${repoDir}`)
+      : kleur.bold(`Install: ${entry.manifest.name}@${entry.manifest.version} → ${repoDir}`);
+    console.log(header);
+    console.log();
+    printSkillStatusLine(plan.destination, plan.action);
+    console.log(kleur.dim(`  target: ${plan.target}`));
+    if (dryRun) {
+      console.log();
+      console.log(kleur.dim('Re-run with --yes to write changes.'));
+    }
+  });
 
 skillsCmd
   .command('new')

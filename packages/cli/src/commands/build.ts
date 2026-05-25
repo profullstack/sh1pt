@@ -8,7 +8,7 @@ import kleur from 'kleur';
 import { describeInput, resolveInput } from '../input.js';
 import type { ResolvedInput } from '../input.js';
 import { entityCmd } from './entity.js';
-import { actionsCmd } from './build-actions.js';
+import { createActionsCmd } from './build-actions.js';
 
 function run(argv: string[], env?: Record<string, string>): number {
   console.log(kleur.cyan(`→ ${argv.join(' ')}`));
@@ -185,7 +185,7 @@ buildCmd.addCommand(entityCmd);
 
 // Actions Store / Actions Fleet — install GitHub Actions workflow packs.
 // See docs/prd/actions-fleet.md.
-buildCmd.addCommand(actionsCmd);
+buildCmd.addCommand(createActionsCmd());
 
 // Maintainer ops — lockstep version bump for the three published sh1pt
 // packages (core / policy / cli). Wraps the root-level `pnpm version:*`

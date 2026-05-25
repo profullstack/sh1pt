@@ -151,9 +151,7 @@ export function auditWorkflowContent(file: string, content: string): WorkflowAud
     findings.push({ file, rule, severity, message });
   };
 
-  if (!/^\s*permissions\s*:/m.test(content)) {
-    add('missing-permissions', 'medium', 'workflow does not define an explicit permissions block');
-  }
+  if (!/^permissions\s*:/m.test(content)) {
   if (/permissions\s*:\s*write-all\b/m.test(content)) {
     add('write-all-permissions', 'high', 'workflow requests `permissions: write-all`');
   }

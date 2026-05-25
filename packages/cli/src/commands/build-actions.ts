@@ -190,8 +190,9 @@ async function findWorkflowFiles(repoDir: string): Promise<string[]> {
     return entries
       .filter((entry) => entry.isFile() && (entry.name.endsWith('.yml') || entry.name.endsWith('.yaml')))
       .map((entry) => join(workflowsDir, entry.name));
-  } catch {
-    return [];
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    throw err;
   }
 }
 

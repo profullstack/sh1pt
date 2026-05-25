@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
-import { resolve } from 'node:path';
+import { readdir, readFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 import {
   getGhToken,
   installPlan,
@@ -16,6 +17,13 @@ import { loadBuiltinPacks } from '@profullstack/sh1pt-action-packs';
 
 export const actionsCmd = new Command('actions')
   .description('Install and manage GitHub Actions workflow packs from the sh1pt Actions Store.');
+
+export interface WorkflowAuditFinding {
+  file: string;
+  rule: string;
+  severity: 'high' | 'medium' | 'low';
+  message: string;
+}
 
 async function getCatalogEntry(packId: string): Promise<CatalogEntry> {
   const catalog = await loadBuiltinPacks();
@@ -89,6 +97,7 @@ actionsCmd
 
 actionsCmd
   .command('show')
+  .alias('info')
   .description('Show details of a single action pack.')
   .argument('<pack-id>', 'pack id, e.g. node-pnpm-ci')
   .option('--json', 'emit machine-readable JSON')
@@ -133,6 +142,109 @@ actionsCmd
     console.log(kleur.bold('Files'));
     for (const f of manifest.files) {
       console.log(`  ${f.destination}  ${kleur.dim(`← ${f.source} · ${f.mergeStrategy}`)}`);
+    }
+  });
+
+export function auditWorkflowContent(file: string, content: string): WorkflowAuditFinding[] {
+  const findings: WorkflowAuditFinding[] = [];
+  const add = (rule: string, severity: WorkflowAuditFinding['severity'], message: string): void => {
+    findings.push({ file, rule, severity, message });
+  };
+
+  if (!/^\s*permissions\s*:/m.test(content)) {
+    add('missing-permissions', 'medium', 'workflow does not define an explicit permissions block');
+  }
+  if (/permissions\s*:\s*write-all\b/m.test(content)) {
+    add('write-all-permissions', 'high', 'workflow requests `permissions: write-all`');
+  }
+  if (/^\s*pull_request_target\s*:/m.test(content)) {
+    add('pull-request-target', 'high', 'workflow is triggered by `pull_request_target`');
+  }
+
+  for (const match of content.matchAll(/uses:\s*([^\s@]+\/[^\s@]+)@(main|master)\b/g)) {
+    const ref = match[2];
+    add('unpinned-action-branch', 'high', `action ${match[1]} is pinned to mutable @${ref}`);
+  }
+
+  if (/\bcurl\b[^\n]*\|\s*(bash|sh)\b/i.test(content)) {
+    add('curl-pipe-bash', 'high', 'workflow contains a `curl ... | bash|sh` pattern');
+  }
+  if (/\bwget\b[^\n]*\|\s*(bash|sh)\b/i.test(content)) {
+    add('wget-pipe-bash', 'high', 'workflow contains a `wget ... | bash|sh` pattern');
+  }
+
+  for (const match of content.matchAll(/^\s*image:\s*([^\s#]+)\s*$/gm)) {
+    const image = match[1];
+    if (image && !image.includes('@sha256:')) {
+      add('unpinned-docker-image', 'medium', `image ${image} is not pinned to a digest`);
+    }
+  }
+
+  return findings;
+}
+
+async function findWorkflowFiles(repoDir: string): Promise<string[]> {
+  const workflowsDir = join(repoDir, '.github', 'workflows');
+  try {
+    const entries = await readdir(workflowsDir, { withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isFile() && (entry.name.endsWith('.yml') || entry.name.endsWith('.yaml')))
+      .map((entry) => join(workflowsDir, entry.name));
+  } catch {
+    return [];
+  }
+}
+
+actionsCmd
+  .command('audit')
+  .description('Audit GitHub workflow files for common security risks.')
+  .option('-r, --repo <dir>', 'target repo directory', '.')
+  .option('--strict', 'exit with non-zero code when findings are present')
+  .option('--json', 'emit machine-readable JSON')
+  .action(async (opts: { repo: string; strict?: boolean; json?: boolean }) => {
+    const repoDir = resolve(opts.repo);
+    const files = await findWorkflowFiles(repoDir);
+    const findings: WorkflowAuditFinding[] = [];
+
+    for (const file of files) {
+      const content = await readFile(file, 'utf8');
+      findings.push(...auditWorkflowContent(file, content));
+    }
+
+    const result = {
+      repoDir,
+      filesScanned: files.length,
+      findings,
+      riskLevel: findings.some((f) => f.severity === 'high')
+        ? 'high'
+        : findings.some((f) => f.severity === 'medium')
+          ? 'medium'
+          : findings.length > 0
+            ? 'low'
+            : 'none',
+    } as const;
+
+    if (opts.json) {
+      console.log(JSON.stringify(result, null, 2));
+    } else {
+      console.log(kleur.bold(`Audit: ${repoDir}`));
+      console.log(kleur.dim(`Scanned ${files.length} workflow file(s)`));
+      if (findings.length === 0) {
+        console.log(kleur.green('✔ No findings'));
+      } else {
+        console.log();
+        for (const finding of findings) {
+          const color = finding.severity === 'high' ? kleur.red : finding.severity === 'medium' ? kleur.yellow : kleur.cyan;
+          console.log(`${color(finding.severity.toUpperCase().padEnd(6))} ${finding.file}`);
+          console.log(`       ${finding.rule}: ${finding.message}`);
+        }
+        console.log();
+        console.log(`${kleur.bold('Risk level:')} ${result.riskLevel}`);
+      }
+    }
+
+    if (opts.strict && findings.length > 0) {
+      process.exitCode = 1;
     }
   });
 

@@ -94,10 +94,18 @@ export async function POST(
     return NextResponse.json({ error: token.error ?? 'Could not mint installation token' }, { status: token.status || 500 });
   }
   if (token.data.permissions) {
-    await admin
+    const { error: updateError } = await admin
       .from('github_installations')
       .update({ permissions: token.data.permissions, updated_at: new Date().toISOString() })
       .eq('id', auth.installation.id);
+
+    if (updateError) {
+      console.error('Failed to persist refreshed GitHub installation permissions', {
+        installationId: auth.installation.id,
+        githubInstallationId: auth.installation.installation_id,
+        error: updateError,
+      });
+    }
   }
   if (
     requiresWorkflowWrite(entry.manifest.files) &&

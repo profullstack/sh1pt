@@ -152,6 +152,9 @@ export function auditWorkflowContent(file: string, content: string): WorkflowAud
   };
 
   if (!/^permissions\s*:/m.test(content)) {
+    add('missing-permissions', 'medium', 'workflow has no top-level permissions block');
+  }
+
   if (/permissions\s*:\s*write-all\b/m.test(content)) {
     add('write-all-permissions', 'high', 'workflow requests `permissions: write-all`');
   }

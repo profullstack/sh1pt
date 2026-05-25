@@ -162,8 +162,9 @@ export function auditWorkflowContent(file: string, content: string): WorkflowAud
   }
 
   for (const match of content.matchAll(/uses:\s*([^\s@]+\/[^\s@]+)@(main|master)\b/g)) {
-    const ref = match[2];
-    add('unpinned-action-branch', 'high', `action ${match[1]} is pinned to mutable @${ref}`);
+    const actionRef = match[1] ?? 'unknown/action';
+    const branchRef = match[2] ?? 'unknown';
+    add('unpinned-action-branch', 'high', `action ${actionRef} is pinned to mutable @${branchRef}`);
   }
 
   if (/\bcurl\b[^\n]*\|\s*(bash|sh)\b/i.test(content)) {
@@ -175,7 +176,8 @@ export function auditWorkflowContent(file: string, content: string): WorkflowAud
 
   for (const match of content.matchAll(/^\s*image:\s*([^\s#]+)\s*$/gm)) {
     const image = match[1];
-    if (image && !image.includes('@sha256:')) {
+    if (!image) continue;
+    if (!image.includes('@sha256:')) {
       add('unpinned-docker-image', 'medium', `image ${image} is not pinned to a digest`);
     }
   }

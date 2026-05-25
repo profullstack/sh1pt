@@ -174,7 +174,7 @@ export function auditWorkflowContent(file: string, content: string): WorkflowAud
     add('wget-pipe-bash', 'high', 'workflow contains a `wget ... | bash|sh` pattern');
   }
 
-  for (const match of content.matchAll(/^\s*image:\s*([^\s#]+)\s*$/gm)) {
+  for (const match of content.matchAll(/^\s*image:\s*([^\s#]+)\s*(?:#.*)?$/gm)) {
     const image = match[1];
     if (!image) continue;
     if (!image.includes('@sha256:')) {

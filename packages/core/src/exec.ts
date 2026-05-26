@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import type { SpawnOptions } from 'node:child_process';
 import type { BuildContext } from './target.js';
 
 type LogFn = BuildContext['log'];
@@ -28,10 +29,10 @@ export async function exec(cmd: string, args: string[], opts: ExecOptions): Prom
   }
 
   return new Promise<ExecResult>((resolve, reject) => {
-    const spawnOptions = {
+    const spawnOptions: SpawnOptions = {
       cwd: opts.cwd,
       env: { ...process.env, ...extraEnv },
-      stdio: 'pipe' as const,
+      stdio: ['ignore', 'pipe', 'pipe'],
     };
     const child = process.platform === 'win32'
       ? spawn(windowsCommandLine(cmd, args), { ...spawnOptions, shell: true })
@@ -40,13 +41,13 @@ export async function exec(cmd: string, args: string[], opts: ExecOptions): Prom
     let stdout = '';
     let stderr = '';
 
-    child.stdout.on('data', (chunk: Buffer) => {
+    child.stdout?.on('data', (chunk: Buffer) => {
       const text = chunk.toString();
       stdout += text;
       for (const line of text.split('\n')) if (line) opts.log(line);
     });
 
-    child.stderr.on('data', (chunk: Buffer) => {
+    child.stderr?.on('data', (chunk: Buffer) => {
       const text = chunk.toString();
       stderr += text;
       for (const line of text.split('\n')) if (line) opts.log(line, 'warn');
@@ -78,7 +79,7 @@ function windowsCommandLine(cmd: string, args: string[]): string {
 
 function windowsShellQuote(value: string): string {
   if (/^[A-Za-z0-9_/:=.+@-]+$/.test(value)) return value;
-  return `"${value.replace(/"/g, '\\"')}"`;
+  return `"${value.replace(/(\\*)"/g, '$1$1\\"').replace(/\\+$/, '$&$&')}"`;
 }
 
 export async function ensureCli(cmd: string, installHint: string, log: LogFn): Promise<void> {

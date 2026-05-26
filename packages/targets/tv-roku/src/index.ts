@@ -1,6 +1,6 @@
 import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 import { access, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
-import { join, relative, resolve } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 
 // Roku apps run on BrightScript + SceneGraph. Unlike tvOS / Android TV /
 // Fire TV, there is no supported React runtime on Roku OS — react-tv is
@@ -42,7 +42,7 @@ async function listFiles(root: string, dir = root): Promise<string[]> {
   const files = await Promise.all(entries.map(async (entry) => {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) return listFiles(root, path);
-    if (entry.isFile()) return [relative(root, path)];
+    if (entry.isFile()) return [relative(root, path).split(sep).join('/')];
     return [];
   }));
   return files.flat().sort();

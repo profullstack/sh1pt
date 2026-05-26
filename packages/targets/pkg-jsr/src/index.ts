@@ -1,5 +1,5 @@
 import { defineTarget, exec, manualSetup } from '@profullstack/sh1pt-core';
-import { join } from 'node:path';
+import { join, posix } from 'node:path';
 
 // JSR (jsr.io) - TS-native registry. Publishes source TS directly; the
 // registry handles transpilation for Node/Deno/Bun consumers. Scoped packages
@@ -11,7 +11,12 @@ interface Config {
 }
 
 function packagePath(ctx: { projectDir: string }, config: Config): string {
-  return config.packageDir ? join(ctx.projectDir, config.packageDir) : ctx.projectDir;
+  if (!config.packageDir) return ctx.projectDir;
+  return isWindowsPath(ctx.projectDir) ? join(ctx.projectDir, config.packageDir) : posix.join(ctx.projectDir, config.packageDir);
+}
+
+function isWindowsPath(path: string): boolean {
+  return path.includes('\\') || /^[A-Za-z]:\//.test(path.replace(/\\/g, '/')) || path.startsWith('//');
 }
 
 function packageId(config: Config, version: string): string {

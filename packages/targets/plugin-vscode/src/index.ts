@@ -1,6 +1,6 @@
 import { defineTarget, setupGuide, exec } from '@profullstack/sh1pt-core';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, posix } from 'node:path';
 
 interface Config {
   publisher: string;       // e.g. "mycompany"
@@ -10,11 +10,17 @@ interface Config {
 }
 
 function packageDir(ctx: { projectDir: string }, config: Config): string {
-  return config.packageDir ? join(ctx.projectDir, config.packageDir) : ctx.projectDir;
+  if (!config.packageDir) return ctx.projectDir;
+  return isWindowsPath(ctx.projectDir) ? join(ctx.projectDir, config.packageDir) : posix.join(ctx.projectDir, config.packageDir);
 }
 
 function packageArtifact(ctx: { outDir: string; version: string }, config: Config): string {
-  return join(ctx.outDir, `${config.extensionName}-${ctx.version}.vsix`);
+  const file = `${config.extensionName}-${ctx.version}.vsix`;
+  return isWindowsPath(ctx.outDir) ? join(ctx.outDir, file) : posix.join(ctx.outDir, file);
+}
+
+function isWindowsPath(path: string): boolean {
+  return path.includes('\\') || /^[A-Za-z]:\//.test(path.replace(/\\/g, '/')) || path.startsWith('//');
 }
 
 function packageArgs(ctx: { outDir: string }, config: Config): string[] {

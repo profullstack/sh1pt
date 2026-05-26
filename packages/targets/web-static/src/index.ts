@@ -1,6 +1,6 @@
 import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 import { cp, mkdir, readdir, stat, writeFile } from 'node:fs/promises';
-import { join, relative, resolve } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 
 interface Config {
   dir: string;                 // built output directory
@@ -14,7 +14,7 @@ async function listFiles(root: string, dir = root): Promise<string[]> {
   const files = await Promise.all(entries.map(async (entry) => {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) return listFiles(root, path);
-    if (entry.isFile()) return [relative(root, path)];
+    if (entry.isFile()) return [relative(root, path).split(sep).join('/')];
     return [];
   }));
   return files.flat().sort();

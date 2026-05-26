@@ -3,7 +3,7 @@ import { execFileSync, execSync } from 'node:child_process';
 import { createSign } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { join, posix, resolve } from 'node:path';
 
 interface Config {
   bundleId: string;          // e.g. "com.example.MyApp.Extension"
@@ -65,15 +65,27 @@ function planPath(outDir: string, bundleId: string, version: string): string {
   return join(outDir, `${safeFileStem(bundleId)}-${safeFileStem(version)}.safari-plan.json`);
 }
 
+function isWindowsPath(path: string): boolean {
+  return path.includes('\\') || /^[A-Za-z]:\//.test(path.replace(/\\/g, '/')) || path.startsWith('//');
+}
+
+function joinLike(base: string, ...parts: string[]): string {
+  return isWindowsPath(base) ? join(base, ...parts) : posix.join(base, ...parts);
+}
+
+function resolveLike(base: string, path: string): string {
+  return isWindowsPath(base) ? resolve(base, path) : posix.resolve(base, path);
+}
+
 function buildPlan(
   ctx: { projectDir: string; outDir: string; version: string },
   config: Config,
 ): SafariPackagePlan {
-  const projectDir = resolve(ctx.projectDir, config.projectDir ?? '.');
+  const projectDir = resolveLike(ctx.projectDir, config.projectDir ?? '.');
   const scheme = config.scheme ?? 'App';
-  const archivePath = join(ctx.outDir, `${safeFileStem(config.bundleId)}-${safeFileStem(ctx.version)}.xcarchive`);
-  const xcodeProj = join(projectDir, `${scheme}.xcodeproj`);
-  const xcWorkspace = join(projectDir, `${scheme}.xcworkspace`);
+  const archivePath = joinLike(ctx.outDir, `${safeFileStem(config.bundleId)}-${safeFileStem(ctx.version)}.xcarchive`);
+  const xcodeProj = joinLike(projectDir, `${scheme}.xcodeproj`);
+  const xcWorkspace = joinLike(projectDir, `${scheme}.xcworkspace`);
   const appName = config.bundleId.split('.').pop() ?? 'Extension';
   const archiveArgs = [
     existsSync(xcWorkspace) ? '-workspace' : '-project',
@@ -97,7 +109,7 @@ function buildPlan(
       command: 'xcrun',
       args: [
         'safari-web-extension-converter',
-        join(projectDir, 'dist'),
+        joinLike(projectDir, 'dist'),
         '--app-name',
         appName,
         '--bundle-identifier',

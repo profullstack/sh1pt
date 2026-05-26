@@ -34,7 +34,7 @@ export async function exec(cmd: string, args: string[], opts: ExecOptions): Prom
       env: { ...process.env, ...extraEnv },
       stdio: ['ignore', 'pipe', 'pipe'],
     };
-    const child = process.platform === 'win32'
+    const child = shouldUseWindowsShell(cmd)
       ? spawn(windowsCommandLine(cmd, args), { ...spawnOptions, shell: true })
       : spawn(cmd, args, spawnOptions);
 
@@ -73,6 +73,13 @@ export async function exec(cmd: string, args: string[], opts: ExecOptions): Prom
   });
 }
 
+function shouldUseWindowsShell(cmd: string): boolean {
+  return process.platform === 'win32'
+    && !cmd.includes('/')
+    && !cmd.includes('\\')
+    && !/\.(?:exe|com)$/i.test(cmd);
+}
+
 function windowsCommandLine(cmd: string, args: string[]): string {
   return [cmd, ...args].map(windowsShellQuote).join(' ');
 }
@@ -84,7 +91,8 @@ function windowsShellQuote(value: string): string {
 
 export async function ensureCli(cmd: string, installHint: string, log: LogFn): Promise<void> {
   try {
-    await exec(cmd, ['--version'], { log: () => {}, throwOnNonZero: false });
+    const result = await exec(cmd, ['--version'], { log: () => {}, throwOnNonZero: false });
+    if (result.exitCode !== 0) throw new Error(`command not found: ${cmd}`);
   } catch (err) {
     if (err instanceof Error && err.message.startsWith('command not found')) {
       log(`${cmd} not found on PATH`, 'error');

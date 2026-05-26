@@ -16,7 +16,7 @@ function packagePath(ctx: { projectDir: string }, config: Config): string {
 }
 
 function isWindowsPath(path: string): boolean {
-  return path.includes('\\') || /^[A-Za-z]:\//.test(path.replace(/\\/g, '/')) || path.startsWith('//');
+  return path.includes('\\') || /^[A-Za-z]:\//.test(path.replace(/\\/g, '/'));
 }
 
 function packageId(config: Config, version: string): string {

@@ -62,11 +62,11 @@ function safeFileStem(value: string): string {
 }
 
 function planPath(outDir: string, bundleId: string, version: string): string {
-  return join(outDir, `${safeFileStem(bundleId)}-${safeFileStem(version)}.safari-plan.json`);
+  return joinLike(outDir, `${safeFileStem(bundleId)}-${safeFileStem(version)}.safari-plan.json`);
 }
 
 function isWindowsPath(path: string): boolean {
-  return path.includes('\\') || /^[A-Za-z]:\//.test(path.replace(/\\/g, '/')) || path.startsWith('//');
+  return path.includes('\\') || /^[A-Za-z]:\//.test(path.replace(/\\/g, '/'));
 }
 
 function joinLike(base: string, ...parts: string[]): string {

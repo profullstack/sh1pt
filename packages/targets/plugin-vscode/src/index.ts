@@ -20,7 +20,11 @@ function packageArtifact(ctx: { outDir: string; version: string }, config: Confi
 }
 
 function isWindowsPath(path: string): boolean {
-  return path.includes('\\') || /^[A-Za-z]:\//.test(path.replace(/\\/g, '/')) || path.startsWith('//');
+  return path.includes('\\') || /^[A-Za-z]:\//.test(path.replace(/\\/g, '/'));
+}
+
+function joinLike(base: string, ...parts: string[]): string {
+  return isWindowsPath(base) ? join(base, ...parts) : posix.join(base, ...parts);
 }
 
 function packageArgs(ctx: { outDir: string }, config: Config): string[] {
@@ -48,7 +52,7 @@ export default defineTarget<Config>({
 
   async build(ctx, config) {
     if (ctx.dryRun) {
-      const planPath = join(ctx.outDir, 'vscode-package.json');
+      const planPath = joinLike(ctx.outDir, 'vscode-package.json');
       ctx.log(`vsce: dry-run package plan for ${config.publisher}.${config.extensionName} v${ctx.version}`);
       await mkdir(ctx.outDir, { recursive: true });
       await writeFile(planPath, renderPackagePlan(ctx, config), 'utf-8');

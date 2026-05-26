@@ -28,11 +28,14 @@ export async function exec(cmd: string, args: string[], opts: ExecOptions): Prom
   }
 
   return new Promise<ExecResult>((resolve, reject) => {
-    const child = spawn(cmd, args, {
+    const spawnOptions = {
       cwd: opts.cwd,
       env: { ...process.env, ...extraEnv },
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+      stdio: 'pipe' as const,
+    };
+    const child = process.platform === 'win32'
+      ? spawn(windowsCommandLine(cmd, args), { ...spawnOptions, shell: true })
+      : spawn(cmd, args, spawnOptions);
 
     let stdout = '';
     let stderr = '';
@@ -67,6 +70,15 @@ export async function exec(cmd: string, args: string[], opts: ExecOptions): Prom
       }
     });
   });
+}
+
+function windowsCommandLine(cmd: string, args: string[]): string {
+  return [cmd, ...args].map(windowsShellQuote).join(' ');
+}
+
+function windowsShellQuote(value: string): string {
+  if (/^[A-Za-z0-9_/:=.+@-]+$/.test(value)) return value;
+  return `"${value.replace(/"/g, '\\"')}"`;
 }
 
 export async function ensureCli(cmd: string, installHint: string, log: LogFn): Promise<void> {

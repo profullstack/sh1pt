@@ -1,7 +1,7 @@
 import { contractTestDocs } from '@profullstack/sh1pt-core/testing';
 import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { delimiter, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import docs from './index.js';
 
@@ -48,7 +48,7 @@ describe('docs-pandoc generation', () => {
     const binDir = await mkdtemp(join(tmpdir(), 'sh1pt-pandoc-bin-'));
     tempDirs.push(outDir, binDir);
     await installFakePandoc(binDir);
-    process.env.PATH = `${binDir}:${oldPath ?? ''}`;
+    process.env.PATH = `${binDir}${delimiter}${oldPath ?? ''}`;
 
     const result = await docs.generate({ secret: () => undefined, log: () => {}, dryRun: false }, {
       kind: 'whitepaper',
@@ -90,6 +90,22 @@ describe('docs-pandoc generation', () => {
 });
 
 async function installFakePandoc(binDir: string): Promise<void> {
+  if (process.platform === 'win32') {
+    const helper = join(binDir, 'pandoc.js');
+    await writeFile(helper, [
+      'const { writeFileSync } = require("node:fs");',
+      'const { dirname, join } = require("node:path");',
+      'const args = process.argv.slice(2);',
+      'const outIndex = args.indexOf("-o");',
+      'const out = outIndex >= 0 ? args[outIndex + 1] : "";',
+      'if (!out) throw new Error("missing -o");',
+      'writeFileSync(join(dirname(out), "pandoc-args.json"), JSON.stringify(args));',
+      'writeFileSync(out, "fake pandoc output\\n");',
+    ].join('\n'), 'utf-8');
+    await writeFile(join(binDir, 'pandoc.cmd'), `@echo off\r\n"${process.execPath}" "%~dp0\\pandoc.js" %*\r\n`, 'utf-8');
+    return;
+  }
+
   const script = join(binDir, 'pandoc');
   await writeFile(script, [
     '#!/usr/bin/env bash',

@@ -123,9 +123,38 @@ describe('updateExperiment', () => {
     expect(state.experiments[0]?.note).toBe('signup rate improved');
     expect(state.experiments[0]?.updatedAt).toBe('2026-01-02T06:04:05.000Z');
 
-    updateExperiment(state, id, 'active', { now: new Date('2026-01-02T07:04:05Z') });
-    expect(state.experiments[0]?.status).toBe('active');
-    expect(state.experiments[0]?.winner).toBeUndefined();
-    expect(state.experiments[0]?.note).toBeUndefined();
+    const resumedEndedExperiment = updateExperiment(state, id, 'active', { now: new Date('2026-01-02T07:04:05Z') });
+    expect(resumedEndedExperiment).toBeUndefined();
+    expect(state.experiments[0]?.status).toBe('ended');
+    expect(state.experiments[0]?.winner).toBe('B');
+    expect(state.experiments[0]?.note).toBe('signup rate improved');
+    expect(state.experiments[0]?.updatedAt).toBe('2026-01-02T06:04:05.000Z');
+  });
+
+  it('does not pause an ended experiment or clear outcome metadata', () => {
+    const state = {
+      experiments: [
+        {
+          ...createExperiment('new headline improves signup', {
+            variant: ['A', 'B'],
+            traffic: 50,
+            minSample: 1000,
+          }, new Date('2026-01-02T03:04:05Z')),
+          status: 'ended' as const,
+          updatedAt: '2026-01-02T06:04:05.000Z',
+          winner: 'B' as const,
+          note: 'signup rate improved',
+        },
+      ],
+    };
+    const id = state.experiments[0]?.id ?? '';
+
+    const pausedEndedExperiment = updateExperiment(state, id, 'paused', { now: new Date('2026-01-02T07:04:05Z') });
+
+    expect(pausedEndedExperiment).toBeUndefined();
+    expect(state.experiments[0]?.status).toBe('ended');
+    expect(state.experiments[0]?.winner).toBe('B');
+    expect(state.experiments[0]?.note).toBe('signup rate improved');
+    expect(state.experiments[0]?.updatedAt).toBe('2026-01-02T06:04:05.000Z');
   });
 });

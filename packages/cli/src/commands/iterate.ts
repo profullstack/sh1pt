@@ -117,6 +117,19 @@ function parseWinner(value?: string): IterateExperiment['winner'] | undefined {
   return undefined;
 }
 
+function invalidTransitionMessage(experiment: IterateExperiment, status: IterateExperiment['status']): string | undefined {
+  if (status === 'paused' && experiment.status !== 'active') {
+    return `only active experiments can be paused: ${experiment.id} is ${experiment.status}`;
+  }
+  if (status === 'active' && experiment.status !== 'paused') {
+    return `only paused experiments can be resumed: ${experiment.id} is ${experiment.status}`;
+  }
+  if (status === 'ended' && experiment.status !== 'active') {
+    return `only active experiments can be ended: ${experiment.id} is ${experiment.status}`;
+  }
+  return undefined;
+}
+
 export function updateExperiment(
   state: ExperimentsState,
   id: string,
@@ -125,6 +138,7 @@ export function updateExperiment(
 ): IterateExperiment | undefined {
   const experiment = findExperiment(state, id);
   if (!experiment) return undefined;
+  if (invalidTransitionMessage(experiment, status)) return undefined;
   experiment.status = status;
   experiment.updatedAt = (opts.now ?? new Date()).toISOString();
   if (status === 'ended') {
@@ -305,36 +319,57 @@ iterateCmd
         process.exitCode = 1;
         return;
       }
-      const experiment = updateExperiment(state, opts.end, 'ended', { winner, note: opts.note });
+      const experiment = findExperiment(state, opts.end);
       if (!experiment) {
         console.error(kleur.red(`experiment not found: ${opts.end}`));
         process.exitCode = 1;
         return;
       }
+      const transitionError = invalidTransitionMessage(experiment, 'ended');
+      if (transitionError) {
+        console.error(kleur.red(transitionError));
+        process.exitCode = 1;
+        return;
+      }
+      updateExperiment(state, opts.end, 'ended', { winner, note: opts.note });
       await saveExperiments(state);
       console.log(kleur.yellow(`ended experiment: ${experiment.id}`));
       return;
     }
 
     if (opts.pause) {
-      const experiment = updateExperiment(state, opts.pause, 'paused');
+      const experiment = findExperiment(state, opts.pause);
       if (!experiment) {
         console.error(kleur.red(`experiment not found: ${opts.pause}`));
         process.exitCode = 1;
         return;
       }
+      const transitionError = invalidTransitionMessage(experiment, 'paused');
+      if (transitionError) {
+        console.error(kleur.red(transitionError));
+        process.exitCode = 1;
+        return;
+      }
+      updateExperiment(state, opts.pause, 'paused');
       await saveExperiments(state);
       console.log(kleur.yellow(`paused experiment: ${experiment.id}`));
       return;
     }
 
     if (opts.resume) {
-      const experiment = updateExperiment(state, opts.resume, 'active');
+      const experiment = findExperiment(state, opts.resume);
       if (!experiment) {
         console.error(kleur.red(`experiment not found: ${opts.resume}`));
         process.exitCode = 1;
         return;
       }
+      const transitionError = invalidTransitionMessage(experiment, 'active');
+      if (transitionError) {
+        console.error(kleur.red(transitionError));
+        process.exitCode = 1;
+        return;
+      }
+      updateExperiment(state, opts.resume, 'active');
       await saveExperiments(state);
       console.log(kleur.green(`resumed experiment: ${experiment.id}`));
       return;

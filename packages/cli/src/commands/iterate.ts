@@ -2,12 +2,33 @@ import { Command } from 'commander';
 import kleur from 'kleur';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { randomBytes } from 'node:crypto';
 import { configDir } from '@profullstack/sh1pt-core';
 import { describeInput, resolveInput } from '../input.js';
 
 // agentsCmd moved to root level — see https://github.com/profullstack/sh1pt/issues/235
 
 const GOALS_FILE = () => path.join(configDir(), 'iterate-goals.json');
+const EXPERIMENTS_FILE = () => path.join(configDir(), 'iterate-experiments.json');
+
+export interface IterateExperiment {
+  id: string;
+  hypothesis: string;
+  variants: string[];
+  traffic: number;
+  minSample: number;
+  createdAt: string;
+  updatedAt: string;
+  status: 'active' | 'ended' | 'paused';
+  significance?: number;
+  sampleCount?: number;
+  winner?: 'A' | 'B' | 'inconclusive';
+  note?: string;
+}
+
+export interface ExperimentsState {
+  experiments: IterateExperiment[];
+}
 
 async function loadGoals(): Promise<Record<string, string>> {
   try {
@@ -25,6 +46,108 @@ async function saveGoals(goals: Record<string, string>): Promise<void> {
   const tmp = `${GOALS_FILE()}.tmp`;
   await fs.writeFile(tmp, JSON.stringify(goals, null, 2) + '\n', { mode: 0o600 });
   await fs.rename(tmp, GOALS_FILE());
+}
+
+export async function loadExperiments(): Promise<ExperimentsState> {
+  try {
+    const raw = await fs.readFile(EXPERIMENTS_FILE(), 'utf8');
+    const parsed = JSON.parse(raw);
+    const experiments = Array.isArray(parsed?.experiments) ? parsed.experiments : [];
+    return { experiments: experiments.filter(isExperiment) };
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return { experiments: [] };
+    throw err;
+  }
+}
+
+async function saveExperiments(state: ExperimentsState): Promise<void> {
+  await fs.mkdir(configDir(), { recursive: true, mode: 0o700 });
+  const tmp = `${EXPERIMENTS_FILE()}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(state, null, 2) + '\n', { mode: 0o600 });
+  await fs.rename(tmp, EXPERIMENTS_FILE());
+}
+
+function isExperiment(value: unknown): value is IterateExperiment {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<IterateExperiment>;
+  return typeof candidate.id === 'string'
+    && typeof candidate.hypothesis === 'string'
+    && Array.isArray(candidate.variants)
+    && typeof candidate.traffic === 'number'
+    && typeof candidate.minSample === 'number'
+    && typeof candidate.createdAt === 'string'
+    && typeof candidate.updatedAt === 'string'
+    && (candidate.status === 'active' || candidate.status === 'ended' || candidate.status === 'paused');
+}
+
+export function createExperiment(
+  hypothesis: string,
+  opts: { variant?: string[]; traffic?: number; minSample?: number },
+  now = new Date(),
+): IterateExperiment {
+  const variants = opts.variant && opts.variant.length > 0 ? opts.variant : ['current', 'candidate'];
+  const timestamp = now.toISOString();
+  return {
+    id: randomBytes(4).toString('hex'),
+    hypothesis,
+    variants,
+    traffic: opts.traffic ?? 50,
+    minSample: opts.minSample ?? 1000,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    status: 'active',
+  };
+}
+
+function findExperiment(state: ExperimentsState, id: string): IterateExperiment | undefined {
+  return state.experiments.find((item) => item.id === id);
+}
+
+function formatOutcome(experiment: IterateExperiment): string {
+  const details = [
+    experiment.winner ? `winner=${experiment.winner}` : undefined,
+    experiment.note ? `note="${experiment.note}"` : undefined,
+  ].filter(Boolean);
+  return details.length > 0 ? ` (${details.join(', ')})` : '';
+}
+
+function parseWinner(value?: string): IterateExperiment['winner'] | undefined {
+  if (!value) return undefined;
+  if (value === 'A' || value === 'B' || value === 'inconclusive') return value;
+  return undefined;
+}
+
+export function updateExperiment(
+  state: ExperimentsState,
+  id: string,
+  status: IterateExperiment['status'],
+  opts: { winner?: IterateExperiment['winner']; note?: string; now?: Date } = {},
+): IterateExperiment | undefined {
+  const experiment = findExperiment(state, id);
+  if (!experiment) return undefined;
+  experiment.status = status;
+  experiment.updatedAt = (opts.now ?? new Date()).toISOString();
+  if (status === 'ended') {
+    if (opts.winner) experiment.winner = opts.winner;
+    if (opts.note) experiment.note = opts.note;
+  } else {
+    delete experiment.winner;
+    delete experiment.note;
+  }
+  return experiment;
+}
+
+function printExperiments(state: ExperimentsState): void {
+  if (state.experiments.length === 0) {
+    console.log(kleur.dim('no experiments registered'));
+    return;
+  }
+  for (const experiment of state.experiments) {
+    const variants = experiment.variants.map((variant) => `"${variant}"`).join(' vs ');
+    console.log(`${kleur.cyan(experiment.id)} ${experiment.status} ${experiment.traffic}% ${experiment.minSample} samples${formatOutcome(experiment)}`);
+    console.log(`  hypothesis: ${experiment.hypothesis}`);
+    console.log(`  variants: ${variants}`);
+  }
 }
 
 export const iterateCmd = new Command('iterate')
@@ -138,16 +261,92 @@ iterateCmd
   .option('--variant <text...>', 'the B-side change; A is current state')
   .option('--traffic <percent>', 'percentage routed to B', Number, 50)
   .option('--min-sample <n>', 'minimum events before stopping', Number, 1000)
-  .action((hypothesis: string, opts) => {
-    console.log(kleur.cyan(`[stub] iterate test "${hypothesis}" ${JSON.stringify(opts)}`));
-    // TODO: generate two Ship variants, wire feature flag, schedule analysis at min-sample
+  .action(async (hypothesis: string, opts: { variant?: string[]; traffic?: number; minSample?: number }) => {
+    const state = await loadExperiments();
+    const experiment = createExperiment(hypothesis, opts);
+    state.experiments.push(experiment);
+    await saveExperiments(state);
+    console.log(kleur.green(`registered experiment: ${experiment.id}`));
+    console.log(`  hypothesis: ${experiment.hypothesis}`);
+    console.log(`  variants: ${experiment.variants.join(' vs ')}`);
+    console.log(`  traffic: ${experiment.traffic}%`);
+    console.log(`  min sample: ${experiment.minSample}`);
   });
 
 iterateCmd
   .command('experiments')
   .description('Active and recently-ended experiments with significance')
   .option('--json')
-  .action((opts: { json?: boolean }) => {
-    if (opts.json) { console.log(JSON.stringify({ active: [], ended: [] }, null, 2)); return; }
-    console.log(kleur.dim('[stub] iterate experiments — table of active / concluded tests'));
+  .option('--end <id>', 'mark an active experiment as ended')
+  .option('--pause <id>', 'mark an active experiment as paused')
+  .option('--resume <id>', 'mark a paused experiment as active')
+  .option('--winner <result>', 'record an ending outcome: A, B, or inconclusive')
+  .option('--note <text>', 'record an outcome note when ending an experiment')
+  .action(async (opts: { json?: boolean; end?: string; pause?: string; resume?: string; winner?: string; note?: string }) => {
+    const state = await loadExperiments();
+    const mutationCount = [opts.end, opts.pause, opts.resume].filter(Boolean).length;
+
+    if (mutationCount > 1) {
+      console.error(kleur.red('choose only one of --end, --pause, or --resume'));
+      process.exitCode = 1;
+      return;
+    }
+
+    if ((opts.winner || opts.note) && !opts.end) {
+      console.error(kleur.red('--winner and --note can only be used with --end'));
+      process.exitCode = 1;
+      return;
+    }
+
+    if (opts.end) {
+      const winner = parseWinner(opts.winner);
+      if (opts.winner && !winner) {
+        console.error(kleur.red('invalid winner: expected A, B, or inconclusive'));
+        process.exitCode = 1;
+        return;
+      }
+      const experiment = updateExperiment(state, opts.end, 'ended', { winner, note: opts.note });
+      if (!experiment) {
+        console.error(kleur.red(`experiment not found: ${opts.end}`));
+        process.exitCode = 1;
+        return;
+      }
+      await saveExperiments(state);
+      console.log(kleur.yellow(`ended experiment: ${experiment.id}`));
+      return;
+    }
+
+    if (opts.pause) {
+      const experiment = updateExperiment(state, opts.pause, 'paused');
+      if (!experiment) {
+        console.error(kleur.red(`experiment not found: ${opts.pause}`));
+        process.exitCode = 1;
+        return;
+      }
+      await saveExperiments(state);
+      console.log(kleur.yellow(`paused experiment: ${experiment.id}`));
+      return;
+    }
+
+    if (opts.resume) {
+      const experiment = updateExperiment(state, opts.resume, 'active');
+      if (!experiment) {
+        console.error(kleur.red(`experiment not found: ${opts.resume}`));
+        process.exitCode = 1;
+        return;
+      }
+      await saveExperiments(state);
+      console.log(kleur.green(`resumed experiment: ${experiment.id}`));
+      return;
+    }
+
+    if (opts.json) {
+      console.log(JSON.stringify({
+        active: state.experiments.filter((experiment) => experiment.status === 'active'),
+        paused: state.experiments.filter((experiment) => experiment.status === 'paused'),
+        ended: state.experiments.filter((experiment) => experiment.status === 'ended'),
+      }, null, 2));
+      return;
+    }
+    printExperiments(state);
   });

@@ -21,5 +21,16 @@
     "dist"
   ],
   "homepage": "https://sh1pt.com",
-  "bugs": "https://github.com/profullstack/sh1pt/issues"
+  "bugs": "https://github.com/profullstack/sh1pt/issues",
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  }
 }

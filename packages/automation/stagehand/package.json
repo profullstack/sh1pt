@@ -15,7 +15,9 @@
     "@browserbasehq/stagehand": "^2.0.0"
   },
   "peerDependenciesMeta": {
-    "@browserbasehq/stagehand": { "optional": true }
+    "@browserbasehq/stagehand": {
+      "optional": true
+    }
   },
   "license": "MIT",
   "repository": {
@@ -25,5 +27,18 @@
   },
   "homepage": "https://sh1pt.com",
   "bugs": "https://github.com/profullstack/sh1pt/issues",
-  "files": ["dist"]
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  }
 }

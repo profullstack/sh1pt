@@ -34,8 +34,8 @@ export async function exec(cmd: string, args: string[], opts: ExecOptions): Prom
       env: { ...process.env, ...extraEnv },
       stdio: ['ignore', 'pipe', 'pipe'],
     };
-    const child = shouldUseWindowsShell(cmd)
-      ? spawn(windowsCommandLine(cmd, args), { ...spawnOptions, shell: true })
+    const child = shouldUseWindowsCmd(cmd)
+      ? spawn('cmd.exe', ['/d', '/s', '/c', cmd, ...args], spawnOptions)
       : spawn(cmd, args, spawnOptions);
 
     let stdout = '';
@@ -73,20 +73,11 @@ export async function exec(cmd: string, args: string[], opts: ExecOptions): Prom
   });
 }
 
-function shouldUseWindowsShell(cmd: string): boolean {
+function shouldUseWindowsCmd(cmd: string): boolean {
   return process.platform === 'win32'
     && !cmd.includes('/')
     && !cmd.includes('\\')
     && !/\.(?:exe|com)$/i.test(cmd);
-}
-
-function windowsCommandLine(cmd: string, args: string[]): string {
-  return [cmd, ...args].map(windowsShellQuote).join(' ');
-}
-
-function windowsShellQuote(value: string): string {
-  if (/^[A-Za-z0-9_/:=.+@-]+$/.test(value)) return value;
-  return `"${value.replace(/(\\*)"/g, '$1$1\\"').replace(/\\+$/, '$&$&')}"`;
 }
 
 export async function ensureCli(cmd: string, installHint: string, log: LogFn): Promise<void> {

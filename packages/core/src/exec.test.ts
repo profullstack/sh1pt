@@ -14,12 +14,17 @@ afterEach(async () => {
 
 describe('exec', () => {
   it('preserves percent-wrapped arguments on Windows shell execution', async () => {
-    const result = await exec(process.execPath, ['-e', 'console.log(process.argv[1])', '%SH1PT_EXEC_LITERAL%'], {
+    const binDir = await mkdtemp(join(tmpdir(), 'sh1pt-exec-bin-'));
+    tempDirs.push(binDir);
+    await installEchoArgsCli(binDir, 'sh1pt-echo-args');
+    process.env.PATH = `${binDir}${delimiter}${oldPath ?? ''}`;
+
+    const result = await exec('sh1pt-echo-args', ['%SH1PT_EXEC_LITERAL%', 'C:\\tmp\\path\\'], {
       log: () => {},
     });
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout.trim()).toBe('%SH1PT_EXEC_LITERAL%');
+    expect(JSON.parse(result.stdout.trim())).toEqual(['%SH1PT_EXEC_LITERAL%', 'C:\\tmp\\path\\']);
   });
 });
 
@@ -43,4 +48,24 @@ async function installFailingCli(binDir: string, name: string): Promise<void> {
 
   const script = join(binDir, name);
   await writeFile(script, '#!/usr/bin/env sh\nexit 127\n', { encoding: 'utf-8', mode: 0o755 });
+}
+
+async function installEchoArgsCli(binDir: string, name: string): Promise<void> {
+  const helper = join(binDir, 'echo-args.js');
+  await writeFile(helper, 'console.log(JSON.stringify(process.argv.slice(2)));\n', 'utf-8');
+
+  if (process.platform === 'win32') {
+    await writeFile(
+      join(binDir, `${name}.cmd`),
+      `@echo off\r\n"${process.execPath}" "%~dp0echo-args.js" %*\r\n`,
+      'utf-8',
+    );
+    return;
+  }
+
+  const script = join(binDir, name);
+  await writeFile(script, `#!/usr/bin/env sh\n"${process.execPath}" "${helper}" "$@"\n`, {
+    encoding: 'utf-8',
+    mode: 0o755,
+  });
 }

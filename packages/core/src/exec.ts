@@ -83,7 +83,7 @@ function shouldUseWindowsCmd(cmd: string): boolean {
 export async function ensureCli(cmd: string, installHint: string, log: LogFn): Promise<void> {
   try {
     const result = await exec(cmd, ['--version'], { log: () => {}, throwOnNonZero: false });
-    if (result.exitCode !== 0) throw new Error(`command not found: ${cmd}`);
+    if (isWindowsCommandNotFound(result)) throw new Error(`command not found: ${cmd}`);
   } catch (err) {
     if (err instanceof Error && err.message.startsWith('command not found')) {
       log(`${cmd} not found on PATH`, 'error');
@@ -91,4 +91,12 @@ export async function ensureCli(cmd: string, installHint: string, log: LogFn): P
     }
     throw err;
   }
+}
+
+function isWindowsCommandNotFound(result: ExecResult): boolean {
+  if (process.platform !== 'win32' || result.exitCode === 0) return false;
+
+  const output = `${result.stderr}\n${result.stdout}`;
+  return result.exitCode === 9009
+    || output.includes('is not recognized as an internal or external command');
 }

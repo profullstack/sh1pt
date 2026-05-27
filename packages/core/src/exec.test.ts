@@ -6,6 +6,8 @@ import { ensureCli, exec } from './exec.js';
 
 const tempDirs: string[] = [];
 const oldPath = process.env.PATH;
+const itOnWindows = process.platform === 'win32' ? it : it.skip;
+const itOnNonWindows = process.platform === 'win32' ? it.skip : it;
 
 afterEach(async () => {
   process.env.PATH = oldPath;
@@ -29,7 +31,7 @@ describe('exec', () => {
 });
 
 describe('ensureCli', () => {
-  it('throws when a command exits non-zero instead of reporting it as installed', async () => {
+  itOnWindows('throws when Windows reports a command-not-found exit', async () => {
     const binDir = await mkdtemp(join(tmpdir(), 'sh1pt-exec-bin-'));
     tempDirs.push(binDir);
     await installFailingCli(binDir, 'sh1pt-missing-version');
@@ -37,6 +39,16 @@ describe('ensureCli', () => {
 
     await expect(ensureCli('sh1pt-missing-version', 'install it', () => {}))
       .rejects.toThrow('sh1pt-missing-version not installed. install it');
+  });
+
+  itOnNonWindows('keeps non-Windows non-zero version exits distinct from missing commands', async () => {
+    const binDir = await mkdtemp(join(tmpdir(), 'sh1pt-exec-bin-'));
+    tempDirs.push(binDir);
+    await installFailingCli(binDir, 'sh1pt-installed-failing-version');
+    process.env.PATH = `${binDir}${delimiter}${oldPath ?? ''}`;
+
+    await expect(ensureCli('sh1pt-installed-failing-version', 'install it', () => {}))
+      .resolves.toBeUndefined();
   });
 });
 

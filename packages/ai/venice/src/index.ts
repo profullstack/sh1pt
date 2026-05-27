@@ -4,26 +4,61 @@ interface Config {
   baseUrl?: string;
 }
 
+const DEFAULT_BASE = 'https://api.venice.ai/api/v1';
+const DEFAULT_MODEL = 'venice-uncensored-1-2';
+
 export default defineAi<Config>({
   id: 'ai-venice',
   label: 'Venice AI',
-  defaultModel: 'llama-3.3-70b',
-  models: ['llama-3.3-70b'],
+  defaultModel: DEFAULT_MODEL,
+  models: [DEFAULT_MODEL, 'venice-uncensored', 'llama-3.3-70b'],
 
-  async generate(ctx, prompt, _opts, _config) {
+  async generate(ctx, prompt, opts, config) {
     const apiKey = ctx.secret('VENICE_API_KEY');
-    if (!apiKey) throw new Error('VENICE_API_KEY not in vault — run `sh1pt promote ai setup`');
-    ctx.log(`[stub] ai-venice · ${prompt.length} chars in — integration pending`);
-    return { text: '[stub — ai-venice integration not yet implemented]', model: 'llama-3.3-70b' };
+    if (!apiKey) throw new Error('VENICE_API_KEY not in vault');
+    const model = opts.model ?? DEFAULT_MODEL;
+    ctx.log(`venice | model=${model} | ${prompt.length} chars in`);
+    if (ctx.dryRun) return { text: '[dry-run]', model };
+
+    const messages: Array<{ role: string; content: string }> = [];
+    if (opts.system) messages.push({ role: 'system', content: opts.system });
+    messages.push({ role: 'user', content: prompt });
+
+    const res = await fetch(`${config.baseUrl ?? DEFAULT_BASE}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        ...(opts.maxTokens !== undefined ? { max_tokens: opts.maxTokens } : {}),
+        ...(opts.temperature !== undefined ? { temperature: opts.temperature } : {}),
+        ...opts.extra,
+      }),
+    });
+    if (!res.ok) throw new Error(`Venice ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    const data = (await res.json()) as {
+      choices: Array<{ message?: { content?: string } }>;
+      model: string;
+      usage?: { prompt_tokens?: number; completion_tokens?: number };
+    };
+    return {
+      text: data.choices[0]?.message?.content ?? '',
+      model: data.model,
+      inputTokens: data.usage?.prompt_tokens,
+      outputTokens: data.usage?.completion_tokens,
+    };
   },
 
   setup: tokenSetup<Config>({
     secretKey: 'VENICE_API_KEY',
     label: 'Venice AI',
-    vendorDocUrl: 'https://venice.ai',
+    vendorDocUrl: 'https://docs.venice.ai/api-reference/api-spec',
     steps: [
       'Sign in at https://venice.ai and create an API key',
-      'Copy the key — usually shown once',
+      'Copy the key; it is usually shown once',
       'Paste below; sh1pt encrypts it in the vault',
     ],
   }),

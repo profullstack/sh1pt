@@ -124,13 +124,18 @@ export default defineDns<Config>({
     const project = config.projectId ?? _secret('GOOGLE_PROJECT_ID');
     if (!project) throw new Error('GOOGLE_PROJECT_ID not set');
     const [type, name] = recordId.split('/');
+    if (!type || !name) {
+      throw new Error(`Invalid Google Cloud DNS record id: ${recordId}`);
+    }
     // Need to fetch the rrset to get current rrdatas for the deletion entry.
     const existing = (await this.listRecords(zoneId, config)).filter(
       r => r.type === type && (r.name === name || r.name === name.replace(/\.$/, '')),
     );
     if (existing.length === 0) return;
     const fqdn = name.endsWith('.') ? name : `${name}.`;
-    const ttl = existing[0].ttl;
+    const first = existing[0];
+    if (!first) return;
+    const ttl = first.ttl;
     const res = await fetch(`${API}/projects/${project}/managedZones/${zoneId}/changes`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },

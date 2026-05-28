@@ -1,4 +1,8 @@
-import makeBaileysBot, { type WASocket } from "baileys";
+import makeBaileysBot, {
+  type BaileysEventMap,
+  type WASocket,
+  useMultiFileAuthState,
+} from "baileys";
 import { z } from "zod";
 
 const configSchema = z.object({
@@ -27,12 +31,16 @@ export interface IncomingMessage {
 }
 
 type MessageHandler = (msg: IncomingMessage) => void | Promise<void>;
+type CredsUpdateHandler = (update: BaileysEventMap["creds.update"]) => void;
+type MessagesUpsertHandler = (event: BaileysEventMap["messages.upsert"]) => void | Promise<void>;
 
 export class WhatsAppBot {
   private sock: WASocket | null = null;
   private handlers: MessageHandler[] = [];
   private config: Config;
   private running = false;
+  private credsUpdateHandler: CredsUpdateHandler | null = null;
+  private messagesUpsertHandler: MessagesUpsertHandler | null = null;
 
   constructor(config: Config) {
     this.config = config;
@@ -43,14 +51,19 @@ export class WhatsAppBot {
   }
 
   async start(): Promise<void> {
-    const { state, saveState } = useMultiFileAuthState("./auth");
+    const { state, saveCreds } = await useMultiFileAuthState("./auth");
 
-    this.sock = makeBaileysBot(state, {
-      print: console.log,
+    this.sock = makeBaileysBot({
+      auth: state,
+      printQRInTerminal: true,
       browser: ["sh1pt-bot", "Chrome", "120"],
     });
+    this.credsUpdateHandler = () => {
+      void saveCreds();
+    };
+    this.sock.ev.on("creds.update", this.credsUpdateHandler);
 
-    this.sock.ev.on("messages.upsert", async ({ messages }) => {
+    this.messagesUpsertHandler = async ({ messages }) => {
       for (const msg of messages) {
         if (!msg.message || msg.key.fromMe) continue;
 
@@ -81,7 +94,8 @@ export class WhatsAppBot {
           }
         }
       }
-    });
+    };
+    this.sock.ev.on("messages.upsert", this.messagesUpsertHandler);
 
     this.running = true;
     console.log("WhatsApp bot started");
@@ -89,6 +103,20 @@ export class WhatsAppBot {
 
   async stop(): Promise<void> {
     this.running = false;
+    if (!this.sock) return;
+
+    if (this.credsUpdateHandler) {
+      this.sock.ev.off("creds.update", this.credsUpdateHandler);
+      this.credsUpdateHandler = null;
+    }
+    if (this.messagesUpsertHandler) {
+      this.sock.ev.off("messages.upsert", this.messagesUpsertHandler);
+      this.messagesUpsertHandler = null;
+    }
+    if (!this.sock.ws.isClosed && !this.sock.ws.isClosing) {
+      await this.sock.ws.close();
+    }
+    this.sock = null;
   }
 
   isRunning(): boolean {
@@ -102,15 +130,6 @@ export class WhatsAppBot {
   async send(chatId: string, text: string): Promise<void> {
     await this.sock?.sendMessage(chatId, { text });
   }
-}
-
-function useMultiFileAuthState(
-  dir: string
-): { state: any; saveState: () => void } {
-  return {
-    state: {},
-    saveState: () => {},
-  };
 }
 
 export function loadConfig(env: Record<string, string | undefined>): Config {

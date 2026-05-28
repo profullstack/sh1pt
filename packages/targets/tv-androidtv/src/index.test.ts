@@ -1,5 +1,5 @@
 import { fakeBuildContext, fakeShipContext, smokeTest } from '@profullstack/sh1pt-core/testing';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -58,6 +58,68 @@ describe('Android TV package planning', () => {
     expect(plan.commands).toContain('./gradlew :app:bundleRelease');
   });
 
+  it('validates a provided manifest before writing the plan', async () => {
+    const projectDir = await mkdtemp(join(tmpdir(), 'sh1pt-androidtv-project-'));
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-androidtv-out-'));
+    tempDirs.push(projectDir, outDir);
+    await mkdir(join(projectDir, 'app', 'src', 'main'), { recursive: true });
+    await writeFile(join(projectDir, 'app', 'src', 'main', 'AndroidManifest.xml'), `
+      <manifest package="com.acme.tv">
+        <uses-feature android:name="android.software.leanback" android:required="true" />
+        <application>
+          <activity android:name=".MainActivity">
+            <intent-filter>
+              <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+          </activity>
+        </application>
+      </manifest>
+    `, 'utf-8');
+
+    const result = await adapter.build(fakeBuildContext({
+      projectDir,
+      outDir,
+      version: '1.2.3',
+    }) as any, {
+      packageName: 'com.acme.tv',
+      track: 'beta',
+      manifestPath: 'app/src/main/AndroidManifest.xml',
+      gradleTask: ':tv:bundleRelease',
+    });
+
+    const plan = JSON.parse(await readFile(result.meta?.planFile as string, 'utf-8'));
+    expect(plan).toMatchObject({
+      packageName: 'com.acme.tv',
+      version: '1.2.3',
+      track: 'beta',
+      manifestPath: join(projectDir, 'app', 'src', 'main', 'AndroidManifest.xml'),
+      commands: [
+        './gradlew :tv:bundleRelease',
+        'play-developer-api edits.insert package=com.acme.tv',
+        `play-developer-api edits.bundles.upload artifact=${join(outDir, 'androidtv', 'com.acme.tv.aab')}`,
+        'play-developer-api edits.tracks.update track=beta',
+        'play-developer-api edits.commit',
+      ],
+    });
+  });
+
+  it('rejects manifests missing Android TV requirements', async () => {
+    const projectDir = await mkdtemp(join(tmpdir(), 'sh1pt-androidtv-project-'));
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-androidtv-out-'));
+    tempDirs.push(projectDir, outDir);
+    await mkdir(join(projectDir, 'app', 'src', 'main'), { recursive: true });
+    await writeFile(join(projectDir, 'app', 'src', 'main', 'AndroidManifest.xml'), '<manifest package="com.acme.tv" />', 'utf-8');
+
+    await expect(adapter.build(fakeBuildContext({
+      projectDir,
+      outDir,
+    }) as any, {
+      packageName: 'com.acme.tv',
+      track: 'internal',
+      manifestPath: 'app/src/main/AndroidManifest.xml',
+    })).rejects.toThrow('AndroidManifest must declare android.software.leanback');
+  });
+
   it('maps non-stable channels to safe test tracks', async () => {
     const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-androidtv-'));
     tempDirs.push(outDir);
@@ -97,6 +159,25 @@ describe('Android TV package planning', () => {
           'play-developer-api edits.tracks.update track=internal',
           'play-developer-api edits.commit',
         ],
+      },
+    });
+  });
+
+  it('returns store metadata in real ship mode', async () => {
+    await expect(adapter.ship(fakeShipContext({
+      artifact: '/repo/.sh1pt/out/androidtv-package-plan.json',
+      channel: 'stable',
+      version: '1.2.3',
+      dryRun: false,
+    }) as any, {
+      packageName: 'com.acme.tv',
+      track: 'beta',
+    })).resolves.toEqual({
+      id: 'com.acme.tv@1.2.3',
+      url: 'https://play.google.com/store/apps/details?id=com.acme.tv',
+      meta: {
+        artifact: '/repo/.sh1pt/out/androidtv-package-plan.json',
+        track: 'beta',
       },
     });
   });

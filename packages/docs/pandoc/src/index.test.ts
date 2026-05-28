@@ -102,7 +102,7 @@ async function installFakePandoc(binDir: string): Promise<void> {
       'writeFileSync(join(dirname(out), "pandoc-args.json"), JSON.stringify(args));',
       'writeFileSync(out, "fake pandoc output\\n");',
     ].join('\n'), 'utf-8');
-    await writeFile(join(binDir, 'pandoc.cmd'), `@echo off\r\n"${process.execPath}" "%~dp0\\pandoc.js" %*\r\n`, 'utf-8');
+    await writeFile(join(binDir, 'pandoc.cmd'), `@echo off\r\n"${process.execPath}" "%~dp0pandoc.js" %*\r\n`, 'utf-8');
     return;
   }
 

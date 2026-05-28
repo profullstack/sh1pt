@@ -22,6 +22,7 @@ describe('exec', () => {
     process.env.PATH = `${binDir}${delimiter}${oldPath ?? ''}`;
 
     const result = await exec('sh1pt-echo-args', ['%SH1PT_EXEC_LITERAL%', 'C:\\tmp\\path\\'], {
+      env: { SH1PT_EXEC_LITERAL: 'expanded-value' },
       log: () => {},
     });
 

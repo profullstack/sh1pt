@@ -35,7 +35,10 @@ export async function exec(cmd: string, args: string[], opts: ExecOptions): Prom
       stdio: ['ignore', 'pipe', 'pipe'],
     };
     const child = shouldUseWindowsCmd(cmd)
-      ? spawn('cmd.exe', ['/d', '/s', '/c', cmd, ...args], spawnOptions)
+      ? spawn('cmd.exe', ['/d', '/s', '/c', windowsCommandLine(cmd, args)], {
+        ...spawnOptions,
+        windowsVerbatimArguments: true,
+      })
       : spawn(cmd, args, spawnOptions);
 
     let stdout = '';
@@ -78,6 +81,20 @@ function shouldUseWindowsCmd(cmd: string): boolean {
     && !cmd.includes('/')
     && !cmd.includes('\\')
     && !/\.(?:exe|com)$/i.test(cmd);
+}
+
+function windowsCommandLine(cmd: string, args: string[]): string {
+  return [cmd, ...args].map(windowsCmdArg).join(' ');
+}
+
+function windowsCmdArg(value: string): string {
+  let escaped = value.replace(/([%^&|<>()])/g, '^$1');
+  if (!/[\s"]/.test(escaped)) return escaped;
+
+  escaped = escaped
+    .replace(/(\\*)"/g, '$1$1\\"')
+    .replace(/\\+$/, '$&$&');
+  return `"${escaped}"`;
 }
 
 export async function ensureCli(cmd: string, installHint: string, log: LogFn): Promise<void> {

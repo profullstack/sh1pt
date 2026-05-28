@@ -21,13 +21,25 @@ describe('exec', () => {
     await installEchoArgsCli(binDir, 'sh1pt-echo-args');
     process.env.PATH = `${binDir}${delimiter}${oldPath ?? ''}`;
 
-    const result = await exec('sh1pt-echo-args', ['%SH1PT_EXEC_LITERAL%', 'C:\\tmp\\path\\'], {
+    const result = await exec('sh1pt-echo-args', [
+      '%SH1PT_EXEC_LITERAL%',
+      'C:\\tmp\\path\\',
+      'Foo & Bar',
+      'hello!world',
+      'quoted "value"',
+    ], {
       env: { SH1PT_EXEC_LITERAL: 'expanded-value' },
       log: () => {},
     });
 
     expect(result.exitCode).toBe(0);
-    expect(JSON.parse(result.stdout.trim())).toEqual(['%SH1PT_EXEC_LITERAL%', 'C:\\tmp\\path\\']);
+    expect(JSON.parse(result.stdout.trim())).toEqual([
+      '%SH1PT_EXEC_LITERAL%',
+      'C:\\tmp\\path\\',
+      'Foo & Bar',
+      'hello!world',
+      'quoted "value"',
+    ]);
   });
 });
 

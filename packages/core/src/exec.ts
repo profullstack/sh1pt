@@ -34,9 +34,14 @@ export async function exec(cmd: string, args: string[], opts: ExecOptions): Prom
       env: { ...process.env, ...extraEnv },
       stdio: ['ignore', 'pipe', 'pipe'],
     };
-    const child = shouldUseWindowsCmd(cmd)
-      ? spawn('cmd.exe', ['/d', '/s', '/c', windowsCommandLine(cmd, args)], {
+    const useWindowsCmd = shouldUseWindowsCmd(cmd);
+    const windowsCommand = useWindowsCmd
+      ? windowsCommandLine(cmd, args, spawnOptions.env)
+      : { command: '', env: spawnOptions.env };
+    const child = useWindowsCmd
+      ? spawn('cmd.exe', ['/d', '/s', '/v:on', '/c', windowsCommand.command], {
         ...spawnOptions,
+        env: windowsCommand.env,
         windowsVerbatimArguments: true,
       })
       : spawn(cmd, args, spawnOptions);
@@ -83,18 +88,25 @@ function shouldUseWindowsCmd(cmd: string): boolean {
     && !/\.(?:exe|com)$/i.test(cmd);
 }
 
-function windowsCommandLine(cmd: string, args: string[]): string {
-  return [cmd, ...args].map(windowsCmdArg).join(' ');
+function windowsCommandLine(
+  cmd: string,
+  args: string[],
+  env: NodeJS.ProcessEnv | undefined,
+): { command: string; env: NodeJS.ProcessEnv } {
+  const nextEnv: NodeJS.ProcessEnv = { ...env };
+  const argRefs = args.map((arg, index) => {
+    const name = `SH1PT_EXEC_ARG_${index}`;
+    nextEnv[name] = windowsEnvArg(arg);
+    return `"!${name}!"`;
+  });
+  return { command: [cmd, ...argRefs].join(' '), env: nextEnv };
 }
 
-function windowsCmdArg(value: string): string {
-  let escaped = value.replace(/([%^&|<>()])/g, '^$1');
-  if (!/[\s"]/.test(escaped)) return escaped;
-
-  escaped = escaped
+function windowsEnvArg(value: string): string {
+  return value
     .replace(/(\\*)"/g, '$1$1\\"')
-    .replace(/\\+$/, '$&$&');
-  return `"${escaped}"`;
+    .replace(/\\+$/, '$&$&')
+    .replace(/!/g, '^!');
 }
 
 export async function ensureCli(cmd: string, installHint: string, log: LogFn): Promise<void> {

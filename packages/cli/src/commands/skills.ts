@@ -78,6 +78,11 @@ function slugify(s: string): string {
 }
 function q(s: string): string { return JSON.stringify(s); }
 async function exists(path: string): Promise<boolean> { try { await access(path); return true; } catch { return false; } }
+function parsePrice(value: string): number {
+  if (!/^\d+$/.test(value)) return 0;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isSafeInteger(parsed) ? parsed : 0;
+}
 function frontmatterValue(text: string, key: string): string | undefined {
   const m = text.match(new RegExp(`^${key}:\\s*["']?([^"'\\n]+)["']?\\s*$`, 'm'));
   return m?.[1]?.trim();
@@ -153,7 +158,7 @@ function formatSkillRows(entries: BuiltinSkillEntry[], json?: boolean): void {
 
   for (const row of rows) {
     console.log(`${kleur.bold(row.name)} ${kleur.dim(`v${row.version}`)} ${kleur.cyan(`[${row.trustLevel}]`)}`);
-    console.log(`  ${row.title} — ${row.description}`);
+    console.log(`  ${row.title} ? ${row.description}`);
     console.log(`  ${kleur.dim('targets:')} ${row.targets.join(', ')}`);
     console.log();
   }
@@ -182,7 +187,7 @@ function renderSkillBlock(entry: BuiltinSkillEntry): string {
     start,
     `## sh1pt skill: ${manifest.title}`,
     '',
-    `_Installed from ${manifest.publisher}/${manifest.name}@${manifest.version} · trust: ${manifest.trustLevel}_`,
+    `_Installed from ${manifest.publisher}/${manifest.name}@${manifest.version} ? trust: ${manifest.trustLevel}_`,
     '',
     content.trim(),
     end,
@@ -317,8 +322,8 @@ skillsCmd
     }
 
     const header = dryRun
-      ? kleur.yellow(`Dry-run: ${entry.manifest.name}@${entry.manifest.version} → ${repoDir}`)
-      : kleur.bold(`Install: ${entry.manifest.name}@${entry.manifest.version} → ${repoDir}`);
+      ? kleur.yellow(`Dry-run: ${entry.manifest.name}@${entry.manifest.version} ? ${repoDir}`)
+      : kleur.bold(`Install: ${entry.manifest.name}@${entry.manifest.version} ? ${repoDir}`);
     console.log(header);
     console.log();
     printSkillStatusLine(plan.destination, plan.action);
@@ -349,6 +354,7 @@ skillsCmd
     const name = slugify(opts.name ?? inferred.name ?? basename(dirname(skillFile)));
     const title = opts.title ?? inferred.title ?? name;
     const description = opts.description ?? inferred.description ?? `Agent skill: ${title}`;
+    const price = parsePrice(opts.price);
     const manifest: SkillManifest = {
       name,
       title,
@@ -356,14 +362,14 @@ skillsCmd
       tagline: opts.tagline,
       category: opts.category,
       tags: opts.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10),
-      price: Number.parseInt(opts.price, 10) || 0,
+      price,
       skillFile,
       sourceUrl: opts.sourceUrl,
-      marketplaces: Object.fromEntries(MARKETPLACES.map(mp => [mp.id, { enabled: true, status: 'pending', command: 'command' in mp && mp.command ? mp.command({ name, title, description, tagline: opts.tagline, category: opts.category, tags: opts.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10), price: Number.parseInt(opts.price, 10) || 0, skillFile, sourceUrl: opts.sourceUrl, marketplaces: {} }) : undefined, note: 'note' in mp ? mp.note : undefined }])) as SkillManifest['marketplaces'],
+      marketplaces: Object.fromEntries(MARKETPLACES.map(mp => [mp.id, { enabled: true, status: 'pending', command: 'command' in mp && mp.command ? mp.command({ name, title, description, tagline: opts.tagline, category: opts.category, tags: opts.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10), price, skillFile, sourceUrl: opts.sourceUrl, marketplaces: {} }) : undefined, note: 'note' in mp ? mp.note : undefined }])) as SkillManifest['marketplaces'],
     };
     await mkdir(dirname(resolve(opts.out)), { recursive: true });
     await saveManifest(opts.out, manifest);
-    console.log(kleur.green(`✓ wrote ${opts.out}`));
+    console.log(kleur.green(`? wrote ${opts.out}`));
     console.log(`  next: ${kleur.cyan(`sh1pt skills publish --all --dry-run --manifest ${opts.out}`)}`);
   });
 
@@ -382,7 +388,7 @@ skillsCmd
       const entry = manifest.marketplaces[mp.id] ?? { enabled: true, status: 'pending' as const };
       const cmd = entry.command ?? ('command' in mp && mp.command ? mp.command(manifest) : undefined);
       console.log();
-      console.log(kleur.bold(`${mp.name} (${mp.method} · ${mp.readiness})`));
+      console.log(kleur.bold(`${mp.name} (${mp.method} ? ${mp.readiness})`));
       if (cmd) console.log(`  ${kleur.cyan(cmd)}`);
       if (entry.note || ('note' in mp && mp.note)) console.log(`  ${kleur.dim(entry.note ?? ('note' in mp ? mp.note : ''))}`);
       if (mp.readiness === 'manual') console.log(kleur.yellow('  next step: open the required PR/import/browser flow after preparing the assets above'));

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
@@ -149,5 +149,85 @@ describe('skills marketplaces --json', () => {
       expect(typeof mp.method).toBe('string');
       expect(typeof mp.readiness).toBe('string');
     }
+  });
+});
+
+describe('skills new command', () => {
+  let stdout: string[];
+  let tempDir: string;
+
+  beforeEach(() => {
+    stdout = [];
+    vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
+      stdout.push(args.map(String).join(' '));
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    if (tempDir) {
+      rmSync(tempDir, { recursive: true, force: true });
+      tempDir = '';
+    }
+  });
+
+  it('does not write negative prices into the manifest', async () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'sh1pt-skills-new-'));
+    const skillFile = join(tempDir, 'SKILL.md');
+    const manifestFile = join(tempDir, 'sh1pt.skill.json');
+    writeFileSync(skillFile, '---\nname: paid-skill\ndescription: Paid skill\n---\n');
+
+    const newCmd = skillsCmd.commands.find((c) => c.name() === 'new');
+    expect(newCmd).toBeDefined();
+
+    await newCmd?.parseAsync([
+      '--skill-file', skillFile,
+      '--out', manifestFile,
+      '--price', '-5',
+    ], { from: 'user' });
+
+    const manifest = JSON.parse(readFileSync(manifestFile, 'utf8'));
+    expect(manifest.price).toBe(0);
+    expect(manifest.marketplaces.ugig.command).toContain('--price 0');
+  });
+
+  it('keeps valid positive prices', async () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'sh1pt-skills-new-'));
+    const skillFile = join(tempDir, 'SKILL.md');
+    const manifestFile = join(tempDir, 'sh1pt.skill.json');
+    writeFileSync(skillFile, '---\nname: priced-skill\ndescription: Priced skill\n---\n');
+
+    const newCmd = skillsCmd.commands.find((c) => c.name() === 'new');
+    expect(newCmd).toBeDefined();
+
+    await newCmd?.parseAsync([
+      '--skill-file', skillFile,
+      '--out', manifestFile,
+      '--price', '100',
+    ], { from: 'user' });
+
+    const manifest = JSON.parse(readFileSync(manifestFile, 'utf8'));
+    expect(manifest.price).toBe(100);
+    expect(manifest.marketplaces.ugig.command).toContain('--price 100');
+  });
+
+  it('rejects fractional prices', async () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'sh1pt-skills-new-'));
+    const skillFile = join(tempDir, 'SKILL.md');
+    const manifestFile = join(tempDir, 'sh1pt.skill.json');
+    writeFileSync(skillFile, '---\nname: fractional-skill\ndescription: Fractional skill\n---\n');
+
+    const newCmd = skillsCmd.commands.find((c) => c.name() === 'new');
+    expect(newCmd).toBeDefined();
+
+    await newCmd?.parseAsync([
+      '--skill-file', skillFile,
+      '--out', manifestFile,
+      '--price', '1.9',
+    ], { from: 'user' });
+
+    const manifest = JSON.parse(readFileSync(manifestFile, 'utf8'));
+    expect(manifest.price).toBe(0);
+    expect(manifest.marketplaces.ugig.command).toContain('--price 0');
   });
 });

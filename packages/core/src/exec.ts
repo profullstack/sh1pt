@@ -28,10 +28,14 @@ export async function exec(cmd: string, args: string[], opts: ExecOptions): Prom
   }
 
   return new Promise<ExecResult>((resolve, reject) => {
-    const child = spawn(cmd, args, {
+    // On Windows, .cmd/.bat shims must be spawned with shell:true or via cmd.exe
+    const isWin = process.platform === 'win32';
+    const needsShell = isWin && (cmd.endsWith('.cmd') || cmd.endsWith('.bat'));
+    const child = spawn(needsShell ? 'cmd' : cmd, needsShell ? ['/d', '/s', '/c', cmd, ...args] : args, {
       cwd: opts.cwd,
       env: { ...process.env, ...extraEnv },
       stdio: ['ignore', 'pipe', 'pipe'],
+      ...(needsShell ? { shell: true } : {}),
     });
 
     let stdout = '';

@@ -23,6 +23,7 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 | `pkg-snap` | Snapcraft | 🚧 |
 | `pkg-flatpak` | Flathub | ✅ |
 | `pkg-aur` | Arch User Repo | 🚧 |
+| `pkg-pacman` | Arch custom repo (repo-add) | ✅ |
 | `pkg-nix` | nixpkgs | 🚧 |
 
 ### Desktop

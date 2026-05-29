@@ -1880,6 +1880,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/targets/pkg-pacman:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/targets/pkg-perry:
     dependencies:
       '@profullstack/sh1pt-core':

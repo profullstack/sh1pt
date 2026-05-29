@@ -1754,6 +1754,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/targets/mobile-amazon:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/targets/mobile-android:
     dependencies:
       '@profullstack/sh1pt-core':

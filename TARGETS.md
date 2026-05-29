@@ -41,7 +41,7 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 | `mobile-android` | Google Play + internal tracks | 🚧 |
 | `pkg-fdroid` | F-Droid (FOSS Android repo) | ✅ |
 | `mobile-huawei` | Huawei AppGallery | — |
-| `mobile-amazon` | Amazon Appstore | — |
+| `mobile-amazon` | Amazon Appstore (phones & tablets) | ✅ |
 
 ### Wearable
 | Target id | Channel | Status |

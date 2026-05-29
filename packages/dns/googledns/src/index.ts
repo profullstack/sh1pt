@@ -123,6 +123,9 @@ export default defineDns<Config>({
     const token = await getAccessToken();
     const project = config.projectId ?? _secret('GOOGLE_PROJECT_ID');
     if (!project) throw new Error('GOOGLE_PROJECT_ID not set');
+    if (typeof recordId !== 'string' || !recordId.includes('/')) {
+      throw new Error(`Invalid recordId: ${recordId}. Expected format: "<type>/<FQDN>"`);
+    }
     const [type, name] = recordId.split('/');
     // Need to fetch the rrset to get current rrdatas for the deletion entry.
     const existing = (await this.listRecords(zoneId, config)).filter(

@@ -1,4 +1,5 @@
 import { fakeBuildContext, fakeShipContext, smokeTest } from '@profullstack/sh1pt-core/testing';
+import { execFileSync } from 'node:child_process';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -78,5 +79,35 @@ describe('pacman PKGBUILD generation', () => {
     await expect(adapter.ship(fakeShipContext({ version: '1.5.0', dryRun: false }) as any, {
       pkgname: 'myapp',
     })).rejects.toThrow(/PACMAN_GPG_KEY|not implemented/i);
+  });
+
+  it('generates syntactically valid bash (bash -n) even with hostile field values', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-pacman-'));
+    tempDirs.push(outDir);
+
+    await adapter.build(fakeBuildContext({ outDir, version: '1.0.0' }) as any, {
+      pkgname: 'myapp',
+      pkgdesc: 'evil"; rm -rf /; echo "$(whoami)` `',
+      url: 'https://x.test/$(id)`uname`',
+      sha256sum: "ab'cd",
+    });
+
+    // bash -n parses without executing — proves the generated PKGBUILD is valid bash.
+    const out = execFileSync('bash', ['-n', join(outDir, 'pacman', 'PKGBUILD')], { encoding: 'utf-8', stdio: 'pipe' });
+    expect(out).toBe('');
+  });
+
+  it('rejects pkgname / repoName that would break the PKGBUILD or pacman.conf', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-pacman-'));
+    tempDirs.push(outDir);
+
+    await expect(adapter.build(fakeBuildContext({ outDir, version: '1.0.0' }) as any, {
+      pkgname: 'bad name; rm -rf /',
+    })).rejects.toThrow(/invalid pkgname/i);
+
+    await expect(adapter.build(fakeBuildContext({ outDir, version: '1.0.0' }) as any, {
+      pkgname: 'myapp',
+      repoName: 'evil]\n[core',
+    })).rejects.toThrow(/invalid repoName/i);
   });
 });

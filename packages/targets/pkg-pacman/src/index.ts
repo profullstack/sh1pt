@@ -37,6 +37,25 @@ function bashArray(values: string[]): string {
   return values.map((v) => `'${v.replace(/'/g, "'\\''")}'`).join(' ');
 }
 
+// Reject inputs that could produce an invalid PKGBUILD or inject into the
+// pacman.conf [section] header / shell commands. pkgname follows Arch rules;
+// the repo db/section name allows only [A-Za-z0-9_-].
+function assertValidNames(config: Config): void {
+  if (!/^[a-z0-9][a-z0-9@._+-]*$/.test(config.pkgname)) {
+    throw new Error(
+      `pkg-pacman: invalid pkgname '${config.pkgname}' — Arch pkgnames are lowercase ` +
+      'alphanumerics plus @ . _ + -, and may not start with "-" or "."',
+    );
+  }
+  const repo = config.repoName ?? config.pkgname;
+  if (!/^[A-Za-z0-9_-]+$/.test(repo)) {
+    throw new Error(
+      `pkg-pacman: invalid repoName '${repo}' — only letters, digits, "-" and "_" ` +
+      'are allowed (it becomes a pacman.conf [section] header and a repo db filename)',
+    );
+  }
+}
+
 function renderPkgbuild(ctx: { version: string }, config: Config): string {
   const ver = pkgver(ctx.version);
   const rel = config.pkgrel ?? '1';
@@ -56,7 +75,7 @@ function renderPkgbuild(ctx: { version: string }, config: Config): string {
   if (config.makedepends?.length) lines.push(`makedepends=(${bashArray(config.makedepends)})`);
   if (config.sourceUrl) {
     lines.push(`source=("$pkgname-$pkgver.tar.gz::${shEscape(config.sourceUrl)}")`);
-    lines.push(`sha256sums=('${config.sha256sum ?? 'SKIP'}')`);
+    lines.push(`sha256sums=(${bashArray([config.sha256sum ?? 'SKIP'])})`);
   } else {
     lines.push('source=()');
     lines.push('sha256sums=()');
@@ -92,10 +111,11 @@ function publishCommands(ctx: { version: string }, config: Config): string[] {
   const rel = config.pkgrel ?? '1';
   const arch = arches(config)[0] ?? 'x86_64';
   const pkgfile = `${config.pkgname}-${ver}-${rel}-${arch}.pkg.tar.zst`;
+  const dest = config.repoBaseUrl ?? `pacman.sh1pt.com:/var/www/pacman/${repo}`;
   return [
     'makepkg -s --sign',
-    `repo-add --sign ${repo}.db.tar.zst ${pkgfile}`,
-    `rsync ./ ${config.repoBaseUrl ?? 'pacman.sh1pt.com:/var/www/pacman/' + repo}/`,
+    `repo-add --sign '${repo}.db.tar.zst' '${pkgfile}'`,
+    `rsync ./ '${dest}/'`,
   ];
 }
 
@@ -104,6 +124,7 @@ export default defineTarget<Config>({
   kind: 'package-manager',
   label: 'Pacman / Arch custom repository',
   async build(ctx, config) {
+    assertValidNames(config);
     const pkgbuildPath = join(ctx.outDir, 'pacman', 'PKGBUILD');
     const confPath = join(ctx.outDir, 'pacman', `${config.repoName ?? config.pkgname}.pacman.conf`);
     ctx.log(`generate PKGBUILD for ${config.pkgname} v${ctx.version} [${arches(config).join(', ')}]`);
@@ -118,14 +139,13 @@ export default defineTarget<Config>({
     };
   },
   async ship(ctx, config) {
+    assertValidNames(config);
     const repo = config.repoName ?? config.pkgname;
     ctx.log(`publish ${config.pkgname}@${ctx.version} to pacman repo (${repo})`);
     if (ctx.dryRun) return { id: 'dry-run', meta: { commands: publishCommands(ctx, config) } };
-    if (!ctx.secret('PACMAN_GPG_KEY')) {
-      throw new Error('PACMAN_GPG_KEY not in vault — run: sh1pt secret set PACMAN_GPG_KEY "$(gpg --export-secret-keys --armor <key-id>)"');
-    }
     // Live publish (makepkg + repo-add + signed upload) is not implemented yet —
-    // fail loudly rather than report a false success.
+    // fail loudly rather than report a false success. (PACMAN_GPG_KEY is
+    // documented in setup(); not checked here since the path is unimplemented.)
     throw new Error(
       `pkg-pacman live publish for ${config.pkgname} is not implemented yet — ` +
       'use dryRun to preview the makepkg + repo-add commands.',

@@ -39,6 +39,8 @@ describe('dnf / RPM spec generation', () => {
     expect(spec).toContain('Requires:       openssl');
     expect(spec).toContain('%description');
     expect(spec).toContain('%changelog');
+    // %changelog header must be valid RPM form: "* Wed May 29 2026 Name <email> - ver-rel"
+    expect(spec).toMatch(/^\* (Sun|Mon|Tue|Wed|Thu|Fri|Sat) [A-Z][a-z]{2} \d{2} \d{4} sh1pt <release@sh1pt\.com> - .+-.+$/m);
 
     const repo = await readFile(join(outDir, 'rpm', 'myapp.repo'), 'utf-8');
     expect(repo).toContain('[myapp]');
@@ -57,6 +59,8 @@ describe('dnf / RPM spec generation', () => {
 
     const repo = await readFile(join(outDir, 'rpm', 'myapp.repo'), 'utf-8');
     expect(repo).toContain('download.copr.fedorainfracloud.org/results/acme/myapp');
+    // gpgkey must point at the COPR project's pubkey, not the self-hosted fallback.
+    expect(repo).toContain('gpgkey=https://download.copr.fedorainfracloud.org/results/acme/myapp/pubkey.gpg');
 
     // COPR publish path uses copr-cli with the documented `status <buildId>` form.
     expect(result.meta?.commands).toContain('copr-cli status <buildId>');
@@ -69,5 +73,9 @@ describe('dnf / RPM spec generation', () => {
     });
     expect(ship.id).toBe('dry-run');
     expect((ship.meta?.commands as string[])?.some((c: string) => c.startsWith('rpmbuild'))).toBe(true);
+
+    await expect(adapter.ship(fakeShipContext({ version: '1.5.0', dryRun: false }) as any, {
+      packageName: 'myapp',
+    })).rejects.toThrow(/not implemented/i);
   });
 });

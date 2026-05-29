@@ -27,6 +27,15 @@ function arches(config: Config): RpmArch[] {
   return config.arch ?? ['x86_64'];
 }
 
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// RPM %changelog requires the exact header form: "* Wed May 29 2026 Name <email> - ver-rel".
+// Built locale-independently so the .spec is accepted by rpmbuild.
+function rpmChangelogDate(d: Date): string {
+  return `${WEEKDAYS[d.getUTCDay()]} ${MONTHS[d.getUTCMonth()]} ${String(d.getUTCDate()).padStart(2, '0')} ${d.getUTCFullYear()}`;
+}
+
 function renderSpec(ctx: { version: string }, config: Config): string {
   const version = rpmVersion(ctx.version);
   const release = config.release ?? '1';
@@ -61,7 +70,7 @@ function renderSpec(ctx: { version: string }, config: Config): string {
   lines.push('# TODO: list packaged files');
   lines.push('');
   lines.push('%changelog');
-  lines.push(`* Release ${version}-${release} - sh1pt <release@sh1pt.com>`);
+  lines.push(`* ${rpmChangelogDate(new Date())} sh1pt <release@sh1pt.com> - ${version}-${release}`);
   lines.push(`- Automated release ${version}`);
   lines.push('');
   return lines.join('\n');
@@ -77,7 +86,9 @@ function renderRepoFile(config: Config): string {
     `baseurl=${baseUrl}`,
     'enabled=1',
     'gpgcheck=1',
-    `gpgkey=${config.repoBaseUrl ?? `https://dnf.sh1pt.com/${config.packageName}`}/RPM-GPG-KEY-${config.packageName}`,
+    `gpgkey=${config.coprProject
+      ? `https://download.copr.fedorainfracloud.org/results/${config.coprProject}/pubkey.gpg`
+      : `${config.repoBaseUrl ?? `https://dnf.sh1pt.com/${config.packageName}`}/RPM-GPG-KEY-${config.packageName}`}`,
     '',
   ].join('\n');
 }
@@ -121,15 +132,10 @@ export default defineTarget<Config>({
     const via = config.coprProject ? `COPR ${config.coprProject}` : (config.repoBaseUrl ?? 'dnf.sh1pt.com');
     ctx.log(`publish ${config.packageName}@${ctx.version} to ${via}`);
     if (ctx.dryRun) return { id: 'dry-run', meta: { commands: publishCommands(ctx, config) } };
-    if (config.coprProject) {
-      if (!ctx.secret('COPR_API_TOKEN')) {
-        throw new Error('COPR_API_TOKEN not in vault — run: sh1pt secret set COPR_API_TOKEN <token from https://copr.fedorainfracloud.org/api/>');
-      }
-    } else if (!ctx.secret('DNF_GPG_KEY')) {
-      throw new Error('DNF_GPG_KEY not in vault — run: sh1pt secret set DNF_GPG_KEY "$(gpg --export-secret-keys --armor <key-id>)"');
-    }
     // Live publish (rpmbuild + copr-cli build | createrepo_c + GPG-sign + upload)
     // is not implemented yet — fail loudly rather than report a false success.
+    // (Required secrets are documented in setup(); not checked here since the
+    // path is unimplemented.)
     throw new Error(
       `pkg-dnf live publish for ${config.packageName} is not implemented yet — ` +
       `use dryRun to preview the ${config.coprProject ? 'rpmbuild + copr-cli' : 'rpmbuild + createrepo_c'} commands.`,

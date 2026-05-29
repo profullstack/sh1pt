@@ -134,7 +134,9 @@ export default defineDns<Config>({
     if (existing.length === 0) return;
     const fqdn = name.endsWith('.') ? name : `${name}.`;
     const first = existing[0];
-    if (!first) return;
+    if (!first) {
+      throw new Error('Google Cloud DNS deleteRecord: matching record unavailable');
+    }
     const ttl = first.ttl;
     const res = await fetch(`${API}/projects/${project}/managedZones/${zoneId}/changes`, {
       method: 'POST',

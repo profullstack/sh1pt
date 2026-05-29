@@ -19,6 +19,7 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 | `pkg-homebrew` | Homebrew tap | ✅ |
 | `pkg-winget` | Microsoft winget | 🚧 |
 | `pkg-scoop` | Scoop bucket | 🚧 |
+| `pkg-chocolatey` | Chocolatey Community Repository | ✅ |
 | `pkg-apt` | apt repo / PPA | 🚧 |
 | `pkg-snap` | Snapcraft | 🚧 |
 | `pkg-flatpak` | Flathub | ✅ |

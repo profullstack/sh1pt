@@ -151,3 +151,40 @@ describe('skills marketplaces --json', () => {
     }
   });
 });
+
+describe('skills new command', () => {
+  let tempDir: string;
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    if (tempDir) {
+      rmSync(tempDir, { recursive: true, force: true });
+      tempDir = '';
+    }
+  });
+
+  it('stores a non-negative integer listing price in the manifest and marketplace command', async () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'sh1pt-skills-new-'));
+    const out = join(tempDir, 'sh1pt.skill.json');
+    const newCmd = skillsCmd.commands.find((c) => c.name() === 'new');
+    expect(newCmd).toBeDefined();
+
+    await newCmd?.parseAsync(['--out', out, '--name', 'qa-helper', '--price', '25'], { from: 'user' });
+
+    const manifest = JSON.parse(readFileSync(out, 'utf8'));
+    expect(manifest.price).toBe(25);
+    expect(manifest.marketplaces.ugig.command).toContain('--price 25');
+  });
+
+  it.each(['-5', '1.9', 'abc'])('rejects invalid listing price %s before writing the manifest', async (price) => {
+    tempDir = mkdtempSync(join(tmpdir(), 'sh1pt-skills-new-'));
+    const out = join(tempDir, 'sh1pt.skill.json');
+    const newCmd = skillsCmd.commands.find((c) => c.name() === 'new');
+    expect(newCmd).toBeDefined();
+
+    await expect(
+      newCmd?.parseAsync(['--out', out, '--name', 'qa-helper', '--price', price], { from: 'user' })
+    ).rejects.toThrow('--price must be a non-negative integer sat amount');
+    expect(existsSync(out)).toBe(false);
+  });
+});

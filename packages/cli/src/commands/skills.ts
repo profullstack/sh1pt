@@ -78,6 +78,12 @@ function slugify(s: string): string {
 }
 function q(s: string): string { return JSON.stringify(s); }
 async function exists(path: string): Promise<boolean> { try { await access(path); return true; } catch { return false; } }
+function parseListingPrice(value: string): number {
+  if (!/^\d+$/.test(value.trim())) {
+    throw new Error('--price must be a non-negative integer sat amount');
+  }
+  return Number.parseInt(value, 10);
+}
 function frontmatterValue(text: string, key: string): string | undefined {
   const m = text.match(new RegExp(`^${key}:\\s*["']?([^"'\\n]+)["']?\\s*$`, 'm'));
   return m?.[1]?.trim();
@@ -349,17 +355,19 @@ skillsCmd
     const name = slugify(opts.name ?? inferred.name ?? basename(dirname(skillFile)));
     const title = opts.title ?? inferred.title ?? name;
     const description = opts.description ?? inferred.description ?? `Agent skill: ${title}`;
+    const price = parseListingPrice(opts.price);
+    const tags = opts.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10);
     const manifest: SkillManifest = {
       name,
       title,
       description,
       tagline: opts.tagline,
       category: opts.category,
-      tags: opts.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10),
-      price: Number.parseInt(opts.price, 10) || 0,
+      tags,
+      price,
       skillFile,
       sourceUrl: opts.sourceUrl,
-      marketplaces: Object.fromEntries(MARKETPLACES.map(mp => [mp.id, { enabled: true, status: 'pending', command: 'command' in mp && mp.command ? mp.command({ name, title, description, tagline: opts.tagline, category: opts.category, tags: opts.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10), price: Number.parseInt(opts.price, 10) || 0, skillFile, sourceUrl: opts.sourceUrl, marketplaces: {} }) : undefined, note: 'note' in mp ? mp.note : undefined }])) as SkillManifest['marketplaces'],
+      marketplaces: Object.fromEntries(MARKETPLACES.map(mp => [mp.id, { enabled: true, status: 'pending', command: 'command' in mp && mp.command ? mp.command({ name, title, description, tagline: opts.tagline, category: opts.category, tags, price, skillFile, sourceUrl: opts.sourceUrl, marketplaces: {} }) : undefined, note: 'note' in mp ? mp.note : undefined }])) as SkillManifest['marketplaces'],
     };
     await mkdir(dirname(resolve(opts.out)), { recursive: true });
     await saveManifest(opts.out, manifest);

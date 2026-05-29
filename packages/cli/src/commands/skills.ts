@@ -76,6 +76,14 @@ const SKILL_TARGETS = {
 function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 64) || 'my-skill';
 }
+function validatePrice(raw: string): number {
+  const trimmed = raw.trim();
+  if (!/^\d+$/.test(trimmed)) {
+    throw new Error(`Invalid --price "${raw}": must be a non-negative integer (sats). Got "${raw}".`);
+  }
+  return parseInt(trimmed, 10);
+}
+
 function q(s: string): string { return JSON.stringify(s); }
 async function exists(path: string): Promise<boolean> { try { await access(path); return true; } catch { return false; } }
 function frontmatterValue(text: string, key: string): string | undefined {
@@ -356,10 +364,10 @@ skillsCmd
       tagline: opts.tagline,
       category: opts.category,
       tags: opts.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10),
-      price: Number.parseInt(opts.price, 10) || 0,
+      price: validatePrice(opts.price),
       skillFile,
       sourceUrl: opts.sourceUrl,
-      marketplaces: Object.fromEntries(MARKETPLACES.map(mp => [mp.id, { enabled: true, status: 'pending', command: 'command' in mp && mp.command ? mp.command({ name, title, description, tagline: opts.tagline, category: opts.category, tags: opts.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10), price: Number.parseInt(opts.price, 10) || 0, skillFile, sourceUrl: opts.sourceUrl, marketplaces: {} }) : undefined, note: 'note' in mp ? mp.note : undefined }])) as SkillManifest['marketplaces'],
+      marketplaces: Object.fromEntries(MARKETPLACES.map(mp => [mp.id, { enabled: true, status: 'pending', command: 'command' in mp && mp.command ? mp.command({ name, title, description, tagline: opts.tagline, category: opts.category, tags: opts.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10), price: validatePrice(opts.price), skillFile, sourceUrl: opts.sourceUrl, marketplaces: {} }) : undefined, note: 'note' in mp ? mp.note : undefined }])) as SkillManifest['marketplaces'],
     };
     await mkdir(dirname(resolve(opts.out)), { recursive: true });
     await saveManifest(opts.out, manifest);

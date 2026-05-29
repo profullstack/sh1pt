@@ -79,10 +79,15 @@ function slugify(s: string): string {
 function q(s: string): string { return JSON.stringify(s); }
 async function exists(path: string): Promise<boolean> { try { await access(path); return true; } catch { return false; } }
 function parseListingPrice(value: string): number {
-  if (!/^\d+$/.test(value.trim())) {
+  const normalized = value.trim();
+  if (!/^\d+$/.test(normalized)) {
     throw new Error('--price must be a non-negative integer sat amount');
   }
-  return Number.parseInt(value, 10);
+  const price = Number.parseInt(normalized, 10);
+  if (!Number.isSafeInteger(price)) {
+    throw new Error('--price must be less than or equal to Number.MAX_SAFE_INTEGER');
+  }
+  return price;
 }
 function frontmatterValue(text: string, key: string): string | undefined {
   const m = text.match(new RegExp(`^${key}:\\s*["']?([^"'\\n]+)["']?\\s*$`, 'm'));

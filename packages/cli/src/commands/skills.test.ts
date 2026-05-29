@@ -176,7 +176,7 @@ describe('skills new command', () => {
     expect(manifest.marketplaces.ugig.command).toContain('--price 25');
   });
 
-  it.each(['-5', '1.9', 'abc'])('rejects invalid listing price %s before writing the manifest', async (price) => {
+  it.each(['-5', '1.9', 'abc', '9007199254740992'])('rejects invalid listing price %s before writing the manifest', async (price) => {
     tempDir = mkdtempSync(join(tmpdir(), 'sh1pt-skills-new-'));
     const out = join(tempDir, 'sh1pt.skill.json');
     const newCmd = skillsCmd.commands.find((c) => c.name() === 'new');
@@ -184,7 +184,7 @@ describe('skills new command', () => {
 
     await expect(
       newCmd?.parseAsync(['--out', out, '--name', 'qa-helper', '--price', price], { from: 'user' })
-    ).rejects.toThrow('--price must be a non-negative integer sat amount');
+    ).rejects.toThrow(/--price must be/);
     expect(existsSync(out)).toBe(false);
   });
 });

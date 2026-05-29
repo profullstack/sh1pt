@@ -51,7 +51,7 @@ describe('pacman PKGBUILD generation', () => {
     expect(conf).toContain('Server = ');
   });
 
-  it('escapes shell metacharacters in pkgdesc and defaults source to SKIP', async () => {
+  it('escapes shell metacharacters in pkgdesc and defaults source to empty arrays', async () => {
     const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-pacman-'));
     tempDirs.push(outDir);
 
@@ -109,5 +109,17 @@ describe('pacman PKGBUILD generation', () => {
       pkgname: 'myapp',
       repoName: 'evil]\n[core',
     })).rejects.toThrow(/invalid repoName/i);
+
+    // repoBaseUrl with a newline would inject a fake [section] into pacman.conf.
+    await expect(adapter.build(fakeBuildContext({ outDir, version: '1.0.0' }) as any, {
+      pkgname: 'myapp',
+      repoBaseUrl: 'https://x.test\n[core]\nServer = https://evil.test',
+    })).rejects.toThrow(/invalid repoBaseUrl/i);
+
+    // pkgrel must be a positive integer (it's embedded unquoted in the PKGBUILD).
+    await expect(adapter.build(fakeBuildContext({ outDir, version: '1.0.0' }) as any, {
+      pkgname: 'myapp',
+      pkgrel: '1\nextrafield=injected',
+    })).rejects.toThrow(/invalid pkgrel/i);
   });
 });

@@ -54,6 +54,17 @@ function assertValidNames(config: Config): void {
       'are allowed (it becomes a pacman.conf [section] header and a repo db filename)',
     );
   }
+  // repoBaseUrl flows verbatim into the .pacman.conf "Server =" line and into the
+  // single-quoted rsync command — a newline injects a fake [section] and a single
+  // quote breaks out of the rsync quoting.
+  if (config.repoBaseUrl !== undefined && /[\r\n']/.test(config.repoBaseUrl)) {
+    throw new Error('pkg-pacman: invalid repoBaseUrl — must not contain newlines or single-quote characters');
+  }
+  // pkgrel is embedded unquoted in the PKGBUILD; Arch requires a positive integer.
+  const rel = config.pkgrel ?? '1';
+  if (!/^[1-9][0-9]*$/.test(rel)) {
+    throw new Error(`pkg-pacman: invalid pkgrel '${rel}' — must be a positive integer`);
+  }
 }
 
 function renderPkgbuild(ctx: { version: string }, config: Config): string {

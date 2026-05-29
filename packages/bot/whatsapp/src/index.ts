@@ -27,6 +27,17 @@ export interface IncomingMessage {
 }
 
 type MessageHandler = (msg: IncomingMessage) => void | Promise<void>;
+type WhatsAppTimestamp = number | string | { toNumber?: () => number };
+
+function toUnixMs(timestamp: WhatsAppTimestamp | null | undefined): number {
+  if (typeof timestamp === "number") return timestamp * 1000;
+  if (typeof timestamp === "string") return Number(timestamp) * 1000;
+
+  const numeric = timestamp?.toNumber?.();
+  if (typeof numeric === "number") return numeric * 1000;
+
+  return Date.now();
+}
 
 export class WhatsAppBot {
   private sock: WASocket | null = null;
@@ -54,7 +65,8 @@ export class WhatsAppBot {
       for (const msg of messages) {
         if (!msg.message || msg.key.fromMe) continue;
 
-        const chatId = msg.key.remoteJid!;
+        const chatId = msg.key.remoteJid;
+        if (!chatId) continue;
         const isGroup = chatId.endsWith("@g.us");
         const text =
           msg.message.conversation ||
@@ -65,7 +77,7 @@ export class WhatsAppBot {
           source: chatId,
           sourceName: msg.pushName || "User",
           text,
-          timestamp: msg.messageTimestamp * 1000,
+          timestamp: toUnixMs(msg.messageTimestamp),
           chatId,
           isGroup,
           attachments: [],

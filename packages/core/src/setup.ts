@@ -16,7 +16,7 @@
 //
 // Secrets go to the vault via ctx.setSecret — never into config.json.
 
-import { configPath, setAdapterConfig } from './config-store.js';
+import { configPath, getAdapterConfig, setAdapterConfig } from './config-store.js';
 
 export interface SetupPromptDef<T = string> {
   type: 'text' | 'password' | 'select' | 'confirm';
@@ -78,7 +78,9 @@ export async function runSetup<Config = unknown>(
     };
   }
 
-  await setAdapterConfig(adapter.id, result.config);
+  const existingConfig = await getAdapterConfig(adapter.id);
+  const configToSave = mergeAdapterConfig(existingConfig, result.config);
+  await setAdapterConfig(adapter.id, configToSave);
   ctx.log(`  saved → ${configPath()} · adapters.${adapter.id}`);
 
   if (!result.ok && result.manual && result.manual.length > 0) {
@@ -90,4 +92,14 @@ export async function runSetup<Config = unknown>(
   }
 
   return result;
+}
+
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function mergeAdapterConfig(existing: unknown, next: unknown): unknown {
+  if (!isPlainRecord(existing) || !isPlainRecord(next)) return next;
+  return { ...existing, ...next };
 }

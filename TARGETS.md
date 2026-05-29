@@ -20,6 +20,7 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 | `pkg-winget` | Microsoft winget | 🚧 |
 | `pkg-scoop` | Scoop bucket | 🚧 |
 | `pkg-apt` | apt repo / PPA | 🚧 |
+| `pkg-dnf` | dnf repo / Fedora COPR | ✅ |
 | `pkg-snap` | Snapcraft | 🚧 |
 | `pkg-flatpak` | Flathub | ✅ |
 | `pkg-aur` | Arch User Repo | 🚧 |

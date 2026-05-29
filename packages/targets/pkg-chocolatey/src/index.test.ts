@@ -84,4 +84,33 @@ describe('chocolatey package generation', () => {
     expect(ship.id).toBe('dry-run');
     expect(ship.meta?.commands).toContain('choco push mytool.1.4.0.nupkg --source https://push.chocolatey.org/');
   });
+
+  it("escapes single quotes in user-overridable PowerShell fields", async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-choco-'));
+    tempDirs.push(outDir);
+
+    await adapter.build(fakeBuildContext({ outDir, version: '1.0.0' }) as any, {
+      packageId: 'mytool',
+      installerUrl: "https://downloads.example.com/o'reilly-1.0.0.exe",
+      installerType: 'exe',
+      checksum: 'd'.repeat(64),
+      silentArgs: "/VERYSILENT /DIR='C:\\Program Files'",
+    });
+
+    const install = await readFile(join(outDir, 'chocolatey', 'mytool', 'tools', 'chocolateyinstall.ps1'), 'utf-8');
+    // Single quotes are doubled so the generated .ps1 stays valid PowerShell.
+    expect(install).toContain("url            = 'https://downloads.example.com/o''reilly-1.0.0.exe'");
+    expect(install).toContain("silentArgs     = '/VERYSILENT /DIR=''C:\\Program Files'''");
+    // Every literal quote is doubled, so the count of ' is even on each value line.
+    const silentLine = install.split('\n').find((l) => l.includes('silentArgs')) ?? '';
+    expect((silentLine.match(/'/g) ?? []).length % 2).toBe(0);
+  });
+
+  it('throws (no false success) on live, unimplemented publish', async () => {
+    await expect(adapter.ship(fakeShipContext({ version: '1.0.0', dryRun: false }) as any, {
+      packageId: 'mytool',
+      installerUrl: 'https://downloads.example.com/mytool-1.0.0.exe',
+      checksum: 'e'.repeat(64),
+    })).rejects.toThrow(/not implemented/i);
+  });
 });

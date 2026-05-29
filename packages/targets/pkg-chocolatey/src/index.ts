@@ -72,7 +72,13 @@ function renderNuspec(config: Config, version: string): string {
   return lines.join('\n');
 }
 
-function renderInstallScript(config: Config, version: string): string {
+// Escape a value for a single-quoted PowerShell string literal: a literal '
+// must be doubled ('') or it terminates the string and breaks the .ps1.
+function psEscape(value: string): string {
+  return value.replace(/'/g, "''");
+}
+
+function renderInstallScript(config: Config): string {
   const type = config.installerType ?? 'exe';
   const checksumType = config.checksumType ?? 'sha256';
   if (type === 'zip') {
@@ -80,10 +86,10 @@ function renderInstallScript(config: Config, version: string): string {
       `$ErrorActionPreference = 'Stop'`,
       `$toolsDir   = Split-Path -Parent $MyInvocation.MyCommand.Definition`,
       `$packageArgs = @{`,
-      `  packageName   = '${config.packageId}'`,
+      `  packageName   = '${psEscape(config.packageId)}'`,
       `  unzipLocation = $toolsDir`,
-      `  url           = '${config.installerUrl}'`,
-      `  checksum      = '${config.checksum}'`,
+      `  url           = '${psEscape(config.installerUrl)}'`,
+      `  checksum      = '${psEscape(config.checksum)}'`,
       `  checksumType  = '${checksumType}'`,
       `}`,
       `Install-ChocolateyZipPackage @packageArgs`,
@@ -93,12 +99,12 @@ function renderInstallScript(config: Config, version: string): string {
   return [
     `$ErrorActionPreference = 'Stop'`,
     `$packageArgs = @{`,
-    `  packageName    = '${config.packageId}'`,
+    `  packageName    = '${psEscape(config.packageId)}'`,
     `  fileType       = '${type}'`,
-    `  url            = '${config.installerUrl}'`,
-    `  checksum       = '${config.checksum}'`,
+    `  url            = '${psEscape(config.installerUrl)}'`,
+    `  checksum       = '${psEscape(config.checksum)}'`,
     `  checksumType   = '${checksumType}'`,
-    `  silentArgs     = '${silentArgsFor(config)}'`,
+    `  silentArgs     = '${psEscape(silentArgsFor(config))}'`,
     `  validExitCodes = @(0)`,
     `}`,
     `Install-ChocolateyPackage @packageArgs`,
@@ -127,7 +133,7 @@ export default defineTarget<Config>({
     await mkdir(toolsDir, { recursive: true });
     await Promise.all([
       writeFile(join(dir, `${config.packageId}.nuspec`), renderNuspec(config, ctx.version), 'utf-8'),
-      writeFile(join(toolsDir, 'chocolateyinstall.ps1'), renderInstallScript(config, ctx.version), 'utf-8'),
+      writeFile(join(toolsDir, 'chocolateyinstall.ps1'), renderInstallScript(config), 'utf-8'),
     ]);
     return {
       artifact: dir,
@@ -143,15 +149,13 @@ export default defineTarget<Config>({
     if (ctx.dryRun) {
       return { id: 'dry-run', meta: { commands: publishCommands(config, ctx.version) } };
     }
-    const apiKey = ctx.secret('CHOCOLATEY_API_KEY');
-    if (!apiKey) {
-      throw new Error('CHOCOLATEY_API_KEY not in vault — run: sh1pt secret set CHOCOLATEY_API_KEY <key>');
-    }
-    // TODO: choco pack + choco push using CHOCOLATEY_API_KEY (Windows + choco CLI required).
-    return {
-      id: `${config.packageId}@${ctx.version}`,
-      url: `https://community.chocolatey.org/packages/${config.packageId}/${ctx.version}`,
-    };
+    // Live publish (choco pack + choco push) is not implemented yet — fail
+    // loudly rather than return a false success. Needs Windows + the choco CLI
+    // and CHOCOLATEY_API_KEY in the vault.
+    throw new Error(
+      'pkg-chocolatey live publish is not implemented yet — use dryRun to preview ' +
+      'the choco pack/push commands. (Requires Windows + choco CLI + CHOCOLATEY_API_KEY.)',
+    );
   },
   async status(id) {
     const [pkgId] = id.split('@');

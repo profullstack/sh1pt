@@ -1,5 +1,5 @@
 import { fakeBuildContext, fakeShipContext, smokeTest } from '@profullstack/sh1pt-core/testing';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -31,6 +31,10 @@ describe('Amazon Appstore (Android) package planning', () => {
     expect(result.artifact).toBe(join(outDir, 'amazon', 'com.acme.app.apk'));
     expect(result.meta?.planFile).toBe(planFile);
     expect(result.meta?.deviceTargeting).toBe('phone-and-tablet');
+
+    // build() must create the artifact's directory so the downstream APK build
+    // can write to the reported path.
+    expect((await stat(join(outDir, 'amazon'))).isDirectory()).toBe(true);
 
     const plan = JSON.parse(await readFile(planFile, 'utf-8')) as {
       appSku: string;
@@ -108,5 +112,30 @@ describe('Amazon Appstore (Android) package planning', () => {
         ],
       },
     });
+  });
+
+  it('keeps the reported artifact and the upload command in sync without apkPath', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-amazon-'));
+    tempDirs.push(outDir);
+
+    // No apkPath: the artifact is derived under outDir. ship() must report the
+    // artifact it was actually handed (ctx.artifact) AND reference that exact
+    // path in the upload command — they must not diverge.
+    const built = await adapter.build(fakeBuildContext({ outDir, version: '2.1.0' }) as any, {
+      packageName: 'com.acme.app',
+      appSku: 'ACMEANDROID',
+    });
+
+    const ship = await adapter.ship(fakeShipContext({
+      outDir,
+      artifact: built.artifact,
+      dryRun: true,
+    }) as any, {
+      packageName: 'com.acme.app',
+      appSku: 'ACMEANDROID',
+    });
+
+    expect(ship.meta?.artifact).toBe(built.artifact);
+    expect(ship.meta?.commands).toContain(`amazon-appstore apk.upload artifact=${built.artifact}`);
   });
 });

@@ -1,5 +1,5 @@
 import { mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
@@ -19,8 +19,8 @@ function targeting(config: Config): NonNullable<Config['deviceTargeting']> {
   return config.deviceTargeting ?? 'phone-and-tablet';
 }
 
-function buildPlan(ctx: { outDir: string; version: string; channel: string }, config: Config) {
-  const artifact = artifactPath(ctx, config);
+function buildPlan(ctx: { outDir: string; version: string; channel: string }, config: Config, artifactOverride?: string) {
+  const artifact = artifactOverride ?? artifactPath(ctx, config);
   const deviceTargeting = targeting(config);
   return {
     packageName: config.packageName,
@@ -67,6 +67,9 @@ export default defineTarget<Config>({
     const plan = buildPlan(ctx, config);
     ctx.log(`amazon plan ${config.appSku} -> ${plan.deviceTargeting}`);
     await mkdir(ctx.outDir, { recursive: true });
+    // Ensure the artifact's directory exists (e.g. <outDir>/amazon/) so the
+    // downstream APK build can write to the reported artifact path.
+    await mkdir(dirname(plan.artifact), { recursive: true });
     await writeFile(plan.planFile, `${JSON.stringify(plan, null, 2)}\n`, 'utf-8');
     return {
       artifact: plan.artifact,
@@ -78,7 +81,10 @@ export default defineTarget<Config>({
     };
   },
   async ship(ctx, config) {
-    const plan = buildPlan(ctx, config);
+    // Build the plan against the artifact actually handed to ship() so the
+    // upload command and the reported artifact can't diverge when apkPath is
+    // omitted and ship's outDir differs from build's.
+    const plan = buildPlan(ctx, config, ctx.artifact);
     ctx.log(`upload to Amazon Appstore sku=${config.appSku}`);
     if (ctx.dryRun) {
       return {
@@ -86,7 +92,7 @@ export default defineTarget<Config>({
         meta: {
           appSku: config.appSku,
           packageName: config.packageName,
-          artifact: ctx.artifact,
+          artifact: plan.artifact,
           deviceTargeting: plan.deviceTargeting,
           commands: plan.commands.slice(1),
         },

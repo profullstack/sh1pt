@@ -196,6 +196,8 @@ export function tokenSetup<C = unknown>(opts: TokenSetupOpts<C>): SetupFn<C> {
       if (val) {
         if (field.secret) await ctx.setSecret(field.key, val);
         else configExtras[field.key] = val;
+      } else if (!field.secret) {
+        configExtras[field.key] = '';
       }
     }
 

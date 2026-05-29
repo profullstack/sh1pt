@@ -37,7 +37,7 @@ export default defineAi<Config>({
       body: JSON.stringify({
         model,
         messages,
-        ...(opts.maxTokens !== undefined ? { max_tokens: opts.maxTokens } : {}),
+        ...(opts.maxTokens !== undefined ? { max_completion_tokens: opts.maxTokens } : {}),
         ...(opts.temperature !== undefined ? { temperature: opts.temperature } : {}),
         ...opts.extra,
       }),

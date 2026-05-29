@@ -31,10 +31,13 @@ type WhatsAppTimestamp = number | string | { toNumber?: () => number };
 
 function toUnixMs(timestamp: WhatsAppTimestamp | null | undefined): number {
   if (typeof timestamp === "number") return timestamp * 1000;
-  if (typeof timestamp === "string") return Number(timestamp) * 1000;
+  if (typeof timestamp === "string") {
+    const numeric = Number(timestamp);
+    return Number.isFinite(numeric) ? numeric * 1000 : Date.now();
+  }
 
   const numeric = timestamp?.toNumber?.();
-  if (typeof numeric === "number") return numeric * 1000;
+  if (typeof numeric === "number" && Number.isFinite(numeric)) return numeric * 1000;
 
   return Date.now();
 }

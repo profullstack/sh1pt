@@ -1,5 +1,73 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
+import { exec } from '@profullstack/sh1pt-core';
+
+interface AgentDef {
+  id: string;
+  binary: string;
+  versionArgs: string[];
+  installHint: string;
+  authHint: string;
+}
+
+const KNOWN_AGENTS: AgentDef[] = [
+  {
+    id: 'claude',
+    binary: 'claude',
+    versionArgs: ['--version'],
+    installHint: 'mise use npm:@anthropic-ai/claude-code',
+    authHint: 'run `claude /login`',
+  },
+  {
+    id: 'codex',
+    binary: 'codex',
+    versionArgs: ['--version'],
+    installHint: 'npm install -g @openai/codex',
+    authHint: 'set OPENAI_API_KEY env var',
+  },
+  {
+    id: 'qwen',
+    binary: 'qwen',
+    versionArgs: ['--version'],
+    installHint: 'pip install qwen-agent',
+    authHint: 'set DASHSCOPE_API_KEY env var',
+  },
+];
+
+interface AgentStatus {
+  id: string;
+  installed: boolean;
+  version?: string;
+  installHint: string;
+  authHint: string;
+}
+
+async function checkAgent(agent: AgentDef): Promise<AgentStatus> {
+  const noop = () => {};
+  try {
+    const result = await exec(agent.binary, agent.versionArgs, {
+      log: noop,
+      throwOnNonZero: false,
+    });
+    if (result.exitCode === 0) {
+      return {
+        id: agent.id,
+        installed: true,
+        version: result.stdout.trim() || undefined,
+        installHint: agent.installHint,
+        authHint: agent.authHint,
+      };
+    }
+  } catch {
+    // binary not found
+  }
+  return {
+    id: agent.id,
+    installed: false,
+    installHint: agent.installHint,
+    authHint: agent.authHint,
+  };
+}
 
 export const agentsCmd = new Command('agents')
   .description('Orchestrate AI coding CLIs (Claude Code, Codex, Qwen) — generate, edit, and talk')
@@ -10,12 +78,29 @@ export const agentsCmd = new Command('agents')
 agentsCmd
   .command('list')
   .description('Which agent CLIs are installed on this machine')
-  .action(() => {
-    const agents = ['claude', 'codex', 'qwen'];
-    for (const a of agents) {
-      // TODO: resolve adapter, call check(), render real status
-      console.log(`  ${kleur.gray('○')} ${kleur.bold(a)}  ${kleur.dim('run `sh1pt agents setup --agent ' + a + '`')}`);
+  .option('--json', 'output as JSON')
+  .action(async (opts: { json?: boolean }) => {
+    const results = await Promise.all(KNOWN_AGENTS.map(checkAgent));
+
+    if (opts.json) {
+      console.log(JSON.stringify(results, null, 2));
+      return;
     }
+
+    for (const r of results) {
+      if (r.installed) {
+        const ver = r.version ? kleur.dim(` v${r.version}`) : '';
+        console.log(`  ${kleur.green('●')} ${kleur.bold(r.id)}${ver}`);
+      } else {
+        console.log(
+          `  ${kleur.gray('○')} ${kleur.bold(r.id)}  ${kleur.dim('not installed — ' + r.installHint)}`
+        );
+      }
+    }
+
+    const installed = results.filter((r) => r.installed).length;
+    console.log('');
+    console.log(kleur.dim(`${installed}/${results.length} agent(s) installed. Run \`sh1pt agents setup\` to install missing agents.`));
   });
 
 agentsCmd

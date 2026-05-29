@@ -14,13 +14,13 @@ function chatCompletionsUrl(baseUrl: string): string {
 export default defineAi<Config>({
   id: "ai-cohere",
   label: "Cohere",
-  defaultModel: "command-r-plus",
-  models: ["command-r-plus", "command-r", "command-a-03-2025"],
+  defaultModel: "command-a-plus-05-2026",
+  models: ["command-a-plus-05-2026", "command-a-03-2025", "command-r-plus", "command-r"],
 
   async generate(ctx, prompt, opts, config) {
     const apiKey = ctx.secret("COHERE_API_KEY");
     if (!apiKey) throw new Error('COHERE_API_KEY not in vault - run `sh1pt promote ai setup`');
-    const model = opts.model ?? "command-r-plus";
+    const model = opts.model ?? "command-a-plus-05-2026";
     ctx.log(`ai-cohere · model=${model} · ${prompt.length} chars in`);
     if (ctx.dryRun) return { text: '[dry-run]', model };
 

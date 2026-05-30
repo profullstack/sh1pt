@@ -3,12 +3,12 @@ import { defineDns, type DnsRecord } from '@profullstack/sh1pt-core';
 // Google Cloud DNS REST API v1. Auth: OAuth 2.0 service account
 // (or Application Default Credentials via GOOGLE_APPLICATION_CREDENTIALS).
 // Endpoints (base: https://dns.googleapis.com/dns/v1):
-//   GET  /projects/:project/managedZones                   鈥?list zones
-//   GET  /projects/:project/managedZones/:zone/rrsets      鈥?list records
-//   POST /projects/:project/managedZones/:zone/changes     鈥?create/delete (atomic)
+//   GET  /projects/:project/managedZones                   — list zones
+//   GET  /projects/:project/managedZones/:zone/rrsets      — list records
+//   POST /projects/:project/managedZones/:zone/changes     — create/delete (atomic)
 // Google Cloud DNS: use ALIAS record sets (type=A with aliasTargetName) to
 // point the zone apex to a Cloud resource; use CNAME for non-apex targets.
-// Records are grouped into ResourceRecordSets (rrsets) 鈥?one set per name+type.
+// Records are grouped into ResourceRecordSets (rrsets) — one set per name+type.
 interface Config {
   projectId?: string;
   defaultTtl?: number;
@@ -41,10 +41,10 @@ export default defineDns<Config>({
   async connect(ctx) {
     _secret = (k) => ctx.secret(k);
     if (!ctx.secret('GOOGLE_ACCESS_TOKEN') && !ctx.secret('GOOGLE_APPLICATION_CREDENTIALS')) {
-      throw new Error('GOOGLE_ACCESS_TOKEN not set 鈥?run `sh1pt secret set GOOGLE_ACCESS_TOKEN ...` (required, or set GOOGLE_APPLICATION_CREDENTIALS for service-account flow)');
+      throw new Error('GOOGLE_ACCESS_TOKEN not set — run `sh1pt secret set GOOGLE_ACCESS_TOKEN ...` (required, or set GOOGLE_APPLICATION_CREDENTIALS for service-account flow)');
     }
     if (!ctx.secret('GOOGLE_PROJECT_ID')) {
-      throw new Error('GOOGLE_PROJECT_ID not set 鈥?run `sh1pt secret set GOOGLE_PROJECT_ID ...` (required)');
+      throw new Error('GOOGLE_PROJECT_ID not set — run `sh1pt secret set GOOGLE_PROJECT_ID ...` (required)');
     }
     await getAccessToken();
     return { accountId: 'googledns' };

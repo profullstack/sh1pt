@@ -3,12 +3,12 @@ import { defineDns, type DnsRecord } from '@profullstack/sh1pt-core';
 // Google Cloud DNS REST API v1. Auth: OAuth 2.0 service account
 // (or Application Default Credentials via GOOGLE_APPLICATION_CREDENTIALS).
 // Endpoints (base: https://dns.googleapis.com/dns/v1):
-//   GET  /projects/:project/managedZones                   — list zones
-//   GET  /projects/:project/managedZones/:zone/rrsets      — list records
-//   POST /projects/:project/managedZones/:zone/changes     — create/delete (atomic)
+//   GET  /projects/:project/managedZones                   鈥?list zones
+//   GET  /projects/:project/managedZones/:zone/rrsets      鈥?list records
+//   POST /projects/:project/managedZones/:zone/changes     鈥?create/delete (atomic)
 // Google Cloud DNS: use ALIAS record sets (type=A with aliasTargetName) to
 // point the zone apex to a Cloud resource; use CNAME for non-apex targets.
-// Records are grouped into ResourceRecordSets (rrsets) — one set per name+type.
+// Records are grouped into ResourceRecordSets (rrsets) 鈥?one set per name+type.
 interface Config {
   projectId?: string;
   defaultTtl?: number;
@@ -41,10 +41,10 @@ export default defineDns<Config>({
   async connect(ctx) {
     _secret = (k) => ctx.secret(k);
     if (!ctx.secret('GOOGLE_ACCESS_TOKEN') && !ctx.secret('GOOGLE_APPLICATION_CREDENTIALS')) {
-      throw new Error('GOOGLE_ACCESS_TOKEN not set — run `sh1pt secret set GOOGLE_ACCESS_TOKEN ...` (required, or set GOOGLE_APPLICATION_CREDENTIALS for service-account flow)');
+      throw new Error('GOOGLE_ACCESS_TOKEN not set 鈥?run `sh1pt secret set GOOGLE_ACCESS_TOKEN ...` (required, or set GOOGLE_APPLICATION_CREDENTIALS for service-account flow)');
     }
     if (!ctx.secret('GOOGLE_PROJECT_ID')) {
-      throw new Error('GOOGLE_PROJECT_ID not set — run `sh1pt secret set GOOGLE_PROJECT_ID ...` (required)');
+      throw new Error('GOOGLE_PROJECT_ID not set 鈥?run `sh1pt secret set GOOGLE_PROJECT_ID ...` (required)');
     }
     await getAccessToken();
     return { accountId: 'googledns' };
@@ -123,14 +123,20 @@ export default defineDns<Config>({
     const token = await getAccessToken();
     const project = config.projectId ?? _secret('GOOGLE_PROJECT_ID');
     if (!project) throw new Error('GOOGLE_PROJECT_ID not set');
-    const [type, name] = recordId.split('/');
+    const separatorIndex = recordId.indexOf('/');
+    if (separatorIndex <= 0 || separatorIndex === recordId.length - 1) {
+      throw new Error(`Google Cloud DNS deleteRecord: invalid record id "${recordId}"`);
+    }
+    const type = recordId.slice(0, separatorIndex);
+    const name = recordId.slice(separatorIndex + 1);
     // Need to fetch the rrset to get current rrdatas for the deletion entry.
     const existing = (await this.listRecords(zoneId, config)).filter(
       r => r.type === type && (r.name === name || r.name === name.replace(/\.$/, '')),
     );
-    if (existing.length === 0) return;
+    const firstRecord = existing[0];
+    if (!firstRecord) return;
     const fqdn = name.endsWith('.') ? name : `${name}.`;
-    const ttl = existing[0].ttl;
+    const ttl = firstRecord.ttl;
     const res = await fetch(`${API}/projects/${project}/managedZones/${zoneId}/changes`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },

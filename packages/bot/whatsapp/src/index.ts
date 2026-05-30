@@ -45,10 +45,11 @@ export class WhatsAppBot {
   async start(): Promise<void> {
     const { state, saveState } = useMultiFileAuthState("./auth");
 
-    this.sock = makeBaileysBot(state, {
-      print: console.log,
+    this.sock = makeBaileysBot({
+      auth: state,
       browser: ["sh1pt-bot", "Chrome", "120"],
     });
+    this.sock.ev.on("creds.update", saveState);
 
     this.sock.ev.on("messages.upsert", async ({ messages }) => {
       for (const msg of messages) {

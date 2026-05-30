@@ -142,6 +142,18 @@ describe('skills new command', () => {
     expect(manifest.marketplaces.ugig.command).toContain('--price 42');
   });
 
+  it('preserves zero as a valid price', async () => {
+    const { skillFile, manifestFile } = skillFixture();
+    const newCmd = skillsCmd.commands.find((c) => c.name() === 'new');
+    expect(newCmd).toBeDefined();
+
+    await newCmd?.parseAsync(['--skill-file', skillFile, '--out', manifestFile, '--price', '0'], { from: 'user' });
+
+    const manifest = JSON.parse(readFileSync(manifestFile, 'utf8'));
+    expect(manifest.price).toBe(0);
+    expect(manifest.marketplaces.ugig.command).toContain('--price 0');
+  });
+
   it('rejects negative prices without writing a manifest', async () => {
     const { skillFile, manifestFile } = skillFixture();
     const newCmd = skillsCmd.commands.find((c) => c.name() === 'new');
@@ -159,6 +171,16 @@ describe('skills new command', () => {
 
     await expect(newCmd?.parseAsync(['--skill-file', skillFile, '--out', manifestFile, '--price', '1.9'], { from: 'user' }))
       .rejects.toThrow('--price must be a non-negative integer in sats');
+    expect(existsSync(manifestFile)).toBe(false);
+  });
+
+  it('rejects prices larger than Number.MAX_SAFE_INTEGER', async () => {
+    const { skillFile, manifestFile } = skillFixture();
+    const newCmd = skillsCmd.commands.find((c) => c.name() === 'new');
+    expect(newCmd).toBeDefined();
+
+    await expect(newCmd?.parseAsync(['--skill-file', skillFile, '--out', manifestFile, '--price', '9007199254740992'], { from: 'user' }))
+      .rejects.toThrow('--price must be a safe non-negative integer in sats');
     expect(existsSync(manifestFile)).toBe(false);
   });
 });

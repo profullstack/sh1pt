@@ -6,6 +6,14 @@ interface Config {
 
 const DEFAULT_BASE = 'https://api.x.ai';
 
+function chatCompletionsUrl(baseUrl?: string): string {
+  return `${(baseUrl ?? DEFAULT_BASE).replace(/\/+$/, '')}/v1/chat/completions`;
+}
+
+function redact(value: string, apiKey: string): string {
+  return apiKey ? value.split(apiKey).join('[redacted]') : value;
+}
+
 export default defineAi<Config>({
   id: 'ai-xai',
   label: 'xAI',
@@ -23,7 +31,7 @@ export default defineAi<Config>({
     if (opts.system) messages.push({ role: 'system', content: opts.system });
     messages.push({ role: 'user', content: prompt });
 
-    const res = await fetch(`${config.baseUrl ?? DEFAULT_BASE}/v1/chat/completions`, {
+    const res = await fetch(chatCompletionsUrl(config.baseUrl), {
       method: 'POST',
       headers: {
         authorization: `Bearer ${apiKey}`,
@@ -37,7 +45,7 @@ export default defineAi<Config>({
         ...opts.extra,
       }),
     });
-    if (!res.ok) throw new Error(`xAI ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    if (!res.ok) throw new Error(`xAI ${res.status}: ${redact((await res.text()).slice(0, 200), apiKey)}`);
     const data = (await res.json()) as {
       choices: Array<{ message?: { content?: string } }>;
       model: string;

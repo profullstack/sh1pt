@@ -68,13 +68,36 @@ describe('Cerebras OpenAI-compatible generation', () => {
     });
   });
 
-  it('includes status and response body excerpt on errors', async () => {
+  it('normalizes configured base URLs with trailing slashes', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: 'ok' } }], model: 'llama-3.3-70b' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://proxy.example.com/' });
+
+    const [url] = fetchMock.mock.calls[0]!;
+    expect(url).toBe('https://proxy.example.com/v1/chat/completions');
+  });
+
+  it('includes status and redacted response body excerpt on errors', async () => {
+    const apiKey = 'test-key';
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
-      text: async () => 'server error'.repeat(30),
+      text: async () => `server error ${apiKey}`.repeat(30),
     }));
 
-    await expect(adapter.generate(ctx(), 'hello', {}, {})).rejects.toThrow(/Cerebras 500: server error/);
+    let error: unknown;
+    try {
+      await adapter.generate(ctx({ CEREBRAS_API_KEY: apiKey }), 'hello', {}, {});
+    } catch (exc) {
+      error = exc;
+    }
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toContain('Cerebras 500: server error');
+    expect((error as Error).message).toContain('[redacted]');
+    expect((error as Error).message).not.toContain(apiKey);
   });
 });

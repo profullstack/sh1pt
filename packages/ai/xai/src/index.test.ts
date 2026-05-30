@@ -82,11 +82,12 @@ describe('xAI OpenAI-compatible generation', () => {
   });
 
   it('includes status and redacted response body excerpt on errors', async () => {
-    const apiKey = 'test-key';
+    const apiKey = 'test-key-crossing-truncation-boundary';
+    const prefix = 'x'.repeat(190);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: false,
       status: 403,
-      text: async () => `forbidden ${apiKey}`.repeat(30),
+      text: async () => `${prefix}${apiKey} forbidden`,
     }));
 
     let error: unknown;
@@ -96,8 +97,9 @@ describe('xAI OpenAI-compatible generation', () => {
       error = exc;
     }
     expect(error).toBeInstanceOf(Error);
-    expect((error as Error).message).toContain('xAI 403: forbidden');
+    expect((error as Error).message).toContain('xAI 403:');
     expect((error as Error).message).toContain('[redacted]');
     expect((error as Error).message).not.toContain(apiKey);
+    expect((error as Error).message).not.toContain(apiKey.slice(0, 10));
   });
 });

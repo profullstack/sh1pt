@@ -45,7 +45,7 @@ export default defineAi<Config>({
         ...opts.extra,
       }),
     });
-    if (!res.ok) throw new Error(`xAI ${res.status}: ${redact((await res.text()).slice(0, 200), apiKey)}`);
+    if (!res.ok) throw new Error(`xAI ${res.status}: ${redact(await res.text(), apiKey).slice(0, 200)}`);
     const data = (await res.json()) as {
       choices: Array<{ message?: { content?: string } }>;
       model: string;

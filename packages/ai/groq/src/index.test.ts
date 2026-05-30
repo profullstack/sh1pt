@@ -82,11 +82,12 @@ describe('Groq OpenAI-compatible generation', () => {
   });
 
   it('includes status and redacted response body excerpt on errors', async () => {
-    const apiKey = 'test-key';
+    const apiKey = 'test-key-crossing-truncation-boundary';
+    const prefix = 'x'.repeat(190);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: false,
       status: 429,
-      text: async () => `rate limited ${apiKey}`.repeat(30),
+      text: async () => `${prefix}${apiKey} rate limited`,
     }));
 
     let error: unknown;
@@ -96,8 +97,9 @@ describe('Groq OpenAI-compatible generation', () => {
       error = exc;
     }
     expect(error).toBeInstanceOf(Error);
-    expect((error as Error).message).toContain('Groq 429: rate limited');
+    expect((error as Error).message).toContain('Groq 429:');
     expect((error as Error).message).toContain('[redacted]');
     expect((error as Error).message).not.toContain(apiKey);
+    expect((error as Error).message).not.toContain(apiKey.slice(0, 10));
   });
 });

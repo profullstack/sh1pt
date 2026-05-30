@@ -82,11 +82,12 @@ describe('Mistral OpenAI-compatible generation', () => {
   });
 
   it('includes status and redacted response body excerpt on errors', async () => {
-    const apiKey = 'test-key';
+    const apiKey = 'test-key-crossing-truncation-boundary';
+    const prefix = 'x'.repeat(190);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: false,
       status: 400,
-      text: async () => `bad request ${apiKey}`.repeat(30),
+      text: async () => `${prefix}${apiKey} bad request`,
     }));
 
     let error: unknown;
@@ -96,8 +97,9 @@ describe('Mistral OpenAI-compatible generation', () => {
       error = exc;
     }
     expect(error).toBeInstanceOf(Error);
-    expect((error as Error).message).toContain('Mistral 400: bad request');
+    expect((error as Error).message).toContain('Mistral 400:');
     expect((error as Error).message).toContain('[redacted]');
     expect((error as Error).message).not.toContain(apiKey);
+    expect((error as Error).message).not.toContain(apiKey.slice(0, 10));
   });
 });

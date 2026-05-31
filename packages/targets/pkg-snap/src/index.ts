@@ -33,6 +33,29 @@ function renderDescription(description: string): string[] {
   ];
 }
 
+/**
+ * Validate a Snap Store package name.
+ * Rules: lowercase letters, digits, and hyphens only; at least one letter;
+ * no leading or trailing hyphen; max 40 characters.
+ */
+function validateSnapName(snapName: string): void {
+  if (!snapName || typeof snapName !== 'string') {
+    throw new Error('pkg-snap: snapName is required');
+  }
+  if (snapName.length > 40) {
+    throw new Error(`pkg-snap: snapName "${snapName}" exceeds 40 characters`);
+  }
+  if (snapName.startsWith('-') || snapName.endsWith('-')) {
+    throw new Error(`pkg-snap: snapName "${snapName}" must not start or end with a hyphen`);
+  }
+  if (!/^[a-z0-9-]+$/.test(snapName)) {
+    throw new Error(`pkg-snap: snapName "${snapName}" must contain only lowercase letters, digits, and hyphens`);
+  }
+  if (!/[a-z]/.test(snapName)) {
+    throw new Error(`pkg-snap: snapName "${snapName}" must contain at least one letter`);
+  }
+}
+
 function renderSnapcraftYaml(ctx: { projectDir: string; version: string; channel: string }, config: Config): string {
   const grade = config.grade ?? (ctx.channel === 'stable' ? 'stable' : 'devel');
   const confinement = config.confinement ?? 'strict';
@@ -84,6 +107,7 @@ export default defineTarget<Config>({
   kind: 'package-manager',
   label: 'Snapcraft',
   async build(ctx, config) {
+    validateSnapName(config.snapName);
     const grade = config.grade ?? (ctx.channel === 'stable' ? 'stable' : 'devel');
     const confinement = config.confinement ?? 'strict';
     const base = config.base ?? 'core22';

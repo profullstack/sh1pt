@@ -27,6 +27,34 @@ function renderList(values: string[], indent: string): string[] {
   return values.map((value) => `${indent}- ${yamlString(value)}`);
 }
 
+/**
+ * Validate a Flatpak application ID.
+ * Must be a reverse-DNS string with at least 3 dot-separated segments,
+ * each non-empty and containing only alphanumeric characters or hyphens/underscores.
+ * Must not contain path traversal characters.
+ */
+function validateAppId(appId: string): void {
+  if (!appId || typeof appId !== 'string') {
+    throw new Error('pkg-flatpak: appId is required');
+  }
+  // Block path traversal
+  if (appId.includes('/') || appId.includes('\\') || appId.includes('..')) {
+    throw new Error(`pkg-flatpak: invalid appId "${appId}" — must not contain path separators or ".." sequences`);
+  }
+  const segments = appId.split('.');
+  if (segments.length < 3) {
+    throw new Error(`pkg-flatpak: invalid appId "${appId}" — must have at least 3 dot-separated segments (e.g. "org.example.App")`);
+  }
+  for (const seg of segments) {
+    if (!seg) {
+      throw new Error(`pkg-flatpak: invalid appId "${appId}" — segments must be non-empty`);
+    }
+    if (!/^[A-Za-z0-9_-]+$/.test(seg)) {
+      throw new Error(`pkg-flatpak: invalid appId "${appId}" — segment "${seg}" contains invalid characters`);
+    }
+  }
+}
+
 function renderFlatpakManifest(ctx: { projectDir: string; version: string; channel: string }, config: Config): string {
   const branch = config.branch ?? (ctx.channel === 'stable' ? 'stable' : 'beta');
   const runtime = config.runtime ?? 'org.freedesktop.Platform';
@@ -84,6 +112,7 @@ export default defineTarget<Config>({
   kind: 'package-manager',
   label: 'Flathub',
   async build(ctx, config) {
+    validateAppId(config.appId);
     const branch = config.branch ?? (ctx.channel === 'stable' ? 'stable' : 'beta');
     const runtime = config.runtime ?? 'org.freedesktop.Platform';
     const runtimeVersion = config.runtimeVersion ?? '23.08';

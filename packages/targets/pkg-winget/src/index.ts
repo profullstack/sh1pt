@@ -24,6 +24,32 @@ function yamlString(value: string): string {
   return JSON.stringify(value);
 }
 
+/**
+ * Validate a winget package identifier.
+ * Must follow "Publisher.PackageName" format — at least one dot, no leading/trailing dot,
+ * each segment non-empty and containing only alphanumeric characters, hyphens, or underscores.
+ */
+function validatePackageId(packageId: string): void {
+  if (!packageId || typeof packageId !== 'string') {
+    throw new Error('winget: packageId is required');
+  }
+  if (packageId.startsWith('.') || packageId.endsWith('.')) {
+    throw new Error(`winget: invalid packageId "${packageId}" — must not start or end with a dot`);
+  }
+  const segments = packageId.split('.');
+  if (segments.length < 2) {
+    throw new Error(`winget: invalid packageId "${packageId}" — must use Publisher.Package format (e.g. "Microsoft.VSCode")`);
+  }
+  for (const seg of segments) {
+    if (!seg) {
+      throw new Error(`winget: invalid packageId "${packageId}" — segments must be non-empty`);
+    }
+    if (!/^[A-Za-z0-9_-]+$/.test(seg)) {
+      throw new Error(`winget: invalid packageId "${packageId}" — segment "${seg}" contains invalid characters (use alphanumeric, hyphen, or underscore)`);
+    }
+  }
+}
+
 function manifestDir(outDir: string, packageId: string, version: string): string {
   const [publisher = packageId, name = packageId] = packageId.split('.');
   return join(outDir, 'manifests', publisher[0]!.toLowerCase(), publisher, name, version);
@@ -119,6 +145,7 @@ export default defineTarget<Config>({
     return { artifact: dir };
   },
   async ship(ctx, config) {
+    validatePackageId(config.packageId);
     ctx.log(`submit winget PR for ${config.packageId}@${ctx.version}`);
     if (ctx.dryRun) return { id: 'dry-run' };
     // TODO: fork winget-pkgs, add manifests, open PR via GitHub API

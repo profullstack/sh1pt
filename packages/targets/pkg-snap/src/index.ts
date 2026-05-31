@@ -33,7 +33,18 @@ function renderDescription(description: string): string[] {
   ];
 }
 
+function assertSnapName(snapName: string): void {
+  if (
+    snapName.length > 40
+    || !/[a-z]/.test(snapName)
+    || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(snapName)
+  ) {
+    throw new Error(`snapName must be a valid Snap Store name, got "${snapName}"`);
+  }
+}
+
 function renderSnapcraftYaml(ctx: { projectDir: string; version: string; channel: string }, config: Config): string {
+  assertSnapName(config.snapName);
   const grade = config.grade ?? (ctx.channel === 'stable' ? 'stable' : 'devel');
   const confinement = config.confinement ?? 'strict';
   const base = config.base ?? 'core22';
@@ -84,6 +95,7 @@ export default defineTarget<Config>({
   kind: 'package-manager',
   label: 'Snapcraft',
   async build(ctx, config) {
+    assertSnapName(config.snapName);
     const grade = config.grade ?? (ctx.channel === 'stable' ? 'stable' : 'devel');
     const confinement = config.confinement ?? 'strict';
     const base = config.base ?? 'core22';
@@ -97,6 +109,7 @@ export default defineTarget<Config>({
     return { artifact: manifestPath };
   },
   async ship(ctx, config) {
+    assertSnapName(config.snapName);
     const trackChannel = config.channel ?? (ctx.channel === 'stable' ? 'stable' : 'edge');
     ctx.log(`snapcraft upload + release ${config.snapName} → ${trackChannel}`);
     if (ctx.dryRun) return { id: 'dry-run' };

@@ -60,4 +60,27 @@ describe('snapcraft manifest generation', () => {
       snapName: 'myapp',
     })).resolves.toEqual({ id: 'dry-run' });
   });
+
+  it('rejects invalid snap names before generating manifests', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-snap-'));
+    tempDirs.push(outDir);
+
+    await expect(adapter.build(fakeBuildContext({
+      outDir,
+      projectDir: '/repo/myapp',
+      version: '1.2.3',
+      channel: 'stable',
+    }) as any, {
+      snapName: 'Bad: Name',
+    })).rejects.toThrow('snapName');
+
+    await expect(adapter.build(fakeBuildContext({
+      outDir,
+      projectDir: '/repo/myapp',
+      version: '1.2.3',
+      channel: 'stable',
+    }) as any, {
+      snapName: '-myapp',
+    })).rejects.toThrow('snapName');
+  });
 });

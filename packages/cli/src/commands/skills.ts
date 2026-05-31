@@ -76,6 +76,9 @@ const SKILL_TARGETS = {
 function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 64) || 'my-skill';
 }
+function titleFromSlug(s: string): string {
+  return s.split('-').filter(Boolean).map(w => w[0]!.toUpperCase() + w.slice(1)).join(' ');
+}
 function q(s: string): string { return JSON.stringify(s); }
 async function exists(path: string): Promise<boolean> { try { await access(path); return true; } catch { return false; } }
 function frontmatterValue(text: string, key: string): string | undefined {
@@ -87,7 +90,7 @@ async function inferFromSkill(file: string): Promise<Partial<SkillManifest>> {
   const text = await readFile(file, 'utf8');
   const name = frontmatterValue(text, 'name');
   const description = frontmatterValue(text, 'description');
-  const title = name ? name.split('-').map(w => w[0]?.toUpperCase() + w.slice(1)).join(' ') : undefined;
+  const title = name ? titleFromSlug(slugify(name)) : undefined;
   return { name, title, description };
 }
 async function loadManifest(path = 'sh1pt.skill.json'): Promise<SkillManifest> {

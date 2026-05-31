@@ -4,10 +4,10 @@ import { join, basename } from 'node:path';
 import kleur from 'kleur';
 import prompts from 'prompts';
 
-const CONFIG_TEMPLATE = (name: string) => `import { defineConfig } from '@profullstack/sh1pt-core';
+export const CONFIG_TEMPLATE = (name: string) => `import { defineConfig } from '@profullstack/sh1pt-core';
 
 export default defineConfig({
-  name: '${name}',
+  name: ${JSON.stringify(name)},
   version: '0.0.0',
   targets: {
     // add targets with \`sh1pt ship target add <id>\`

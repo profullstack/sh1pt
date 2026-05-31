@@ -47,6 +47,11 @@ export function defineAi<Config>(p: AiProvider<Config>): AiProvider<Config> {
   return autoSetup(p);
 }
 
+export function openAiCompatibleChatCompletionsUrl(baseUrl: string): string {
+  const base = baseUrl.replace(/\/+$/, '');
+  return base.endsWith('/v1') ? `${base}/chat/completions` : `${base}/v1/chat/completions`;
+}
+
 const aiRegistry = new Map<string, AiProvider<any>>();
 
 export function registerAi(p: AiProvider<any>): void {

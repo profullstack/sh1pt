@@ -1,15 +1,10 @@
-import { defineAi, tokenSetup } from '@profullstack/sh1pt-core';
+import { defineAi, openAiCompatibleChatCompletionsUrl, tokenSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   baseUrl?: string;
 }
 
 const DEFAULT_BASE = "https://api.cohere.ai/compatibility";
-
-function chatCompletionsUrl(baseUrl: string): string {
-  const base = baseUrl.replace(/\/+$/, '');
-  return base.endsWith('/v1') ? `${base}/chat/completions` : `${base}/v1/chat/completions`;
-}
 
 export default defineAi<Config>({
   id: "ai-cohere",
@@ -28,7 +23,7 @@ export default defineAi<Config>({
     if (opts.system) messages.push({ role: 'system', content: opts.system });
     messages.push({ role: 'user', content: prompt });
 
-    const res = await fetch(chatCompletionsUrl(config.baseUrl ?? DEFAULT_BASE), {
+    const res = await fetch(openAiCompatibleChatCompletionsUrl(config.baseUrl ?? DEFAULT_BASE), {
       method: 'POST',
       headers: {
         authorization: `Bearer ${apiKey}`,

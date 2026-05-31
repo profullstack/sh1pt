@@ -1,6 +1,6 @@
 import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
-import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
-import { isAbsolute, join, resolve } from 'node:path';
+import { copyFile, cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { basename, isAbsolute, join, resolve } from 'node:path';
 
 interface Config {
   manifestPath: string;
@@ -59,7 +59,35 @@ export default defineTarget<Config>({
       ctx.log(`include service worker ${config.serviceWorkerPath}`);
       await copyFile(fromProject(ctx.projectDir, config.serviceWorkerPath), serviceWorkerOut);
     } else {
-      await writeFile(serviceWorkerOut, "self.addEventListener('fetch', () => undefined);\n", 'utf-8');
+      await writeFile(serviceWorkerOut, `const CACHE_NAME = 'sh1pt-web-pwa-${ctx.version}';
+const OFFLINE_URL = './index.html';
+const PRECACHE_URLS = [OFFLINE_URL, './manifest.webmanifest'];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)));
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))),
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        return response;
+      })
+      .catch(async () => (await caches.match(event.request)) ?? caches.match(OFFLINE_URL)),
+  );
+});
+`, 'utf-8');
     }
 
     await writeFile(htmlOut, `<!doctype html>
@@ -78,8 +106,14 @@ export default defineTarget<Config>({
 </html>
 `, 'utf-8');
 
+    const files = ['index.html', 'manifest.webmanifest', 'service-worker.js'];
     if (config.iconsDir) {
-      ctx.log(`PWA icons should be copied from ${config.iconsDir} by the upstream web build before publish`);
+      const iconsSrc = fromProject(ctx.projectDir, config.iconsDir);
+      const iconsDestName = basename(config.iconsDir.replace(/[\\/]$/, '')) || 'icons';
+      const iconsDest = join(artifactDir, iconsDestName);
+      ctx.log(`copy PWA icons from ${config.iconsDir} to ${iconsDestName}/`);
+      await cp(iconsSrc, iconsDest, { recursive: true });
+      files.push(iconsDestName);
     }
 
     await writeFile(summaryOut, `${JSON.stringify({
@@ -88,7 +122,7 @@ export default defineTarget<Config>({
       startUrl,
       scope,
       display: manifest.display,
-      files: ['index.html', 'manifest.webmanifest', 'service-worker.js'],
+      files,
     }, null, 2)}\n`, 'utf-8');
 
     return { artifact: artifactDir };

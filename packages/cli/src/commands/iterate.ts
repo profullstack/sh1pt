@@ -237,16 +237,25 @@ iterateCmd
       }
       if (opts.end) {
         exp.status = 'ended';
-        if (opts.winner) exp.winner = opts.winner as 'A' | 'B' | 'inconclusive';
+        if (opts.winner) {
+          const validWinners = ['A', 'B', 'inconclusive'] as const;
+          if (!(validWinners as readonly string[]).includes(opts.winner)) {
+            console.error(kleur.red(`invalid --winner "${opts.winner}" — must be A, B, or inconclusive`));
+            process.exit(1);
+          }
+          exp.winner = opts.winner as 'A' | 'B' | 'inconclusive';
+        }
         if (opts.note) exp.note = opts.note;
         exp.updatedAt = new Date().toISOString();
         console.log(kleur.yellow(`ended: ${exp.id}${opts.winner ? ` · winner=${opts.winner}` : ''}`));
       } else if (opts.pause) {
         exp.status = 'paused';
+        if (opts.note) exp.note = opts.note;
         exp.updatedAt = new Date().toISOString();
         console.log(kleur.yellow(`paused: ${exp.id}`));
       } else if (opts.resume) {
         exp.status = 'active';
+        if (opts.note) exp.note = opts.note;
         exp.updatedAt = new Date().toISOString();
         console.log(kleur.green(`resumed: ${exp.id}`));
       }

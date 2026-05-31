@@ -14,4 +14,11 @@ describe('CONFIG_TEMPLATE', () => {
 
     expect(config).toContain('name: "line\\nbreak"');
   });
+
+  it('escapes double quotes and backslashes in project names', () => {
+    const name = 'quote "inside" C:\\tmp\\app';
+    const config = CONFIG_TEMPLATE(name);
+
+    expect(config).toContain(`name: ${JSON.stringify(name)}`);
+  });
 });

@@ -77,14 +77,14 @@ export default defineTarget<Config>({
   async ship(ctx, config) {
     ctx.log(`vsce: publishing ${config.publisher}.${config.extensionName}@${ctx.version} to VS Code Marketplace`);
 
-    const token = ctx.secret('VSCE_TOKEN');
-    if (!token) {
-      throw new Error('VSCE_TOKEN not set. Run: sh1pt secret set VSCE_TOKEN <pat>');
-    }
-
     if (ctx.dryRun) {
       ctx.log('vsce: dry-run — would publish extension');
       return { id: 'dry-run' };
+    }
+
+    const token = ctx.secret('VSCE_TOKEN');
+    if (!token) {
+      throw new Error('VSCE_TOKEN not set. Run: sh1pt secret set VSCE_TOKEN <pat>');
     }
 
     await exec('npx', ['--yes', 'vsce', 'publish', '--pat', token, '--packagePath', ctx.artifact], {

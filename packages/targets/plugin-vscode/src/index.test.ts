@@ -1,4 +1,4 @@
-import { fakeBuildContext, smokeTest } from '@profullstack/sh1pt-core/testing';
+import { fakeBuildContext, fakeShipContext, smokeTest } from '@profullstack/sh1pt-core/testing';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -93,10 +93,20 @@ describe('plugin-vscode target adapter', () => {
       '--target',
       'linux-x64',
     ], {
-      cwd: '/repo/extensions/sample-extension',
+      cwd: join('/repo', 'extensions/sample-extension'),
       log: ctx.log,
       throwOnNonZero: true,
     });
-    expect(result).toEqual({ artifact: '/repo/.sh1pt/out/sample-extension-1.2.3.vsix' });
+    expect(result).toEqual({ artifact: join('/repo/.sh1pt/out', 'sample-extension-1.2.3.vsix') });
+  });
+
+  it('keeps dry-run publishing side-effect free without requiring a token', async () => {
+    await expect(adapter.ship(fakeShipContext({
+      version: '1.2.3',
+      dryRun: true,
+      secret: () => undefined,
+    }) as any, sampleConfig)).resolves.toEqual({ id: 'dry-run' });
+
+    expect(execMock).not.toHaveBeenCalled();
   });
 });

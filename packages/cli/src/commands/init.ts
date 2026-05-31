@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { writeFile, access } from 'node:fs/promises';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import kleur from 'kleur';
 import prompts from 'prompts';
 
@@ -14,6 +14,10 @@ export default defineConfig({
   },
 });
 `;
+
+export function defaultProjectName(cwd = process.cwd()): string {
+  return basename(cwd.replace(/\\/g, '/')) || 'my-app';
+}
 
 /**
  * Shared init action — scaffolds sh1pt.config.ts in the current project.
@@ -32,7 +36,7 @@ export async function initAction(): Promise<void> {
     type: 'text',
     name: 'name',
     message: 'Project name',
-    initial: process.cwd().split('/').pop() ?? 'my-app',
+    initial: defaultProjectName(),
   });
   if (!name) return;
   await writeFile(cfgPath, CONFIG_TEMPLATE(name), 'utf8');

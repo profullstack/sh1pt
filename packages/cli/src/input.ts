@@ -39,8 +39,9 @@ export function resolveInput(raw: string): ResolvedInput {
   // 2) Http(s) git urls: *.git, github.com/foo/bar, gitlab.com/foo/bar,
   //    bitbucket.org/foo/bar. A plain https to a known forge with org/repo
   //    is treated as git, not a live site.
-  if (/\.git$/i.test(input) || isForgeRepoUrl(input)) {
-    return { kind: 'git', raw, value: normalizeUrl(input), inferredName: repoNameFromGit(input) };
+  //    Also matches .git?query and .git#fragment browser-copied forms.
+  if (/\.git([?#]|$)/i.test(input) || isForgeRepoUrl(input)) {
+    return { kind: 'git', raw, value: normalizeGitUrl(input), inferredName: repoNameFromGit(input) };
   }
 
   // 3) Generic http(s) — a live site.
@@ -70,9 +71,24 @@ function isForgeRepoUrl(u: string): boolean {
   return Boolean(m);
 }
 
+/**
+ * Normalize a git clone URL: strip browser-only query strings and fragments,
+ * then clean up trailing slashes. The .git suffix is preserved when present.
+ *
+ * Examples:
+ *   https://github.com/foo/bar?tab=readme#install → https://github.com/foo/bar
+ *   https://github.com/foo/bar.git?ref=main        → https://github.com/foo/bar.git
+ *   https://github.com/foo/bar.git#README          → https://github.com/foo/bar.git
+ */
+function normalizeGitUrl(u: string): string {
+  // Strip query string and fragment — they are browser artefacts on clone URLs.
+  const stripped = u.replace(/[?#].*$/, '');
+  return stripped.replace(/\/+$/, '');
+}
+
 function normalizeUrl(u: string): string {
-  // Trim trailing slashes and default fragments; keep the path intact.
-  return u.replace(/\/+$/, '').replace(/\.git$/i, '.git');
+  // For live-site URLs keep query strings and fragments intact; only strip trailing slashes.
+  return u.replace(/\/+$/, '');
 }
 
 function repoNameFromGit(u: string): string | undefined {

@@ -147,6 +147,7 @@ function captureMetricSnapshot(scope: string): MetricSnapshot {
 
 export interface WatchConfig {
   agent: string;
+  scope: string;
   interval: number;
   quietHours?: string;
   cloud: boolean;
@@ -253,7 +254,11 @@ iterateCmd
 
     const finishedAt = new Date().toISOString();
     const agentOutput = (result.stdout ?? '').trim();
-    const status: RunStatus = result.error ? 'failed' : 'completed';
+    // Use exit code to determine status: treat non-zero exit as failed,
+    // not just process spawn errors, so the user gets a meaningful signal.
+    const status: RunStatus = (result.error || (result.status !== 0 && result.status !== null))
+      ? 'failed'
+      : 'completed';
 
     const record: RunRecord = {
       id, startedAt, finishedAt, agent: opts.agent,
@@ -286,6 +291,7 @@ iterateCmd
   .command('watch')
   .description('Configure a daemon that runs iterate run on every significant metric change')
   .option('--agent <id>', 'claude | codex | qwen', 'claude')
+  .option('--scope <area>', 'copy | pricing | onboarding | perf | bugs | all', 'all')
   .option('--cloud', 'schedule in sh1pt cloud instead of local cron')
   .option('--interval <seconds>', 're-check interval in seconds', Number, 3600)
   .option('--quiet-hours <start-end>', 'pause during these local hours, e.g. 22-08')
@@ -293,6 +299,7 @@ iterateCmd
   .option('--status', 'show current watch configuration')
   .action(async (opts: {
     agent: string;
+    scope: string;
     cloud?: boolean;
     interval: number;
     quietHours?: string;
@@ -325,6 +332,7 @@ iterateCmd
 
     const config: WatchConfig = {
       agent: opts.agent,
+      scope: opts.scope,
       interval: opts.interval,
       quietHours: opts.quietHours,
       cloud: opts.cloud ?? false,
@@ -344,7 +352,7 @@ iterateCmd
     } else {
       const intervalMin = Math.round(config.interval / 60);
       const cronMin = intervalMin >= 1 ? `*/${intervalMin}` : '*';
-      const cron = `${cronMin} * * * * sh1pt iterate run --agent ${config.agent} --auto-apply`;
+      const cron = `${cronMin} * * * * sh1pt iterate run --agent ${config.agent} --scope ${config.scope} --auto-apply`;
       console.log(kleur.dim('\nLocal mode — add this to your crontab:'));
       console.log(kleur.cyan(`  ${cron}`));
       console.log(kleur.dim('  (run `crontab -e` to edit)'));

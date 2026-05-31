@@ -24,8 +24,23 @@ function yamlString(value: string): string {
   return JSON.stringify(value);
 }
 
+function packageIdParts(packageId: string): { publisher: string; name: string } {
+  const parts = packageId.split('.');
+  const publisher = parts[0];
+  const name = parts.at(-1);
+  if (
+    parts.length < 2
+    || !publisher
+    || !name
+    || parts.some((part) => part.length === 0)
+  ) {
+    throw new Error(`packageId must use winget Publisher.Package format, got "${packageId}"`);
+  }
+  return { publisher, name };
+}
+
 function manifestDir(outDir: string, packageId: string, version: string): string {
-  const [publisher = packageId, name = packageId] = packageId.split('.');
+  const { publisher, name } = packageIdParts(packageId);
   return join(outDir, 'manifests', publisher[0]!.toLowerCase(), publisher, name, version);
 }
 
@@ -74,8 +89,9 @@ function renderInstallerManifest(config: Config, version: string): string {
 function renderLocaleManifest(config: Config, version: string): string {
   const locale = config.defaultLocale ?? 'en-US';
   const manifestVersion = config.manifestVersion ?? '1.6.0';
-  const packageName = config.packageName ?? config.packageId.split('.').at(-1) ?? config.packageId;
-  const publisher = config.publisher ?? config.packageId.split('.')[0] ?? 'Unknown';
+  const idParts = packageIdParts(config.packageId);
+  const packageName = config.packageName ?? idParts.name;
+  const publisher = config.publisher ?? idParts.publisher;
   const lines = [
     `PackageIdentifier: ${yamlString(config.packageId)}`,
     `PackageVersion: ${yamlString(version)}`,

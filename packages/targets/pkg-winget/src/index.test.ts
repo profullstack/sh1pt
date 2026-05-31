@@ -67,6 +67,36 @@ describe('winget manifest generation', () => {
     expect(localeManifest).toContain('License: "MIT"');
   });
 
+  it('rejects malformed package identifiers before writing manifests', async () => {
+    await expect(adapter.build(fakeBuildContext({
+      outDir: await mkdtemp(join(tmpdir(), 'sh1pt-winget-')),
+      version: '1.2.3',
+    }) as any, {
+      packageId: '.MyTool',
+      installers: [
+        {
+          architecture: 'x64',
+          url: 'https://downloads.example.com/my-tool-1.2.3-x64.exe',
+          sha256: 'a'.repeat(64),
+        },
+      ],
+    })).rejects.toThrow('packageId');
+
+    await expect(adapter.build(fakeBuildContext({
+      outDir: await mkdtemp(join(tmpdir(), 'sh1pt-winget-')),
+      version: '1.2.3',
+    }) as any, {
+      packageId: 'Acme',
+      installers: [
+        {
+          architecture: 'x64',
+          url: 'https://downloads.example.com/my-tool-1.2.3-x64.exe',
+          sha256: 'a'.repeat(64),
+        },
+      ],
+    })).rejects.toThrow('packageId');
+  });
+
   it('keeps dry-run shipping side-effect free', async () => {
     await expect(adapter.ship(fakeShipContext({
       version: '1.2.3',

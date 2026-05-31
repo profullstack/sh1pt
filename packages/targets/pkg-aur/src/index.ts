@@ -37,6 +37,12 @@ function srcinfoList(key: string, values: string[]): string[] {
   return values.map((value) => `\t${key} = ${value}`);
 }
 
+function assertPkgName(pkgName: string): void {
+  if (!/^[a-z0-9@_+][a-z0-9@._+-]*$/.test(pkgName)) {
+    throw new Error(`pkgName must be a valid Arch package name, got "${pkgName}"`);
+  }
+}
+
 function sourceUrl(config: Config, ctx: { version: string }): string {
   return config.sourceUrl ?? `${config.pkgName}-${pkgver(ctx.version)}.tar.gz`;
 }
@@ -46,6 +52,7 @@ function sourceSha256(config: Config): string {
 }
 
 function renderPkgbuild(ctx: { projectDir: string; version: string }, config: Config): string {
+  assertPkgName(config.pkgName);
   const arches = config.arch ?? ['x86_64', 'aarch64'];
   const release = config.pkgrel ?? 1;
   const desc = config.pkgdesc ?? `Release package for ${config.pkgName}`;
@@ -83,6 +90,7 @@ function renderPkgbuild(ctx: { projectDir: string; version: string }, config: Co
 }
 
 function renderSrcinfo(ctx: { version: string }, config: Config): string {
+  assertPkgName(config.pkgName);
   const arches = config.arch ?? ['x86_64', 'aarch64'];
   const release = config.pkgrel ?? 1;
   const desc = config.pkgdesc ?? `Release package for ${config.pkgName}`;
@@ -109,6 +117,7 @@ function renderSrcinfo(ctx: { version: string }, config: Config): string {
 }
 
 async function renderFromTemplate(ctx: { projectDir: string; version: string }, config: Config): Promise<string> {
+  assertPkgName(config.pkgName);
   const templatePath = isAbsolute(config.pkgbuildTemplate!)
     ? config.pkgbuildTemplate!
     : join(ctx.projectDir, config.pkgbuildTemplate!);
@@ -127,6 +136,7 @@ export default defineTarget<Config>({
   kind: 'package-manager',
   label: 'Arch User Repository (AUR)',
   async build(ctx, config) {
+    assertPkgName(config.pkgName);
     const arches = config.arch ?? ['x86_64', 'aarch64'];
     const pkgbuildPath = join(ctx.outDir, 'PKGBUILD');
     const srcinfoPath = join(ctx.outDir, '.SRCINFO');
@@ -139,6 +149,7 @@ export default defineTarget<Config>({
     return { artifact: pkgbuildPath };
   },
   async ship(ctx, config) {
+    assertPkgName(config.pkgName);
     ctx.log(`push PKGBUILD + .SRCINFO to AUR ssh://aur@aur.archlinux.org/${config.pkgName}.git`);
     if (ctx.dryRun) return { id: 'dry-run' };
     // TODO: git clone ssh://aur@aur.archlinux.org/${pkgName}.git (using AUR_SSH_KEY secret)

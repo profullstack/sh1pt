@@ -71,4 +71,23 @@ describe('AUR package metadata generation', () => {
       pkgName: 'myapp-bin',
     })).resolves.toEqual({ id: 'dry-run' });
   });
+
+  it('rejects invalid package names before rendering PKGBUILD files', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-aur-'));
+    tempDirs.push(outDir);
+
+    await expect(adapter.build(fakeBuildContext({
+      outDir,
+      version: '1.2.3',
+    }) as any, {
+      pkgName: 'Bad;Name',
+    })).rejects.toThrow('pkgName');
+
+    await expect(adapter.build(fakeBuildContext({
+      outDir,
+      version: '1.2.3',
+    }) as any, {
+      pkgName: '.myapp',
+    })).rejects.toThrow('pkgName');
+  });
 });

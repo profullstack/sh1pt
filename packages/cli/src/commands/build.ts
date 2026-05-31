@@ -93,12 +93,21 @@ export function detectStack(dir: string): DetectedStack | undefined {
       return {
         runtime: 'go',
         packageManager: 'go',
-        projectName: modName ? modName.split('/').pop() : undefined,
+        projectName: modName ? projectNameFromGoModule(modName) : undefined,
       };
     } catch { /* skip */ }
   }
 
   return undefined;
+}
+
+function projectNameFromGoModule(moduleName: string): string | undefined {
+  const segments = moduleName.split('/').filter(Boolean);
+  const last = segments.at(-1);
+  if (last && /^v\d+$/.test(last) && segments.length > 1) {
+    return segments.at(-2);
+  }
+  return last;
 }
 
 // --- Git clone ---------------------------------------------------------------

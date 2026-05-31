@@ -104,7 +104,7 @@ export function detectStack(dir: string): DetectedStack | undefined {
 function projectNameFromGoModule(moduleName: string): string | undefined {
   const segments = moduleName.split('/').filter(Boolean);
   const last = segments.at(-1);
-  if (last && /^v\d+$/.test(last) && segments.length > 1) {
+  if (last && /^v[2-9]\d*$/.test(last) && segments.length > 1) {
     return segments.at(-2);
   }
   return last;

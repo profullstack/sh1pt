@@ -14,6 +14,18 @@ describe('resolveInput', () => {
     expect(r.inferredName).toBe('sh1pt');
   });
 
+  it('classifies github issue urls as live urls, not git repos', () => {
+    const r = resolveInput('https://github.com/profullstack/sh1pt/issues/403');
+    expect(r.kind).toBe('url');
+    expect(r.inferredName).toBe('github.com');
+  });
+
+  it('classifies github tree urls as live urls, not git repos', () => {
+    const r = resolveInput('https://github.com/profullstack/sh1pt/tree/master/packages');
+    expect(r.kind).toBe('url');
+    expect(r.inferredName).toBe('github.com');
+  });
+
   it('detects gitlab repo urls', () => {
     const r = resolveInput('https://gitlab.com/some-org/some-repo');
     expect(r.kind).toBe('git');

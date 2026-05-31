@@ -65,9 +65,16 @@ export function resolveInput(raw: string): ResolvedInput {
 }
 
 function isForgeRepoUrl(u: string): boolean {
-  // https://github.com/<org>/<repo>[...] — two path segments after the host.
-  const m = u.match(/^https?:\/\/(www\.)?(github\.com|gitlab\.com|bitbucket\.org|codeberg\.org)\/([^/\s]+)\/([^/\s?#]+)/i);
-  return Boolean(m);
+  try {
+    const url = new URL(u);
+    if (!/^(github\.com|gitlab\.com|bitbucket\.org|codeberg\.org)$/i.test(url.hostname.replace(/^www\./i, ''))) {
+      return false;
+    }
+    const segments = url.pathname.replace(/\/+$/, '').split('/').filter(Boolean);
+    return segments.length === 2;
+  } catch {
+    return false;
+  }
 }
 
 function normalizeUrl(u: string): string {

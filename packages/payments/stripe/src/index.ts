@@ -162,23 +162,44 @@ async function readStripeJson<T>(res: Response): Promise<T> {
 }
 
 function verifyStripeSignature(rawBody: string, header: string, secret: string): void {
-  const parts = Object.fromEntries(
-    header.split(',').map((part) => {
-      const [key, value] = part.split('=');
-      return [key, value];
-    }),
-  );
-  const timestamp = parts.t;
-  const signature = parts.v1;
-  if (!timestamp || !signature) throw new Error('Stripe-Signature missing t or v1');
+  // Parse all key=value pairs preserving duplicate v1 keys.
+  // Stripe sends multiple v1 signatures during webhook secret rotation;
+  // Object.fromEntries() would silently drop all but one.
+  let timestamp: string | undefined;
+  const v1Signatures: string[] = [];
+
+  for (const part of header.split(',')) {
+    const eqIdx = part.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = part.slice(0, eqIdx).trim();
+    const val = part.slice(eqIdx + 1).trim();
+    if (key === 't') {
+      timestamp = val;
+    } else if (key === 'v1' && val) {
+      v1Signatures.push(val);
+    }
+  }
+
+  if (!timestamp || v1Signatures.length === 0) {
+    throw new Error('Stripe-Signature missing t or v1');
+  }
 
   const expected = createHmac('sha256', secret)
     .update(`${timestamp}.${rawBody}`)
     .digest('hex');
-
-  const actualBuffer = Buffer.from(signature, 'hex');
   const expectedBuffer = Buffer.from(expected, 'hex');
-  if (actualBuffer.length !== expectedBuffer.length || !timingSafeEqual(actualBuffer, expectedBuffer)) {
+
+  // Accept the webhook if ANY provided v1 signature matches.
+  const valid = v1Signatures.some((sig) => {
+    try {
+      const actualBuffer = Buffer.from(sig, 'hex');
+      return actualBuffer.length === expectedBuffer.length && timingSafeEqual(actualBuffer, expectedBuffer);
+    } catch {
+      return false;
+    }
+  });
+
+  if (!valid) {
     throw new Error('Invalid Stripe webhook signature');
   }
 }

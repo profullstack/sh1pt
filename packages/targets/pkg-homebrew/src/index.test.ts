@@ -73,4 +73,39 @@ describe('Homebrew formula generation', () => {
       ],
     })).resolves.toEqual({ id: 'dry-run' });
   });
+
+  it('rejects invalid formula names before writing formula files', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-homebrew-'));
+    tempDirs.push(outDir);
+
+    await expect(adapter.build(fakeBuildContext({
+      outDir,
+      version: '1.2.3',
+    }) as any, {
+      tap: 'acme/homebrew-tools',
+      formulaName: '../escape',
+      binaries: [
+        {
+          platform: 'darwin-x64',
+          url: 'https://downloads.example.com/tool-1.2.3-darwin-x64.tar.gz',
+          sha256: 'c'.repeat(64),
+        },
+      ],
+    })).rejects.toThrow('formulaName');
+
+    await expect(adapter.build(fakeBuildContext({
+      outDir,
+      version: '1.2.3',
+    }) as any, {
+      tap: 'acme/homebrew-tools',
+      formulaName: 'BadName',
+      binaries: [
+        {
+          platform: 'darwin-x64',
+          url: 'https://downloads.example.com/tool-1.2.3-darwin-x64.tar.gz',
+          sha256: 'c'.repeat(64),
+        },
+      ],
+    })).rejects.toThrow('formulaName');
+  });
 });

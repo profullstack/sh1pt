@@ -31,6 +31,12 @@ function formulaClassName(formulaName: string): string {
   return name || 'Sh1ptFormula';
 }
 
+function assertFormulaName(formulaName: string): void {
+  if (!/^[a-z0-9][a-z0-9@._+-]*$/.test(formulaName)) {
+    throw new Error(`formulaName must be a lowercase Homebrew formula name, got "${formulaName}"`);
+  }
+}
+
 function osFor(platform: Binary['platform']): Os {
   return platform.startsWith('darwin') ? 'darwin' : 'linux';
 }
@@ -61,6 +67,7 @@ function renderPlatformBlocks(binaries: Binary[]): string {
 }
 
 function renderFormula(config: Config, version: string): string {
+  assertFormulaName(config.formulaName);
   if (!config.binaries?.length) {
     throw new Error('Homebrew formula requires at least one binary download');
   }
@@ -99,6 +106,7 @@ export default defineTarget<Config>({
   kind: 'package-manager',
   label: 'Homebrew',
   async build(ctx, config) {
+    assertFormulaName(config.formulaName);
     const formula = renderFormula(config, ctx.version);
     const formulaPath = join(ctx.outDir, `${config.formulaName}.rb`);
     ctx.log(`render Formula/${config.formulaName}.rb`);
@@ -107,6 +115,7 @@ export default defineTarget<Config>({
     return { artifact: formulaPath };
   },
   async ship(ctx, config) {
+    assertFormulaName(config.formulaName);
     ctx.log(`open PR against ${config.tap} bumping ${config.formulaName} → ${ctx.version}`);
     if (ctx.dryRun) return { id: 'dry-run' };
     // TODO: git clone tap, commit formula, push branch, open PR via GH_TOKEN

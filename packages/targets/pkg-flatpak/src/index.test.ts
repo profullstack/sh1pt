@@ -54,6 +54,29 @@ describe('Flatpak manifest generation', () => {
     expect(manifest).toContain(`sha256: "${'a'.repeat(64)}"`);
   });
 
+  it('rejects malformed app IDs before writing manifest files', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-flatpak-'));
+    tempDirs.push(outDir);
+
+    await expect(adapter.build(fakeBuildContext({
+      outDir,
+      projectDir: '/repo/myapp',
+      version: '1.2.3',
+      channel: 'stable',
+    }) as any, {
+      appId: '../escape',
+    })).rejects.toThrow('appId');
+
+    await expect(adapter.build(fakeBuildContext({
+      outDir,
+      projectDir: '/repo/myapp',
+      version: '1.2.3',
+      channel: 'stable',
+    }) as any, {
+      appId: 'com.example',
+    })).rejects.toThrow('appId');
+  });
+
   it('keeps dry-run shipping side-effect free', async () => {
     await expect(adapter.ship(fakeShipContext({
       version: '1.2.3',

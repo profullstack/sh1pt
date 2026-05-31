@@ -27,7 +27,18 @@ function renderList(values: string[], indent: string): string[] {
   return values.map((value) => `${indent}- ${yamlString(value)}`);
 }
 
+function assertAppId(appId: string): void {
+  const parts = appId.split('.');
+  if (
+    parts.length < 3
+    || parts.some((part) => !/^[A-Za-z][A-Za-z0-9_-]*$/.test(part))
+  ) {
+    throw new Error(`appId must be a reverse-DNS Flatpak ID, got "${appId}"`);
+  }
+}
+
 function renderFlatpakManifest(ctx: { projectDir: string; version: string; channel: string }, config: Config): string {
+  assertAppId(config.appId);
   const branch = config.branch ?? (ctx.channel === 'stable' ? 'stable' : 'beta');
   const runtime = config.runtime ?? 'org.freedesktop.Platform';
   const runtimeVersion = config.runtimeVersion ?? '23.08';
@@ -84,6 +95,7 @@ export default defineTarget<Config>({
   kind: 'package-manager',
   label: 'Flathub',
   async build(ctx, config) {
+    assertAppId(config.appId);
     const branch = config.branch ?? (ctx.channel === 'stable' ? 'stable' : 'beta');
     const runtime = config.runtime ?? 'org.freedesktop.Platform';
     const runtimeVersion = config.runtimeVersion ?? '23.08';
@@ -96,6 +108,7 @@ export default defineTarget<Config>({
     return { artifact: manifestPath };
   },
   async ship(ctx, config) {
+    assertAppId(config.appId);
     const branch = config.branch ?? (ctx.channel === 'stable' ? 'stable' : 'beta');
     ctx.log(`submit ${config.appId} to Flathub (branch: ${branch})`);
     if (ctx.dryRun) return { id: 'dry-run' };

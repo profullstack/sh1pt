@@ -2,12 +2,55 @@ import { Command } from 'commander';
 import kleur from 'kleur';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { randomBytes } from 'node:crypto';
 import { configDir } from '@profullstack/sh1pt-core';
 import { describeInput, resolveInput } from '../input.js';
 
 // agentsCmd moved to root level — see https://github.com/profullstack/sh1pt/issues/235
 
 const GOALS_FILE = () => path.join(configDir(), 'iterate-goals.json');
+const EXPERIMENTS_FILE = () => path.join(configDir(), 'iterate-experiments.json');
+
+// ---------------------------------------------------------------------------
+// Experiment types & persistence
+// ---------------------------------------------------------------------------
+
+export interface Experiment {
+  id: string;
+  hypothesis: string;
+  variants: string[];
+  traffic: number;
+  minSample: number;
+  status: 'active' | 'paused' | 'ended';
+  winner?: 'A' | 'B' | 'inconclusive';
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExperimentState {
+  experiments: Experiment[];
+}
+
+async function loadExperiments(): Promise<ExperimentState> {
+  try {
+    const raw = await fs.readFile(EXPERIMENTS_FILE(), 'utf8');
+    const parsed = JSON.parse(raw);
+    return parsed && Array.isArray(parsed.experiments)
+      ? parsed
+      : { experiments: [] };
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return { experiments: [] };
+    throw err;
+  }
+}
+
+async function saveExperiments(state: ExperimentState): Promise<void> {
+  await fs.mkdir(configDir(), { recursive: true, mode: 0o700 });
+  const tmp = `${EXPERIMENTS_FILE()}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(state, null, 2) + '\n', { mode: 0o600 });
+  await fs.rename(tmp, EXPERIMENTS_FILE());
+}
 
 async function loadGoals(): Promise<Record<string, string>> {
   try {
@@ -135,19 +178,115 @@ iterateCmd
 iterateCmd
   .command('test <hypothesis>')
   .description('Spawn an A/B experiment around a hypothesis and register auto-analysis')
-  .option('--variant <text...>', 'the B-side change; A is current state')
+  .option('--variant <text...>', 'the B-side change; A is current state (may be specified multiple times)')
   .option('--traffic <percent>', 'percentage routed to B', Number, 50)
   .option('--min-sample <n>', 'minimum events before stopping', Number, 1000)
-  .action((hypothesis: string, opts) => {
-    console.log(kleur.cyan(`[stub] iterate test "${hypothesis}" ${JSON.stringify(opts)}`));
-    // TODO: generate two Ship variants, wire feature flag, schedule analysis at min-sample
+  .action(async (hypothesis: string, opts: { variant?: string[]; traffic: number; minSample: number }) => {
+    const state = await loadExperiments();
+    const id = randomBytes(4).toString('hex');
+    const now = new Date().toISOString();
+    const experiment: Experiment = {
+      id,
+      hypothesis,
+      variants: opts.variant ?? [],
+      traffic: opts.traffic,
+      minSample: opts.minSample,
+      status: 'active',
+      createdAt: now,
+      updatedAt: now,
+    };
+    state.experiments.push(experiment);
+    await saveExperiments(state);
+
+    console.log(kleur.green(`experiment created: ${kleur.bold(id)}`));
+    console.log(`  ${kleur.cyan('hypothesis'.padEnd(12))}: ${hypothesis}`);
+    if (experiment.variants.length > 0) {
+      console.log(`  ${kleur.cyan('variant(s)'.padEnd(12))}: ${experiment.variants.join(', ')}`);
+    }
+    console.log(`  ${kleur.cyan('traffic'.padEnd(12))}: ${opts.traffic}% to B`);
+    console.log(`  ${kleur.cyan('min-sample'.padEnd(12))}: ${opts.minSample}`);
+    console.log(kleur.dim(`  run \`sh1pt iterate experiments\` to track progress`));
   });
 
 iterateCmd
   .command('experiments')
   .description('Active and recently-ended experiments with significance')
-  .option('--json')
-  .action((opts: { json?: boolean }) => {
-    if (opts.json) { console.log(JSON.stringify({ active: [], ended: [] }, null, 2)); return; }
-    console.log(kleur.dim('[stub] iterate experiments — table of active / concluded tests'));
+  .option('--json', 'machine-readable output grouped by status')
+  .option('--end <id>', 'mark an experiment as ended')
+  .option('--pause <id>', 'pause a running experiment')
+  .option('--resume <id>', 'resume a paused experiment')
+  .option('--winner <result>', 'A | B | inconclusive (use with --end)')
+  .option('--note <text>', 'free-form note recorded on status change')
+  .action(async (opts: {
+    json?: boolean;
+    end?: string;
+    pause?: string;
+    resume?: string;
+    winner?: string;
+    note?: string;
+  }) => {
+    const state = await loadExperiments();
+
+    // Mutations
+    const mutateId = opts.end ?? opts.pause ?? opts.resume;
+    if (mutateId) {
+      const exp = state.experiments.find(e => e.id === mutateId);
+      if (!exp) {
+        console.error(kleur.red(`experiment "${mutateId}" not found`));
+        process.exit(1);
+      }
+      if (opts.end) {
+        exp.status = 'ended';
+        if (opts.winner) exp.winner = opts.winner as 'A' | 'B' | 'inconclusive';
+        if (opts.note) exp.note = opts.note;
+        exp.updatedAt = new Date().toISOString();
+        console.log(kleur.yellow(`ended: ${exp.id}${opts.winner ? ` · winner=${opts.winner}` : ''}`));
+      } else if (opts.pause) {
+        exp.status = 'paused';
+        exp.updatedAt = new Date().toISOString();
+        console.log(kleur.yellow(`paused: ${exp.id}`));
+      } else if (opts.resume) {
+        exp.status = 'active';
+        exp.updatedAt = new Date().toISOString();
+        console.log(kleur.green(`resumed: ${exp.id}`));
+      }
+      await saveExperiments(state);
+      return;
+    }
+
+    // Display
+    const active  = state.experiments.filter(e => e.status === 'active');
+    const paused  = state.experiments.filter(e => e.status === 'paused');
+    const ended   = state.experiments.filter(e => e.status === 'ended');
+
+    if (opts.json) {
+      console.log(JSON.stringify({ active, paused, ended }, null, 2));
+      return;
+    }
+
+    if (state.experiments.length === 0) {
+      console.log(kleur.dim('no experiments yet — run `sh1pt iterate test "<hypothesis>"` to create one'));
+      return;
+    }
+
+    function printGroup(label: string, items: Experiment[]): void {
+      if (items.length === 0) return;
+      console.log(kleur.bold(`\n${label}`));
+      for (const e of items) {
+        console.log(`  ${kleur.cyan(e.id)}  ${e.status}`);
+        console.log(`    ${e.hypothesis}`);
+        if (e.variants.length > 0) {
+          console.log(kleur.dim(`    variants: ${e.variants.join(', ')}`));
+        }
+        if (e.winner) console.log(kleur.dim(`    winner: ${e.winner}`));
+        if (e.note)   console.log(kleur.dim(`    note: ${e.note}`));
+      }
+    }
+
+    printGroup('Active', active);
+    printGroup('Paused', paused);
+    printGroup('Ended',  ended);
+
+    const total = state.experiments.length;
+    console.log(kleur.dim(`\n${active.length} active / ${total} total`));
   });

@@ -73,4 +73,23 @@ describe('Scoop manifest generation', () => {
       appName: 'myapp',
     })).resolves.toEqual({ id: 'dry-run' });
   });
+
+  it('rejects invalid app names before writing manifests', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-scoop-'));
+    tempDirs.push(outDir);
+
+    await expect(adapter.build(fakeBuildContext({
+      outDir,
+      version: '1.2.3',
+    }) as any, {
+      appName: '../escape',
+    })).rejects.toThrow('appName');
+
+    await expect(adapter.build(fakeBuildContext({
+      outDir,
+      version: '1.2.3',
+    }) as any, {
+      appName: 'Bad Name',
+    })).rejects.toThrow('appName');
+  });
 });

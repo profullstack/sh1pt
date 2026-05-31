@@ -37,6 +37,12 @@ function scoopVersion(version: string): string {
   return version.replace(/^v/, '');
 }
 
+function assertAppName(appName: string): void {
+  if (!/^[a-z0-9][a-z0-9._-]*$/.test(appName)) {
+    throw new Error(`appName must be a valid Scoop manifest name, got "${appName}"`);
+  }
+}
+
 function templateValue(value: string, config: Config, version: string, arch: ScoopArch): string {
   return value
     .replaceAll('{{version}}', version)
@@ -57,6 +63,7 @@ function architectureUrl(ctx: { version: string }, config: Config, arch: Archite
 }
 
 function renderManifest(ctx: { version: string }, config: Config): string {
+  assertAppName(config.appName);
   const version = scoopVersion(ctx.version);
   const architectures = config.architecture ?? [{ name: '64bit' as const }];
   const manifest: Record<string, unknown> = {
@@ -94,6 +101,7 @@ export default defineTarget<Config>({
   kind: 'package-manager',
   label: 'Scoop bucket',
   async build(ctx, config) {
+    assertAppName(config.appName);
     const manifestPath = join(ctx.outDir, `${config.appName}.json`);
     ctx.log(`generate scoop manifest ${config.appName}.json for v${ctx.version}`);
     await mkdir(ctx.outDir, { recursive: true });
@@ -101,6 +109,7 @@ export default defineTarget<Config>({
     return { artifact: manifestPath };
   },
   async ship(ctx, config) {
+    assertAppName(config.appName);
     const bucket = config.bucketRepo ?? 'profullstack/scoop-bucket';
     ctx.log(`push ${config.appName}.json to ${bucket} bucket`);
     if (ctx.dryRun) return { id: 'dry-run' };

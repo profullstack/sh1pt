@@ -14,6 +14,19 @@ describe('resolveInput', () => {
     expect(r.inferredName).toBe('sh1pt');
   });
 
+  it('strips query strings and fragments from git clone urls', () => {
+    const r = resolveInput('https://github.com/profullstack/sh1pt?tab=readme-ov-file#usage');
+    expect(r.kind).toBe('git');
+    expect(r.value).toBe('https://github.com/profullstack/sh1pt');
+    expect(r.inferredName).toBe('sh1pt');
+  });
+
+  it('keeps query strings and fragments on live site urls', () => {
+    const r = resolveInput('https://example.com/pricing?plan=pro#faq');
+    expect(r.kind).toBe('url');
+    expect(r.value).toBe('https://example.com/pricing?plan=pro#faq');
+  });
+
   it('detects gitlab repo urls', () => {
     const r = resolveInput('https://gitlab.com/some-org/some-repo');
     expect(r.kind).toBe('git');

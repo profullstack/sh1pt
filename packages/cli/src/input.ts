@@ -39,8 +39,8 @@ export function resolveInput(raw: string): ResolvedInput {
   // 2) Http(s) git urls: *.git, github.com/foo/bar, gitlab.com/foo/bar,
   //    bitbucket.org/foo/bar. A plain https to a known forge with org/repo
   //    is treated as git, not a live site.
-  if (/\.git$/i.test(input) || isForgeRepoUrl(input)) {
-    return { kind: 'git', raw, value: normalizeUrl(input), inferredName: repoNameFromGit(input) };
+  if (/\.git(?:[?#]|$)/i.test(input) || isForgeRepoUrl(input)) {
+    return { kind: 'git', raw, value: normalizeGitUrl(input), inferredName: repoNameFromGit(input) };
   }
 
   // 3) Generic http(s) — a live site.
@@ -73,6 +73,22 @@ function isForgeRepoUrl(u: string): boolean {
 function normalizeUrl(u: string): string {
   // Trim trailing slashes and default fragments; keep the path intact.
   return u.replace(/\/+$/, '').replace(/\.git$/i, '.git');
+}
+
+function normalizeGitUrl(u: string): string {
+  if (!/^https?:\/\//i.test(u)) {
+    return normalizeUrl(u);
+  }
+
+  try {
+    const parsed = new URL(u);
+    parsed.search = '';
+    parsed.hash = '';
+    parsed.pathname = parsed.pathname.replace(/\/+$/, '');
+    return `${parsed.protocol}//${parsed.host}${parsed.pathname}`;
+  } catch {
+    return normalizeUrl(u).replace(/[?#].*$/, '');
+  }
 }
 
 function repoNameFromGit(u: string): string | undefined {

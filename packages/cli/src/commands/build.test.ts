@@ -107,6 +107,16 @@ describe('detectStack', () => {
     expect(result!.packageManager).toBe('go');
   });
 
+  it('uses the repository segment for double-digit Go module versions', () => {
+    const dir = makeTempDir();
+    writeFileSync(join(dir, 'go.mod'), `module github.com/user/my-go-app/v10\n\ngo 1.21\n`);
+    const result = detectStack(dir);
+    expect(result).toBeDefined();
+    expect(result!.runtime).toBe('go');
+    expect(result!.projectName).toBe('my-go-app');
+    expect(result!.packageManager).toBe('go');
+  });
+
   it('keeps v1 when it is the Go repository name', () => {
     const dir = makeTempDir();
     writeFileSync(join(dir, 'go.mod'), `module github.com/user/v1\n\ngo 1.21\n`);

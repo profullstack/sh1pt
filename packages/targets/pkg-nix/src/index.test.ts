@@ -80,12 +80,28 @@ describe('nix package expression generation', () => {
   });
 
   it('rejects malformed sourceRepo values', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-nix-'));
+    tempDirs.push(outDir);
+
     await expect(adapter.build(fakeBuildContext({
-      outDir: await mkdtemp(join(tmpdir(), 'sh1pt-nix-')),
+      outDir,
       version: '1.2.3',
     }) as any, {
       pname: 'myapp',
       sourceRepo: 'acme',
+    })).rejects.toThrow('sourceRepo');
+  });
+
+  it('rejects non-GitHub sourceRepo URLs', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-nix-'));
+    tempDirs.push(outDir);
+
+    await expect(adapter.build(fakeBuildContext({
+      outDir,
+      version: '1.2.3',
+    }) as any, {
+      pname: 'myapp',
+      sourceRepo: 'https://gitlab.com/acme/myapp',
     })).rejects.toThrow('sourceRepo');
   });
 

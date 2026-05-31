@@ -35,6 +35,9 @@ function parseRepo(sourceRepo: string | undefined, pname: string): { owner: stri
   if (/^https?:\/\//i.test(value)) {
     try {
       const parsed = new URL(value);
+      if (!['github.com', 'www.github.com'].includes(parsed.hostname.toLowerCase())) {
+        throw new Error(`sourceRepo URL must point to github.com, got "${parsed.hostname}"`);
+      }
       path = parsed.pathname;
     } catch {
       throw new Error(`invalid sourceRepo "${sourceRepo}"`);

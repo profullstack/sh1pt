@@ -77,7 +77,7 @@ function normalizeUrl(u: string): string {
 
 function normalizeGitUrl(u: string): string {
   if (!/^https?:\/\//i.test(u)) {
-    return normalizeUrl(u);
+    return normalizeUrl(u).replace(/[?#].*$/, '');
   }
 
   try {

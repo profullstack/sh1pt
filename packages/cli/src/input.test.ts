@@ -21,6 +21,13 @@ describe('resolveInput', () => {
     expect(r.inferredName).toBe('sh1pt');
   });
 
+  it('strips query strings from .git clone urls', () => {
+    const r = resolveInput('https://example.com/repo.git?tab=readme-ov-file#usage');
+    expect(r.kind).toBe('git');
+    expect(r.value).toBe('https://example.com/repo.git');
+    expect(r.inferredName).toBe('repo');
+  });
+
   it('keeps query strings and fragments on live site urls', () => {
     const r = resolveInput('https://example.com/pricing?plan=pro#faq');
     expect(r.kind).toBe('url');

@@ -36,6 +36,16 @@ export interface DetectedStack {
  * Inspect a directory root and return detected stack info based on manifest
  * files. Returns undefined if nothing recognizable is found.
  */
+/**
+ * Extract a human-readable project name from a Go module path.
+ * Strips major-version suffixes so `github.com/user/my-go-app/v2`
+ * returns `my-go-app` rather than `v2`.
+ */
+function goProjectName(module: string): string {
+  const stripped = module.replace(/\/v\d+$/, '');
+  return stripped.split('/').pop() ?? stripped;
+}
+
 export function detectStack(dir: string): DetectedStack | undefined {
   // Node (package.json)
   const pkgPath = join(dir, 'package.json');
@@ -93,7 +103,7 @@ export function detectStack(dir: string): DetectedStack | undefined {
       return {
         runtime: 'go',
         packageManager: 'go',
-        projectName: modName ? modName.split('/').pop() : undefined,
+        projectName: modName ? goProjectName(modName) : undefined,
       };
     } catch { /* skip */ }
   }

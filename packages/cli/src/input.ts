@@ -65,9 +65,18 @@ export function resolveInput(raw: string): ResolvedInput {
 }
 
 function isForgeRepoUrl(u: string): boolean {
-  // https://github.com/<org>/<repo>[...] — two path segments after the host.
-  const m = u.match(/^https?:\/\/(www\.)?(github\.com|gitlab\.com|bitbucket\.org|codeberg\.org)\/([^/\s]+)\/([^/\s?#]+)/i);
-  return Boolean(m);
+  // Match repo-root URLs only: https://github.com/<org>/<repo>
+  // with no additional path segments (issues/123, tree/main, etc.).
+  // Subpath URLs like /issues/ or /tree/ are live-site pages, not clone targets.
+  const m = u.match(
+    /^https?:\/\/(www\.)?(github\.com|gitlab\.com|bitbucket\.org|codeberg\.org)\/([^/\s]+)\/([^/\s?#]+)([?#].*)?$/i,
+  );
+  if (!m) return false;
+  // Reject if the URL path continues beyond /<org>/<repo>
+  // (e.g. /org/repo/issues/1 or /org/repo/tree/main)
+  const afterHost = u.replace(/^https?:\/\/(www\.)?(github\.com|gitlab\.com|bitbucket\.org|codeberg\.org)\//i, '');
+  const segments = afterHost.split('/').filter(s => s && !s.startsWith('?') && !s.startsWith('#'));
+  return segments.length === 2;
 }
 
 function normalizeUrl(u: string): string {

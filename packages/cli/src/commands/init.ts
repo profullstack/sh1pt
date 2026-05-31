@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { writeFile, access } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, basename } from 'node:path';
 import kleur from 'kleur';
 import prompts from 'prompts';
 
@@ -32,7 +32,7 @@ export async function initAction(): Promise<void> {
     type: 'text',
     name: 'name',
     message: 'Project name',
-    initial: process.cwd().split('/').pop() ?? 'my-app',
+    initial: basename(process.cwd()) || 'my-app',
   });
   if (!name) return;
   await writeFile(cfgPath, CONFIG_TEMPLATE(name), 'utf8');

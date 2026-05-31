@@ -62,6 +62,33 @@ describe('nix package expression generation', () => {
     expect(expression).toContain('maintainers = with maintainers; [ photon101 ];');
   });
 
+  it('accepts GitHub URLs for sourceRepo', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-nix-'));
+    tempDirs.push(outDir);
+
+    await adapter.build(fakeBuildContext({
+      outDir,
+      version: '1.2.3',
+    }) as any, {
+      pname: 'myapp',
+      sourceRepo: 'https://github.com/acme/myapp.git?tab=readme-ov-file#usage',
+    });
+
+    const expression = await readFile(join(outDir, 'default.nix'), 'utf-8');
+    expect(expression).toContain('owner = "acme";');
+    expect(expression).toContain('repo = "myapp";');
+  });
+
+  it('rejects malformed sourceRepo values', async () => {
+    await expect(adapter.build(fakeBuildContext({
+      outDir: await mkdtemp(join(tmpdir(), 'sh1pt-nix-')),
+      version: '1.2.3',
+    }) as any, {
+      pname: 'myapp',
+      sourceRepo: 'acme',
+    })).rejects.toThrow('sourceRepo');
+  });
+
   it('keeps dry-run shipping side-effect free', async () => {
     await expect(adapter.ship(fakeShipContext({
       version: '1.2.3',

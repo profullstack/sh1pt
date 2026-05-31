@@ -29,11 +29,29 @@ function nixString(value: string): string {
 }
 
 function parseRepo(sourceRepo: string | undefined, pname: string): { owner: string; repo: string } {
-  const [owner, repo] = (sourceRepo ?? `profullstack/${pname}`).split('/');
-  return {
-    owner: owner || 'profullstack',
-    repo: repo || pname,
-  };
+  const value = sourceRepo?.trim() || `profullstack/${pname}`;
+  let path = value;
+
+  if (/^https?:\/\//i.test(value)) {
+    try {
+      const parsed = new URL(value);
+      path = parsed.pathname;
+    } catch {
+      throw new Error(`invalid sourceRepo "${sourceRepo}"`);
+    }
+  }
+
+  const [owner, repo, ...rest] = path
+    .replace(/[?#].*$/, '')
+    .replace(/^\/+|\/+$/g, '')
+    .replace(/\.git$/i, '')
+    .split('/');
+
+  if (!owner || !repo || rest.length > 0) {
+    throw new Error(`sourceRepo must be "owner/repo" or a GitHub repository URL, got "${sourceRepo}"`);
+  }
+
+  return { owner, repo };
 }
 
 function nixList(values: string[] | undefined): string {

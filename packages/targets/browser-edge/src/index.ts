@@ -17,7 +17,7 @@ function safeFileStem(value: string): string {
   return value
     .replace(/[^a-zA-Z0-9._-]+/g, '-')
     .replace(/^\.+|\.+$/g, '')
-    .replace(/^-|-$/g, '') || 'edge-extension';
+    .replace(/^-+|-+$/g, '') || 'edge-extension';
 }
 
 function packageArtifact(ctx: { outDir: string; version: string }, config: Config): string {

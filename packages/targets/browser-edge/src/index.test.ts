@@ -102,6 +102,7 @@ describe('browser-edge target adapter', () => {
     });
 
     const plan = JSON.parse(await readFile(result.artifact, 'utf-8'));
+    expect(plan.productId).toBe('../edge-product');
     expect(plan.artifact).toBe(join(outDir, 'edge-product-1.2.3.zip'));
     expect(plan.command).toEqual(['zip', '-r', join(outDir, 'edge-product-1.2.3.zip'), '.']);
   });

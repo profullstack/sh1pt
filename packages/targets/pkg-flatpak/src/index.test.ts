@@ -62,4 +62,28 @@ describe('Flatpak manifest generation', () => {
       appId: 'com.example.MyApp',
     })).resolves.toEqual({ id: 'dry-run' });
   });
+
+  it('rejects invalid app IDs before manifest generation', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-flatpak-'));
+    tempDirs.push(outDir);
+    const ctx = fakeBuildContext({
+      outDir,
+      projectDir: '/repo/myapp',
+      version: '1.2.3',
+      channel: 'stable',
+    }) as any;
+
+    for (const appId of ['../escape', 'com.example', 'com.example.App-', 'com.123.App']) {
+      await expect(adapter.build(ctx, { appId })).rejects.toThrow('appId');
+    }
+  });
+
+  it('rejects invalid app IDs before shipping', async () => {
+    await expect(adapter.ship(fakeShipContext({
+      version: '1.2.3',
+      dryRun: true,
+    }) as any, {
+      appId: '../escape',
+    })).rejects.toThrow('appId');
+  });
 });

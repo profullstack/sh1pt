@@ -67,7 +67,7 @@ function probeAgent(desc: AgentDescriptor): AgentStatus {
     };
   }
 
-  const raw = (result.stdout ?? result.stderr ?? '').trim();
+  const raw = ((result.stdout?.trim() || result.stderr?.trim()) ?? '');
   // Extract semver-ish version from output like "claude 1.2.3" or "v1.2.3"
   const match = raw.match(/v?(\d+\.\d+(?:\.\d+)?(?:[-+][^\s]*)?)/);
   const version = match ? match[1] : raw.split('\n')[0]?.trim();

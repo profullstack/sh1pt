@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { agentsCmd } from './agents.js';
+import { spawnSync } from 'node:child_process';
+
+vi.mock('node:child_process', () => ({
+  spawnSync: vi.fn(() => ({
+    status: 1,
+    stdout: '',
+    stderr: '',
+  })),
+}));
 
 describe('agents list --json', () => {
   let stdout: string[];
@@ -45,5 +54,26 @@ describe('agents list --json', () => {
       expect(typeof agent.package).toBe('string');
       expect(typeof agent.setupCommand).toBe('string');
     }
+  });
+
+  it('reads installed agent versions from stderr when stdout is empty', () => {
+    vi.mocked(spawnSync).mockImplementation((binary: string) => ({
+      status: 0,
+      stdout: '',
+      stderr: `${binary} 1.2.3\n`,
+      pid: 123,
+      output: [],
+      signal: null,
+    }));
+
+    agentsCmd.commands.find((c) => c.name() === 'list')!.parse(['--json'], { from: 'user' });
+    const output = stdout.join('\n');
+    const parsed = JSON.parse(output);
+
+    expect(parsed[0]).toMatchObject({
+      id: 'claude',
+      installed: true,
+      version: '1.2.3',
+    });
   });
 });

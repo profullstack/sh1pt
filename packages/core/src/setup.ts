@@ -100,8 +100,8 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function mergeAdapterConfig(existing: unknown, next: unknown): unknown {
-  if (!isPlainRecord(existing) || !isPlainRecord(next)) return next;
-  const merged: Record<string, unknown> = { ...existing };
+  if (!isPlainRecord(next)) return next;
+  const merged: Record<string, unknown> = isPlainRecord(existing) ? { ...existing } : {};
   for (const [key, value] of Object.entries(next)) {
     if (value === '') delete merged[key];
     else merged[key] = value;

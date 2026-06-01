@@ -1,4 +1,4 @@
-import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+﻿import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
@@ -122,11 +122,19 @@ async function renderFromTemplate(ctx: { projectDir: string; version: string }, 
     .replaceAll('{{sha256sums}}', bashArray([sourceSha256(config)]));
 }
 
+
+/** Validate AUR package name: lowercase alphanumeric, hyphens, underscores, dots. */
+function validatePkgName(name: string): void {
+  if (!name || !/^[a-z0-9][a-z0-9_.-]*$/.test(name) || /[;$<>&|\\\\]/.test(name)) {
+    throw new Error(pkg-aur: invalid pkgName "${name}");
+  }
+}
 export default defineTarget<Config>({
   id: 'pkg-aur',
   kind: 'package-manager',
   label: 'Arch User Repository (AUR)',
   async build(ctx, config) {
+    validatePkgName(config.pkgName);
     const arches = config.arch ?? ['x86_64', 'aarch64'];
     const pkgbuildPath = join(ctx.outDir, 'PKGBUILD');
     const srcinfoPath = join(ctx.outDir, '.SRCINFO');
@@ -165,3 +173,5 @@ export default defineTarget<Config>({
     ],
   }),
 });
+
+

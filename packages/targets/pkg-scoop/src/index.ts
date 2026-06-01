@@ -89,11 +89,22 @@ function renderManifest(ctx: { version: string }, config: Config): string {
   return `${JSON.stringify(manifest, null, 2)}\n`;
 }
 
+/** Validate a Scoop app name — alphanumeric, hyphens, underscores only. No path traversal. */
+function validateAppName(name: string): void {
+  if (!name || !/^[a-zA-Z0-9][a-zA-Z0-9_\-]*$/.test(name)) {
+    throw new Error(`pkg-scoop: invalid appName "${name}". Must start with alphanumeric and contain only letters, digits, hyphens, or underscores.`);
+  }
+  if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+    throw new Error(`pkg-scoop: appName "${name}" contains path traversal characters.`);
+  }
+}
+
 export default defineTarget<Config>({
   id: 'pkg-scoop',
   kind: 'package-manager',
   label: 'Scoop bucket',
   async build(ctx, config) {
+    validateAppName(config.appName);
     const manifestPath = join(ctx.outDir, `${config.appName}.json`);
     ctx.log(`generate scoop manifest ${config.appName}.json for v${ctx.version}`);
     await mkdir(ctx.outDir, { recursive: true });
@@ -101,6 +112,7 @@ export default defineTarget<Config>({
     return { artifact: manifestPath };
   },
   async ship(ctx, config) {
+    validateAppName(config.appName);
     const bucket = config.bucketRepo ?? 'profullstack/scoop-bucket';
     ctx.log(`push ${config.appName}.json to ${bucket} bucket`);
     if (ctx.dryRun) return { id: 'dry-run' };

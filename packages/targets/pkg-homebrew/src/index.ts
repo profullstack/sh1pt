@@ -1,4 +1,4 @@
-import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+﻿import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -94,11 +94,19 @@ function renderFormula(config: Config, version: string): string {
   return lines.join('\n');
 }
 
+
+/** Validate Homebrew formula name: lowercase, alphanumeric, hyphens only. */
+function validateFormulaName(name: string): void {
+  if (!name || !/^[a-z0-9][a-z0-9-]*$/.test(name)) {
+    throw new Error(pkg-homebrew: invalid formulaName "${name}". Must be lowercase with hyphens only.);
+  }
+}
 export default defineTarget<Config>({
   id: 'pkg-homebrew',
   kind: 'package-manager',
   label: 'Homebrew',
   async build(ctx, config) {
+    validateFormulaName(config.formulaName);
     const formula = renderFormula(config, ctx.version);
     const formulaPath = join(ctx.outDir, `${config.formulaName}.rb`);
     ctx.log(`render Formula/${config.formulaName}.rb`);
@@ -107,7 +115,7 @@ export default defineTarget<Config>({
     return { artifact: formulaPath };
   },
   async ship(ctx, config) {
-    ctx.log(`open PR against ${config.tap} bumping ${config.formulaName} → ${ctx.version}`);
+    ctx.log(`open PR against ${config.tap} bumping ${config.formulaName} â†’ ${ctx.version}`);
     if (ctx.dryRun) return { id: 'dry-run' };
     // TODO: git clone tap, commit formula, push branch, open PR via GH_TOKEN
     return { id: `${config.formulaName}@${ctx.version}`, url: `https://github.com/${config.tap}` };
@@ -123,3 +131,5 @@ export default defineTarget<Config>({
     ],
   }),
 });
+
+

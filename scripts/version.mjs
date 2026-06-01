@@ -15,19 +15,12 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { cmp } from './semver-cmp.mjs';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '..', '..');
 const PACKAGES = ['packages/core', 'packages/policy', 'packages/cli'];
-const arg = process.argv[2] ?? 'patch';
 
-function cmp(a, b) {
-  const pa = a.split('.').map(Number);
-  const pb = b.split('.').map(Number);
-  for (let i = 0; i < 3; i++) {
-    if (pa[i] !== pb[i]) return pa[i] - pb[i];
-  }
-  return 0;
-}
+const arg = process.argv[2] ?? 'patch';
 
 const entries = PACKAGES.map((rel) => {
   const path = resolve(ROOT, rel, 'package.json');

@@ -344,6 +344,13 @@ skillsCmd
   .option('--price <sats>', 'Price in sats; 0 = free', '0')
   .option('--source-url <url>', 'Public raw SKILL.md or repo URL')
   .action(async (opts: { skillFile: string; out: string; name?: string; title?: string; description?: string; tagline?: string; category: string; tags: string; price: string; sourceUrl?: string }) => {
+    // Validate price before writing any files.
+    const parsedPrice = Number.parseInt(opts.price, 10);
+    if (!Number.isInteger(parsedPrice) || parsedPrice < 0 || opts.price.includes('.') || Number.isNaN(parsedPrice)) {
+      console.error(kleur.red(`--price must be a non-negative integer (sats). Got: ${JSON.stringify(opts.price)}`));
+      process.exit(1);
+    }
+
     const skillFile = resolve(opts.skillFile);
     const inferred = await inferFromSkill(skillFile);
     const name = slugify(opts.name ?? inferred.name ?? basename(dirname(skillFile)));
@@ -356,10 +363,10 @@ skillsCmd
       tagline: opts.tagline,
       category: opts.category,
       tags: opts.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10),
-      price: Number.parseInt(opts.price, 10) || 0,
+      price: parsedPrice,
       skillFile,
       sourceUrl: opts.sourceUrl,
-      marketplaces: Object.fromEntries(MARKETPLACES.map(mp => [mp.id, { enabled: true, status: 'pending', command: 'command' in mp && mp.command ? mp.command({ name, title, description, tagline: opts.tagline, category: opts.category, tags: opts.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10), price: Number.parseInt(opts.price, 10) || 0, skillFile, sourceUrl: opts.sourceUrl, marketplaces: {} }) : undefined, note: 'note' in mp ? mp.note : undefined }])) as SkillManifest['marketplaces'],
+      marketplaces: Object.fromEntries(MARKETPLACES.map(mp => [mp.id, { enabled: true, status: 'pending', command: 'command' in mp && mp.command ? mp.command({ name, title, description, tagline: opts.tagline, category: opts.category, tags: opts.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10), price: parsedPrice, skillFile, sourceUrl: opts.sourceUrl, marketplaces: {} }) : undefined, note: 'note' in mp ? mp.note : undefined }])) as SkillManifest['marketplaces'],
     };
     await mkdir(dirname(resolve(opts.out)), { recursive: true });
     await saveManifest(opts.out, manifest);

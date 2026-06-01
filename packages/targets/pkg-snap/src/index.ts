@@ -48,6 +48,9 @@ function validateSnapName(snapName: string): void {
   if (snapName.startsWith('-') || snapName.endsWith('-')) {
     throw new Error(`pkg-snap: snapName "${snapName}" must not start or end with a hyphen`);
   }
+  if (snapName.includes('--')) {
+    throw new Error(`pkg-snap: snapName "${snapName}" must not contain consecutive hyphens`);
+  }
   if (!/^[a-z0-9-]+$/.test(snapName)) {
     throw new Error(`pkg-snap: snapName "${snapName}" must contain only lowercase letters, digits, and hyphens`);
   }
@@ -108,6 +111,7 @@ export default defineTarget<Config>({
   kind: 'package-manager',
   label: 'Snapcraft',
   async build(ctx, config) {
+    validateSnapName(config.snapName);
     const grade = config.grade ?? (ctx.channel === 'stable' ? 'stable' : 'devel');
     const confinement = config.confinement ?? 'strict';
     const base = config.base ?? 'core22';

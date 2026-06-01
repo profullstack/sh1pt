@@ -82,4 +82,40 @@ describe('winget manifest generation', () => {
       ],
     })).resolves.toEqual({ id: 'dry-run' });
   });
+
+  it('rejects invalid package IDs before manifest generation', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-winget-'));
+    tempDirs.push(outDir);
+    const ctx = fakeBuildContext({
+      outDir,
+      version: '1.2.3',
+    }) as any;
+    const installers = [
+      {
+        architecture: 'x64' as const,
+        url: 'https://downloads.example.com/my-tool-1.2.3-x64.exe',
+        sha256: 'c'.repeat(64),
+      },
+    ];
+
+    for (const packageId of ['NoDot', '.Acme.MyTool', 'Acme..MyTool', 'Acme/MyTool']) {
+      await expect(adapter.build(ctx, { packageId, installers })).rejects.toThrow('packageId');
+    }
+  });
+
+  it('rejects invalid package IDs before shipping', async () => {
+    await expect(adapter.ship(fakeShipContext({
+      version: '1.2.3',
+      dryRun: true,
+    }) as any, {
+      packageId: 'Acme/MyTool',
+      installers: [
+        {
+          architecture: 'x64',
+          url: 'https://downloads.example.com/my-tool-1.2.3-x64.exe',
+          sha256: 'c'.repeat(64),
+        },
+      ],
+    })).rejects.toThrow('packageId');
+  });
 });

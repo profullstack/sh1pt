@@ -1,6 +1,11 @@
 import type { Rule, Finding } from '../rule.js';
 
-const BUNDLE_RE = /^[a-zA-Z][a-zA-Z0-9-]*(\.[a-zA-Z][a-zA-Z0-9-]*)+$/;
+// Each reverse-DNS label must start with a letter and end with an
+// alphanumeric; hyphens are only allowed between alphanumerics. The previous
+// pattern (`[a-zA-Z][a-zA-Z0-9-]*`) let a label end with a hyphen, so
+// "com.foo.bar-" passed even though Apple App Store Connect and Google Play
+// both reject a bundle/application id with a trailing (or doubled) hyphen.
+const BUNDLE_RE = /^[a-zA-Z][a-zA-Z0-9]*(-[a-zA-Z0-9]+)*(\.[a-zA-Z][a-zA-Z0-9]*(-[a-zA-Z0-9]+)*)+$/;
 
 export const bundleId: Rule = {
   id: 'mobile/bundle-id',

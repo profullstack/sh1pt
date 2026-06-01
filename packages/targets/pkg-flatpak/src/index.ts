@@ -79,11 +79,32 @@ function renderFlatpakManifest(ctx: { projectDir: string; version: string; chann
   return lines.join('\n');
 }
 
+/**
+ * Validate a Flatpak app ID (reverse-DNS format): at least 3 dot-separated segments,
+ * each containing alphanumeric or hyphens. e.g. "com.example.MyApp"
+ */
+function validateAppId(appId: string): void {
+  if (!appId) throw new Error('pkg-flatpak: appId is required');
+  const segments = appId.split('.');
+  if (segments.length < 3) {
+    throw new Error(`pkg-flatpak: invalid appId "${appId}". Must have at least 3 reverse-DNS segments (e.g. "com.example.MyApp").`);
+  }
+  if (appId.includes('..') || appId.includes('/') || appId.includes('\\')) {
+    throw new Error(`pkg-flatpak: appId "${appId}" contains path traversal characters.`);
+  }
+  for (const seg of segments) {
+    if (!seg || !/^[A-Za-z0-9_-]+$/.test(seg)) {
+      throw new Error(`pkg-flatpak: invalid segment "${seg}" in appId "${appId}".`);
+    }
+  }
+}
+
 export default defineTarget<Config>({
   id: 'pkg-flatpak',
   kind: 'package-manager',
   label: 'Flathub',
   async build(ctx, config) {
+    validateAppId(config.appId);
     const branch = config.branch ?? (ctx.channel === 'stable' ? 'stable' : 'beta');
     const runtime = config.runtime ?? 'org.freedesktop.Platform';
     const runtimeVersion = config.runtimeVersion ?? '23.08';
@@ -96,6 +117,7 @@ export default defineTarget<Config>({
     return { artifact: manifestPath };
   },
   async ship(ctx, config) {
+    validateAppId(config.appId);
     const branch = config.branch ?? (ctx.channel === 'stable' ? 'stable' : 'beta');
     ctx.log(`submit ${config.appId} to Flathub (branch: ${branch})`);
     if (ctx.dryRun) return { id: 'dry-run' };

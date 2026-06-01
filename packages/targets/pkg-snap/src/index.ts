@@ -79,11 +79,21 @@ function renderSnapcraftYaml(ctx: { projectDir: string; version: string; channel
   return lines.join('\n');
 }
 
+/** Validate a snap package name: lowercase, alphanumeric, hyphens only (no leading/trailing hyphen). */
+function validateSnapName(name: string): void {
+  if (!name || !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(name)) {
+    throw new Error(
+      `pkg-snap: invalid snapName "${name}". Snap names must be lowercase alphanumeric with optional hyphens (no leading/trailing hyphen, no uppercase, no underscore).`,
+    );
+  }
+}
+
 export default defineTarget<Config>({
   id: 'pkg-snap',
   kind: 'package-manager',
   label: 'Snapcraft',
   async build(ctx, config) {
+    validateSnapName(config.snapName);
     const grade = config.grade ?? (ctx.channel === 'stable' ? 'stable' : 'devel');
     const confinement = config.confinement ?? 'strict';
     const base = config.base ?? 'core22';
@@ -97,6 +107,7 @@ export default defineTarget<Config>({
     return { artifact: manifestPath };
   },
   async ship(ctx, config) {
+    validateSnapName(config.snapName);
     const trackChannel = config.channel ?? (ctx.channel === 'stable' ? 'stable' : 'edge');
     ctx.log(`snapcraft upload + release ${config.snapName} → ${trackChannel}`);
     if (ctx.dryRun) return { id: 'dry-run' };

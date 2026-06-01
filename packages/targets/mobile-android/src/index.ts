@@ -5,6 +5,10 @@ interface Config {
   track?: 'internal' | 'alpha' | 'beta' | 'production';
 }
 
+function safeFileStem(value: string): string {
+  return value.replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'android-app';
+}
+
 export default defineTarget<Config>({
   id: 'mobile-android',
   kind: 'mobile',
@@ -12,7 +16,7 @@ export default defineTarget<Config>({
   async build(ctx, config) {
     ctx.log(`build Android AAB for ${config.packageName} v${ctx.version}`);
     // TODO: run Gradle bundleRelease to produce signed .aab
-    return { artifact: `${ctx.outDir}/${config.packageName}-${ctx.version}.aab` };
+    return { artifact: `${ctx.outDir}/${safeFileStem(config.packageName)}-${ctx.version}.aab` };
   },
   async ship(ctx, config) {
     const track = config.track ?? 'internal';

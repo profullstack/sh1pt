@@ -31,7 +31,7 @@ export default defineTarget<Config>({
   label: 'Telegram Bot',
   async build(ctx, config) {
     ctx.log(`telegram · prepare bot manifest for @${config.botUsername}`);
-    return { artifact: `${ctx.outDir}/telegram-${config.botUsername}.json` };
+    return { artifact: `${ctx.outDir}/telegram-${safeFileStem(config.botUsername)}.json` };
   },
   async ship(ctx, config) {
     const username = normalizeUsername(config.botUsername);
@@ -96,6 +96,10 @@ async function callTelegram<T>(
     throw new Error(data.description ?? `Telegram ${method} failed (${res.status})`);
   }
   return data.result;
+}
+
+function safeFileStem(value: string): string {
+  return value.replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'telegram-bot';
 }
 
 function normalizeUsername(username: string): string {

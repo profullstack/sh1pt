@@ -15,6 +15,15 @@ describe('agents list --json', () => {
 
   beforeEach(() => {
     stdout = [];
+    vi.mocked(spawnSync).mockReset();
+    vi.mocked(spawnSync).mockReturnValue({
+      status: 1,
+      stdout: '',
+      stderr: '',
+      pid: 123,
+      output: [],
+      signal: null,
+    });
     vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
       stdout.push(args.map(String).join(' '));
     });

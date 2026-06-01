@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
@@ -150,4 +150,78 @@ describe('skills marketplaces --json', () => {
       expect(typeof mp.readiness).toBe('string');
     }
   });
+});
+
+describe('skills new command', () => {
+  let tempDir: string;
+  let stdout: string[];
+  let stderr: string[];
+
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), 'sh1pt-skills-new-'));
+    stdout = [];
+    stderr = [];
+    vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
+      stdout.push(args.map(String).join(' '));
+    });
+    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+      stderr.push(args.map(String).join(' '));
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  function writeSkillFile() {
+    const skillDir = join(tempDir, 'skill');
+    mkdirSync(skillDir, { recursive: true });
+    const skillFile = join(skillDir, 'SKILL.md');
+    writeFileSync(skillFile, [
+      '---',
+      'name: invoice-helper',
+      'description: Helps prepare invoices',
+      '---',
+      '',
+      '# Invoice Helper',
+      '',
+    ].join('\n'));
+    return skillFile;
+  }
+
+  async function runNew(price: string) {
+    const newCmd = skillsCmd.commands.find((c) => c.name() === 'new')!;
+    const skillFile = writeSkillFile();
+    const out = join(tempDir, 'sh1pt.skill.json');
+    await newCmd.parseAsync([
+      '--skill-file', skillFile,
+      '--out', out,
+      '--price', price,
+    ], { from: 'user' });
+    return out;
+  }
+
+  it('writes valid integer prices to the manifest and marketplace command', async () => {
+    const out = await runNew('100');
+    const manifest = JSON.parse(readFileSync(out, 'utf8'));
+
+    expect(manifest.price).toBe(100);
+    expect(manifest.marketplaces.ugig.command).toContain('--price 100');
+    expect(stdout.join('\n')).toContain('wrote');
+  });
+
+  it.each(['-5', '1.9', '5abc', '1e2', '0x10', '+5', `${Number.MAX_SAFE_INTEGER + 1}`])(
+    'rejects invalid listing price %s before writing a manifest',
+    async (price) => {
+      const exit = vi.spyOn(process, 'exit').mockImplementation(((code?: string | number | null) => {
+        throw new Error(`process.exit(${code})`);
+      }) as never);
+
+      await expect(runNew(price)).rejects.toThrow('process.exit(1)');
+      expect(stderr.join('\n')).toContain('--price');
+      expect(existsSync(join(tempDir, 'sh1pt.skill.json'))).toBe(false);
+      expect(exit).toHaveBeenCalledWith(1);
+    },
+  );
 });

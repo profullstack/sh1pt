@@ -111,6 +111,20 @@ async function saveManifest(path: string, manifest: SkillManifest): Promise<void
   await writeFile(path, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 }
 
+function parsePriceSats(raw: string): number {
+  const value = raw.trim();
+  if (!/^\d+$/.test(value)) {
+    throw new Error(`--price must be a non-negative integer in sats. Got: ${JSON.stringify(raw)}`);
+  }
+
+  const price = Number(value);
+  if (!Number.isSafeInteger(price)) {
+    throw new Error(`--price must be a safe non-negative integer in sats. Got: ${JSON.stringify(raw)}`);
+  }
+
+  return price;
+}
+
 function normalizeText(text: string): string {
   const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   return normalized.endsWith('\n') ? normalized : `${normalized}\n`;
@@ -357,10 +371,11 @@ skillsCmd
   .option('--price <sats>', 'Price in sats; 0 = free', '0')
   .option('--source-url <url>', 'Public raw SKILL.md or repo URL')
   .action(async (opts: { skillFile: string; out: string; name?: string; title?: string; description?: string; tagline?: string; category: string; tags: string; price: string; sourceUrl?: string }) => {
-    // Validate price before writing any files.
-    const parsedPrice = Number.parseInt(opts.price, 10);
-    if (!Number.isInteger(parsedPrice) || parsedPrice < 0 || opts.price.includes('.') || Number.isNaN(parsedPrice)) {
-      console.error(kleur.red(`--price must be a non-negative integer (sats). Got: ${JSON.stringify(opts.price)}`));
+    let price: number;
+    try {
+      price = parsePriceSats(opts.price);
+    } catch (error) {
+      console.error(kleur.red(error instanceof Error ? error.message : String(error)));
       process.exit(1);
     }
 
@@ -369,17 +384,18 @@ skillsCmd
     const name = slugify(opts.name ?? inferred.name ?? basename(dirname(skillFile)));
     const title = opts.title ?? inferred.title ?? name;
     const description = opts.description ?? inferred.description ?? `Agent skill: ${title}`;
+    const tags = opts.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10);
     const manifest: SkillManifest = {
       name,
       title,
       description,
       tagline: opts.tagline,
       category: opts.category,
-      tags: opts.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10),
-      price: parsedPrice,
+      tags,
+      price,
       skillFile,
       sourceUrl: opts.sourceUrl,
-      marketplaces: Object.fromEntries(MARKETPLACES.map(mp => [mp.id, { enabled: true, status: 'pending', command: 'command' in mp && mp.command ? mp.command({ name, title, description, tagline: opts.tagline, category: opts.category, tags: opts.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10), price: parsedPrice, skillFile, sourceUrl: opts.sourceUrl, marketplaces: {} }) : undefined, note: 'note' in mp ? mp.note : undefined }])) as SkillManifest['marketplaces'],
+      marketplaces: Object.fromEntries(MARKETPLACES.map(mp => [mp.id, { enabled: true, status: 'pending', command: 'command' in mp && mp.command ? mp.command({ name, title, description, tagline: opts.tagline, category: opts.category, tags, price, skillFile, sourceUrl: opts.sourceUrl, marketplaces: {} }) : undefined, note: 'note' in mp ? mp.note : undefined }])) as SkillManifest['marketplaces'],
     };
     await mkdir(dirname(resolve(opts.out)), { recursive: true });
     await saveManifest(opts.out, manifest);

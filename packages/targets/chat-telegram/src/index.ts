@@ -1,4 +1,5 @@
 import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { join } from 'node:path';
 
 // Telegram bots. No "store" — a bot is just a token + webhook URL. This
 // adapter registers the webhook with Telegram, sets commands/description/
@@ -25,13 +26,20 @@ interface TelegramResponse<T> {
 
 type TelegramCommand = { command: string; description: string };
 
+function safeFileStem(value: string): string {
+  return value
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/^\.+|\.+$/g, '')
+    .replace(/^-+|-+$/g, '') || 'telegram-bot';
+}
+
 export default defineTarget<Config>({
   id: 'chat-telegram',
   kind: 'chat',
   label: 'Telegram Bot',
   async build(ctx, config) {
     ctx.log(`telegram · prepare bot manifest for @${config.botUsername}`);
-    return { artifact: `${ctx.outDir}/telegram-${config.botUsername}.json` };
+    return { artifact: join(ctx.outDir, `telegram-${safeFileStem(config.botUsername)}.json`) };
   },
   async ship(ctx, config) {
     const username = normalizeUsername(config.botUsername);

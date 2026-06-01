@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { contractTestTarget, fakeShipContext } from '@profullstack/sh1pt-core/testing';
+import { contractTestTarget, fakeBuildContext, fakeShipContext } from '@profullstack/sh1pt-core/testing';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import adapter from './index.js';
 
 contractTestTarget(adapter, {
@@ -14,7 +17,28 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+const tempDirs: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
+});
+
 describe('chat-telegram API calls', () => {
+  it('keeps bot usernames with path separators inside the output directory', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-telegram-out-'));
+    tempDirs.push(outDir);
+
+    const result = await adapter.build(fakeBuildContext({
+      outDir,
+      dryRun: true,
+    }) as any, {
+      botUsername: '../demo_bot',
+      webhookUrl: 'https://example.com/telegram',
+    });
+
+    expect(result.artifact).toBe(join(outDir, 'telegram-demo_bot.json'));
+  });
+
   it('sets webhook, commands, and bot descriptions', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,

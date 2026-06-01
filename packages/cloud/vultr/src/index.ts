@@ -506,7 +506,16 @@ async function vultrRequest<T = unknown>(
   }
 
   const text = await response.text();
-  const data = text ? JSON.parse(text) : undefined;
+  let data: unknown;
+  try {
+    data = text ? JSON.parse(text) : undefined;
+  } catch (error) {
+    if (!response.ok) {
+      data = { message: text || response.statusText };
+    } else {
+      throw error;
+    }
+  }
 
   if (!response.ok) {
     const errMsg = extractErrorMessage(data, response.statusText);

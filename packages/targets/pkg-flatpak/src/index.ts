@@ -30,7 +30,7 @@ function renderList(values: string[], indent: string): string[] {
 /**
  * Validate a Flatpak application ID.
  * Must be a reverse-DNS string with at least 3 dot-separated segments,
- * each non-empty and containing only alphanumeric characters or hyphens/underscores.
+ * each starting with a letter and containing alphanumeric characters, hyphens, or underscores.
  * Must not contain path traversal characters.
  */
 function validateAppId(appId: string): void {
@@ -49,7 +49,7 @@ function validateAppId(appId: string): void {
     if (!seg) {
       throw new Error(`pkg-flatpak: invalid appId "${appId}" — segments must be non-empty`);
     }
-    if (!/^[A-Za-z0-9_-]+$/.test(seg)) {
+    if (!/^[A-Za-z][A-Za-z0-9_]*(?:-[A-Za-z0-9_]+)*$/.test(seg)) {
       throw new Error(`pkg-flatpak: invalid appId "${appId}" — segment "${seg}" contains invalid characters`);
     }
   }
@@ -105,26 +105,6 @@ function renderFlatpakManifest(ctx: { projectDir: string; version: string; chann
 
   lines.push('');
   return lines.join('\n');
-}
-
-/**
- * Validate a Flatpak app ID (reverse-DNS format): at least 3 dot-separated segments,
- * each containing alphanumeric or hyphens. e.g. "com.example.MyApp"
- */
-function validateAppId(appId: string): void {
-  if (!appId) throw new Error('pkg-flatpak: appId is required');
-  const segments = appId.split('.');
-  if (segments.length < 3) {
-    throw new Error(`pkg-flatpak: invalid appId "${appId}". Must have at least 3 reverse-DNS segments (e.g. "com.example.MyApp").`);
-  }
-  if (appId.includes('..') || appId.includes('/') || appId.includes('\\')) {
-    throw new Error(`pkg-flatpak: appId "${appId}" contains path traversal characters.`);
-  }
-  for (const seg of segments) {
-    if (!seg || !/^[A-Za-z0-9_-]+$/.test(seg)) {
-      throw new Error(`pkg-flatpak: invalid segment "${seg}" in appId "${appId}".`);
-    }
-  }
 }
 
 export default defineTarget<Config>({

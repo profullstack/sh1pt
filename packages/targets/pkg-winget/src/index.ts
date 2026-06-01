@@ -124,28 +124,6 @@ function renderLocaleManifest(config: Config, version: string): string {
   return lines.join('\n');
 }
 
-/**
- * Validate a winget package identifier: must contain at least one dot,
- * each segment must be non-empty alphanumeric+hyphens/underscores/dots.
- * e.g. "Microsoft.WindowsTerminal"
- */
-function validatePackageId(packageId: string): void {
-  if (!packageId) throw new Error('pkg-winget: packageId is required');
-  const segments = packageId.split('.');
-  if (segments.length < 2) {
-    throw new Error(`pkg-winget: invalid packageId "${packageId}". Must be "Publisher.AppName" format with at least one dot.`);
-  }
-  for (const seg of segments) {
-    if (!seg) throw new Error(`pkg-winget: empty segment in packageId "${packageId}".`);
-    if (!/^[A-Za-z0-9_\-]+$/.test(seg)) {
-      throw new Error(`pkg-winget: invalid segment "${seg}" in packageId "${packageId}". Segments must be alphanumeric with hyphens or underscores.`);
-    }
-  }
-  if (packageId.includes('..') || packageId.includes('/') || packageId.includes('\\')) {
-    throw new Error(`pkg-winget: packageId "${packageId}" contains path traversal characters.`);
-  }
-}
-
 export default defineTarget<Config>({
   id: 'pkg-winget',
   kind: 'package-manager',

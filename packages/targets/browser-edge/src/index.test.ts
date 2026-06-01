@@ -85,4 +85,24 @@ describe('browser-edge target adapter', () => {
     });
     expect(result).toEqual({ artifact });
   });
+
+  it('keeps product IDs with path separators inside the output directory', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-edge-out-'));
+    const projectDir = await mkdtemp(join(tmpdir(), 'sh1pt-edge-project-'));
+    tempDirs.push(outDir, projectDir);
+
+    const result = await adapter.build(fakeBuildContext({
+      outDir,
+      projectDir,
+      version: '1.2.3',
+      dryRun: true,
+    }) as any, {
+      productId: '../edge-product',
+      sourceDir: 'extension-dist',
+    });
+
+    const plan = JSON.parse(await readFile(result.artifact, 'utf-8'));
+    expect(plan.artifact).toBe(join(outDir, 'edge-product-1.2.3.zip'));
+    expect(plan.command).toEqual(['zip', '-r', join(outDir, 'edge-product-1.2.3.zip'), '.']);
+  });
 });

@@ -13,8 +13,15 @@ function sourceDir(ctx: { projectDir: string }, config: Config): string {
   return isAbsolute(dir) ? dir : join(ctx.projectDir, dir);
 }
 
+function safeFileStem(value: string): string {
+  return value
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/^\.+|\.+$/g, '')
+    .replace(/^-|-$/g, '') || 'edge-extension';
+}
+
 function packageArtifact(ctx: { outDir: string; version: string }, config: Config): string {
-  return join(ctx.outDir, `${config.productId}-${ctx.version}.zip`);
+  return join(ctx.outDir, `${safeFileStem(config.productId)}-${safeFileStem(ctx.version)}.zip`);
 }
 
 function packagePlan(ctx: { projectDir: string; outDir: string; version: string }, config: Config) {

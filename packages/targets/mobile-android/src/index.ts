@@ -1,8 +1,16 @@
 import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { join } from 'node:path';
 
 interface Config {
   packageName: string;    // e.g. "com.example.myapp"
   track?: 'internal' | 'alpha' | 'beta' | 'production';
+}
+
+function safeFileStem(value: string): string {
+  return value
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/^\.+|\.+$/g, '')
+    .replace(/^-+|-+$/g, '') || 'android-app';
 }
 
 export default defineTarget<Config>({
@@ -12,7 +20,7 @@ export default defineTarget<Config>({
   async build(ctx, config) {
     ctx.log(`build Android AAB for ${config.packageName} v${ctx.version}`);
     // TODO: run Gradle bundleRelease to produce signed .aab
-    return { artifact: `${ctx.outDir}/${config.packageName}-${ctx.version}.aab` };
+    return { artifact: join(ctx.outDir, `${safeFileStem(config.packageName)}-${safeFileStem(ctx.version)}.aab`) };
   },
   async ship(ctx, config) {
     const track = config.track ?? 'internal';

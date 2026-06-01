@@ -1,5 +1,5 @@
 import { fakeBuildContext, fakeShipContext, smokeTest } from '@profullstack/sh1pt-core/testing';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -59,5 +59,47 @@ describe('snapcraft manifest generation', () => {
     }) as any, {
       snapName: 'myapp',
     })).resolves.toEqual({ id: 'dry-run' });
+  });
+
+  it('rejects invalid snap names before generating manifests', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-snap-'));
+    tempDirs.push(outDir);
+
+    const ctx = fakeBuildContext({
+      outDir,
+      projectDir: '/repo/myapp',
+      version: '1.2.3',
+      channel: 'stable',
+    }) as any;
+
+    for (const snapName of ['Bad: Name', '-myapp', 'myapp-', 'my--app', '1234', 'a'.repeat(41)]) {
+      await expect(adapter.build(ctx, { snapName })).rejects.toThrow('snapName');
+    }
+  });
+
+  it('rejects invalid snap names before touching the output directory', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'sh1pt-snap-'));
+    tempDirs.push(outDir);
+    await mkdir(outDir, { recursive: true });
+
+    await expect(adapter.build(fakeBuildContext({
+      outDir,
+      projectDir: '/repo/myapp',
+      version: '1.2.3',
+      channel: 'stable',
+    }) as any, {
+      snapName: 'my--app',
+    })).rejects.toThrow('snapName');
+
+    await expect(readdir(outDir)).resolves.toEqual([]);
+  });
+
+  it('rejects invalid snap names before shipping', async () => {
+    await expect(adapter.ship(fakeShipContext({
+      version: '1.2.3',
+      dryRun: true,
+    }) as any, {
+      snapName: 'Bad: Name',
+    })).rejects.toThrow('snapName');
   });
 });

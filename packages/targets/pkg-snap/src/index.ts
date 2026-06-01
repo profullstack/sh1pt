@@ -48,6 +48,9 @@ function validateSnapName(snapName: string): void {
   if (snapName.startsWith('-') || snapName.endsWith('-')) {
     throw new Error(`pkg-snap: snapName "${snapName}" must not start or end with a hyphen`);
   }
+  if (snapName.includes('--')) {
+    throw new Error(`pkg-snap: snapName "${snapName}" must not contain consecutive hyphens`);
+  }
   if (!/^[a-z0-9-]+$/.test(snapName)) {
     throw new Error(`pkg-snap: snapName "${snapName}" must contain only lowercase letters, digits, and hyphens`);
   }
@@ -57,6 +60,7 @@ function validateSnapName(snapName: string): void {
 }
 
 function renderSnapcraftYaml(ctx: { projectDir: string; version: string; channel: string }, config: Config): string {
+  validateSnapName(config.snapName);
   const grade = config.grade ?? (ctx.channel === 'stable' ? 'stable' : 'devel');
   const confinement = config.confinement ?? 'strict';
   const base = config.base ?? 'core22';
@@ -100,15 +104,6 @@ function renderSnapcraftYaml(ctx: { projectDir: string; version: string; channel
 
   lines.push('');
   return lines.join('\n');
-}
-
-/** Validate a snap package name: lowercase, alphanumeric, hyphens only (no leading/trailing hyphen). */
-function validateSnapName(name: string): void {
-  if (!name || !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(name)) {
-    throw new Error(
-      `pkg-snap: invalid snapName "${name}". Snap names must be lowercase alphanumeric with optional hyphens (no leading/trailing hyphen, no uppercase, no underscore).`,
-    );
-  }
 }
 
 export default defineTarget<Config>({

@@ -1,7 +1,8 @@
 import { defineTarget, exec, manualSetup } from '@profullstack/sh1pt-core';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
-nfunction safeFileStem(value: string): string {
+
+function safeFileStem(value: string): string {
   return value.replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'edge-ext';
 }
 

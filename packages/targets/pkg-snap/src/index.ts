@@ -38,13 +38,6 @@ function renderDescription(description: string): string[] {
  * Rules: lowercase letters, digits, and hyphens only; at least one letter;
  * no leading or trailing hyphen; max 40 characters.
  */
-function validateSnapName(snapName: string): void {
-  if (!snapName || typeof snapName !== 'string') {
-    throw new Error('pkg-snap: snapName is required');
-  }
-  if (snapName.length > 40) {
-    throw new Error(`pkg-snap: snapName "${snapName}" exceeds 40 characters`);
-  }
   if (snapName.startsWith('-') || snapName.endsWith('-')) {
     throw new Error(`pkg-snap: snapName "${snapName}" must not start or end with a hyphen`);
   }

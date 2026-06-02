@@ -33,12 +33,6 @@ function renderList(values: string[], indent: string): string[] {
  * each non-empty and containing only alphanumeric characters or hyphens/underscores.
  * Must not contain path traversal characters.
  */
-function validateAppId(appId: string): void {
-  if (!appId || typeof appId !== 'string') {
-    throw new Error('pkg-flatpak: appId is required');
-  }
-  // Block path traversal
-  if (appId.includes('/') || appId.includes('\\') || appId.includes('..')) {
     throw new Error(`pkg-flatpak: invalid appId "${appId}" — must not contain path separators or ".." sequences`);
   }
   const segments = appId.split('.');

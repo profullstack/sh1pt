@@ -29,13 +29,6 @@ function yamlString(value: string): string {
  * Must follow "Publisher.PackageName" format — at least one dot, no leading/trailing dot,
  * each segment non-empty and containing only alphanumeric characters, hyphens, or underscores.
  */
-function validatePackageId(packageId: string): void {
-  if (!packageId || typeof packageId !== 'string') {
-    throw new Error('winget: packageId is required');
-  }
-  if (packageId.startsWith('.') || packageId.endsWith('.')) {
-    throw new Error(`winget: invalid packageId "${packageId}" — must not start or end with a dot`);
-  }
   const segments = packageId.split('.');
   if (segments.length < 2) {
     throw new Error(`winget: invalid packageId "${packageId}" — must use Publisher.Package format (e.g. "Microsoft.VSCode")`);

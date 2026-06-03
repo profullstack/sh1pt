@@ -8,6 +8,7 @@ import adapter from './index.js';
 smokeTest(adapter, { idPrefix: 'pkg', requireKind: true });
 
 const tempDirs: string[] = [];
+const invalidPackageNames = ['../escape', 'com.acme/app', 'com..acme', '1com.acme.app', 'com.int.app'];
 
 afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
@@ -89,7 +90,7 @@ describe('F-Droid target', () => {
       sourceRepo: 'https://github.com/acme/app',
     };
 
-    for (const packageName of ['../escape', 'com.acme/app', 'com..acme', '1com.acme.app']) {
+    for (const packageName of invalidPackageNames) {
       await expect(adapter.build(ctx, {
         packageName,
         mode: 'main-repo',
@@ -117,14 +118,16 @@ describe('F-Droid target', () => {
   });
 
   it('rejects invalid package names before shipping', async () => {
-    await expect(adapter.ship(fakeShipContext({ dryRun: true }) as any, {
-      packageName: '../escape',
-      mode: 'main-repo',
-      metadata: {
-        categories: ['Development'],
-        license: 'Apache-2.0',
-        sourceRepo: 'https://github.com/acme/app',
-      },
-    })).rejects.toThrow('packageName');
+    for (const packageName of invalidPackageNames) {
+      await expect(adapter.ship(fakeShipContext({ dryRun: true }) as any, {
+        packageName,
+        mode: 'main-repo',
+        metadata: {
+          categories: ['Development'],
+          license: 'Apache-2.0',
+          sourceRepo: 'https://github.com/acme/app',
+        },
+      })).rejects.toThrow('packageName');
+    }
   });
 });

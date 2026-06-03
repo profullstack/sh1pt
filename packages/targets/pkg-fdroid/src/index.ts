@@ -42,7 +42,6 @@ function renderBlock(key: string, value: string): string[] {
 }
 
 function renderMetadata(config: Config): string {
-  assertPackageName(config.packageName);
   if (!config.metadata) {
     throw new Error('pkg-fdroid main-repo mode requires metadata');
   }
@@ -78,10 +77,21 @@ function resolveRepoDir(ctx: { projectDir: string }, config: Config): string {
   return isAbsolute(dir) ? dir : join(ctx.projectDir, dir);
 }
 
+const JAVA_RESERVED_WORDS = new Set([
+  'abstract', 'assert', 'boolean', 'break', 'byte', 'case', 'catch', 'char',
+  'class', 'const', 'continue', 'default', 'do', 'double', 'else', 'enum',
+  'extends', 'final', 'finally', 'float', 'for', 'goto', 'if', 'implements',
+  'import', 'instanceof', 'int', 'interface', 'long', 'native', 'new',
+  'package', 'private', 'protected', 'public', 'return', 'short', 'static',
+  'strictfp', 'super', 'switch', 'synchronized', 'this', 'throw', 'throws',
+  'transient', 'try', 'void', 'volatile', 'while', 'true', 'false', 'null',
+]);
+
 function assertPackageName(packageName: string): void {
   const segment = '[A-Za-z][A-Za-z0-9_]*';
   const pattern = new RegExp(`^${segment}(\\.${segment})+$`);
-  if (!pattern.test(packageName)) {
+  const segments = packageName.split('.');
+  if (!pattern.test(packageName) || segments.some((part) => JAVA_RESERVED_WORDS.has(part))) {
     throw new Error(`packageName must be a valid Android package name, got "${packageName}"`);
   }
 }

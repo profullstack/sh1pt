@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { contractTestTarget, fakeShipContext } from '@profullstack/sh1pt-core/testing';
+import { contractTestTarget, fakeBuildContext, fakeShipContext } from '@profullstack/sh1pt-core/testing';
+import { join } from 'node:path';
 import adapter from './index.js';
 
 contractTestTarget(adapter, {
@@ -15,6 +16,16 @@ afterEach(() => {
 });
 
 describe('chat-telegram API calls', () => {
+  it('sanitizes botUsername when building the manifest artifact path', async () => {
+    const outDir = '/tmp/sh1pt-out';
+    const result = await adapter.build(fakeBuildContext({ outDir }) as any, {
+      botUsername: '../demo/bot',
+      webhookUrl: 'https://example.com/telegram',
+    });
+
+    expect(result.artifact).toBe(join(outDir, 'telegram-___demo_bot.json'));
+  });
+
   it('sets webhook, commands, and bot descriptions', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,

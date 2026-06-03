@@ -1,9 +1,10 @@
 import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { join } from 'node:path';
 
-// Telegram bots. No "store" — a bot is just a token + webhook URL. This
+// Telegram bots. No "store" means a bot is just a token + webhook URL. This
 // adapter registers the webhook with Telegram, sets commands/description/
 // about text, and optionally submits to bot directories (t.me/BotFather,
-// storebot.me, combot.org). Hosting the bot itself is orthogonal — pair
+// storebot.me, combot.org). Hosting the bot itself is orthogonal, pair
 // with deploy-workers / deploy-fly.
 interface Config {
   botUsername: string;               // e.g. 'my_sh1pt_bot' (no @)
@@ -30,17 +31,18 @@ export default defineTarget<Config>({
   kind: 'chat',
   label: 'Telegram Bot',
   async build(ctx, config) {
-    ctx.log(`telegram · prepare bot manifest for @${config.botUsername}`);
-    return { artifact: `${ctx.outDir}/telegram-${config.botUsername}.json` };
+    const username = normalizeUsername(config.botUsername);
+    ctx.log(`telegram prepare bot manifest for @${username}`);
+    return { artifact: join(ctx.outDir, `telegram-${safeFilename(username)}.json`) };
   },
   async ship(ctx, config) {
     const username = normalizeUsername(config.botUsername);
-    ctx.log(`telegram · setWebhook + setMyCommands for @${username}`);
+    ctx.log(`telegram setWebhook + setMyCommands for @${username}`);
     if (ctx.dryRun) return { id: 'dry-run' };
 
     const tokenKey = config.tokenKey ?? 'TELEGRAM_BOT_TOKEN';
     const token = ctx.secret(tokenKey);
-    if (!token) throw new Error(`${tokenKey} not in vault — run: sh1pt secret set ${tokenKey} <bot-token>`);
+    if (!token) throw new Error(`${tokenKey} not in vault - run: sh1pt secret set ${tokenKey} <bot-token>`);
 
     await callTelegram(ctx.log, token, 'setWebhook', {
       url: config.webhookUrl,
@@ -71,8 +73,8 @@ export default defineTarget<Config>({
     label: "Telegram Bot (@BotFather)",
     vendorDocUrl: "https://t.me/BotFather",
     steps: [
-      "Open Telegram \u2192 chat with @BotFather \u2192 /newbot",
-      "Copy the HTTP API token \u2014 sh1pt will store it",
+      "Open Telegram -> chat with @BotFather -> /newbot",
+      "Copy the HTTP API token - sh1pt will store it",
       "Run: sh1pt secret set TELEGRAM_BOT_TOKEN <token>",
     ],
   }),
@@ -84,7 +86,7 @@ async function callTelegram<T>(
   method: string,
   body: Record<string, unknown>,
 ): Promise<T | undefined> {
-  log(`telegram · ${method}`);
+  log(`telegram ${method}`);
   const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -104,6 +106,10 @@ function normalizeUsername(username: string): string {
   return clean;
 }
 
+function safeFilename(value: string): string {
+  return value.replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
 function normalizeCommand(command: TelegramCommand): TelegramCommand {
   return {
     command: command.command.replace(/^\//, ''),
@@ -113,6 +119,6 @@ function normalizeCommand(command: TelegramCommand): TelegramCommand {
 
 function requireSecret(ctx: { secret(key: string): string | undefined }, key: string): string {
   const value = ctx.secret(key);
-  if (!value) throw new Error(`${key} not in vault — run: sh1pt secret set ${key} <value>`);
+  if (!value) throw new Error(`${key} not in vault - run: sh1pt secret set ${key} <value>`);
   return value;
 }

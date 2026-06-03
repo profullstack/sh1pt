@@ -42,6 +42,7 @@ function renderBlock(key: string, value: string): string[] {
 }
 
 function renderMetadata(config: Config): string {
+  assertPackageName(config.packageName);
   if (!config.metadata) {
     throw new Error('pkg-fdroid main-repo mode requires metadata');
   }
@@ -77,11 +78,20 @@ function resolveRepoDir(ctx: { projectDir: string }, config: Config): string {
   return isAbsolute(dir) ? dir : join(ctx.projectDir, dir);
 }
 
+function assertPackageName(packageName: string): void {
+  const segment = '[A-Za-z][A-Za-z0-9_]*';
+  const pattern = new RegExp(`^${segment}(\\.${segment})+$`);
+  if (!pattern.test(packageName)) {
+    throw new Error(`packageName must be a valid Android package name, got "${packageName}"`);
+  }
+}
+
 export default defineTarget<Config>({
   id: 'pkg-fdroid',
   kind: 'package-manager',
   label: 'F-Droid (Android FOSS repo)',
   async build(ctx, config) {
+    assertPackageName(config.packageName);
     if (config.mode === 'main-repo') {
       ctx.log(`render fdroiddata metadata for ${config.packageName}`);
       const metadataPath = join(ctx.outDir, `${config.packageName}.yml`);
@@ -109,6 +119,7 @@ export default defineTarget<Config>({
     return { artifact: cwd };
   },
   async ship(ctx, config) {
+    assertPackageName(config.packageName);
     if (config.mode === 'main-repo') {
       ctx.log(`open PR against fdroiddata for ${config.packageName}`);
       if (ctx.dryRun) {

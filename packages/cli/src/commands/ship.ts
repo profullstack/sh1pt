@@ -1,10 +1,10 @@
 import { Command } from 'commander';
-import { join, resolve, dirname } from 'node:path';
+import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import kleur from 'kleur';
 import { lint } from '@profullstack/sh1pt-policy';
 import type { Manifest } from '@profullstack/sh1pt-core';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { initAction } from './init.js';
 
 /**
@@ -21,8 +21,7 @@ async function loadManifest(configPathOrDir?: string): Promise<Manifest> {
 
   // If input is a directory, look for the default config file inside it.
   // Otherwise treat the input as an explicit file path (supports --config flag).
-  const isDirectory = existsSync(resolved) &&
-    (await import('node:fs/promises')).stat(resolved).then(s => s.isDirectory()).catch(() => false);
+  const isDirectory = existsSync(resolved) && statSync(resolved).isDirectory();
   const configPath = isDirectory
     ? join(resolved, 'sh1pt.config.ts')
     : resolved;
@@ -35,7 +34,7 @@ async function loadManifest(configPathOrDir?: string): Promise<Manifest> {
     // pathToFileURL ensures Windows backslashes don't break dynamic import
     const mod = await import(pathToFileURL(configPath).href);
 
-    // Schema validation (Greptile P2 fix)
+    // Schema validation
     const candidate = (mod.default ?? mod) as Record<string, unknown>;
     if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
       console.error(kleur.red(`error: ${configPath} must export an object`));
@@ -164,7 +163,6 @@ targetSubCmd
   .option('--json', 'output as JSON for automation')
   .option('-c, --config <path>', 'path to alternate config file or directory')
   .action(async (opts: { json?: boolean; config?: string }) => {
-    // Fix: pass full config path to loadManifest (Greptile P1 fix)
     try {
       const manifest = await loadManifest(opts.config);
       const targetEntries = Object.entries(manifest.targets ?? {});
@@ -187,7 +185,7 @@ targetSubCmd
       console.log(kleur.bold(`Configured targets (${targetEntries.length}):`));
       for (const [id, t] of targetEntries) {
         const status = t.enabled === false ? kleur.dim('(disabled)') : kleur.green('enabled');
-        console.log(`  ${kleur.cyan(id)}  ${kleur.dim('→ ${t.use}')}  ${status}`);
+        console.log(`  ${kleur.cyan(id)}  ${kleur.dim(`→ ${t.use}`)}  ${status}`);
       }
     } catch (err) {
       console.error(kleur.red(`error: ${(err as Error).message}`));

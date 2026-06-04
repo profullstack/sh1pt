@@ -6,46 +6,40 @@ interface Config {
 
 const DEFAULT_BASE = 'https://api.deepseek.com';
 
-function chatCompletionsUrl(baseUrl?: string): string {
-  return `${(baseUrl ?? DEFAULT_BASE).replace(/\/+$/, '')}/v1/chat/completions`;
-}
-
-function redact(value: string, apiKey: string): string {
-  return apiKey ? value.split(apiKey).join('[redacted]') : value;
-}
-
 export default defineAi<Config>({
   id: 'ai-deepseek',
   label: 'DeepSeek',
   defaultModel: 'deepseek-chat',
-  models: ['deepseek-chat', 'deepseek-reasoner'],
+  models: ['deepseek-chat', 'deepseek-coder'],
 
   async generate(ctx, prompt, opts, config) {
     const apiKey = ctx.secret('DEEPSEEK_API_KEY');
     if (!apiKey) throw new Error('DEEPSEEK_API_KEY not in vault');
     const model = opts.model ?? 'deepseek-chat';
-    ctx.log(`deepseek · model=${model} · ${prompt.length} chars in`);
+    ctx.log(`${DeepSeek_LOWER} · model=${model} · ${prompt.length} chars in`);
     if (ctx.dryRun) return { text: '[dry-run]', model };
 
     const messages: Array<{ role: string; content: string }> = [];
     if (opts.system) messages.push({ role: 'system', content: opts.system });
     messages.push({ role: 'user', content: prompt });
 
-    const res = await fetch(chatCompletionsUrl(config.baseUrl), {
+    const headers: Record<string, string> = {
+      authorization: `Bearer ${apiKey}`,
+      'content-type': 'application/json',
+    };
+
+    const res = await fetch(`${config.baseUrl ?? DEFAULT_BASE}/v1/chat/completions`, {
       method: 'POST',
-      headers: {
-        authorization: `Bearer ${apiKey}`,
-        'content-type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         model,
         messages,
-        ...(opts.maxTokens !== undefined ? { max_tokens: opts.maxTokens } : {}),
-        ...(opts.temperature !== undefined ? { temperature: opts.temperature } : {}),
+        ... (opts.maxTokens !== undefined ? { max_tokens: opts.maxTokens } : {}),
+        ... (opts.temperature !== undefined ? { temperature: opts.temperature } : {}),
         ...opts.extra,
       }),
     });
-    if (!res.ok) throw new Error(`DeepSeek ${res.status}: ${redact(await res.text(), apiKey).slice(0, 200)}`);
+    if (!res.ok) throw new Error(`${DeepSeek} ${res.status}: ${(await res.text()).slice(0, 200)}`);
     const data = (await res.json()) as {
       choices: Array<{ message?: { content?: string } }>;
       model: string;
@@ -59,14 +53,11 @@ export default defineAi<Config>({
     };
   },
 
-  setup: tokenSetup<Config>({
+  setup: tokenSetup({
     secretKey: 'DEEPSEEK_API_KEY',
     label: 'DeepSeek',
-    vendorDocUrl: 'https://platform.deepseek.com',
-    steps: [
-      'Sign in at https://platform.deepseek.com and create an API key',
-      'Copy the key — usually shown once',
-      'Paste below; sh1pt encrypts it in the vault',
-    ],
+    vendorDocUrl: 'https://platform.deepseek.com/',
+    steps: ['Create account on DeepSeek', 'Generate API Key', 'Paste below'],
+    fields: [],
   }),
 });

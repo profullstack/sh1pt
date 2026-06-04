@@ -159,8 +159,40 @@ stackCmd
 stackCmd
   .command('detect')
   .description('Auto-detect stack from project files (package.json / pyproject.toml / Cargo.toml / …)')
-  .action(() => {
-    console.log(kleur.dim('[stub] stack detect — look for package.json, pyproject.toml, Cargo.toml, *.csproj, CMakeLists.txt'));
+  .option('--cwd <path>', 'directory to scan', process.cwd())
+  .action(async (opts: { cwd: string }) => {
+    const { existsSync, readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const cwd = opts.cwd;
+    console.log(kleur.dim(`Scanning: ${cwd}`));
+    const checks = [
+      { file: 'package.json', stack: 'node', label: 'Node.js / TypeScript' },
+      { file: 'bun.lock', stack: 'bun', label: 'Bun' },
+      { file: 'pyproject.toml', stack: 'python', label: 'Python' },
+      { file: 'Cargo.toml', stack: 'rust', label: 'Rust' },
+      { file: '*.csproj', stack: 'dotnet', label: '.NET' },
+      { file: 'CMakeLists.txt', stack: 'cpp', label: 'C++' },
+    ];
+    for (const check of checks) {
+      if (check.file.includes("*")) {
+        const { readdirSync } = await import("node:fs");
+        try {
+          const files = readdirSync(cwd);
+          if (files.some(f => f.endsWith(check.file.slice(1)))) {
+            console.log(`  ${kleur.green("●")} ${kleur.bold(check.label)}  ${kleur.dim("(" + check.file + ")")}`);
+            return;
+          }
+        } catch {}
+      } else {
+        const fullPath = join(cwd, check.file);
+        if (existsSync(fullPath)) {
+          console.log(`  ${kleur.green("●")} ${kleur.bold(check.label)}  ${kleur.dim("(" + check.file + ")")}`);
+          return;
+        }
+      }
+    }
+    console.log(`  ${kleur.yellow("○")} No supported stack detected. Run 'sh1pt config stack set' to pick one.`);
+  });
   });
 
 // ------ vcs (git / github / gitlab / gitea) -----------------------------
@@ -194,12 +226,37 @@ vcsCmd
     console.log(kleur.green(`✓ vcs set to ${pick}`));
   });
 
-vcsCmd
   .command('auth')
   .description('Walk through setting the right token in the vault (GITHUB_TOKEN / GITLAB_TOKEN / GITEA_TOKEN)')
   .option('--provider <id>', 'vcs-github | vcs-gitlab | vcs-gitea')
-  .action((opts: { provider?: string }) => {
-    console.log(kleur.cyan(`[stub] vcs auth · ${opts.provider ?? 'current'} — prompt for token and write to vault`));
+  .action(async (opts: { provider?: string }) => {
+    const { setSecretInLocal } = await import("../local-vault.js");
+    let provider = opts.provider;
+    if (!provider) {
+      const resp = await prompts({
+        type: 'select',
+        name: 'p',
+        message: 'VCS provider?',
+        choices: [
+          { title: 'GitHub', description: 'github.com — GITHUB_TOKEN', value: 'vcs-github' },
+          { title: 'GitLab', description: 'gitlab.com — GITLAB_TOKEN', value: 'vcs-gitlab' },
+          { title: 'Gitea', description: 'codeberg.org etc — GITEA_TOKEN', value: 'vcs-gitea' },
+        ],
+        initial: 0,
+      });
+      provider = resp.p;
+      if (!provider) return;
+    }
+    const envVar = provider === 'vcs-github' ? 'GITHUB_TOKEN' : provider === 'vcs-gitlab' ? 'GITLAB_TOKEN' : 'GITEA_TOKEN';
+    const hasExisting = process.env[envVar];
+    if (hasExisting) {
+      const overwrite = await prompts({ type: 'confirm', name: 'v', message: `${envVar} is set in env. Overwrite vault copy?`, initial: false });
+      if (!overwrite.v) { console.log(kleur.dim(`Using environment ${envVar}`)); return; }
+    }
+    const tokenResp = await prompts({ type: 'password', name: 'v', message: `Enter your ${envVar} token:` });
+    if (!tokenResp.v) { console.log(kleur.yellow("No token entered, aborted")); return; }
+    await setSecretInLocal(envVar, tokenResp.v);
+    console.log(kleur.green(`✓ ${envVar} saved to local vault`));
   });
 
 vcsCmd

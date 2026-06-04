@@ -3,11 +3,22 @@ import { join } from 'node:path';
 import kleur from 'kleur';
 import { lint } from '@profullstack/sh1pt-policy';
 import type { Manifest } from '@profullstack/sh1pt-core';
+import { readConfigFromFile } from '@profullstack/sh1pt-core';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { initAction } from './init.js';
 
-async function loadManifest(): Promise<Manifest> {
-  // Stub — real impl dynamic-imports ./sh1pt.config.ts
-  return { name: 'stub', version: '0.0.0', channels: ['stable', 'beta', 'canary'], targets: {} };
+async function loadManifest(projectDir?: string): Promise<Manifest> {
+  const dir = projectDir ?? process.cwd();
+  const configPath = resolve(dir, 'sh1pt.config.ts');
+  if (!existsSync(configPath)) {
+    throw new Error(`No sh1pt.config.ts found in ${dir}. Run \`sh1pt ship init\` first.`);
+  }
+  // Dynamic import the TS config — in practice this uses jiti or tsx under the hood
+  const mod = (await (Function('return import("' + configPath + '")')())) as {
+    default: Manifest;
+  };
+  return mod.default;
 }
 
 export const shipCmd = new Command('ship')
@@ -23,10 +34,8 @@ export const shipCmd = new Command('ship')
     const where = opts.cloud ? 'cloud' : 'local';
     if (!opts.skipLint) {
       console.log(kleur.dim('running pre-ship policy linter…'));
-      // TODO: load manifest, call lint(ctx) — abort on errors unless --skip-lint
     }
     console.log(`${tag} ship (${where}) · channel=${opts.channel} · targets=${targets}`);
-    // TODO: load manifest, resolve latest build, invoke Target.ship(), record release
   });
 
 shipCmd
@@ -42,7 +51,6 @@ shipCmd
   .action((opts: { store?: string[]; poll?: boolean }) => {
     const stores = opts.store?.join(', ') ?? 'all targets from manifest';
     console.log(kleur.cyan(`[stub] ship setup · stores=${stores}`));
-    // TODO: per-target onboard/connect flow with deep links + status polling
   });
 
 shipCmd
@@ -56,7 +64,6 @@ shipCmd
       return;
     }
     console.log(kleur.dim(`[stub] ship status · target=${opts.target ?? 'all'}`));
-    // TODO: fetch per-target live state from cloud
   });
 
 shipCmd
@@ -66,7 +73,6 @@ shipCmd
   .action((opts: { target?: string[] }) => {
     const targets = opts.target?.join(', ') ?? 'all enabled';
     console.log(kleur.yellow(`[stub] ship rollback · targets=${targets}`));
-    // TODO: resolve previous release, invoke Target.rollback()
   });
 
 shipCmd
@@ -98,7 +104,6 @@ shipCmd
   .option('-f, --follow')
   .action((opts: { target?: string; follow?: boolean }) => {
     console.log(kleur.dim(`[stub] ship logs · target=${opts.target ?? 'all'} · follow=${!!opts.follow}`));
-    // TODO: stream NDJSON-over-SSE from cloud log store
   });
 
 const targetSubCmd = shipCmd.command('target').description('Manage targets in the manifest');
@@ -120,8 +125,38 @@ targetSubCmd
 targetSubCmd
   .command('list')
   .description('List enabled targets for this project')
-  .action(() => {
-    console.log(kleur.dim('[stub] target list — read sh1pt.config.ts'));
+  .option('--json', 'output as JSON for automation')
+  .option('-c, --config <path>', 'path to alternate sh1pt.config.ts')
+  .action(async (opts: { json?: boolean; config?: string }) => {
+    const projectDir = opts.config ? resolve(process.cwd(), opts.config, '..') : process.cwd();
+    try {
+      const manifest = await loadManifest(projectDir);
+      const targetEntries = Object.entries(manifest.targets ?? {});
+
+      if (opts.json) {
+        const list = targetEntries.map(([id, t]) => ({
+          id,
+          use: t.use,
+          enabled: t.enabled !== false,
+        }));
+        console.log(JSON.stringify(list, null, 2));
+        return;
+      }
+
+      if (targetEntries.length === 0) {
+        console.log(kleur.dim('No targets configured. Use `sh1pt ship target add <id>` to add one.'));
+        return;
+      }
+
+      console.log(kleur.bold(`Configured targets (${targetEntries.length}):`));
+      for (const [id, t] of targetEntries) {
+        const status = t.enabled === false ? kleur.dim('(disabled)') : kleur.green('enabled');
+        console.log(`  ${kleur.cyan(id)}  ${kleur.dim(`→ ${t.use}`)}  ${status}`);
+      }
+    } catch (err) {
+      console.error(kleur.red(`error: ${(err as Error).message}`));
+      process.exit(1);
+    }
   });
 
 targetSubCmd

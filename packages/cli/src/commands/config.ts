@@ -182,7 +182,7 @@ stackCmd
             console.log(`  ${kleur.green("●")} ${kleur.bold(check.label)}  ${kleur.dim("(" + check.file + ")")}`);
             return;
           }
-        } catch {}
+        } catch { console.error(kleur.dim(`[debug] could not scan ${check.file}`)); }
       } else {
         const fullPath = join(cwd, check.file);
         if (existsSync(fullPath)) {
@@ -247,7 +247,8 @@ vcsCmd
       provider = resp.p;
       if (!provider) return;
     }
-    const envVar = provider === 'vcs-github' ? 'GITHUB_TOKEN' : provider === 'vcs-gitlab' ? 'GITLAB_TOKEN' : 'GITEA_TOKEN';
+    const envVar = provider === 'vcs-github' ? 'GITHUB_TOKEN' : provider === 'vcs-gitlab' ? 'GITLAB_TOKEN' : provider === 'vcs-gitea' ? 'GITEA_TOKEN' : null;
+    if (envVar === null) { console.error(kleur.red(`Unknown provider: "${provider}". Expected vcs-github | vcs-gitlab | vcs-gitea`)); process.exit(1); }
     console.log(kleur.dim(`Provider: ${provider}, Token env: ${envVar}`));
     const hasExisting = process.env[envVar];
     if (hasExisting) {

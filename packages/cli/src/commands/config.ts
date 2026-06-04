@@ -158,16 +158,16 @@ stackCmd
 
 stackCmd
   .command('detect')
-  .description('Auto-detect stack from project files (package.json / pyproject.toml / Cargo.toml / …)')
+  .description('Auto-detect stack from project files (package.json / bun.lock / pyproject.toml / Cargo.toml / …)')
   .option('--cwd <path>', 'directory to scan', process.cwd())
   .action(async (opts: { cwd: string }) => {
-    const { existsSync, readFileSync } = await import("node:fs");
+    const { existsSync } = await import("node:fs");
     const { join } = await import("node:path");
     const cwd = opts.cwd;
     console.log(kleur.dim(`Scanning: ${cwd}`));
     const checks = [
-      { file: 'package.json', stack: 'node', label: 'Node.js / TypeScript' },
       { file: 'bun.lock', stack: 'bun', label: 'Bun' },
+      { file: 'package.json', stack: 'node', label: 'Node.js / TypeScript' },
       { file: 'pyproject.toml', stack: 'python', label: 'Python' },
       { file: 'Cargo.toml', stack: 'rust', label: 'Rust' },
       { file: '*.csproj', stack: 'dotnet', label: '.NET' },
@@ -192,7 +192,6 @@ stackCmd
       }
     }
     console.log(`  ${kleur.yellow("○")} No supported stack detected. Run 'sh1pt config stack set' to pick one.`);
-  });
   });
 
 // ------ vcs (git / github / gitlab / gitea) -----------------------------
@@ -226,6 +225,7 @@ vcsCmd
     console.log(kleur.green(`✓ vcs set to ${pick}`));
   });
 
+vcsCmd
   .command('auth')
   .description('Walk through setting the right token in the vault (GITHUB_TOKEN / GITLAB_TOKEN / GITEA_TOKEN)')
   .option('--provider <id>', 'vcs-github | vcs-gitlab | vcs-gitea')
@@ -248,13 +248,14 @@ vcsCmd
       if (!provider) return;
     }
     const envVar = provider === 'vcs-github' ? 'GITHUB_TOKEN' : provider === 'vcs-gitlab' ? 'GITLAB_TOKEN' : 'GITEA_TOKEN';
+    console.log(kleur.dim(`Provider: ${provider}, Token env: ${envVar}`));
     const hasExisting = process.env[envVar];
     if (hasExisting) {
-      const overwrite = await prompts({ type: 'confirm', name: 'v', message: `${envVar} is set in env. Overwrite vault copy?`, initial: false });
+      const overwrite = await prompts({ type: 'confirm', name: 'v', message: `${envVar} is set in env. Save to vault also?`, initial: true });
       if (!overwrite.v) { console.log(kleur.dim(`Using environment ${envVar}`)); return; }
     }
-    const tokenResp = await prompts({ type: 'password', name: 'v', message: `Enter your ${envVar} token:` });
-    if (!tokenResp.v) { console.log(kleur.yellow("No token entered, aborted")); return; }
+    const tokenResp = await prompts({ type: 'password', name: 'v', message: `Enter ${envVar} token:` });
+    if (!tokenResp.v) { console.log(kleur.yellow("No token entered")); return; }
     await setSecretInLocal(envVar, tokenResp.v);
     console.log(kleur.green(`✓ ${envVar} saved to local vault`));
   });

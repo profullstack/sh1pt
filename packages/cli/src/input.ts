@@ -88,6 +88,8 @@ function isForgeRepoUrl(u: string): boolean {
  *   https://github.com/foo/bar?tab=readme#install → https://github.com/foo/bar
  *   https://github.com/foo/bar.git?ref=main        → https://github.com/foo/bar.git
  *   https://github.com/foo/bar.git#README          → https://github.com/foo/bar.git
+*   ssh://git@github.com/org/repo?query         → ssh://git@github.com/org/repo
+  *   git@github.com:org/repo?tab=readme          → git@github.com:org/repo
  */
 function normalizeGitUrl(u: string): string {
   // Strip query string and fragment — they are browser artefacts on clone URLs.

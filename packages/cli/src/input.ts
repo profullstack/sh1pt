@@ -33,7 +33,7 @@ export function resolveInput(raw: string): ResolvedInput {
 
   // 1) SSH git urls: git@host:path or ssh://git@host/path
   if (/^git@[^:]+:/.test(input) || /^ssh:\/\//.test(input)) {
-    return { kind: 'git', raw, value: input, inferredName: repoNameFromGit(input) };
+    return { kind: 'git', raw, value: normalizeGitUrl(input), inferredName: repoNameFromGit(input) };
   }
 
   // 2) Http(s) git urls: *.git, github.com/foo/bar, gitlab.com/foo/bar,

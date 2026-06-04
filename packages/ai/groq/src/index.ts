@@ -1,34 +1,25 @@
 import { defineAi, tokenSetup } from '@profullstack/sh1pt-core';
 
+// Groq Chat Completions. Compatible with any Groq-protocol server
+// (Groq, Together, vLLM) via baseUrl override — though provider-specific
+// adapters are usually a better fit when limits/pricing differ.
 interface Config {
   baseUrl?: string;
+  organization?: string;
 }
 
-const DEFAULT_BASE = 'https://api.groq.com/openai';
-
-function chatCompletionsUrl(baseUrl?: string): string {
-  return `${(baseUrl ?? DEFAULT_BASE).replace(/\/+$/, '')}/v1/chat/completions`;
-}
-
-function redact(value: string, apiKey: string): string {
-  return apiKey ? value.split(apiKey).join('[redacted]') : value;
-}
+const DEFAULT_BASE = 'https://api.groq.com';
 
 export default defineAi<Config>({
   id: 'ai-groq',
   label: 'Groq',
-  defaultModel: 'llama-3.3-70b-versatile',
-  models: [
-    'llama-3.3-70b-versatile',
-    'llama-3.1-8b-instant',
-    'mixtral-8x7b-32768',
-    'deepseek-r1-distill-llama-70b',
-  ],
+  defaultModel: 'llama3-70b-8192',
+  models: ['llama3-70b-8192', 'llama3-70b-8192-mini', 'o1', 'o1-mini', 'o3-mini'],
 
   async generate(ctx, prompt, opts, config) {
     const apiKey = ctx.secret('GROQ_API_KEY');
     if (!apiKey) throw new Error('GROQ_API_KEY not in vault');
-    const model = opts.model ?? 'llama-3.3-70b-versatile';
+    const model = opts.model ?? 'llama3-70b-8192';
     ctx.log(`groq · model=${model} · ${prompt.length} chars in`);
     if (ctx.dryRun) return { text: '[dry-run]', model };
 
@@ -36,12 +27,15 @@ export default defineAi<Config>({
     if (opts.system) messages.push({ role: 'system', content: opts.system });
     messages.push({ role: 'user', content: prompt });
 
-    const res = await fetch(chatCompletionsUrl(config.baseUrl), {
+    const headers: Record<string, string> = {
+      authorization: `Bearer ${apiKey}`,
+      'content-type': 'application/json',
+    };
+    if (config.organization) headers['groq-organization'] = config.organization;
+
+    const res = await fetch(`${config.baseUrl ?? DEFAULT_BASE}/v1/chat/completions`, {
       method: 'POST',
-      headers: {
-        authorization: `Bearer ${apiKey}`,
-        'content-type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         model,
         messages,
@@ -50,7 +44,7 @@ export default defineAi<Config>({
         ...opts.extra,
       }),
     });
-    if (!res.ok) throw new Error(`Groq ${res.status}: ${redact(await res.text(), apiKey).slice(0, 200)}`);
+    if (!res.ok) throw new Error(`Groq ${res.status}: ${(await res.text()).slice(0, 200)}`);
     const data = (await res.json()) as {
       choices: Array<{ message?: { content?: string } }>;
       model: string;
@@ -64,14 +58,13 @@ export default defineAi<Config>({
     };
   },
 
-  setup: tokenSetup<Config>({
+  setup: tokenSetup({
     secretKey: 'GROQ_API_KEY',
     label: 'Groq',
-    vendorDocUrl: 'https://console.groq.com',
-    steps: [
-      'Sign in at https://console.groq.com and create an API key',
-      'Copy the key — usually shown once',
-      'Paste below; sh1pt encrypts it in the vault',
+    vendorDocUrl: 'https://platform.groq.com/api-keys',
+    steps: ['Go to Groq Console', 'Create API Key', 'Paste below'],
+    fields: [
+      { key: 'organization', message: 'Organization id (optional, leave blank if you only have one):' },
     ],
   }),
 });

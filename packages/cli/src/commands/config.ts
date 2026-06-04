@@ -257,7 +257,7 @@ vcsCmd
     }
     const tokenResp = await prompts({ type: 'password', name: 'v', message: `Enter ${envVar} token:` });
     if (!tokenResp.v) { console.log(kleur.yellow("No token entered")); return; }
-    await setSecretInLocal(envVar, tokenResp.v);
+    try { await setSecretInLocal(envVar, tokenResp.v); } catch (err: unknown) { console.error(kleur.red(`Failed to write vault: ${err instanceof Error ? err.message : err}`)); process.exit(1); }
     console.log(kleur.green(`✓ ${envVar} saved to local vault`));
   });
 

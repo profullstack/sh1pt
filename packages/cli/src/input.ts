@@ -54,11 +54,17 @@ export function resolveInput(raw: string): ResolvedInput {
   const abs = isAbsolute(input) ? input : resolve(process.cwd(), input);
   const ext = extname(abs).toLowerCase();
   const exists = existsSync(abs);
-  if (ext && DOC_EXTS.has(ext)) {
+  // A path qualifies as 'doc' when it has a recognised document extension
+  // AND is either a regular file or doesn't exist yet (future output path).
+  // Previously there were two branches: the first returned unconditionally
+  // on extension match, making the second (which correctly checked isFile())
+  // unreachable. This caused directories whose names end in a doc extension
+  // (e.g. './config.yaml/' used by consul-template or vault) to be
+  // classified as 'doc', leading to EISDIR when downstream code reads them.
+  const isDocLike = !!ext && DOC_EXTS.has(ext);
+  const isFileOrMissing = !exists || statSync(abs).isFile();
+  if (isDocLike && isFileOrMissing) {
     return { kind: 'doc', raw, value: abs, inferredName: baseNameWithoutExt(abs), exists };
-  }
-  if (exists && statSync(abs).isFile() && ext && DOC_EXTS.has(ext)) {
-    return { kind: 'doc', raw, value: abs, inferredName: baseNameWithoutExt(abs), exists: true };
   }
 
   // Default: treat as a local path (may or may not exist yet).

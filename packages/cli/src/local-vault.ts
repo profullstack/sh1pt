@@ -17,6 +17,22 @@ import { promises as fs, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { configDir } from '@profullstack/sh1pt-core';
 
+// In-process serialization lock for read-modify-write operations.
+// Prevents concurrent setSecretInLocal / deleteSecretFromLocal calls
+// (e.g. from Promise.all over multiple adapter setups) from silently
+// overwriting each other's writes. Each mutation acquires this before
+// reading, modifies the in-memory snapshot, writes, then releases.
+let _vaultLock: Promise<void> = Promise.resolve();
+function withVaultLock<T>(fn: () => Promise<T>): Promise<T> {
+  const next = _vaultLock.then(fn, fn);
+  // Reset the chain tail so the lock doesn't grow unbounded.
+  _vaultLock = next.then(
+    () => {},
+    () => {},
+  );
+  return next;
+}
+
 const VAULT_VERSION = 1;
 
 interface LocalVault {
@@ -76,7 +92,9 @@ async function readVault(): Promise<LocalVault> {
 async function writeVault(v: LocalVault): Promise<void> {
   const file = localVaultPath();
   await fs.mkdir(path.dirname(file), { recursive: true, mode: 0o700 });
-  const tmp = `${file}.tmp`;
+  // Include pid + a random suffix so concurrent writers never share a tmp
+  // filename and stomp each other's in-progress write.
+  const tmp = `${file}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
   await fs.writeFile(tmp, JSON.stringify(v, null, 2) + '\n', { mode: 0o600 });
   await fs.rename(tmp, file);
   // rename preserves the source mode, but be explicit if the destination
@@ -85,9 +103,14 @@ async function writeVault(v: LocalVault): Promise<void> {
 }
 
 export async function setSecretInLocal(key: string, value: string): Promise<void> {
-  const v = await readVault();
-  v.secrets[key] = value;
-  await writeVault(v);
+  // Serialize through the in-process lock to prevent concurrent
+  // read-modify-write races (e.g. Promise.all over multiple adapter setups)
+  // from silently dropping each other's writes.
+  return withVaultLock(async () => {
+    const v = await readVault();
+    v.secrets[key] = value;
+    await writeVault(v);
+  });
 }
 
 export async function getSecretFromLocal(key: string): Promise<string | undefined> {
@@ -96,11 +119,13 @@ export async function getSecretFromLocal(key: string): Promise<string | undefine
 }
 
 export async function deleteSecretFromLocal(key: string): Promise<boolean> {
-  const v = await readVault();
-  if (!(key in v.secrets)) return false;
-  delete v.secrets[key];
-  await writeVault(v);
-  return true;
+  return withVaultLock(async () => {
+    const v = await readVault();
+    if (!(key in v.secrets)) return false;
+    delete v.secrets[key];
+    await writeVault(v);
+    return true;
+  });
 }
 
 export async function listSecretsLocal(): Promise<Array<{ key: string }>> {

@@ -184,6 +184,21 @@ function verifyStripeSignature(rawBody: string, header: string, secret: string):
     throw new Error('Stripe-Signature missing t or v1');
   }
 
+  // Reject replayed webhooks per Stripe's guidance:
+  // https://docs.stripe.com/webhooks/signatures#replay-prevention
+  const TOLERANCE_SECONDS = 300; // 5 minutes — matches Stripe's own SDK default
+  const ts = Number(timestamp);
+  if (!Number.isFinite(ts)) {
+    throw new Error('Stripe-Signature t is not numeric');
+  }
+  const skew = Math.abs(Math.floor(Date.now() / 1000) - ts);
+  if (skew > TOLERANCE_SECONDS) {
+    throw new Error(
+      `Stripe webhook timestamp ${ts} is outside the ${TOLERANCE_SECONDS}s tolerance (skew: ${skew}s). ` +
+      'Reject to prevent replay attacks.',
+    );
+  }
+
   const expected = createHmac('sha256', secret)
     .update(`${timestamp}.${rawBody}`)
     .digest('hex');

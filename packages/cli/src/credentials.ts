@@ -44,9 +44,18 @@ export async function readCredentials(): Promise<Credentials | null> {
 
 export async function writeCredentials(creds: Credentials): Promise<void> {
   const path = credentialsPath();
-  await fs.mkdir(dirname(path), { recursive: true });
-  // Mode 0600 — only the user can read.
-  await fs.writeFile(path, JSON.stringify(creds, null, 2), { encoding: 'utf8', mode: 0o600 });
+  // Mode 0o700 on the directory — match local-vault.ts writeVault pattern.
+  await fs.mkdir(dirname(path), { recursive: true, mode: 0o700 });
+  // Atomic write: write to a tmp file then rename, so a crash mid-write
+  // never leaves credentials.json truncated/corrupt. Mirrors writeVault() in
+  // local-vault.ts which holds equally sensitive data.
+  const tmp = `${path}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(creds, null, 2) + '\n', { encoding: 'utf8', mode: 0o600 });
+  await fs.rename(tmp, path);
+  // rename(2) preserves the source mode, but if the destination pre-existed
+  // at a looser mode (e.g. 0644 from an older sh1pt build), the resulting
+  // file keeps that loose mode. Explicitly tighten after rename.
+  await fs.chmod(path, 0o600).catch(() => {});
 }
 
 export async function clearCredentials(): Promise<void> {

@@ -126,7 +126,6 @@ describe('GitHub secrets provider', () => {
       { key: 'ORG_TOKEN', value: 'token' },
     ], {
       org: 'my-org',
-      visibility: 'selected',
       repos: ['repo-a', 'repo-b'],
     });
 
@@ -136,6 +135,26 @@ describe('GitHub secrets provider', () => {
       '--repos',
       'repo-a,repo-b',
     ]), expect.any(Object));
+  });
+
+  it('rejects conflicting organization visibility and repository selection options', async () => {
+    await expect(adapter.push({ secret: () => undefined, log: () => {} }, [
+      { key: 'ORG_TOKEN', value: 'token' },
+    ], {
+      org: 'my-org',
+      visibility: 'all',
+      repos: ['repo-a'],
+    })).rejects.toThrow('GitHub organization secrets cannot combine visibility with explicit repository selection');
+
+    await expect(adapter.push({ secret: () => undefined, log: () => {} }, [
+      { key: 'ORG_TOKEN', value: 'token' },
+    ], {
+      org: 'my-org',
+      visibility: 'private',
+      noReposSelected: true,
+    })).rejects.toThrow('GitHub organization secrets cannot combine visibility with explicit repository selection');
+
+    expect(execMock).not.toHaveBeenCalled();
   });
 
   it('supports repository restrictions for user secrets', async () => {

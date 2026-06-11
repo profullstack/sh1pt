@@ -59,6 +59,9 @@ function scopeVisibilityArgs(config: Config): string[] {
     return [];
   }
 
+  if (config.visibility && (config.noReposSelected || config.repos?.length)) {
+    throw new Error('GitHub organization secrets cannot combine visibility with explicit repository selection');
+  }
   if (config.noReposSelected) return ['--no-repos-selected'];
   if (config.repos?.length) return ['--repos', config.repos.join(',')];
   if (config.visibility) return ['--visibility', config.visibility];

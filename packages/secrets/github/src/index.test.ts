@@ -168,6 +168,8 @@ describe('GitHub secrets provider', () => {
     });
 
     expect(execMock).toHaveBeenCalledWith('gh', expect.arrayContaining([
+      '--app',
+      'codespaces',
       '--user',
       '--repos',
       'owner/repo',
@@ -181,6 +183,15 @@ describe('GitHub secrets provider', () => {
       user: true,
       noReposSelected: true,
     })).rejects.toThrow('GitHub user secrets do not support noReposSelected');
+
+    expect(execMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects non-Codespaces apps for user secrets', async () => {
+    await expect(adapter.pull({ secret: () => undefined, log: () => {} }, {
+      user: true,
+      app: 'actions',
+    })).rejects.toThrow('GitHub user secrets only support the Codespaces app');
 
     expect(execMock).not.toHaveBeenCalled();
   });

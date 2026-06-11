@@ -28,6 +28,12 @@ function text(value: string | undefined): string | undefined {
 }
 
 function app(config: Config): GitHubSecretApp {
+  if (config.user) {
+    if (config.app && config.app !== 'codespaces') {
+      throw new Error('GitHub user secrets only support the Codespaces app');
+    }
+    return 'codespaces';
+  }
   return config.app ?? 'actions';
 }
 

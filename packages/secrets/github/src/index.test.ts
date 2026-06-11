@@ -19,6 +19,19 @@ beforeEach(() => {
 });
 
 describe('GitHub secrets provider', () => {
+  it('checks GitHub CLI authentication before reporting a connection', async () => {
+    execMock.mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' });
+
+    await expect(adapter.connect({ secret: () => undefined, log: () => {} }, {
+      repo: 'owner/repo',
+    })).resolves.toEqual({ accountId: 'owner/repo' });
+
+    expect(execMock).toHaveBeenCalledWith('gh', [
+      'auth',
+      'status',
+    ], expect.objectContaining({ throwOnNonZero: true }));
+  });
+
   it('lists GitHub secret metadata without attempting to read values', async () => {
     execMock.mockResolvedValue({
       exitCode: 0,
@@ -47,6 +60,18 @@ describe('GitHub secrets provider', () => {
       '--repo',
       'owner/repo',
     ], expect.objectContaining({ throwOnNonZero: true }));
+  });
+
+  it('reports invalid GitHub CLI list output with an actionable error', async () => {
+    execMock.mockResolvedValue({
+      exitCode: 0,
+      stderr: '',
+      stdout: 'warning: authentication needs attention\n[]',
+    });
+
+    await expect(adapter.pull({ secret: () => undefined, log: () => {} }, {
+      repo: 'owner/repo',
+    })).rejects.toThrow('Unable to parse `gh secret list --json` output as JSON');
   });
 
   it('sets repository environment secrets from provided values or the sh1pt vault', async () => {
@@ -111,5 +136,33 @@ describe('GitHub secrets provider', () => {
       '--repos',
       'repo-a,repo-b',
     ]), expect.any(Object));
+  });
+
+  it('supports repository restrictions for user secrets', async () => {
+    execMock.mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' });
+
+    await adapter.push({ secret: () => undefined, log: () => {} }, [
+      { key: 'USER_TOKEN', value: 'token' },
+    ], {
+      user: true,
+      repos: ['owner/repo'],
+    });
+
+    expect(execMock).toHaveBeenCalledWith('gh', expect.arrayContaining([
+      '--user',
+      '--repos',
+      'owner/repo',
+    ]), expect.any(Object));
+  });
+
+  it('rejects organization-only visibility options for user secrets', async () => {
+    await expect(adapter.push({ secret: () => undefined, log: () => {} }, [
+      { key: 'USER_TOKEN', value: 'token' },
+    ], {
+      user: true,
+      noReposSelected: true,
+    })).rejects.toThrow('GitHub user secrets do not support noReposSelected');
+
+    expect(execMock).not.toHaveBeenCalled();
   });
 });

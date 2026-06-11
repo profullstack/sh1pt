@@ -45,8 +45,20 @@ function targetArgs(config: Config): string[] {
   return args;
 }
 
-function orgVisibilityArgs(config: Config): string[] {
+function scopeVisibilityArgs(config: Config): string[] {
   if (!text(config.org) && !config.user) return [];
+
+  if (config.user) {
+    if (config.noReposSelected) {
+      throw new Error('GitHub user secrets do not support noReposSelected; omit it or use repos to restrict access');
+    }
+    if (config.visibility) {
+      throw new Error('GitHub user secrets do not support visibility; use repos to restrict Codespaces access');
+    }
+    if (config.repos?.length) return ['--repos', config.repos.join(',')];
+    return [];
+  }
+
   if (config.noReposSelected) return ['--no-repos-selected'];
   if (config.repos?.length) return ['--repos', config.repos.join(',')];
   if (config.visibility) return ['--visibility', config.visibility];
@@ -64,7 +76,18 @@ function assertSecretKey(key: string): string {
 function parseSecretList(stdout: string): SecretRef[] {
   const body = stdout.trim();
   if (!body) return [];
-  const entries = JSON.parse(body) as GitHubSecretListEntry[];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(body);
+  } catch (error) {
+    throw new Error('Unable to parse `gh secret list --json` output as JSON. Run `gh auth status` and retry.', {
+      cause: error,
+    });
+  }
+  if (!Array.isArray(parsed)) {
+    throw new Error('Expected `gh secret list --json` to return a JSON array.');
+  }
+  const entries = parsed as GitHubSecretListEntry[];
   return entries.map((entry) => ({
     key: entry.name,
     path: [
@@ -82,6 +105,7 @@ export default defineSecretProvider<Config>({
   async connect(ctx, config) {
     const scope = text(config.repo) ?? text(config.org) ?? (config.user ? 'user' : 'current repository');
     ctx.log(`gh auth status · scope=${scope}`);
+    await exec('gh', ['auth', 'status'], { log: (message) => ctx.log(message), throwOnNonZero: true });
     return { accountId: scope };
   },
   async pull(ctx, config): Promise<SecretRef[]> {
@@ -99,7 +123,7 @@ export default defineSecretProvider<Config>({
     return parseSecretList(result.stdout);
   },
   async push(ctx, secrets, config) {
-    const commonArgs = ['secret', 'set', '--app', app(config), ...targetArgs(config), ...orgVisibilityArgs(config)];
+    const commonArgs = ['secret', 'set', '--app', app(config), ...targetArgs(config), ...scopeVisibilityArgs(config)];
     for (const secret of secrets) {
       const key = assertSecretKey(secret.key);
       const value = secret.value ?? ctx.secret(key);

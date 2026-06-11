@@ -43,6 +43,13 @@ function targetArgs(config: Config): string[] {
   const environment = text(config.environment);
   const org = text(config.org);
 
+  if (config.user && (repo || environment || org)) {
+    throw new Error('GitHub user secrets cannot be combined with repository, environment, or organization scope');
+  }
+  if (org && (repo || environment)) {
+    throw new Error('GitHub organization secrets cannot be combined with repository or environment scope');
+  }
+
   if (repo) args.push('--repo', repo);
   if (environment) args.push('--env', environment);
   if (org) args.push('--org', org);

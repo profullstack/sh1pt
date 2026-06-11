@@ -195,4 +195,20 @@ describe('GitHub secrets provider', () => {
 
     expect(execMock).not.toHaveBeenCalled();
   });
+
+  it('rejects mutually exclusive target scopes before calling gh', async () => {
+    await expect(adapter.pull({ secret: () => undefined, log: () => {} }, {
+      user: true,
+      repo: 'owner/repo',
+    })).rejects.toThrow('GitHub user secrets cannot be combined with repository, environment, or organization scope');
+
+    await expect(adapter.push({ secret: () => undefined, log: () => {} }, [
+      { key: 'ORG_TOKEN', value: 'token' },
+    ], {
+      org: 'my-org',
+      environment: 'production',
+    })).rejects.toThrow('GitHub organization secrets cannot be combined with repository or environment scope');
+
+    expect(execMock).not.toHaveBeenCalled();
+  });
 });

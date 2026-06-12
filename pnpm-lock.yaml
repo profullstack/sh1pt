@@ -1391,6 +1391,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/secrets/railway:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/security/snyk:
     dependencies:
       '@profullstack/sh1pt-core':

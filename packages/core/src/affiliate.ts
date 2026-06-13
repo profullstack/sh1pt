@@ -76,6 +76,19 @@ export function defineAffiliate<Config>(n: AffiliateNetwork<Config>): AffiliateN
   return autoSetup(n);
 }
 
+export function parseHttpUrl(value: string, label = 'URL'): URL {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(`${label} must be an absolute URL`);
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error(`${label} must use HTTP or HTTPS`);
+  }
+  return url;
+}
+
 const affiliateRegistry = new Map<string, AffiliateNetwork<any>>();
 
 export function registerAffiliateNetwork(n: AffiliateNetwork<any>): void {

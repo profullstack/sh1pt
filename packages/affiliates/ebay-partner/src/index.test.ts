@@ -78,6 +78,15 @@ describe('eBay Partner Network affiliate adapter', () => {
     );
   });
 
+  it('rejects non-HTTP destination URLs', async () => {
+    await expect(adapter.getTrackingLink?.(
+      ctx(),
+      '5338461150',
+      'javascript:alert(1)',
+      {},
+    )).rejects.toThrow('destinationUrl must use HTTP or HTTPS');
+  });
+
   it('aggregates Partner Reporting campaign metrics', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonTextResponse({
       Records: [

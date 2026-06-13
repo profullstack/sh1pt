@@ -83,6 +83,15 @@ describe('Sovrn Commerce affiliate adapter', () => {
       .rejects.toThrow('must be an absolute URL');
   });
 
+  it('rejects non-HTTP destination URLs', async () => {
+    await expect(adapter.getTrackingLink?.(
+      ctx(),
+      '9876543',
+      'mailto:test@example.com',
+      { apiKey: 'public-api-key' },
+    )).rejects.toThrow('destinationUrl must use HTTP or HTTPS');
+  });
+
   it('aggregates link report totals for stats', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
       data: [

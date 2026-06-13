@@ -1,4 +1,4 @@
-import { defineAffiliate, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
+import { defineAffiliate, parseHttpUrl, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
 
 interface Config {
   accountId?: string;
@@ -57,11 +57,7 @@ export default defineAffiliate<Config>({
   async getTrackingLink(ctx, programId, destinationUrl, config) {
     ctx.log(`flexoffers deeplink · advertiser=${programId}`);
     if (!destinationUrl) throw new Error('FlexOffers destinationUrl is required');
-    try {
-      new URL(destinationUrl);
-    } catch {
-      throw new Error('FlexOffers destinationUrl must be an absolute URL');
-    }
+    parseHttpUrl(destinationUrl, 'FlexOffers destinationUrl');
 
     if (config.useDeeplinkApi !== false) {
       const data = await flexoffersGet(ctx, config, '/deeplink', deeplinkQuery(programId, destinationUrl, config));

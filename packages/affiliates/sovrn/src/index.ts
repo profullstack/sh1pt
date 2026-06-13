@@ -1,4 +1,4 @@
-import { defineAffiliate, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
+import { defineAffiliate, parseHttpUrl, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
 
 interface Config {
   accountId?: string;
@@ -58,11 +58,7 @@ export default defineAffiliate<Config>({
     ctx.log(`sovrn tracking link · campaign=${programId}`);
     const key = commerceKey(ctx, config);
     if (!destinationUrl) throw new Error('Sovrn destinationUrl is required');
-    try {
-      new URL(destinationUrl);
-    } catch {
-      throw new Error('Sovrn destinationUrl must be an absolute URL');
-    }
+    parseHttpUrl(destinationUrl, 'Sovrn destinationUrl');
     const url = new URL(trimSlash(config.linkBaseUrl ?? DEFAULT_LINK_BASE));
     url.searchParams.set('key', key);
     url.searchParams.set('u', destinationUrl);

@@ -68,6 +68,15 @@ describe('Rakuten Advertising affiliate adapter', () => {
       .rejects.toThrow('must be an absolute URL');
   });
 
+  it('rejects non-HTTP destination URLs', async () => {
+    await expect(adapter.getTrackingLink?.(
+      ctx(),
+      '123',
+      'data:text/html,not-a-product',
+      {},
+    )).rejects.toThrow('destinationUrl must use HTTP or HTTPS');
+  });
+
   it('aggregates Events API rows for one advertiser', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
       transactions: [

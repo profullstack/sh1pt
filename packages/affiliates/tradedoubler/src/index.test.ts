@@ -72,6 +72,15 @@ describe('Tradedoubler affiliate adapter', () => {
       .rejects.toThrow('must be an absolute URL');
   });
 
+  it('rejects non-HTTP destination URLs', async () => {
+    await expect(adapter.getTrackingLink?.(
+      ctx(),
+      '41305',
+      'ftp://merchant.example/product',
+      { accountId: '2038177' },
+    )).rejects.toThrow('destinationUrl must use HTTP or HTTPS');
+  });
+
   it('uses matrix syntax to scope product-feed stats by program', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
       feeds: [

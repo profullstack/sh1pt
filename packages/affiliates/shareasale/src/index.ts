@@ -1,4 +1,4 @@
-import { defineAffiliate, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
+import { defineAffiliate, parseHttpUrl, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
 
 interface Config {
   accountId?: string;
@@ -39,11 +39,7 @@ export default defineAffiliate<Config>({
     ctx.log(`shareasale tracking link · merchant=${programId}`);
     const affiliateId = affiliateIdFor(ctx, config);
     if (!destinationUrl) throw new Error('ShareASale destinationUrl is required');
-    try {
-      new URL(destinationUrl);
-    } catch {
-      throw new Error('ShareASale destinationUrl must be an absolute URL');
-    }
+    parseHttpUrl(destinationUrl, 'ShareASale destinationUrl');
     const url = new URL(config.linkBaseUrl ?? DEFAULT_LINK_BASE);
     if (config.bannerId) url.searchParams.set('b', config.bannerId);
     url.searchParams.set('u', affiliateId);

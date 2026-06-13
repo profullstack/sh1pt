@@ -1,4 +1,4 @@
-import { defineAffiliate, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
+import { defineAffiliate, parseHttpUrl, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
 
 interface Config {
   accountId?: string;
@@ -48,12 +48,7 @@ export default defineAffiliate<Config>({
     if (!campaignId) throw new Error('eBay Partner campaignId is required to build tracking links');
     if (!destinationUrl) throw new Error('eBay Partner destinationUrl is required to build tracking links');
 
-    let url: URL;
-    try {
-      url = new URL(destinationUrl);
-    } catch {
-      throw new Error('eBay Partner destinationUrl must be an absolute URL');
-    }
+    const url = parseHttpUrl(destinationUrl, 'eBay Partner destinationUrl');
 
     url.searchParams.set('mkevt', config.eventType ?? DEFAULT_EVENT_TYPE);
     url.searchParams.set('mkcid', config.channelId ?? DEFAULT_CHANNEL_ID);

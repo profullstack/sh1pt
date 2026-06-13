@@ -100,6 +100,15 @@ describe('FlexOffers affiliate adapter', () => {
     )).rejects.toThrow('Domain ID is required');
   });
 
+  it('rejects non-HTTP destination URLs', async () => {
+    await expect(adapter.getTrackingLink?.(
+      ctx({}),
+      '171465',
+      'ftp://merchant.example/product',
+      { accountId: '177', useDeeplinkApi: false },
+    )).rejects.toThrow('destinationUrl must use HTTP or HTTPS');
+  });
+
   it('loads sales stats across explicit statuses', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(jsonResponse({

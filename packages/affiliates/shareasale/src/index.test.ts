@@ -63,6 +63,11 @@ describe('ShareASale affiliate adapter', () => {
       .rejects.toThrow('must be an absolute URL');
   });
 
+  it('rejects non-HTTP destination URLs', async () => {
+    await expect(adapter.getTrackingLink?.(ctx(), '47', 'javascript:alert(1)', {}))
+      .rejects.toThrow('destinationUrl must use HTTP or HTTPS');
+  });
+
   it('aggregates JSON daily activity stats for one merchant', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
       data: [

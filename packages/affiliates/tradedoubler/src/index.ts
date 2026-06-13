@@ -1,4 +1,4 @@
-import { defineAffiliate, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
+import { defineAffiliate, parseHttpUrl, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
 
 interface Config {
   accountId?: string;
@@ -37,11 +37,7 @@ export default defineAffiliate<Config>({
     const publisherId = config.accountId ?? ctx.secret(PUBLISHER_ID_KEY);
     if (!publisherId) throw new Error('Tradedoubler accountId / publisher id is required');
     if (!destinationUrl) throw new Error('Tradedoubler destinationUrl is required');
-    try {
-      new URL(destinationUrl);
-    } catch {
-      throw new Error('Tradedoubler destinationUrl must be an absolute URL');
-    }
+    parseHttpUrl(destinationUrl, 'Tradedoubler destinationUrl');
     const parts = [
       matrixPart('a', publisherId),
       matrixPart('p', programId),

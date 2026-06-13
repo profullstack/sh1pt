@@ -1,4 +1,4 @@
-import { defineAffiliate, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
+import { defineAffiliate, parseHttpUrl, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
 
 interface Config {
   accountId?: string;
@@ -39,11 +39,7 @@ export default defineAffiliate<Config>({
     const affiliateId = config.accountId ?? ctx.secret(ENCRYPTED_ID_KEY);
     if (!affiliateId) throw new Error('Rakuten accountId / encrypted affiliate ID is required');
     if (!destinationUrl) throw new Error('Rakuten destinationUrl is required');
-    try {
-      new URL(destinationUrl);
-    } catch {
-      throw new Error('Rakuten destinationUrl must be an absolute URL');
-    }
+    parseHttpUrl(destinationUrl, 'Rakuten destinationUrl');
     const url = new URL(config.trackingBaseUrl ?? DEFAULT_TRACKING_BASE);
     url.searchParams.set('id', affiliateId);
     url.searchParams.set('mid', programId);

@@ -1,4 +1,4 @@
-import { Command } from 'commander';
+import { Command, InvalidArgumentError } from 'commander';
 import kleur from 'kleur';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -120,6 +120,30 @@ export function getNextId(instances: FleetEntry[]): string {
   return `inst-${String(max + 1).padStart(4, '0')}`;
 }
 
+export function parsePositiveInteger(value: string): number {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+    throw new InvalidArgumentError('must be a positive integer');
+  }
+  return parsed;
+}
+
+export function parseNonNegativeInteger(value: string): number {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+    throw new InvalidArgumentError('must be zero or a positive integer');
+  }
+  return parsed;
+}
+
+export function parsePositiveNumber(value: string): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new InvalidArgumentError('must be a positive finite number');
+  }
+  return parsed;
+}
+
 function pickIps(count: number): string[] {
   // Simulated IP allocation on RFC 1918 / 100.64.0.0/10 space
   const base = 100 + Math.floor(Math.random() * 55);
@@ -165,9 +189,9 @@ scaleCmd.addCommand(deployCmd);
 scaleCmd
   .command('up')
   .description('Buy more instances of the current SKU (via sh1pt deploy under the hood)')
-  .option('--instances <n>', 'how many to add', Number, 1)
+  .option('--instances <n>', 'how many to add', parsePositiveInteger, 1)
   .option('--provider <id>', 'which cloud provider to add to (default: same as existing fleet, or first in pricing table)')
-  .option('--max-hourly-price <usd>', 'abort if the new instances would push above this total/hr', Number)
+  .option('--max-hourly-price <usd>', 'abort if the new instances would push above this total/hr', parsePositiveNumber)
   .option('--dry-run', 'show the plan without modifying state')
   .action((opts: {
     instances: number;
@@ -262,7 +286,7 @@ scaleCmd
 scaleCmd
   .command('down')
   .description('Tear down instances (cheapest / least-healthy first)')
-  .option('--instances <n>', 'number of instances to destroy', Number, 1)
+  .option('--instances <n>', 'number of instances to destroy', parsePositiveInteger, 1)
   .option('--provider <id>', 'only remove instances from this cloud provider')
   .option('--dry-run', 'show the plan without modifying state')
   .option('--json', 'machine-readable output')
@@ -371,10 +395,10 @@ scaleCmd
 scaleCmd
   .command('auto')
   .description('Set auto-scale rules (sh1pt cloud polls metrics and runs scale up/down on your behalf)')
-  .option('--min <n>', 'minimum instances', Number, 1)
-  .option('--max <n>', 'maximum instances', Number, 10)
-  .option('--target-cpu <percent>', 'target CPU utilization to maintain', Number, 70)
-  .option('--cooldown <seconds>', 'minimum time between scale events', Number, 300)
+  .option('--min <n>', 'minimum instances', parseNonNegativeInteger, 1)
+  .option('--max <n>', 'maximum instances', parsePositiveInteger, 10)
+  .option('--target-cpu <percent>', 'target CPU utilization to maintain', parsePositiveInteger, 70)
+  .option('--cooldown <seconds>', 'minimum time between scale events', parsePositiveInteger, 300)
   .option('--status', 'show current auto-scale rules')
   .option('--dry-run', 'show the rules without saving')
   .option('--json', 'machine-readable output')
@@ -497,7 +521,7 @@ scaleCmd
   .description('Wire round-robin DNS so traffic spreads across the fleet')
   .requiredOption('--provider <id>', 'dns-porkbun | dns-cloudflare')
   .requiredOption('--domain <fqdn>', 'e.g. api.example.com')
-  .option('--ttl <seconds>', 'TTL for DNS records', Number, 60)
+  .option('--ttl <seconds>', 'TTL for DNS records', parsePositiveInteger, 60)
   .option('--proxied', 'cloudflare only — route through the CF edge (orange cloud)')
   .option('--dry-run', 'show the DNS records that would be created/updated')
   .option('--json', 'machine-readable output')
@@ -609,7 +633,7 @@ scaleCmd
   .description('Stage a new version across the fleet (canary / blue-green / rolling)')
   .requiredOption('--version <id>', 'version identifier to deploy (e.g. v2.1.0)')
   .option('--strategy <kind>', 'canary | blue-green | rolling', 'canary')
-  .option('--percent <n>', 'canary only — start at N% of traffic', Number, 5)
+  .option('--percent <n>', 'canary only — start at N% of traffic', parsePositiveInteger, 5)
   .option('--dry-run', 'show the plan without modifying state')
   .option('--status', 'show active rollouts and their state')
   .option('--rollback <id>', 'roll back a previously completed rollout by ID')

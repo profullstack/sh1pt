@@ -11,6 +11,9 @@ import {
   saveFleet,
   loadRollouts,
   saveRollouts,
+  parsePositiveInteger,
+  parseNonNegativeInteger,
+  parsePositiveNumber,
 } from './scale.js';
 
 // Helper to create a temp dir and override CREDS_FILE path
@@ -60,6 +63,35 @@ describe('getNextId', () => {
     ];
     expect(getNextId(instances)).toBe('inst-0001');
   });
+});
+
+describe('scale numeric option parsers', () => {
+  it('accepts valid integer counts and finite prices', () => {
+    expect(parsePositiveInteger('3')).toBe(3);
+    expect(parseNonNegativeInteger('0')).toBe(0);
+    expect(parsePositiveNumber('0.25')).toBe(0.25);
+  });
+
+  it.each(['nope', '1.5', '0', '-1', 'Infinity', 'NaN'])(
+    'rejects invalid positive integers: %s',
+    (value) => {
+      expect(() => parsePositiveInteger(value)).toThrow();
+    },
+  );
+
+  it.each(['nope', '1.5', '-1', 'Infinity', 'NaN'])(
+    'rejects invalid non-negative integers: %s',
+    (value) => {
+      expect(() => parseNonNegativeInteger(value)).toThrow();
+    },
+  );
+
+  it.each(['nope', '0', '-1', 'Infinity', 'NaN'])(
+    'rejects invalid positive finite numbers: %s',
+    (value) => {
+      expect(() => parsePositiveNumber(value)).toThrow();
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------

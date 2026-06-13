@@ -143,8 +143,13 @@ export default defineCloud<Config>({
       tags: tagsToEntries({ ...config.tags, ...tagsFromList(spec.tags) }),
     });
 
+    const instanceId = result.data.instance_ids[0];
+    if (!instanceId) {
+      throw new Error('lambda-labs launch succeeded but returned no instance ID');
+    }
+
     return {
-      id: result.data.instance_ids[0] ?? 'pending',
+      id: instanceId,
       kind: 'gpu',
       status: 'provisioning',
       createdAt: new Date().toISOString(),

@@ -144,6 +144,22 @@ describe('lambda-labs cloud adapter', () => {
     });
   });
 
+  it('throws when launch succeeds without an instance id', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.endsWith('/instance-types')) {
+        return new Response(JSON.stringify(sampleTypes), { status: 200 });
+      }
+      return new Response(JSON.stringify({ data: { instance_ids: [] } }), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(cloud.provision(
+      ctx,
+      { kind: 'gpu', gpu: { model: 'A10', count: 1 }, region: 'us-west-1', maxHourlyPrice: 1 },
+      { sshKeyNames: ['default-key'] },
+    )).rejects.toThrow('returned no instance ID');
+  });
+
   it('preserves Lambda instance timestamp fields in status responses', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
       data: {

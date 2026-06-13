@@ -366,7 +366,7 @@ export default function DocsPage() {
           <CommandBlock signature="sh1pt scale status" description="Current fleet: instance count, DNS records, load distribution." examples={[{ command: 'sh1pt scale status --json' }]} />
 
           <h3 style={{ marginTop: '2.5rem' }}>scale deploy — raw provisioning</h3>
-          <CommandBlock signature="sh1pt scale deploy setup" description="Connect cloud provider accounts (RunPod, DigitalOcean, Vultr, Hetzner, Atlantic.Net)." examples={[{ command: 'sh1pt scale deploy setup --provider cloud-runpod cloud-digitalocean' }]} />
+          <CommandBlock signature="sh1pt scale deploy setup" description="Connect cloud provider accounts (RunPod, Lambda Labs, DigitalOcean, Vultr, Hetzner, Atlantic.Net)." examples={[{ command: 'sh1pt scale deploy setup --provider cloud-runpod cloud-digitalocean' }]} />
           <CommandBlock
             signature="sh1pt scale deploy quote"
             description="Price-check a spec across every connected provider before provisioning."
@@ -634,7 +634,7 @@ export default function DocsPage() {
               ['bots', 'Chat bots', 'discord · slack · telegram · signal · matrix · whatsapp · twilio · telnyx · twitch · wechat · irc · phonenumbers · teams'],
               ['bridges', 'Cross-network chat bridges', 'discord · irc · mastodon · matrix · nostr · signal · slack · telegram'],
               ['captcha', 'CAPTCHA solvers (browser-mode fallback)', '2captcha · captchasolver'],
-              ['cloud', 'Raw-compute providers', 'atlantic · cloudflare · digitalocean · firebase · fly · hetzner · nvidia · railway · runpod · supabase · vultr'],
+              ['cloud', 'Raw-compute providers', 'atlantic · cloudflare · digitalocean · firebase · fly · hetzner · lambda-labs · nvidia · railway · runpod · supabase · vultr'],
               ['observability', 'Release tracking + telemetry', 'sentry'],
               ['dns', 'DNS providers', 'cloudflare · porkbun'],
               ['secrets', 'Secrets CLIs', 'doppler · dotenvx · 1password'],

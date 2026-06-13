@@ -222,6 +222,19 @@ describe('Linode cloud adapter', () => {
     );
   });
 
+  it('does not call the API when destroy is a dry run', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.destroy({
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
+      log: vi.fn(),
+      dryRun: true,
+    }, '123', {})).resolves.toBeUndefined();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('does not fall back to volume destroy on instance lifecycle errors', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,

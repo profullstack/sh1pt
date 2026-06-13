@@ -197,6 +197,7 @@ export default defineCloud<Config>({
 
   async destroy(ctx, instanceId) {
     ctx.log(`linode destroy - ${instanceId}`);
+    if (ctx.dryRun) return;
     try {
       await linodeRequest<unknown>(ctx, 'DELETE', `/linode/instances/${instanceId}`);
       return;

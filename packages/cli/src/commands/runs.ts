@@ -46,3 +46,16 @@ runsCmd
     console.log(kleur.dim(`[stub] run logs · id=${runId} · follow=${!!opts.follow}${target}`));
     // TODO: stream NDJSON-over-SSE from /v1/runs/:id/logs.
   });
+
+runsCmd
+  .command('artifacts <runId>')
+  .description('List artifacts produced by one cloud run.')
+  .option('--json', 'emit machine-readable JSON')
+  .action((runId: string, opts: { json?: boolean }) => {
+    if (opts.json) {
+      console.log(JSON.stringify({ id: runId, artifacts: [] }, null, 2));
+      return;
+    }
+    console.log(kleur.dim(`[stub] run artifacts · id=${runId}`));
+    // TODO: GET /v1/runs/:id/artifacts.
+  });

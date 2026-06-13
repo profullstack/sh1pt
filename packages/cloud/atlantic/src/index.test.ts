@@ -128,6 +128,32 @@ describe('Atlantic.Net cloud adapter', () => {
     expect(run?.get('Signature')).toBe(sign(run!));
   });
 
+  it('auto-selects the newest Ubuntu image when no image is provided', async () => {
+    const calls: URLSearchParams[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
+      const params = bodyParams(init);
+      calls.push(params);
+      if (params.get('Action') === 'describe-plan') return jsonResponse(describePlanResponse());
+      if (params.get('Action') === 'describe-image') return jsonResponse(describeImageResponse());
+      if (params.get('Action') === 'run-instance') return jsonResponse(runInstanceResponse());
+      return jsonResponse({ error: 'unexpected action' }, { ok: false, status: 400, statusText: 'Bad Request' });
+    }));
+
+    await adapter.provision({
+      ...secret,
+      dryRun: false,
+    }, {
+      kind: 'cpu-vps',
+      cpu: 2,
+      memory: 4,
+      region: 'USEAST2',
+    }, {});
+
+    const run = calls.find(call => call.get('Action') === 'run-instance');
+    expect(calls.map(call => call.get('Action'))).toContain('describe-image');
+    expect(run?.get('imageid')).toBe('ubuntu-24.04_64bit');
+  });
+
   it('enforces maxHourlyPrice before run-instance', async () => {
     await expect(adapter.provision({
       ...secret,

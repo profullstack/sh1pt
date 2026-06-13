@@ -353,9 +353,13 @@ async function pickDefaultImage(ctx: AtlanticContext, config: Config): Promise<s
 }
 
 function imageVersionScore(image: AtlanticImage): number {
-  const text = [image.version, image.displayname, image.display_name, image.imageid].filter(Boolean).join(' ');
-  const versions = [...text.matchAll(/\d+(?:\.\d+)?/g)].map(match => Number(match[0]));
-  return Math.max(0, ...versions);
+  for (const value of [image.version, image.displayname, image.display_name, image.imageid]) {
+    const text = value?.toLowerCase();
+    const version = text?.match(/ubuntu[-_\s]*(\d+(?:\.\d+)?)/)?.[1]
+      ?? text?.match(/\b(\d{2}\.\d{2})\b/)?.[1];
+    if (version) return Number(version);
+  }
+  return 0;
 }
 
 type AtlanticContext = {

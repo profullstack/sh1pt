@@ -65,6 +65,19 @@ describe('Impact affiliate adapter', () => {
     expect(request.method).toBe('POST');
   });
 
+  it('rejects non-HTTP destination URLs before calling Impact', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.getTrackingLink?.(
+      ctx(),
+      '10000',
+      'mailto:merchant@example.com',
+      { accountId: 'IRSid' },
+    )).rejects.toThrow('Impact destinationUrl must use HTTP or HTTPS');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('supports regular program-level links when no deeplink is provided', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonTextResponse({
       TrackingUrl: 'https://example.sjv.io/c/123456/98765/101010',

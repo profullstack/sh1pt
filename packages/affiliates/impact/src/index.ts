@@ -1,4 +1,4 @@
-import { defineAffiliate, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
+import { defineAffiliate, parseHttpUrl, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
 
 interface Config {
   accountId?: string;
@@ -36,6 +36,7 @@ export default defineAffiliate<Config>({
   async getTrackingLink(ctx, programId, destinationUrl, config) {
     ctx.log(`impact tracking link - program=${programId}`);
     const { accountSid } = requireAuth(ctx, config);
+    if (destinationUrl) parseHttpUrl(destinationUrl, 'Impact destinationUrl');
     const query = trackingLinkQuery(destinationUrl, config);
     const data = await impactRequest(
       ctx,

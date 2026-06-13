@@ -58,6 +58,19 @@ describe('CJ affiliate adapter', () => {
     expect(request.headers.authorization).toBe('Bearer cj-token');
   });
 
+  it('rejects non-HTTP destination URLs before calling Link Search', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.getTrackingLink?.(
+      ctx(),
+      '15058',
+      'data:text/html,hello',
+      { websiteId: '12345' },
+    )).rejects.toThrow('CJ destinationUrl must use HTTP or HTTPS');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('falls back to the first HTML href when Link Search omits clickUrl', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(xmlResponse(`
       <cj-api>

@@ -56,6 +56,19 @@ describe('admitad affiliate adapter', () => {
     );
   });
 
+  it('rejects non-HTTP destination URLs before calling Admitad', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.getTrackingLink?.(
+      ctx,
+      '234433',
+      'javascript:alert(1)',
+      { websiteId: '232236' },
+    )).rejects.toThrow('Admitad destinationUrl must use HTTP or HTTPS');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('aggregates publisher website and action statistics', async () => {
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(jsonResponse({

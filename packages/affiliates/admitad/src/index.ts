@@ -1,4 +1,4 @@
-import { defineAffiliate, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
+import { defineAffiliate, parseHttpUrl, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
 
 interface Config {
   accountId?: string;
@@ -41,6 +41,7 @@ export default defineAffiliate<Config>({
     ctx.log(`admitad deeplink · campaign=${programId}`);
     const websiteId = admitadWebsiteId(config);
     if (!websiteId) throw new Error('Admitad websiteId/accountId is required to generate deeplinks');
+    if (destinationUrl) parseHttpUrl(destinationUrl, 'Admitad destinationUrl');
 
     const query: Record<string, string | string[]> = { ulp: destinationUrl };
     for (const key of ['subid', 'subid1', 'subid2', 'subid3', 'subid4'] as const) {

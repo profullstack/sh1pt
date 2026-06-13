@@ -1,4 +1,4 @@
-import { defineAffiliate, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
+import { defineAffiliate, parseHttpUrl, tokenSetup, type AffiliateConnectContext } from '@profullstack/sh1pt-core';
 
 interface Config {
   accountId?: string;
@@ -33,6 +33,7 @@ export default defineAffiliate<Config>({
     ctx.log(`cj link search · advertiser=${programId}`);
     const websiteId = config.websiteId;
     if (!websiteId) throw new Error('CJ websiteId is required to generate publisher tracking links');
+    if (destinationUrl) parseHttpUrl(destinationUrl, 'CJ destinationUrl');
 
     const xml = await cjLinkSearch(ctx, config, {
       'website-id': websiteId,

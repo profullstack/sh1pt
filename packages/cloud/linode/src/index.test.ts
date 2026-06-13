@@ -174,6 +174,40 @@ describe('Linode cloud adapter', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('does not fall back to a default billable type when the requested region has no match', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({
+        data: [
+          {
+            id: 'g6-nanode-1',
+            label: 'Nanode 1 GB',
+            price: { hourly: 0.0075, monthly: 5 },
+            vcpus: 1,
+            memory: 1024,
+            disk: 25600,
+            transfer: 1000,
+            class: 'nanode',
+            region_availability: { 'us-east': 'unavailable' },
+          },
+        ],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.provision({
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : key === 'LINODE_ROOT_PASS' ? 'test-root-pass' : undefined,
+      log: vi.fn(),
+      dryRun: false,
+    }, {
+      kind: 'cpu-vps',
+      region: 'us-east',
+    }, {})).rejects.toThrow('linode: no matching type for kind=cpu-vps in us-east');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('fetches fresh type data for each quote', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({
@@ -236,6 +270,33 @@ describe('Linode cloud adapter', () => {
       secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
       log: vi.fn(),
     }, { kind: 'cpu-vps', region: 'us-east' }, {})).rejects.toThrow('Linode GET /linode/types?page_size=500 failed: 503 temporarily unavailable');
+  });
+
+  it('does not quote Linode as free when no type matches the requested region', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({
+        data: [
+          {
+            id: 'g6-nanode-1',
+            label: 'Nanode 1 GB',
+            price: { hourly: 0.0075, monthly: 5 },
+            vcpus: 1,
+            memory: 1024,
+            disk: 25600,
+            transfer: 1000,
+            class: 'nanode',
+            region_availability: { 'us-east': 'unavailable' },
+          },
+        ],
+      }),
+    }));
+
+    await expect(adapter.quote({
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
+      log: vi.fn(),
+    }, { kind: 'cpu-vps', region: 'us-east' }, {})).rejects.toThrow('linode: no matching type for kind=cpu-vps in us-east');
   });
 
   it('requests every page when listing instances and volumes', async () => {

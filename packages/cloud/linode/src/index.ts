@@ -116,7 +116,7 @@ export default defineCloud<Config>({
     const match = pickType(types, spec, region);
     if (!match) {
       ctx.log(`linode quote - no matching type for kind=${spec.kind} in ${region}`, 'warn');
-      return { hourly: 0, monthly: 0, currency: 'USD', provider: 'linode', sku: 'none', spot: false };
+      throw new Error(`linode: no matching type for kind=${spec.kind} in ${region}`);
     }
 
     return {
@@ -157,7 +157,11 @@ export default defineCloud<Config>({
       throw new Error(`linode: no matching type for kind=${spec.kind} in ${region} satisfies requested hardware constraints`);
     }
 
-    const typeId = match?.id ?? defaultType(spec.kind);
+    if (!match) {
+      throw new Error(`linode: no matching type for kind=${spec.kind} in ${region}`);
+    }
+
+    const typeId = match.id;
 
     const login = loginPayload(ctx, config);
     ctx.log(`linode provision - type=${typeId} region=${region} image=${spec.image ?? DEFAULT_IMAGE}`);
@@ -305,12 +309,6 @@ function volumeToInstance(volume: LinodeVolume): Instance {
     region: volume.region,
     tags: volume.tags,
   };
-}
-
-function defaultType(kind: InstanceSpec['kind']): string {
-  if (kind === 'gpu') return 'g1-gpu-rtx6000-1';
-  if (kind === 'bare-metal') return 'g6-dedicated-2';
-  return 'g6-nanode-1';
 }
 
 function hasHardwareConstraints(spec: InstanceSpec): boolean {

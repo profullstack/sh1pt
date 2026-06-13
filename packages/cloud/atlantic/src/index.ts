@@ -81,6 +81,7 @@ export default defineCloud<Config>({
     ctx.log('atlantic connect · verifying credentials...');
     await atlanticRequest(ctx, config, 'list-instances');
     ctx.log('atlantic connected');
+    // Atlantic.Net's Cloud API credential-check path does not expose a stable account id.
     return { accountId: 'atlantic-account' };
   },
 
@@ -443,7 +444,7 @@ function itemsFromSet<T>(set: unknown): T[] {
     if (value === undefined) continue;
     if (Array.isArray(value)) {
       values.push(...value as T[]);
-    } else if (key === 'item' || key.endsWith('item') || isRecord(value)) {
+    } else if (key === 'item' || key.endsWith('item')) {
       values.push(value as T);
     }
   }

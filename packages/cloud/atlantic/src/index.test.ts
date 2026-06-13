@@ -350,6 +350,9 @@ function listInstancesResponse() {
     Timestamp: 1,
     'list-instancesresponse': {
       instancesSet: {
+        metadata: {
+          total: '2',
+        },
         '1item': {
           InstanceId: '145607',
           rate_per_hr: '0.0341',

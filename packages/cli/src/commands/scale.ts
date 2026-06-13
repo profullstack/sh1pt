@@ -138,6 +138,7 @@ const DEFAULT_PRICING: Record<string, { label: string; hourly: number }> = {
   'cloud-digitalocean': { label: 'DigitalOcean (VPS)',  hourly: 0.007 },
   'cloud-vultr':        { label: 'Vultr (VPS)',          hourly: 0.007 },
   'cloud-hetzner':      { label: 'Hetzner Cloud (VPS)',  hourly: 0.005 },
+  'cloud-linode':       { label: 'Linode (VPS)',         hourly: 0.0075 },
   'cloud-atlantic':     { label: 'Atlantic.Net (VPS)',   hourly: 0.008 },
   'cloud-railway':      { label: 'Railway (hosting)',    hourly: 0.017 },
   'cloud-cloudflare':   { label: 'Cloudflare (Workers)', hourly: 0.0   },

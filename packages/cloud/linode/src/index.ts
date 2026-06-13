@@ -131,7 +131,7 @@ export default defineCloud<Config>({
 
   async provision(ctx, spec, config) {
     const region = spec.region ?? config.defaultRegion ?? DEFAULT_REGION;
-    const label = `sh1pt-${labelKind(spec.kind)}-${Date.now()}`;
+    const label = resourceLabel(spec.kind);
 
     if (ctx.dryRun) return { ...stubInstance('dry-run', 'provisioning', spec.kind), region };
 
@@ -320,6 +320,11 @@ function labelKind(kind: InstanceSpec['kind']): string {
   if (kind === 'bare-metal') return 'metal';
   if (kind === 'cpu-vps') return 'cpu';
   return kind;
+}
+
+function resourceLabel(kind: InstanceSpec['kind']): string {
+  const suffix = Math.random().toString(36).slice(2, 6).padEnd(4, '0');
+  return `sh1pt-${labelKind(kind)}-${Date.now().toString(36)}-${suffix}`;
 }
 
 function pickType(types: LinodeType[], spec: InstanceSpec, region: string): LinodeType | null {

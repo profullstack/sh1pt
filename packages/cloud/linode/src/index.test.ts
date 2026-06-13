@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import adapter from './index.js';
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
@@ -109,8 +110,45 @@ describe('Linode cloud adapter', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [, init] = fetchMock.mock.calls[0]!;
     const body = JSON.parse(init!.body as string);
-    expect(body.label).toMatch(/^sh1pt-bs-\d+$/);
+    expect(body.label).toMatch(/^sh1pt-bs-[a-z0-9]+-[a-z0-9]{4}$/);
     expect(body.label.length).toBeLessThanOrEqual(32);
+  });
+
+  it('varies generated labels for same-millisecond block storage creates', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(1_800_000_000_000);
+    vi.spyOn(Math, 'random')
+      .mockReturnValueOnce(0.111111)
+      .mockReturnValueOnce(0.222222);
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({
+        id: 456,
+        label: 'sh1pt-bs-test',
+        status: 'active',
+        size: 20,
+        region: 'us-east',
+        linode_id: null,
+        created: '2026-06-13T00:00:00',
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const ctx = {
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
+      log: vi.fn(),
+      dryRun: false,
+    };
+
+    await adapter.provision(ctx, { kind: 'block-storage', region: 'us-east' }, {});
+    await adapter.provision(ctx, { kind: 'block-storage', region: 'us-east' }, {});
+
+    const first = JSON.parse(fetchMock.mock.calls[0]![1]!.body as string).label;
+    const second = JSON.parse(fetchMock.mock.calls[1]![1]!.body as string).label;
+    expect(first).not.toEqual(second);
+    expect(first.length).toBeLessThanOrEqual(32);
+    expect(second.length).toBeLessThanOrEqual(32);
   });
 
   it('requires a login mechanism before non-dry-run image provisioning', async () => {

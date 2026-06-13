@@ -3,7 +3,6 @@ import { defineCloud, tokenSetup, type Instance, type InstanceSpec, type Quote }
 // Lambda Labs Cloud — GPU-first instances with public pricing metadata.
 // API docs: https://docs.lambda.ai/public-cloud/cloud-api/
 interface Config {
-  apiKey?: string;
   defaultRegion?: string;
   sshKeyNames?: string[];
   fileSystemNames?: string[];
@@ -46,6 +45,11 @@ interface LambdaInstance {
   name?: string;
   ip?: string;
   private_ip?: string;
+  created?: string;
+  created_at?: string;
+  launched_at?: string;
+  launch_time?: string;
+  started_at?: string;
   status: 'booting' | 'active' | 'unhealthy' | 'terminated' | 'terminating' | 'preempted';
   ssh_key_names: string[];
   file_system_names: string[];
@@ -120,6 +124,9 @@ export default defineCloud<Config>({
     if (!sshKeyNames?.length) {
       throw new Error('lambda-labs launch requires one SSH key name; pass spec.sshKeyIds or configure sshKeyNames');
     }
+    if (sshKeyNames.length !== 1) {
+      throw new Error('lambda-labs launch requires exactly one SSH key name');
+    }
 
     const region = spec.region ?? config.defaultRegion ?? match.regions_with_capacity_available[0]?.name ?? DEFAULT_REGION;
     const name = `sh1pt-${spec.kind}-${Date.now()}`;
@@ -128,7 +135,7 @@ export default defineCloud<Config>({
     const result = await lambdaRequest<DataResponse<LambdaLaunchResponse>>(ctx, 'POST', '/instance-operations/launch', {
       region_name: region,
       instance_type_name: match.instance_type.name,
-      ssh_key_names: sshKeyNames.slice(0, 1),
+      ssh_key_names: sshKeyNames,
       file_system_names: config.fileSystemNames,
       name,
       image: normalizeImage(spec.image ?? config.image),
@@ -202,7 +209,7 @@ function instanceToInstance(instance: LambdaInstance): Instance {
     active: 'running',
     unhealthy: 'failed',
     terminated: 'destroyed',
-    terminating: 'provisioning',
+    terminating: 'stopped',
     preempted: 'destroyed',
   };
 
@@ -212,7 +219,7 @@ function instanceToInstance(instance: LambdaInstance): Instance {
     status: statusMap[instance.status] ?? 'provisioning',
     publicIp: instance.ip,
     privateIp: instance.private_ip,
-    createdAt: new Date().toISOString(),
+    createdAt: instanceCreatedAt(instance),
     hourlyRate: instance.instance_type.price_cents_per_hour / 100,
     currency: 'USD',
     sku: instance.instance_type.name,
@@ -354,7 +361,15 @@ function normalizeImage(image: string | { id?: string; family?: string } | undef
 }
 
 function tagsFromList(tags: string[] | undefined): Record<string, string> {
-  return Object.fromEntries((tags ?? []).map((tag, index) => [`tag-${index + 1}`, tag]));
+  return Object.fromEntries((tags ?? []).map((tag, index) => {
+    const separator = tag.indexOf(':');
+    if (separator > 0) {
+      const key = tag.slice(0, separator).trim();
+      const value = tag.slice(separator + 1).trim();
+      if (key && value) return [key, value];
+    }
+    return [`tag-${index + 1}`, tag];
+  }));
 }
 
 function tagsToEntries(tags: Record<string, string>): Array<{ key: string; value: string }> | undefined {
@@ -367,6 +382,20 @@ function tagsToEntries(tags: Record<string, string>): Array<{ key: string; value
 function normalizeTagKey(key: string): string {
   const normalized = key.toLowerCase().replace(/[^a-z0-9-:]+/g, '-').slice(0, 55);
   return /^[a-z]/.test(normalized) ? normalized : `tag-${normalized}`.slice(0, 55);
+}
+
+function instanceCreatedAt(instance: LambdaInstance): string {
+  return firstIsoString(
+    instance.created_at,
+    instance.created,
+    instance.launched_at,
+    instance.launch_time,
+    instance.started_at,
+  ) ?? '1970-01-01T00:00:00.000Z';
+}
+
+function firstIsoString(...values: Array<string | undefined>): string | undefined {
+  return values.find((value) => value !== undefined && !Number.isNaN(Date.parse(value)));
 }
 
 function stripUndefined(value: unknown): unknown {

@@ -189,6 +189,110 @@ describe('Linode cloud adapter', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('falls back to volume destroy only when the instance is not found', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        text: async () => JSON.stringify({ errors: [{ reason: 'not found' }] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 204,
+        text: async () => '',
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.destroy({
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
+      log: vi.fn(),
+      dryRun: false,
+    }, '123', {})).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://api.linode.com/v4/linode/instances/123',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://api.linode.com/v4/volumes/123',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+  });
+
+  it('does not fall back to volume destroy on instance lifecycle errors', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      statusText: 'Conflict',
+      text: async () => JSON.stringify({ errors: [{ reason: 'instance is busy' }] }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.destroy({
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
+      log: vi.fn(),
+      dryRun: false,
+    }, '123', {})).rejects.toThrow('409 instance is busy');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to volume status only when the instance is not found', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        text: async () => JSON.stringify({ errors: [{ reason: 'not found' }] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({
+          id: 456,
+          label: 'sh1pt-volume',
+          status: 'active',
+          size: 20,
+          region: 'us-east',
+          linode_id: null,
+          created: '2026-06-13T00:00:00',
+          tags: ['sh1pt'],
+        }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.status({
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
+      log: vi.fn(),
+    }, '456', {})).resolves.toMatchObject({
+      id: '456',
+      kind: 'block-storage',
+      status: 'running',
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not fall back to volume status on transient instance errors', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      statusText: 'Service Unavailable',
+      text: async () => 'temporarily unavailable',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.status({
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
+      log: vi.fn(),
+    }, '456', {})).rejects.toThrow('503 temporarily unavailable');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('reports non-JSON API errors without parser noise', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: false,

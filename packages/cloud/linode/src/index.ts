@@ -204,9 +204,10 @@ export default defineCloud<Config>({
     try {
       await linodeRequest<unknown>(ctx, 'DELETE', `/linode/instances/${instanceId}`);
       return;
-    } catch {
-      await linodeRequest<unknown>(ctx, 'DELETE', `/volumes/${instanceId}`);
+    } catch (e) {
+      if (!isNotFound(e)) throw e;
     }
+    await linodeRequest<unknown>(ctx, 'DELETE', `/volumes/${instanceId}`);
   },
 
   async status(ctx, instanceId) {
@@ -214,10 +215,11 @@ export default defineCloud<Config>({
     try {
       const instance = await linodeRequest<LinodeInstance>(ctx, 'GET', `/linode/instances/${instanceId}`);
       return instanceToInstance(instance);
-    } catch {
-      const volume = await linodeRequest<LinodeVolume>(ctx, 'GET', `/volumes/${instanceId}`);
-      return volumeToInstance(volume);
+    } catch (e) {
+      if (!isNotFound(e)) throw e;
     }
+    const volume = await linodeRequest<LinodeVolume>(ctx, 'GET', `/volumes/${instanceId}`);
+    return volumeToInstance(volume);
   },
 
   setup: tokenSetup<Config>({
@@ -395,10 +397,25 @@ async function linodeRequest<T>(
   const data = parseJson(text);
 
   if (!response.ok) {
-    throw new Error(`Linode ${method} ${path} failed: ${response.status} ${extractErrorMessage(data, response.statusText || text)}`);
+    throw new LinodeApiError(method, path, response.status, extractErrorMessage(data, response.statusText || text));
   }
 
   return data as T;
+}
+
+class LinodeApiError extends Error {
+  constructor(
+    readonly method: string,
+    readonly path: string,
+    readonly status: number,
+    message: string,
+  ) {
+    super(`Linode ${method} ${path} failed: ${status} ${message}`);
+  }
+}
+
+function isNotFound(e: unknown): boolean {
+  return e instanceof LinodeApiError && e.status === 404;
 }
 
 function parseJson(text: string): unknown {

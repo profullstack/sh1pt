@@ -31,6 +31,7 @@ interface AtlanticPlan {
   rate_per_month?: string;
   plan_type?: string;
   platform?: string;
+  ostype?: string;
 }
 
 interface AtlanticImage {
@@ -108,11 +109,6 @@ export default defineCloud<Config>({
       throw new Error(`Atlantic.Net no matching ${spec.kind} plan found for provisioning`);
     }
 
-    const hourly = planHourly(match);
-    if (spec.maxHourlyPrice !== undefined && hourly > spec.maxHourlyPrice) {
-      throw new Error(`Atlantic.Net selected plan ${planName(match)} costs $${hourly}/hr, above maxHourlyPrice ${spec.maxHourlyPrice}`);
-    }
-
     if ((spec.sshKeyIds?.length ?? 0) > 1) {
       throw new Error('Atlantic.Net run-instance accepts one SSH key id; pass a single sshKeyIds value');
     }
@@ -145,7 +141,7 @@ export default defineCloud<Config>({
       status: 'provisioning',
       publicIp: record.ip_address,
       createdAt: new Date().toISOString(),
-      hourlyRate: hourly,
+      hourlyRate: planHourly(match),
       currency: 'USD',
       sku: planName(match),
       region,
@@ -308,8 +304,8 @@ function planStorageGb(plan: AtlanticPlan): number {
 }
 
 function platformMatches(plan: AtlanticPlan, platform: string): boolean {
-  const value = firstNonEmpty(plan.platform, plan.plan_type)?.toLowerCase();
-  return !value || value.includes(platform) || !value.includes('windows');
+  const value = firstNonEmpty(plan.platform, plan.ostype)?.toLowerCase();
+  return !value || value === platform || value.includes(platform);
 }
 
 function isBareMetal(plan: Pick<AtlanticPlan, 'plan_name' | 'name' | 'display_name' | 'plan_type'>): boolean {

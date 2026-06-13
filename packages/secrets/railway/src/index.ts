@@ -61,6 +61,17 @@ function assertSecretKey(key: string): string {
   return normalized;
 }
 
+function redactSecretArgError(error: unknown, key: string, value: string): Error {
+  const leakedArg = `${key}=${value}`;
+  const redactedArg = `${key}=<redacted>`;
+
+  if (error instanceof Error) {
+    return new Error(error.message.split(leakedArg).join(redactedArg));
+  }
+
+  return new Error(`railway variable set ${redactedArg} failed`);
+}
+
 export default defineSecretProvider<Config>({
   id: 'secrets-railway',
   label: 'Railway Variables',
@@ -91,10 +102,14 @@ export default defineSecretProvider<Config>({
         throw new Error(`No value provided for Railway variable ${key}`);
       }
       ctx.log(`railway ${commonArgs.join(' ')} ${key}=<redacted>`);
-      await exec('railway', [...commonArgs, `${key}=${value}`], {
-        log: (message) => ctx.log(message),
-        throwOnNonZero: true,
-      });
+      try {
+        await exec('railway', [...commonArgs, `${key}=${value}`], {
+          log: (message) => ctx.log(message),
+          throwOnNonZero: true,
+        });
+      } catch (error) {
+        throw redactSecretArgError(error, key, value);
+      }
     }
 
     return { count: secrets.length };

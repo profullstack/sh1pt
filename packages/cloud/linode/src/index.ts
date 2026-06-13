@@ -3,7 +3,6 @@ import { defineCloud, tokenSetup, type Instance, type InstanceSpec, type Quote }
 // Linode, now Akamai Cloud Computing. API v4 exposes public type
 // pricing and authenticated instance/volume management endpoints.
 interface Config {
-  apiToken?: string;
   defaultRegion?: string;
   authorizedKeys?: string[];
   authorizedUsers?: string[];
@@ -113,14 +112,7 @@ export default defineCloud<Config>({
       } satisfies Quote;
     }
 
-    let types: LinodeType[];
-    try {
-      types = await fetchTypes(ctx);
-    } catch (e) {
-      ctx.log(`linode quote - could not fetch types (${e instanceof Error ? e.message : String(e)})`, 'warn');
-      return { hourly: 0, monthly: 0, currency: 'USD', provider: 'linode', sku: 'unknown', spot: false };
-    }
-
+    const types = await fetchTypes(ctx);
     const match = pickType(types, spec, region);
     if (!match) {
       ctx.log(`linode quote - no matching type for kind=${spec.kind} in ${region}`, 'warn');

@@ -224,6 +224,20 @@ describe('Linode cloud adapter', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('does not quote Linode as free when type pricing cannot be fetched', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      statusText: 'Service Unavailable',
+      text: async () => 'temporarily unavailable',
+    }));
+
+    await expect(adapter.quote({
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
+      log: vi.fn(),
+    }, { kind: 'cpu-vps', region: 'us-east' }, {})).rejects.toThrow('Linode GET /linode/types?page_size=500 failed: 503 temporarily unavailable');
+  });
+
   it('requests every page when listing instances and volumes', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({

@@ -131,7 +131,7 @@ export default defineCloud<Config>({
 
   async provision(ctx, spec, config) {
     const region = spec.region ?? config.defaultRegion ?? DEFAULT_REGION;
-    const label = `sh1pt-${spec.kind}-${Date.now()}`;
+    const label = `sh1pt-${labelKind(spec.kind)}-${Date.now()}`;
 
     if (ctx.dryRun) return { ...stubInstance('dry-run', 'provisioning', spec.kind), region };
 
@@ -313,6 +313,13 @@ function volumeToInstance(volume: LinodeVolume): Instance {
 
 function hasHardwareConstraints(spec: InstanceSpec): boolean {
   return !!(spec.cpu || spec.memory || spec.storage || spec.gpu?.count);
+}
+
+function labelKind(kind: InstanceSpec['kind']): string {
+  if (kind === 'block-storage') return 'bs';
+  if (kind === 'bare-metal') return 'metal';
+  if (kind === 'cpu-vps') return 'cpu';
+  return kind;
 }
 
 function pickType(types: LinodeType[], spec: InstanceSpec, region: string): LinodeType | null {

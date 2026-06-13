@@ -74,6 +74,45 @@ describe('Linode cloud adapter', () => {
     });
   });
 
+  it('uses a Linode-valid short label when creating block storage volumes', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({
+        id: 456,
+        label: 'sh1pt-bs-test',
+        status: 'active',
+        size: 20,
+        region: 'us-east',
+        linode_id: null,
+        created: '2026-06-13T00:00:00',
+        tags: ['sh1pt'],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.provision({
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
+      log: vi.fn(),
+      dryRun: false,
+    }, {
+      kind: 'block-storage',
+      storage: 20,
+      region: 'us-east',
+      tags: ['sh1pt'],
+    }, {})).resolves.toMatchObject({
+      id: '456',
+      kind: 'block-storage',
+      status: 'running',
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0]!;
+    const body = JSON.parse(init!.body as string);
+    expect(body.label).toMatch(/^sh1pt-bs-\d+$/);
+    expect(body.label.length).toBeLessThanOrEqual(32);
+  });
+
   it('requires a login mechanism before non-dry-run image provisioning', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,

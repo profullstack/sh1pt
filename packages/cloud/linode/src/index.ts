@@ -72,10 +72,6 @@ interface LinodeInstance {
   tags?: string[];
 }
 
-interface LinodeInstancesResponse {
-  data: LinodeInstance[];
-}
-
 interface LinodeVolume {
   id: number;
   label: string;
@@ -85,10 +81,6 @@ interface LinodeVolume {
   linode_id: number | null;
   created: string;
   tags?: string[];
-}
-
-interface LinodeVolumesResponse {
-  data: LinodeVolume[];
 }
 
 export default defineCloud<Config>({

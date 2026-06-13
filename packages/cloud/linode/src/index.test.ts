@@ -224,6 +224,62 @@ describe('Linode cloud adapter', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('requests expanded pages when listing instances and volumes', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({
+          data: [
+            {
+              id: 123,
+              label: 'sh1pt-cpu-vps-test',
+              status: 'running',
+              type: 'g6-nanode-1',
+              ipv4: ['203.0.113.10'],
+              region: 'us-east',
+              created: '2026-06-13T00:00:00',
+              tags: ['sh1pt'],
+            },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({
+          data: [
+            {
+              id: 456,
+              label: 'sh1pt-volume',
+              status: 'active',
+              size: 20,
+              region: 'us-east',
+              created: '2026-06-13T00:00:00',
+              tags: ['sh1pt'],
+            },
+          ],
+        }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.list({
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
+      log: vi.fn(),
+    }, {})).resolves.toHaveLength(2);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://api.linode.com/v4/linode/instances?page_size=500',
+      expect.objectContaining({ method: 'GET' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://api.linode.com/v4/volumes?page_size=500',
+      expect.objectContaining({ method: 'GET' }),
+    );
+  });
+
   it('falls back to volume destroy only when the instance is not found', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({

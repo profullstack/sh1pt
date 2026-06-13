@@ -186,11 +186,11 @@ export default defineCloud<Config>({
 
   async list(ctx) {
     ctx.log('linode list - fetching instances');
-    const instances = await linodeRequest<LinodeInstancesResponse>(ctx, 'GET', '/linode/instances');
+    const instances = await linodeRequest<LinodeInstancesResponse>(ctx, 'GET', '/linode/instances?page_size=500');
     const result = instances.data.map(instanceToInstance);
 
     try {
-      const volumes = await linodeRequest<LinodeVolumesResponse>(ctx, 'GET', '/volumes');
+      const volumes = await linodeRequest<LinodeVolumesResponse>(ctx, 'GET', '/volumes?page_size=500');
       result.push(...volumes.data.map(volumeToInstance));
     } catch {
       ctx.log('linode list - volumes fetch failed, returning instances only', 'warn');

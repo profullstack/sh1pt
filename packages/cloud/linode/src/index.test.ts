@@ -151,6 +151,24 @@ describe('Linode cloud adapter', () => {
     expect(second.length).toBeLessThanOrEqual(32);
   });
 
+  it('does not create block storage when maxHourlyPrice is below the volume rate', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.provision({
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
+      log: vi.fn(),
+      dryRun: false,
+    }, {
+      kind: 'block-storage',
+      storage: 20,
+      region: 'us-east',
+      maxHourlyPrice: 0.001,
+    }, {})).rejects.toThrow('exceeds maxHourlyPrice');
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('requires a login mechanism before non-dry-run image provisioning', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,

@@ -103,7 +103,7 @@ export default defineCloud<Config>({
     if (spec.kind === 'block-storage') {
       const monthly = (spec.storage ?? 10) * VOLUME_MONTHLY_PER_GB;
       return {
-        hourly: monthly / 730,
+        hourly: volumeHourlyRate(spec.storage ?? 10),
         monthly,
         currency: 'USD',
         provider: 'linode',
@@ -136,6 +136,10 @@ export default defineCloud<Config>({
     if (ctx.dryRun) return { ...stubInstance('dry-run', 'provisioning', spec.kind), region };
 
     if (spec.kind === 'block-storage') {
+      const hourly = volumeHourlyRate(spec.storage ?? 10);
+      if (spec.maxHourlyPrice !== undefined && hourly > spec.maxHourlyPrice) {
+        throw new Error(`linode: block-storage hourly price $${hourly} exceeds maxHourlyPrice $${spec.maxHourlyPrice}`);
+      }
       ctx.log(`linode provision - volume region=${region} size=${spec.storage ?? 10}GB`);
       const volume = await linodeRequest<LinodeVolume>(ctx, 'POST', '/volumes', {
         label,
@@ -304,11 +308,15 @@ function volumeToInstance(volume: LinodeVolume): Instance {
     kind: 'block-storage',
     status: statusMap[volume.status] ?? 'provisioning',
     createdAt: volume.created,
-    hourlyRate: (volume.size * VOLUME_MONTHLY_PER_GB) / 730,
+    hourlyRate: volumeHourlyRate(volume.size),
     currency: 'USD',
     region: volume.region,
     tags: volume.tags,
   };
+}
+
+function volumeHourlyRate(sizeGb: number): number {
+  return (sizeGb * VOLUME_MONTHLY_PER_GB) / 730;
 }
 
 function hasHardwareConstraints(spec: InstanceSpec): boolean {

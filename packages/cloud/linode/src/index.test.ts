@@ -101,6 +101,94 @@ describe('Linode cloud adapter', () => {
     }, { kind: 'cpu-vps', region: 'us-east' }, {})).rejects.toThrow('linode image deploy requires');
   });
 
+  it('does not fall back to a default billable type when maxHourlyPrice filters all matches', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({
+        data: [
+          {
+            id: 'g6-nanode-1',
+            label: 'Nanode 1 GB',
+            price: { hourly: 0.0075, monthly: 5 },
+            vcpus: 1,
+            memory: 1024,
+            disk: 25600,
+            transfer: 1000,
+            class: 'nanode',
+          },
+        ],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.provision({
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : key === 'LINODE_ROOT_PASS' ? 'test-root-pass' : undefined,
+      log: vi.fn(),
+      dryRun: false,
+    }, {
+      kind: 'cpu-vps',
+      region: 'us-east',
+      maxHourlyPrice: 0.001,
+    }, {})).rejects.toThrow('satisfies maxHourlyPrice');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.linode.com/v4/linode/types?page_size=500',
+      expect.objectContaining({ method: 'GET' }),
+    );
+  });
+
+  it('fetches fresh type data for each quote', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({
+          data: [
+            {
+              id: 'g6-nanode-1',
+              label: 'Nanode 1 GB',
+              price: { hourly: 0.0075, monthly: 5 },
+              vcpus: 1,
+              memory: 1024,
+              disk: 25600,
+              transfer: 1000,
+              class: 'nanode',
+            },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({
+          data: [
+            {
+              id: 'g6-standard-1',
+              label: 'Linode 2 GB',
+              price: { hourly: 0.015, monthly: 10 },
+              vcpus: 1,
+              memory: 2048,
+              disk: 51200,
+              transfer: 2000,
+              class: 'standard',
+            },
+          ],
+        }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const ctx = {
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
+      log: vi.fn(),
+    };
+
+    await expect(adapter.quote(ctx, { kind: 'cpu-vps', region: 'us-east' }, {})).resolves.toMatchObject({ sku: 'g6-nanode-1' });
+    await expect(adapter.quote(ctx, { kind: 'cpu-vps', region: 'us-east' }, {})).resolves.toMatchObject({ sku: 'g6-standard-1' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('reports non-JSON API errors without parser noise', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: false,

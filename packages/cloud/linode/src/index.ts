@@ -158,6 +158,11 @@ export default defineCloud<Config>({
 
     const types = await fetchTypes(ctx);
     const match = pickType(types, spec, region);
+
+    if (!match && spec.maxHourlyPrice !== undefined) {
+      throw new Error(`linode: no matching type for kind=${spec.kind} in ${region} satisfies maxHourlyPrice $${spec.maxHourlyPrice}`);
+    }
+
     const typeId = match?.id ?? defaultType(spec.kind);
 
     if (match && spec.maxHourlyPrice !== undefined && match.price.hourly > spec.maxHourlyPrice) {
@@ -350,13 +355,9 @@ function regionAvailable(availability: RegionAvailability | undefined, region: s
   return status === undefined || status !== 'unavailable';
 }
 
-let typesCache: LinodeType[] | null = null;
-
 async function fetchTypes(ctx: RequestContext): Promise<LinodeType[]> {
-  if (typesCache) return typesCache;
   const response = await linodeRequest<LinodeTypesResponse>(ctx, 'GET', '/linode/types?page_size=500', undefined, false);
-  typesCache = response.data;
-  return typesCache;
+  return response.data;
 }
 
 interface RequestContext {

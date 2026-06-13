@@ -165,10 +165,6 @@ export default defineCloud<Config>({
 
     const typeId = match?.id ?? defaultType(spec.kind);
 
-    if (match && spec.maxHourlyPrice !== undefined && match.price.hourly > spec.maxHourlyPrice) {
-      throw new Error(`linode: cheapest matching type (${match.id}) costs $${match.price.hourly}/hr, exceeds maxHourlyPrice $${spec.maxHourlyPrice}`);
-    }
-
     const login = loginPayload(ctx, config);
     ctx.log(`linode provision - type=${typeId} region=${region} image=${spec.image ?? DEFAULT_IMAGE}`);
 

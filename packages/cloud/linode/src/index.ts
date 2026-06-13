@@ -50,6 +50,12 @@ interface LinodeTypesResponse {
   data: LinodeType[];
 }
 
+interface LinodePage<T> {
+  data: T[];
+  page?: number;
+  pages?: number;
+}
+
 interface LinodeInstance {
   id: number;
   label: string;
@@ -186,12 +192,12 @@ export default defineCloud<Config>({
 
   async list(ctx) {
     ctx.log('linode list - fetching instances');
-    const instances = await linodeRequest<LinodeInstancesResponse>(ctx, 'GET', '/linode/instances?page_size=500');
-    const result = instances.data.map(instanceToInstance);
+    const instances = await fetchPages<LinodeInstance>(ctx, '/linode/instances');
+    const result = instances.map(instanceToInstance);
 
     try {
-      const volumes = await linodeRequest<LinodeVolumesResponse>(ctx, 'GET', '/volumes?page_size=500');
-      result.push(...volumes.data.map(volumeToInstance));
+      const volumes = await fetchPages<LinodeVolume>(ctx, '/volumes');
+      result.push(...volumes.map(volumeToInstance));
     } catch {
       ctx.log('linode list - volumes fetch failed, returning instances only', 'warn');
     }
@@ -365,6 +371,18 @@ function regionAvailable(availability: RegionAvailability | undefined, region: s
 async function fetchTypes(ctx: RequestContext): Promise<LinodeType[]> {
   const response = await linodeRequest<LinodeTypesResponse>(ctx, 'GET', '/linode/types?page_size=500', undefined, false);
   return response.data;
+}
+
+async function fetchPages<T>(ctx: RequestContext, path: string): Promise<T[]> {
+  const items: T[] = [];
+  let page = 1;
+
+  for (;;) {
+    const response = await linodeRequest<LinodePage<T>>(ctx, 'GET', `${path}?page=${page}&page_size=500`);
+    items.push(...response.data);
+    if (page >= (response.pages ?? page)) return items;
+    page += 1;
+  }
 }
 
 interface RequestContext {

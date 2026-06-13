@@ -224,7 +224,7 @@ describe('Linode cloud adapter', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('requests expanded pages when listing instances and volumes', async () => {
+  it('requests every page when listing instances and volumes', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({
         ok: true,
@@ -242,6 +242,28 @@ describe('Linode cloud adapter', () => {
               tags: ['sh1pt'],
             },
           ],
+          page: 1,
+          pages: 2,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({
+          data: [
+            {
+              id: 124,
+              label: 'sh1pt-cpu-vps-next',
+              status: 'running',
+              type: 'g6-standard-1',
+              ipv4: ['203.0.113.11'],
+              region: 'us-east',
+              created: '2026-06-13T00:00:00',
+              tags: ['sh1pt'],
+            },
+          ],
+          page: 2,
+          pages: 2,
         }),
       })
       .mockResolvedValueOnce({
@@ -259,6 +281,8 @@ describe('Linode cloud adapter', () => {
               tags: ['sh1pt'],
             },
           ],
+          page: 1,
+          pages: 1,
         }),
       });
     vi.stubGlobal('fetch', fetchMock);
@@ -266,16 +290,21 @@ describe('Linode cloud adapter', () => {
     await expect(adapter.list({
       secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
       log: vi.fn(),
-    }, {})).resolves.toHaveLength(2);
+    }, {})).resolves.toHaveLength(3);
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      'https://api.linode.com/v4/linode/instances?page_size=500',
+      'https://api.linode.com/v4/linode/instances?page=1&page_size=500',
       expect.objectContaining({ method: 'GET' }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      'https://api.linode.com/v4/volumes?page_size=500',
+      'https://api.linode.com/v4/linode/instances?page=2&page_size=500',
+      expect.objectContaining({ method: 'GET' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://api.linode.com/v4/volumes?page=1&page_size=500',
       expect.objectContaining({ method: 'GET' }),
     );
   });

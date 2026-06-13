@@ -163,6 +163,10 @@ export default defineCloud<Config>({
       throw new Error(`linode: no matching type for kind=${spec.kind} in ${region} satisfies maxHourlyPrice $${spec.maxHourlyPrice}`);
     }
 
+    if (!match && hasHardwareConstraints(spec)) {
+      throw new Error(`linode: no matching type for kind=${spec.kind} in ${region} satisfies requested hardware constraints`);
+    }
+
     const typeId = match?.id ?? defaultType(spec.kind);
 
     const login = loginPayload(ctx, config);
@@ -317,6 +321,10 @@ function defaultType(kind: InstanceSpec['kind']): string {
   if (kind === 'gpu') return 'g1-gpu-rtx6000-1';
   if (kind === 'bare-metal') return 'g6-dedicated-2';
   return 'g6-nanode-1';
+}
+
+function hasHardwareConstraints(spec: InstanceSpec): boolean {
+  return !!(spec.cpu || spec.memory || spec.storage || spec.gpu?.count);
 }
 
 function pickType(types: LinodeType[], spec: InstanceSpec, region: string): LinodeType | null {

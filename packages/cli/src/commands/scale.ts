@@ -122,7 +122,7 @@ export function getNextId(instances: FleetEntry[]): string {
 
 export function parsePositiveInteger(value: string): number {
   const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+  if (value.trim() === '' || !Number.isSafeInteger(parsed) || parsed < 1) {
     throw new InvalidArgumentError('must be a positive integer');
   }
   return parsed;
@@ -130,7 +130,7 @@ export function parsePositiveInteger(value: string): number {
 
 export function parseNonNegativeInteger(value: string): number {
   const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+  if (value.trim() === '' || !Number.isSafeInteger(parsed) || parsed < 0) {
     throw new InvalidArgumentError('must be zero or a positive integer');
   }
   return parsed;
@@ -138,8 +138,16 @@ export function parseNonNegativeInteger(value: string): number {
 
 export function parsePositiveNumber(value: string): number {
   const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
+  if (value.trim() === '' || !Number.isFinite(parsed) || parsed <= 0) {
     throw new InvalidArgumentError('must be a positive finite number');
+  }
+  return parsed;
+}
+
+export function parsePercentage(value: string): number {
+  const parsed = parsePositiveInteger(value);
+  if (parsed > 100) {
+    throw new InvalidArgumentError('must be between 1 and 100');
   }
   return parsed;
 }
@@ -633,7 +641,7 @@ scaleCmd
   .description('Stage a new version across the fleet (canary / blue-green / rolling)')
   .requiredOption('--version <id>', 'version identifier to deploy (e.g. v2.1.0)')
   .option('--strategy <kind>', 'canary | blue-green | rolling', 'canary')
-  .option('--percent <n>', 'canary only — start at N% of traffic', parsePositiveInteger, 5)
+  .option('--percent <n>', 'canary only — start at N% of traffic', parsePercentage, 5)
   .option('--dry-run', 'show the plan without modifying state')
   .option('--status', 'show active rollouts and their state')
   .option('--rollback <id>', 'roll back a previously completed rollout by ID')

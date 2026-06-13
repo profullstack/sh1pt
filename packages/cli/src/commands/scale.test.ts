@@ -14,6 +14,7 @@ import {
   parsePositiveInteger,
   parseNonNegativeInteger,
   parsePositiveNumber,
+  parsePercentage,
 } from './scale.js';
 
 // Helper to create a temp dir and override CREDS_FILE path
@@ -70,26 +71,34 @@ describe('scale numeric option parsers', () => {
     expect(parsePositiveInteger('3')).toBe(3);
     expect(parseNonNegativeInteger('0')).toBe(0);
     expect(parsePositiveNumber('0.25')).toBe(0.25);
+    expect(parsePercentage('100')).toBe(100);
   });
 
-  it.each(['nope', '1.5', '0', '-1', 'Infinity', 'NaN'])(
+  it.each(['nope', '1.5', '0', '-1', 'Infinity', 'NaN', ''])(
     'rejects invalid positive integers: %s',
     (value) => {
       expect(() => parsePositiveInteger(value)).toThrow();
     },
   );
 
-  it.each(['nope', '1.5', '-1', 'Infinity', 'NaN'])(
+  it.each(['nope', '1.5', '-1', 'Infinity', 'NaN', ''])(
     'rejects invalid non-negative integers: %s',
     (value) => {
       expect(() => parseNonNegativeInteger(value)).toThrow();
     },
   );
 
-  it.each(['nope', '0', '-1', 'Infinity', 'NaN'])(
+  it.each(['nope', '0', '-1', 'Infinity', 'NaN', ''])(
     'rejects invalid positive finite numbers: %s',
     (value) => {
       expect(() => parsePositiveNumber(value)).toThrow();
+    },
+  );
+
+  it.each(['0', '101', '1.5', 'Infinity', ''])(
+    'rejects invalid rollout percentages: %s',
+    (value) => {
+      expect(() => parsePercentage(value)).toThrow();
     },
   );
 });

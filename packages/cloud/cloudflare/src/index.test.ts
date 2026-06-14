@@ -125,6 +125,31 @@ describe('Cloudflare cloud adapter', () => {
     expect(instances.find((instance) => instance.id === 'tunnel:tun-1')?.status).toBe('running');
   });
 
+  it('continues list pagination when Cloudflare omits total_pages', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      const { searchParams } = new URL(url);
+      const page = searchParams.get('page');
+      if (page === '1') {
+        return ok(Array.from({ length: 100 }, (_, index) => ({
+          queue_id: `queue-${index}`,
+          queue_name: `jobs-${index}`,
+          created_on: '2026-06-14T00:00:00Z',
+        })));
+      }
+      if (page === '2') {
+        return ok([{ queue_id: 'queue-100', queue_name: 'jobs-100', created_on: '2026-06-14T00:00:00Z' }]);
+      }
+      throw new Error(`unexpected url ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const instances = await adapter.list(connectCtx(), { accountId: 'acct-1', resourceType: 'queue' });
+
+    expect(instances).toHaveLength(101);
+    expect(instances.at(-1)?.id).toBe('queue:queue-100');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('checks status using the prefixed resource id', async () => {
     const fetchMock = vi.fn(async (url: string) => {
       expect(url).toBe(`${API}/accounts/acct-1/queues/queue-1`);
@@ -135,6 +160,24 @@ describe('Cloudflare cloud adapter', () => {
     const instance = await adapter.status(connectCtx(), 'queue:queue-1', { accountId: 'acct-1' });
 
     expect(instance).toMatchObject({ id: 'queue:queue-1', status: 'running', sku: 'queue' });
+  });
+
+  it('maps Cloudflare tunnel active and errored statuses', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.endsWith('/cfd_tunnel/tun-active')) {
+        return ok({ id: 'tun-active', name: 'edge-active', status: 'active', created_at: '2026-06-14T00:00:00Z' });
+      }
+      if (url.endsWith('/cfd_tunnel/tun-errored')) {
+        return ok({ id: 'tun-errored', name: 'edge-errored', status: 'errored', created_at: '2026-06-14T00:00:00Z' });
+      }
+      throw new Error(`unexpected url ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.status(connectCtx(), 'tunnel:tun-active', { accountId: 'acct-1' }))
+      .resolves.toMatchObject({ id: 'tunnel:tun-active', status: 'running' });
+    await expect(adapter.status(connectCtx(), 'tunnel:tun-errored', { accountId: 'acct-1' }))
+      .resolves.toMatchObject({ id: 'tunnel:tun-errored', status: 'failed' });
   });
 
   it('requires a caller-supplied tunnel secret when creating a tunnel', async () => {

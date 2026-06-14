@@ -263,17 +263,24 @@ async function cfListAll<T>(
   path: string,
   arrayKey: string,
 ): Promise<T[]> {
+  const perPage = 100;
   const items: T[] = [];
   let page = 1;
-  let totalPages = 1;
+  let shouldContinue = true;
 
   do {
     const separator = path.includes('?') ? '&' : '?';
-    const { result, resultInfo } = await cfRequest<unknown>(ctx, config, 'GET', `${path}${separator}page=${page}&per_page=100`);
-    items.push(...arrayFromResult<T>(result, arrayKey));
-    totalPages = typeof resultInfo?.total_pages === 'number' ? resultInfo.total_pages : 1;
+    const { result, resultInfo } = await cfRequest<unknown>(ctx, config, 'GET', `${path}${separator}page=${page}&per_page=${perPage}`);
+    const pageItems = arrayFromResult<T>(result, arrayKey);
+    items.push(...pageItems);
+
+    if (typeof resultInfo?.total_pages === 'number') {
+      shouldContinue = page < resultInfo.total_pages;
+    } else {
+      shouldContinue = pageItems.length >= perPage;
+    }
     page += 1;
-  } while (page <= totalPages);
+  } while (shouldContinue);
 
   return items;
 }
@@ -477,9 +484,12 @@ function tunnelInstance(tunnel: Tunnel, kind: InstanceKind, quote: Quote, fallba
 }
 
 function tunnelStatus(status: string | undefined): Instance['status'] {
-  if (status === 'healthy') return 'running';
-  if (status === 'inactive' || status === 'down') return 'stopped';
-  if (status === 'degraded') return 'failed';
+  const normalized = status?.toLowerCase();
+  if (!normalized) return 'provisioning';
+  if (normalized === 'healthy' || normalized === 'active' || normalized === 'running') return 'running';
+  if (normalized === 'inactive' || normalized === 'down' || normalized === 'stopped') return 'stopped';
+  if (normalized === 'degraded' || normalized === 'errored' || normalized === 'error' || normalized === 'failed' || normalized === 'unhealthy') return 'failed';
+  if (normalized === 'pending' || normalized === 'provisioning' || normalized === 'initializing') return 'provisioning';
   return 'provisioning';
 }
 

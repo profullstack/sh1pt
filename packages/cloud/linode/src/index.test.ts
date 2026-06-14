@@ -72,6 +72,7 @@ describe('Linode cloud adapter', () => {
       status: 'running',
       publicIp: '203.0.113.10',
       sku: 'g6-nanode-1',
+      hourlyRate: 0.0075,
     });
   });
 
@@ -159,6 +160,24 @@ describe('Linode cloud adapter', () => {
       secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
       log: vi.fn(),
       dryRun: false,
+    }, {
+      kind: 'block-storage',
+      storage: 20,
+      region: 'us-east',
+      maxHourlyPrice: 0.001,
+    }, {})).rejects.toThrow('exceeds maxHourlyPrice');
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('checks block storage maxHourlyPrice before dry-run provisioning succeeds', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.provision({
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
+      log: vi.fn(),
+      dryRun: true,
     }, {
       kind: 'block-storage',
       storage: 20,

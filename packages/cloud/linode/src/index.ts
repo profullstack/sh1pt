@@ -133,12 +133,13 @@ export default defineCloud<Config>({
     const region = spec.region ?? config.defaultRegion ?? DEFAULT_REGION;
     const label = resourceLabel(spec.kind);
 
-    if (ctx.dryRun) return { ...stubInstance('dry-run', 'provisioning', spec.kind), region };
-
     if (spec.kind === 'block-storage') {
       const hourly = volumeHourlyRate(spec.storage ?? 10);
       if (spec.maxHourlyPrice !== undefined && hourly > spec.maxHourlyPrice) {
         throw new Error(`linode: block-storage hourly price $${hourly} exceeds maxHourlyPrice $${spec.maxHourlyPrice}`);
+      }
+      if (ctx.dryRun) {
+        return { ...stubInstance('dry-run', 'provisioning', spec.kind), region, hourlyRate: hourly };
       }
       ctx.log(`linode provision - volume region=${region} size=${spec.storage ?? 10}GB`);
       const volume = await linodeRequest<LinodeVolume>(ctx, 'POST', '/volumes', {
@@ -167,6 +168,15 @@ export default defineCloud<Config>({
 
     const typeId = match.id;
 
+    if (ctx.dryRun) {
+      return {
+        ...stubInstance('dry-run', 'provisioning', spec.kind),
+        hourlyRate: match.price.hourly,
+        sku: typeId,
+        region,
+      };
+    }
+
     const login = loginPayload(ctx, config);
     ctx.log(`linode provision - type=${typeId} region=${region} image=${spec.image ?? DEFAULT_IMAGE}`);
 
@@ -179,7 +189,7 @@ export default defineCloud<Config>({
       tags: spec.tags,
       ...login,
     });
-    return instanceToInstance(instance);
+    return { ...instanceToInstance(instance), hourlyRate: match.price.hourly };
   },
 
   async list(ctx) {

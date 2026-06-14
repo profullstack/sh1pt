@@ -348,7 +348,13 @@ function pickType(types: LinodeType[], spec: InstanceSpec, region: string): Lino
   } else if (spec.kind === 'bare-metal') {
     candidates = candidates.filter((type) => type.class === 'dedicated' || type.id.includes('dedicated'));
   } else {
-    candidates = candidates.filter((type) => (type.gpus ?? 0) === 0 && type.class !== 'gpu' && !type.id.includes('gpu'));
+    candidates = candidates.filter((type) => (
+      (type.gpus ?? 0) === 0
+      && type.class !== 'gpu'
+      && !type.id.includes('gpu')
+      && type.class !== 'dedicated'
+      && !type.id.includes('dedicated')
+    ));
   }
 
   if (spec.cpu) candidates = candidates.filter((type) => type.vcpus >= spec.cpu!);

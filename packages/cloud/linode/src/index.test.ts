@@ -322,6 +322,76 @@ describe('Linode cloud adapter', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('does not provision dedicated CPU types for cpu-vps requests', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({
+        data: [
+          {
+            id: 'g6-dedicated-2',
+            label: 'Dedicated 4 GB',
+            price: { hourly: 0.036, monthly: 24 },
+            vcpus: 2,
+            memory: 4096,
+            disk: 81920,
+            transfer: 4000,
+            class: 'dedicated',
+          },
+        ],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.provision({
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
+      log: vi.fn(),
+      dryRun: true,
+    }, {
+      kind: 'cpu-vps',
+      region: 'us-east',
+    }, {})).rejects.toThrow('linode: no matching type for kind=cpu-vps in us-east');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses dedicated CPU types for bare-metal dry-run provisioning', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({
+        data: [
+          {
+            id: 'g6-dedicated-2',
+            label: 'Dedicated 4 GB',
+            price: { hourly: 0.036, monthly: 24 },
+            vcpus: 2,
+            memory: 4096,
+            disk: 81920,
+            transfer: 4000,
+            class: 'dedicated',
+          },
+        ],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.provision({
+      secret: (key: string) => key === 'LINODE_API_TOKEN' ? 'token' : undefined,
+      log: vi.fn(),
+      dryRun: true,
+    }, {
+      kind: 'bare-metal',
+      region: 'us-east',
+    }, {})).resolves.toMatchObject({
+      kind: 'bare-metal',
+      sku: 'g6-dedicated-2',
+      hourlyRate: 0.036,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('fetches fresh type data for each quote', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({

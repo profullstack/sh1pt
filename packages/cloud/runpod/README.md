@@ -6,9 +6,11 @@ Provides the RunPod (GPU) cloud provider adapter for sh1pt scale and deploy work
 
 - Connects to RunPod through the GraphQL API with `RUNPOD_API_KEY`.
 - Quotes GPU pods from either explicit `hourlyPrice` config or RunPod `gpuTypes` pricing.
+- Uses the highest available price when `cloudType` is `ALL` so `maxHourlyPrice` is not checked against a lower community-only estimate.
 - Provisions on-demand GPU pods with `podFindAndDeployOnDemand`.
 - Lists account pods, checks a pod by ID, and terminates pods with `podTerminate`.
 - Requires `imageName` for real provisioning and supports `maxHourlyPrice` guardrails before any pod is created.
+- Does not call RunPod during dry-run provisioning; set `hourlyPrice` to simulate a non-zero cost in dry-run output.
 
 Common config fields:
 

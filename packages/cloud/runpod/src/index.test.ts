@@ -25,6 +25,12 @@ describe('RunPod cloud adapter', () => {
     await expect(adapter.connect(connectCtx(), {})).resolves.toEqual({ accountId: 'user-1' });
   });
 
+  it('reports a scoped account error when RunPod returns no account', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => graphql({ myself: null })));
+
+    await expect(adapter.connect(connectCtx(), {})).rejects.toThrow('RunPod account not available');
+  });
+
   it('quotes from configured hourly pricing without calling RunPod', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
@@ -65,6 +71,25 @@ describe('RunPod cloud adapter', () => {
 
     expect(quote.hourly).toBe(0.44);
     expect(quote.spot).toBe(true);
+  });
+
+  it('uses the highest available price for ALL cloud type quotes', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => graphql({
+      gpuTypes: [{
+        id: 'NVIDIA RTX A6000',
+        displayName: 'RTX A6000',
+        communityPrice: 0.44,
+        securePrice: 0.79,
+      }],
+    })));
+
+    const quote = await adapter.quote(
+      connectCtx(),
+      { kind: 'gpu', gpu: { model: 'RTX A6000', count: 1 } },
+      {},
+    );
+
+    expect(quote.hourly).toBe(0.79);
   });
 
   it('creates a RunPod pod through GraphQL', async () => {
@@ -133,6 +158,24 @@ describe('RunPod cloud adapter', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('does not call RunPod for dry-run provisioning without hourlyPrice', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const instance = await adapter.provision(
+      provisionCtx(true),
+      { kind: 'gpu', gpu: { model: 'NVIDIA RTX A6000', count: 1 } },
+      { name: 'preview' },
+    );
+
+    expect(instance).toMatchObject({
+      id: 'dry-run-preview',
+      status: 'provisioning',
+      hourlyRate: 0,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('honors maxHourlyPrice before provisioning', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
@@ -161,6 +204,12 @@ describe('RunPod cloud adapter', () => {
       ['pod-1', 'running'],
       ['pod-2', 'stopped'],
     ]);
+  });
+
+  it('reports a scoped account error when listing has no account', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => graphql({ myself: null })));
+
+    await expect(adapter.list(connectCtx(), {})).rejects.toThrow('RunPod account not available');
   });
 
   it('checks status for a single pod', async () => {

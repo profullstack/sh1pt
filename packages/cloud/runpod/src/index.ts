@@ -96,7 +96,7 @@ export default defineCloud<Config>({
   supports: ['gpu'],
 
   async connect(ctx, config) {
-    const data = await runpodGraphql<{ myself: { id?: string; email?: string } }>(
+    const data = await runpodGraphql<{ myself?: { id?: string; email?: string } | null }>(
       ctx,
       config,
       `query Myself {
@@ -106,7 +106,8 @@ export default defineCloud<Config>({
         }
       }`,
     );
-    return { accountId: data.myself.id ?? data.myself.email ?? 'runpod-account' };
+    const account = requireAccount(data.myself);
+    return { accountId: account.id ?? account.email ?? 'runpod-account' };
   },
 
   async quote(ctx, spec, config) {
@@ -129,7 +130,9 @@ export default defineCloud<Config>({
 
   async provision(ctx, spec, config) {
     const gpu = requireGpuSpec(spec);
-    const quote = await this.quote(ctx, spec, config);
+    const quote = ctx.dryRun && config.hourlyPrice === undefined
+      ? quoteFromHourly(spec, config, gpu, 0)
+      : await this.quote(ctx, spec, config);
     if (spec.maxHourlyPrice !== undefined && quote.hourly > spec.maxHourlyPrice) {
       throw new Error(`RunPod quote ${quote.hourly} USD/hr exceeds maxHourlyPrice ${spec.maxHourlyPrice}`);
     }
@@ -182,7 +185,7 @@ export default defineCloud<Config>({
   },
 
   async list(ctx, config) {
-    const data = await runpodGraphql<{ myself: { pods?: RunpodPod[] } }>(
+    const data = await runpodGraphql<{ myself?: { pods?: RunpodPod[] } | null }>(
       ctx,
       config,
       `query Pods {
@@ -193,7 +196,7 @@ export default defineCloud<Config>({
         }
       }`,
     );
-    return (data.myself.pods ?? []).map((pod) => podInstance(pod));
+    return (requireAccount(data.myself).pods ?? []).map((pod) => podInstance(pod));
   },
 
   async destroy(ctx, instanceId, config) {
@@ -268,6 +271,24 @@ async function quoteFromApi(
   return price * (spec.gpu?.count ?? 1);
 }
 
+function quoteFromHourly(
+  spec: InstanceSpec,
+  config: Config,
+  gpu: NonNullable<InstanceSpec['gpu']>,
+  hourly: number,
+): Quote {
+  const gpuTypeId = config.gpuTypeId ?? gpu.model;
+  return {
+    hourly,
+    monthly: hourly * 730,
+    currency: 'USD',
+    provider: 'runpod',
+    sku: `${gpuTypeId} x${gpu.count}`,
+    spot: !!spec.spotOk,
+    availabilityZone: config.cloudType ?? 'ALL',
+  };
+}
+
 async function runpodGraphql<T>(
   ctx: CloudConnectContext | ProvisionContext,
   config: Config,
@@ -331,15 +352,26 @@ function priceForGpu(gpu: RunpodGpuType, cloudType: CloudType, spot: boolean): n
   const community = spot ? gpu.communitySpotPrice : gpu.communityPrice;
   const secure = spot ? gpu.secureSpotPrice : gpu.securePrice;
   const prices = cloudType === 'COMMUNITY'
-    ? [community]
+    ? validPrices([community])
     : cloudType === 'SECURE'
-      ? [secure]
-      : [community, secure];
-  const price = prices.find((value): value is number => typeof value === 'number' && value >= 0);
+      ? validPrices([secure])
+      : validPrices([community, secure]);
+  const price = cloudType === 'ALL' && prices.length > 0 ? Math.max(...prices) : prices[0];
   if (price === undefined) {
     throw new Error(`RunPod GPU price not available for ${gpu.id ?? gpu.displayName ?? 'selected GPU'}`);
   }
   return price;
+}
+
+function validPrices(values: Array<number | undefined>): number[] {
+  return values.filter((value): value is number => typeof value === 'number' && value >= 0);
+}
+
+function requireAccount<T extends object>(account: T | null | undefined): T {
+  if (!account) {
+    throw new Error('RunPod account not available; check RUNPOD_API_KEY permissions');
+  }
+  return account;
 }
 
 function podInstance(pod: RunpodPod, quote?: Quote): Instance {

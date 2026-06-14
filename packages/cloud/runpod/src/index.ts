@@ -250,7 +250,7 @@ async function quoteFromApi(
   config: Config,
   gpuTypeId: string,
 ): Promise<number> {
-  const data = await runpodGraphql<{ gpuTypes: RunpodGpuType[] }>(
+  const data = await runpodGraphql<{ gpuTypes?: RunpodGpuType[] | null }>(
     ctx,
     config,
     `query GpuTypes($input: GpuTypeFilter) {
@@ -266,7 +266,7 @@ async function quoteFromApi(
     }`,
     { input: { id: gpuTypeId } },
   );
-  const selected = selectGpuType(data.gpuTypes, gpuTypeId);
+  const selected = selectGpuType(data.gpuTypes ?? [], gpuTypeId);
   const price = priceForGpu(selected, config.cloudType ?? 'ALL', !!spec.spotOk);
   return price * (spec.gpu?.count ?? 1);
 }
@@ -341,8 +341,7 @@ function requireGpuSpec(spec: InstanceSpec): NonNullable<InstanceSpec['gpu']> {
 function selectGpuType(gpus: RunpodGpuType[], requested: string): RunpodGpuType {
   const normalized = normalize(requested);
   const selected = gpus.find((gpu) => normalize(gpu.id) === normalized || normalize(gpu.displayName) === normalized) ??
-    gpus.find((gpu) => normalize(gpu.id).includes(normalized) || normalize(gpu.displayName).includes(normalized)) ??
-    gpus[0];
+    gpus.find((gpu) => normalize(gpu.id).includes(normalized) || normalize(gpu.displayName).includes(normalized));
 
   if (!selected) throw new Error(`RunPod GPU type not found: ${requested}`);
   return selected;

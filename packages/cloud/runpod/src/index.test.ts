@@ -92,6 +92,28 @@ describe('RunPod cloud adapter', () => {
     expect(quote.hourly).toBe(0.79);
   });
 
+  it('reports a clear error when RunPod returns no GPU types', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => graphql({ gpuTypes: null })));
+
+    await expect(adapter.quote(
+      connectCtx(),
+      { kind: 'gpu', gpu: { model: 'RTX A6000', count: 1 } },
+      {},
+    )).rejects.toThrow('RunPod GPU type not found: RTX A6000');
+  });
+
+  it('does not silently fall back to a different GPU type', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => graphql({
+      gpuTypes: [{ id: 'NVIDIA A100', displayName: 'A100', communityPrice: 1.25 }],
+    })));
+
+    await expect(adapter.quote(
+      connectCtx(),
+      { kind: 'gpu', gpu: { model: 'RTX A6000', count: 1 } },
+      {},
+    )).rejects.toThrow('RunPod GPU type not found: RTX A6000');
+  });
+
   it('creates a RunPod pod through GraphQL', async () => {
     const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
       const body = JSON.parse(String(init.body));

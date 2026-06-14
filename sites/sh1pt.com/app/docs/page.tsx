@@ -634,7 +634,7 @@ export default function DocsPage() {
               ['bots', 'Chat bots', 'discord · slack · telegram · signal · matrix · whatsapp · twilio · telnyx · twitch · wechat · irc · phonenumbers · teams'],
               ['bridges', 'Cross-network chat bridges', 'discord · irc · mastodon · matrix · nostr · signal · slack · telegram'],
               ['captcha', 'CAPTCHA solvers (browser-mode fallback)', '2captcha · captchasolver'],
-              ['cloud', 'Raw-compute providers', 'atlantic · cloudflare · digitalocean · firebase · fly · hetzner · lambda-labs · nvidia · railway · runpod · supabase · vultr'],
+              ['cloud', 'Raw-compute providers', 'atlantic · cloudflare · digitalocean · firebase · fly · hetzner · lambda-labs · linode · nvidia · railway · runpod · supabase · vultr'],
               ['observability', 'Release tracking + telemetry', 'sentry'],
               ['dns', 'DNS providers', 'cloudflare · porkbun'],
               ['secrets', 'Secrets CLIs', 'doppler · dotenvx · 1password'],

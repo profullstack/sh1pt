@@ -1,13 +1,15 @@
-# Cloudflare (Workers / R2 / D1 / Queues)
+# Cloudflare (R2 / D1 / Queues / Tunnels)
 
-Provides the Cloudflare (Workers / R2 / D1 / Queues) cloud provider adapter for sh1pt scale and deploy workflows.
+Provides the Cloudflare (R2 / D1 / Queues / Tunnels) cloud provider adapter for sh1pt scale and deploy workflows.
 
 ## What it does
 
-- Connects cloud provider credentials and project settings.
-- Supports infrastructure planning, deployment, or status workflows where implemented.
-- Includes a connection flow for account or credential setup.
-- Includes setup guidance for required credentials or provider configuration.
+- Connects with `CLOUDFLARE_API_TOKEN` and an optional `accountId`.
+- Quotes R2 storage using the per-GB monthly storage rate and reports zero-dollar base quotes for usage-priced D1, Queues, and Tunnels.
+- Provisions, lists, checks status, and destroys R2 buckets, D1 databases, Queues, and Cloudflare Tunnels through the Cloudflare REST API.
+- Leaves Worker script deployment to the `deploy-workers` target.
+
+Set `resourceType` to one of `r2-bucket`, `d1-database`, `queue`, or `tunnel` when provisioning a specific resource. Without `resourceType`, `object-storage` specs create R2 buckets and `managed-db` specs create D1 databases.
 
 ## Package
 

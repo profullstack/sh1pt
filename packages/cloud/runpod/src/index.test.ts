@@ -52,7 +52,7 @@ describe('RunPod cloud adapter', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('quotes from RunPod GPU type pricing when hourlyPrice is omitted', async () => {
+  it('quotes from RunPod on-demand GPU type pricing when hourlyPrice is omitted', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => graphql({
       gpuTypes: [{
         id: 'NVIDIA RTX A6000',
@@ -69,8 +69,8 @@ describe('RunPod cloud adapter', () => {
       { cloudType: 'COMMUNITY' },
     );
 
-    expect(quote.hourly).toBe(0.44);
-    expect(quote.spot).toBe(true);
+    expect(quote.hourly).toBe(0.88);
+    expect(quote.spot).toBe(false);
   });
 
   it('uses the highest available price for ALL cloud type quotes', async () => {
@@ -241,6 +241,29 @@ describe('RunPod cloud adapter', () => {
       { hourlyPrice: 0.5, imageName: 'runpod/pytorch' },
     )).rejects.toThrow('exceeds maxHourlyPrice');
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('uses on-demand pricing for maxHourlyPrice even when spot is allowed', async () => {
+    const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
+      const body = JSON.parse(String(init.body));
+      expect(body.query).toContain('GpuTypes');
+      return graphql({
+        gpuTypes: [{
+          id: 'NVIDIA RTX A6000',
+          displayName: 'RTX A6000',
+          communityPrice: 0.44,
+          communitySpotPrice: 0.22,
+        }],
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.provision(
+      provisionCtx(),
+      { kind: 'gpu', gpu: { model: 'NVIDIA RTX A6000', count: 1 }, spotOk: true, maxHourlyPrice: 0.3 },
+      { imageName: 'runpod/pytorch', cloudType: 'COMMUNITY' },
+    )).rejects.toThrow('exceeds maxHourlyPrice');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('lists pods from the authenticated account', async () => {

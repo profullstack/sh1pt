@@ -123,7 +123,7 @@ export default defineCloud<Config>({
       currency: 'USD',
       provider: 'runpod',
       sku: `${gpuTypeId} x${gpu.count}`,
-      spot: !!spec.spotOk,
+      spot: false,
       availabilityZone: config.cloudType ?? 'ALL',
     } satisfies Quote;
   },
@@ -267,7 +267,7 @@ async function quoteFromApi(
     { input: { id: gpuTypeId } },
   );
   const selected = selectGpuType(data.gpuTypes ?? [], gpuTypeId);
-  const price = priceForGpu(selected, config.cloudType ?? 'ALL', !!spec.spotOk);
+  const price = priceForGpu(selected, config.cloudType ?? 'ALL');
   return price * (spec.gpu?.count ?? 1);
 }
 
@@ -284,7 +284,7 @@ function quoteFromHourly(
     currency: 'USD',
     provider: 'runpod',
     sku: `${gpuTypeId} x${gpu.count}`,
-    spot: !!spec.spotOk,
+    spot: false,
     availabilityZone: config.cloudType ?? 'ALL',
   };
 }
@@ -347,9 +347,9 @@ function selectGpuType(gpus: RunpodGpuType[], requested: string): RunpodGpuType 
   return selected;
 }
 
-function priceForGpu(gpu: RunpodGpuType, cloudType: CloudType, spot: boolean): number {
-  const community = spot ? gpu.communitySpotPrice : gpu.communityPrice;
-  const secure = spot ? gpu.secureSpotPrice : gpu.securePrice;
+function priceForGpu(gpu: RunpodGpuType, cloudType: CloudType): number {
+  const community = gpu.communityPrice;
+  const secure = gpu.securePrice;
   const prices = cloudType === 'COMMUNITY'
     ? validPrices([community])
     : cloudType === 'SECURE'

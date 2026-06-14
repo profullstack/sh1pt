@@ -168,6 +168,22 @@ describe('RunPod cloud adapter', () => {
     });
   });
 
+  it('reports unavailable capacity when RunPod returns no provisioned pod', async () => {
+    const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
+      const body = JSON.parse(String(init.body));
+      expect(body.query).toContain('podFindAndDeployOnDemand');
+      return graphql({ podFindAndDeployOnDemand: null });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.provision(
+      provisionCtx(),
+      { kind: 'gpu', gpu: { model: 'NVIDIA RTX A6000', count: 1 } },
+      { gpuTypeId: 'NVIDIA RTX A6000', imageName: 'runpod/pytorch', hourlyPrice: 0.5 },
+    )).rejects.toThrow('RunPod pod was not provisioned');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('omits network volume storage unless explicitly requested', async () => {
     const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
       const body = JSON.parse(String(init.body));

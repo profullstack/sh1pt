@@ -170,7 +170,7 @@ export default defineCloud<Config>({
       env: envInput(config.env),
     });
 
-    const data = await runpodGraphql<{ podFindAndDeployOnDemand: RunpodPod }>(
+    const data = await runpodGraphql<{ podFindAndDeployOnDemand?: RunpodPod | null }>(
       ctx,
       config,
       `mutation DeployPod($input: PodFindAndDeployOnDemandInput) {
@@ -181,6 +181,9 @@ export default defineCloud<Config>({
       { input },
     );
 
+    if (!data.podFindAndDeployOnDemand) {
+      throw new Error('RunPod pod was not provisioned; requested GPU capacity may be unavailable');
+    }
     return podInstance(data.podFindAndDeployOnDemand, quote);
   },
 

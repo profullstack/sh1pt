@@ -161,7 +161,7 @@ export default defineCloud<Config>({
       imageName: config.imageName,
       dockerArgs: config.dockerArgs,
       ports: config.ports,
-      volumeInGb: nonNegativeNumber(config.volumeInGb ?? spec.storage ?? 40, 'volumeInGb'),
+      volumeInGb: optionalPositiveNumber(config.volumeInGb ?? spec.storage, 'volumeInGb'),
       containerDiskInGb: nonNegativeNumber(config.containerDiskInGb ?? 40, 'containerDiskInGb'),
       minVcpuCount: optionalPositiveNumber(config.minVcpuCount ?? spec.cpu, 'minVcpuCount'),
       minMemoryInGb: optionalPositiveNumber(config.minMemoryInGb ?? spec.memory, 'minMemoryInGb'),

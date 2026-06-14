@@ -146,6 +146,39 @@ describe('RunPod cloud adapter', () => {
     });
   });
 
+  it('omits network volume storage unless explicitly requested', async () => {
+    const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
+      const body = JSON.parse(String(init.body));
+      expect(body.query).toContain('podFindAndDeployOnDemand');
+      expect(body.variables.input).toEqual(expect.objectContaining({
+        gpuTypeId: 'NVIDIA RTX A6000',
+        imageName: 'runpod/pytorch',
+        containerDiskInGb: 40,
+      }));
+      expect(body.variables.input).not.toHaveProperty('volumeInGb');
+      return graphql({
+        podFindAndDeployOnDemand: pod({
+          id: 'pod-1',
+          imageName: 'runpod/pytorch',
+          costPerHr: 0.5,
+        }),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await adapter.provision(
+      provisionCtx(),
+      { kind: 'gpu', gpu: { model: 'NVIDIA RTX A6000', count: 1 } },
+      {
+        gpuTypeId: 'NVIDIA RTX A6000',
+        imageName: 'runpod/pytorch',
+        hourlyPrice: 0.5,
+      },
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('requires imageName before creating a real pod', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);

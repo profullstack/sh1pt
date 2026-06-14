@@ -18,7 +18,8 @@ Common config fields:
 - `imageName`: container image for real pod creation, such as `runpod/pytorch`.
 - `cloudType`: `ALL`, `COMMUNITY`, or `SECURE`.
 - `hourlyPrice`: optional explicit offline quote value per GPU.
-- `ports`, `dockerArgs`, `volumeInGb`, `containerDiskInGb`, `minVcpuCount`, `minMemoryInGb`, `volumeMountPath`, `networkVolumeId`, and `env`.
+- `volumeInGb`: optional network volume size; omitted unless explicitly requested through config or the spec storage field.
+- `ports`, `dockerArgs`, `containerDiskInGb`, `minVcpuCount`, `minMemoryInGb`, `volumeMountPath`, `networkVolumeId`, and `env`.
 
 ## Package
 

@@ -26,6 +26,19 @@ describe('Cloudflare cloud adapter', () => {
     await expect(adapter.connect(connectCtx(), {})).resolves.toEqual({ accountId: 'acct-2' });
   });
 
+  it('paginates account discovery when accountId is omitted', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      const { searchParams } = new URL(url);
+      if (searchParams.get('page') === '1') return ok([], { total_pages: 2 });
+      if (searchParams.get('page') === '2') return ok([{ id: 'acct-2', name: 'Second page' }], { total_pages: 2 });
+      throw new Error(`unexpected url ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.connect(connectCtx(), {})).resolves.toEqual({ accountId: 'acct-2' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('creates an R2 bucket', async () => {
     const fetchMock = vi.fn(async (url: string, init: RequestInit) => {
       expect(url).toBe(`${API}/accounts/acct-1/r2/buckets`);
@@ -89,7 +102,7 @@ describe('Cloudflare cloud adapter', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('lists supported Cloudflare resources', async () => {
+  it('lists supported Cloudflare resources, including nested R2 bucket responses', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       const { pathname } = new URL(url);
       if (pathname.endsWith('/r2/buckets')) return ok({ buckets: [{ name: 'assets', creation_date: '2026-06-14T00:00:00Z' }] });
@@ -145,7 +158,13 @@ describe('Cloudflare cloud adapter', () => {
         config_src: 'cloudflare',
         tunnel_secret: 'known-secret',
       });
-      return ok({ id: 'tun-1', name: 'edge', status: 'healthy', created_at: '2026-06-14T00:00:00Z' });
+      return ok({
+        id: 'tun-1',
+        name: 'edge',
+        status: 'healthy',
+        tunnel_token: 'cloudflared-token',
+        created_at: '2026-06-14T00:00:00Z',
+      });
     });
     vi.stubGlobal('fetch', fetchMock);
 
@@ -160,6 +179,7 @@ describe('Cloudflare cloud adapter', () => {
       kind: 'object-storage',
       status: 'running',
       sku: 'tunnel',
+      metadata: { cloudflareTunnelToken: 'cloudflared-token' },
     });
   });
 

@@ -65,6 +65,7 @@ interface Tunnel {
   name?: string;
   created_at?: string;
   status?: string;
+  tunnel_token?: string;
 }
 
 const API = 'https://api.cloudflare.com/client/v4';
@@ -323,8 +324,7 @@ async function cfRequest<T>(
 async function resolveAccountId(ctx: CloudConnectContext | ProvisionContext, config: Config): Promise<string> {
   if (config.accountId) return config.accountId;
 
-  const { result } = await cfRequest<unknown>(ctx, config, 'GET', '/accounts');
-  const accounts = arrayFromResult<CloudflareAccount>(result, 'accounts');
+  const accounts = await cfListAll<CloudflareAccount>(ctx, config, '/accounts', 'accounts');
   const first = accounts[0];
   if (!first?.id) throw new Error('Cloudflare accountId not found; set accountId in cloud config');
   return first.id;
@@ -472,6 +472,7 @@ function tunnelInstance(tunnel: Tunnel, kind: InstanceKind, quote: Quote, fallba
     currency: quote.currency,
     sku: quote.sku,
     region: fallbackRegion,
+    ...(tunnel.tunnel_token ? { metadata: { cloudflareTunnelToken: tunnel.tunnel_token } } : {}),
   };
 }
 

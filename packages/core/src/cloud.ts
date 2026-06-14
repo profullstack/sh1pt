@@ -52,6 +52,7 @@ export interface Instance {
   sku?: string;
   region?: string;
   tags?: string[];
+  metadata?: Record<string, string | number | boolean>;
 }
 
 export interface ProvisionContext {

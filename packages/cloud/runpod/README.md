@@ -4,10 +4,19 @@ Provides the RunPod (GPU) cloud provider adapter for sh1pt scale and deploy work
 
 ## What it does
 
-- Connects cloud provider credentials and project settings.
-- Supports infrastructure planning, deployment, or status workflows where implemented.
-- Includes a connection flow for account or credential setup.
-- Includes setup guidance for required credentials or provider configuration.
+- Connects to RunPod through the GraphQL API with `RUNPOD_API_KEY`.
+- Quotes GPU pods from either explicit `hourlyPrice` config or RunPod `gpuTypes` pricing.
+- Provisions on-demand GPU pods with `podFindAndDeployOnDemand`.
+- Lists account pods, checks a pod by ID, and terminates pods with `podTerminate`.
+- Requires `imageName` for real provisioning and supports `maxHourlyPrice` guardrails before any pod is created.
+
+Common config fields:
+
+- `gpuTypeId`: RunPod GPU type ID, such as `NVIDIA RTX A6000`.
+- `imageName`: container image for real pod creation, such as `runpod/pytorch`.
+- `cloudType`: `ALL`, `COMMUNITY`, or `SECURE`.
+- `hourlyPrice`: optional explicit offline quote value per GPU.
+- `ports`, `dockerArgs`, `volumeInGb`, `containerDiskInGb`, `minVcpuCount`, `minMemoryInGb`, `volumeMountPath`, `networkVolumeId`, and `env`.
 
 ## Package
 

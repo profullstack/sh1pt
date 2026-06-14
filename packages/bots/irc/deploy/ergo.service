@@ -1,0 +1,27 @@
+[Unit]
+Description=Ergo IRC server (irc.profullstack.com)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ergo
+Group=ergo
+WorkingDirectory=/opt/ergo
+ExecStart=/opt/ergo/ergo run --conf /opt/ergo/ircd.yaml
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=2s
+LimitNOFILE=1048576
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/ergo
+# allow reading the Let's Encrypt cert tree (symlinks live -> archive)
+ReadOnlyPaths=/etc/letsencrypt
+
+[Install]
+WantedBy=multi-user.target

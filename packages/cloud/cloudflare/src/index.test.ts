@@ -92,7 +92,7 @@ describe('Cloudflare cloud adapter', () => {
   it('lists supported Cloudflare resources', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       const { pathname } = new URL(url);
-      if (pathname.endsWith('/r2/buckets')) return ok([{ name: 'assets', creation_date: '2026-06-14T00:00:00Z' }]);
+      if (pathname.endsWith('/r2/buckets')) return ok({ buckets: [{ name: 'assets', creation_date: '2026-06-14T00:00:00Z' }] });
       if (pathname.endsWith('/d1/database')) return ok([{ uuid: 'db-1', name: 'main', created_at: '2026-06-14T00:00:00Z' }]);
       if (pathname.endsWith('/queues')) return ok([{ queue_id: 'queue-1', queue_name: 'jobs', created_on: '2026-06-14T00:00:00Z' }]);
       if (pathname.endsWith('/cfd_tunnel')) return ok([{ id: 'tun-1', name: 'edge', status: 'healthy', created_at: '2026-06-14T00:00:00Z' }]);
@@ -107,6 +107,8 @@ describe('Cloudflare cloud adapter', () => {
       'r2:assets',
       'tunnel:tun-1',
     ]);
+    expect(instances.find((instance) => instance.id === 'queue:queue-1')?.kind).toBe('object-storage');
+    expect(instances.find((instance) => instance.id === 'tunnel:tun-1')?.kind).toBe('object-storage');
     expect(instances.find((instance) => instance.id === 'tunnel:tun-1')?.status).toBe('running');
   });
 
@@ -120,6 +122,45 @@ describe('Cloudflare cloud adapter', () => {
     const instance = await adapter.status(connectCtx(), 'queue:queue-1', { accountId: 'acct-1' });
 
     expect(instance).toMatchObject({ id: 'queue:queue-1', status: 'running', sku: 'queue' });
+  });
+
+  it('requires a caller-supplied tunnel secret when creating a tunnel', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.provision(
+      provisionCtx(),
+      { kind: 'object-storage', region: 'auto' },
+      { accountId: 'acct-1', resourceType: 'tunnel', name: 'edge' },
+    )).rejects.toThrow('Cloudflare tunnel provisioning requires config.tunnelSecret');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('creates a tunnel with a caller-supplied tunnel secret', async () => {
+    const fetchMock = vi.fn(async (url: string, init: RequestInit) => {
+      expect(url).toBe(`${API}/accounts/acct-1/cfd_tunnel`);
+      expect(init.method).toBe('POST');
+      expect(JSON.parse(String(init.body))).toEqual({
+        name: 'edge',
+        config_src: 'cloudflare',
+        tunnel_secret: 'known-secret',
+      });
+      return ok({ id: 'tun-1', name: 'edge', status: 'healthy', created_at: '2026-06-14T00:00:00Z' });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const instance = await adapter.provision(
+      provisionCtx(),
+      { kind: 'managed-db', region: 'auto' },
+      { accountId: 'acct-1', resourceType: 'tunnel', name: 'edge', tunnelSecret: 'known-secret' },
+    );
+
+    expect(instance).toMatchObject({
+      id: 'tunnel:tun-1',
+      kind: 'object-storage',
+      status: 'running',
+      sku: 'tunnel',
+    });
   });
 
   it('deletes the prefixed resource id', async () => {

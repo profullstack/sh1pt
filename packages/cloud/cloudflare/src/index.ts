@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto';
 import {
   defineCloud,
   tokenSetup,
@@ -109,7 +108,8 @@ export default defineCloud<Config>({
     }
 
     const name = safeName(config.name ?? `sh1pt-${resourceType}-${Date.now().toString(36)}`);
-    if (ctx.dryRun) return dryRunInstance(resourceType, name, spec.kind, quote, spec.region);
+    const kind = kindForResource(resourceType);
+    if (ctx.dryRun) return dryRunInstance(resourceType, name, kind, quote, spec.region);
 
     const accountId = await resolveAccountId(ctx, config);
 
@@ -122,7 +122,7 @@ export default defineCloud<Config>({
           `/accounts/${encodeURIComponent(accountId)}/r2/buckets`,
           { name },
         );
-        return bucketInstance(result, spec.kind, quote, spec.region);
+        return bucketInstance(result, kind, quote, spec.region);
       }
       case 'd1-database': {
         const { result } = await cfRequest<D1Database>(
@@ -135,7 +135,7 @@ export default defineCloud<Config>({
             primary_location_hint: spec.region ?? config.defaultRegion,
           },
         );
-        return d1Instance(result, spec.kind, quote, spec.region ?? config.defaultRegion);
+        return d1Instance(result, kind, quote, spec.region ?? config.defaultRegion);
       }
       case 'queue': {
         const { result } = await cfRequest<Queue>(
@@ -145,9 +145,12 @@ export default defineCloud<Config>({
           `/accounts/${encodeURIComponent(accountId)}/queues`,
           { queue_name: name },
         );
-        return queueInstance(result, spec.kind, quote, spec.region);
+        return queueInstance(result, kind, quote, spec.region);
       }
       case 'tunnel': {
+        if (!config.tunnelSecret) {
+          throw new Error('Cloudflare tunnel provisioning requires config.tunnelSecret so the connector secret is not generated and lost');
+        }
         const { result } = await cfRequest<Tunnel>(
           ctx,
           config,
@@ -156,10 +159,10 @@ export default defineCloud<Config>({
           {
             name,
             config_src: 'cloudflare',
-            tunnel_secret: config.tunnelSecret ?? randomBytes(32).toString('base64'),
+            tunnel_secret: config.tunnelSecret,
           },
         );
-        return tunnelInstance(result, spec.kind, quote, spec.region);
+        return tunnelInstance(result, kind, quote, spec.region);
       }
     }
   },
@@ -198,19 +201,19 @@ export default defineCloud<Config>({
     switch (resource.type) {
       case 'r2-bucket': {
         const { result } = await cfRequest<R2Bucket>(ctx, config, 'GET', `/accounts/${encodeURIComponent(accountId)}/r2/buckets/${encodeURIComponent(resource.nativeId)}`);
-        return bucketInstance(result, 'object-storage', quote);
+        return bucketInstance(result, kindForResource(resource.type), quote);
       }
       case 'd1-database': {
         const { result } = await cfRequest<D1Database>(ctx, config, 'GET', `/accounts/${encodeURIComponent(accountId)}/d1/database/${encodeURIComponent(resource.nativeId)}`);
-        return d1Instance(result, 'managed-db', quote);
+        return d1Instance(result, kindForResource(resource.type), quote);
       }
       case 'queue': {
         const { result } = await cfRequest<Queue>(ctx, config, 'GET', `/accounts/${encodeURIComponent(accountId)}/queues/${encodeURIComponent(resource.nativeId)}`);
-        return queueInstance(result, 'object-storage', quote);
+        return queueInstance(result, kindForResource(resource.type), quote);
       }
       case 'tunnel': {
         const { result } = await cfRequest<Tunnel>(ctx, config, 'GET', `/accounts/${encodeURIComponent(accountId)}/cfd_tunnel/${encodeURIComponent(resource.nativeId)}`);
-        return tunnelInstance(result, 'object-storage', quote);
+        return tunnelInstance(result, kindForResource(resource.type), quote);
       }
     }
   },
@@ -240,16 +243,16 @@ async function listResource(
   switch (resourceType) {
     case 'r2-bucket':
       return (await cfListAll<R2Bucket>(ctx, config, `/accounts/${account}/r2/buckets`, 'buckets'))
-        .map((bucket) => bucketInstance(bucket, 'object-storage', zeroQuote('r2-bucket')));
+        .map((bucket) => bucketInstance(bucket, kindForResource('r2-bucket'), zeroQuote('r2-bucket')));
     case 'd1-database':
       return (await cfListAll<D1Database>(ctx, config, `/accounts/${account}/d1/database`, 'databases'))
-        .map((db) => d1Instance(db, 'managed-db', zeroQuote('d1-database')));
+        .map((db) => d1Instance(db, kindForResource('d1-database'), zeroQuote('d1-database')));
     case 'queue':
       return (await cfListAll<Queue>(ctx, config, `/accounts/${account}/queues`, 'queues'))
-        .map((queue) => queueInstance(queue, 'object-storage', zeroQuote('queue')));
+        .map((queue) => queueInstance(queue, kindForResource('queue'), zeroQuote('queue')));
     case 'tunnel':
       return (await cfListAll<Tunnel>(ctx, config, `/accounts/${account}/cfd_tunnel`, 'tunnels'))
-        .map((tunnel) => tunnelInstance(tunnel, 'object-storage', zeroQuote('tunnel')));
+        .map((tunnel) => tunnelInstance(tunnel, kindForResource('tunnel'), zeroQuote('tunnel')));
   }
 }
 
@@ -343,6 +346,17 @@ function resourceTypeFor(spec: InstanceSpec, config: Config): ResourceType {
   if (spec.kind === 'managed-db') return 'd1-database';
   if (spec.kind === 'object-storage') return 'r2-bucket';
   throw new Error(`cloud-cloudflare supports object-storage and managed-db specs; got ${spec.kind}`);
+}
+
+function kindForResource(resourceType: ResourceType): InstanceKind {
+  switch (resourceType) {
+    case 'r2-bucket':
+    case 'queue':
+    case 'tunnel':
+      return 'object-storage';
+    case 'd1-database':
+      return 'managed-db';
+  }
 }
 
 function listResourceTypes(config: Config): ResourceType[] {

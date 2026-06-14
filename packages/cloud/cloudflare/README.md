@@ -11,6 +11,8 @@ Provides the Cloudflare (R2 / D1 / Queues / Tunnels) cloud provider adapter for 
 
 Set `resourceType` to one of `r2-bucket`, `d1-database`, `queue`, or `tunnel` when provisioning a specific resource. Without `resourceType`, `object-storage` specs create R2 buckets and `managed-db` specs create D1 databases.
 
+Tunnel provisioning requires `tunnelSecret` in the Cloudflare cloud config. The adapter sends that caller-owned secret to Cloudflare and does not generate or return connector credentials.
+
 ## Package
 
 - Name: `@profullstack/sh1pt-cloud-cloudflare`

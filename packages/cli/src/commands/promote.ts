@@ -351,6 +351,22 @@ const OAUTH_REGISTRATION_GUIDES: OAuthRegistrationGuide[] = [
     ],
   },
   {
+    platform: 'threads',
+    label: 'Threads (Meta)',
+    url: 'https://developers.facebook.com/apps/',
+    docUrl: 'https://developers.facebook.com/docs/threads',
+    redirectUris: ['http://127.0.0.1:8765/callback', 'https://sh1pt.com/auth/callback'],
+    scopes: ['threads_basic', 'threads_content_publish'],
+    steps: [
+      'Go to https://developers.facebook.com/apps/ and click "Create App"',
+      'Choose "Other" or "Business" as the app type',
+      'Add the "Threads API" product to the app',
+      'Under "Settings → Basic", note your App ID and App Secret',
+      'Under "Threads API → Settings", add the redirect URIs listed below to "Valid OAuth Redirect URIs"',
+      'Ensure "threads_basic" and "threads_content_publish" permissions are configured',
+    ],
+  },
+  {
     platform: 'tiktok',
     label: 'TikTok',
     url: 'https://developers.tiktok.com/apps/',

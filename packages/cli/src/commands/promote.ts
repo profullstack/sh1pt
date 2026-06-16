@@ -359,7 +359,7 @@ const OAUTH_REGISTRATION_GUIDES: OAuthRegistrationGuide[] = [
     scopes: ['threads_basic', 'threads_content_publish'],
     steps: [
       'Go to https://developers.facebook.com/apps/ and click "Create App"',
-      'Choose "Other" or "Business" as the app type',
+      'Choose "Business" as the app type',
       'Add the "Threads API" product to the app',
       'Under "Settings → Basic", note your App ID and App Secret',
       'Under "Threads API → Settings", add the redirect URIs listed below to "Valid OAuth Redirect URIs"',

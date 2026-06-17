@@ -11,7 +11,12 @@ const SPEC = {
   servers: [{ url: 'https://api.petstore.io/v1' }],
   paths: {
     '/pets': {
-      get: { operationId: 'listPets', tags: ['pets'], responses: { '200': { description: 'ok' } } },
+      get: {
+        operationId: 'listPets',
+        tags: ['pets'],
+        parameters: [{ name: 'page-size', in: 'query', schema: { type: 'integer' } }],
+        responses: { '200': { description: 'ok' } },
+      },
       post: {
         operationId: 'createPet',
         tags: ['pets'],
@@ -38,7 +43,8 @@ describe('generateTsSdk', () => {
     expect(files.map((f) => f.path).sort()).toEqual(['client.ts', 'package.json']);
     const src = await readFile(join(outDir, 'client.ts'), 'utf8');
     expect(src).toContain('class PetstoreClient');
-    expect(src).toContain('async listPets()');
+    expect(src).toContain('async listPets(opts: { query?: { _page_size?: number } } = {})');
+    expect(src).toContain('query: { "page-size": opts.query?._page_size }');
     expect(src).toContain('async getPet(petId: string)');
     expect(src).toContain('${encodeURIComponent(petId)}');
     expect(src).toContain('async createPet(opts: { body: unknown }):');

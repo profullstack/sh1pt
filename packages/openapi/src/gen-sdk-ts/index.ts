@@ -117,7 +117,9 @@ function renderMethod(op: Operation): string {
 
   const pathExpr = op.path.replace(/\{([^}]+)\}/g, (_, n) => `\${encodeURIComponent(${safe(n)})}`);
   const callParts: string[] = [];
-  if (queryParams.length) callParts.push('query: opts.query');
+  if (queryParams.length) {
+    callParts.push(`query: { ${queryParams.map((p) => `${JSON.stringify(p.name)}: opts.query?.${safe(p.name)}`).join(', ')} }`);
+  }
   if (headerParams.length) callParts.push('headers: opts.headers');
   if (op.requestBody) callParts.push('body: opts.body');
   const callOpts = callParts.length ? `, { ${callParts.join(', ')} }` : '';

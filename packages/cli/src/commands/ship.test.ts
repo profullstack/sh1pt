@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { availableTargetAdapters, shipCmd } from './ship.js';
+import {
+  availableTargetAdapters,
+  removeTargetFromConfig,
+  shipCmd,
+  upsertTargetInConfig,
+} from './ship.js';
 
 describe('shipCmd', () => {
   it('is registered as a top-level command named "ship"', () => {
@@ -49,5 +54,64 @@ describe('shipCmd', () => {
     const availableCmd = targetCmd!.commands.find((c) => c.name() === 'available');
     expect(availableCmd).toBeDefined();
     expect(availableCmd!.options.map((o) => o.long)).toContain('--json');
+  });
+
+  it('adds a target to the init template targets block', () => {
+    const source = [
+      "import { defineConfig } from '@profullstack/sh1pt-core';",
+      '',
+      'export default defineConfig({',
+      "  name: 'demo',",
+      "  version: '0.0.0',",
+      '  targets: {',
+      '    // add targets with `sh1pt ship target add <id>`',
+      '  },',
+      '});',
+      '',
+    ].join('\n');
+
+    const next = upsertTargetInConfig(source, 'pkg-npm');
+
+    expect(next).toContain('"pkg-npm": { use: "target-pkg-npm", config: {} },');
+    expect(next).toContain("version: '0.0.0'");
+  });
+
+  it('updates an existing target without duplicating it', () => {
+    const source = [
+      'export default defineConfig({',
+      '  targets: {',
+      '    "pkg-npm": { use: "target-pkg-npm", enabled: false, config: {} },',
+      '  },',
+      '});',
+    ].join('\n');
+
+    const next = upsertTargetInConfig(source, 'pkg-npm');
+
+    expect(next.match(/"pkg-npm"/g)).toHaveLength(1);
+    expect(next).not.toContain('enabled: false');
+  });
+
+  it('can add a disabled target', () => {
+    const source = 'export default defineConfig({ targets: {} });';
+
+    const next = upsertTargetInConfig(source, 'deploy-vercel', { enabled: false });
+
+    expect(next).toContain('"deploy-vercel": { use: "target-deploy-vercel", enabled: false, config: {} },');
+  });
+
+  it('removes a target from config text', () => {
+    const source = [
+      'export default defineConfig({',
+      '  targets: {',
+      '    "pkg-npm": { use: "target-pkg-npm", config: {} },',
+      '    "deploy-vercel": { use: "target-deploy-vercel", config: {} },',
+      '  },',
+      '});',
+    ].join('\n');
+
+    const next = removeTargetFromConfig(source, 'pkg-npm');
+
+    expect(next).not.toContain('"pkg-npm"');
+    expect(next).toContain('"deploy-vercel"');
   });
 });

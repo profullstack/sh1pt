@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import kleur from 'kleur';
 import { lint } from '@profullstack/sh1pt-policy';
 import type { Manifest } from '@profullstack/sh1pt-core';
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { initAction } from './init.js';
 import { categoryById, packageFor } from '../adapter-registry.js';
 
@@ -158,18 +158,162 @@ export function availableTargetAdapters(): Array<{
   }));
 }
 
+export function upsertTargetInConfig(
+  source: string,
+  id: string,
+  opts: { enabled?: boolean } = {},
+): string {
+  assertKnownTarget(id);
+  const targets = findObjectProperty(source, 'targets');
+  if (!targets) {
+    throw new Error('No targets block found in sh1pt.config.ts. Run sh1pt ship init first.');
+  }
+
+  const withoutExisting = removeObjectEntryFromBody(source, targets.open + 1, targets.close, id);
+  const nextTargets = findObjectProperty(withoutExisting, 'targets');
+  if (!nextTargets) throw new Error('Failed to re-read targets block after update.');
+
+  const entry = formatTargetEntry(id, opts);
+  const body = withoutExisting.slice(nextTargets.open + 1, nextTargets.close);
+  const insertion = body.trim().length === 0 || onlyLineComments(body)
+    ? `\n    ${entry}\n  `
+    : `${body.trimEnd().endsWith(',') ? '' : ','}\n    ${entry}`;
+
+  return withoutExisting.slice(0, nextTargets.close) + insertion + withoutExisting.slice(nextTargets.close);
+}
+
+export function removeTargetFromConfig(source: string, id: string): string {
+  const targets = findObjectProperty(source, 'targets');
+  if (!targets) {
+    throw new Error('No targets block found in sh1pt.config.ts. Run sh1pt ship init first.');
+  }
+  return removeObjectEntryFromBody(source, targets.open + 1, targets.close, id);
+}
+
+function resolveConfigPath(configPathOrDir: string): string {
+  const resolved = resolve(configPathOrDir);
+  const isDirectory = existsSync(resolved) && statSync(resolved).isDirectory();
+  const configPath = isDirectory ? join(resolved, 'sh1pt.config.ts') : resolved;
+  if (!existsSync(configPath)) {
+    throw new Error(`No sh1pt config found at ${configPath}. Run sh1pt ship init first.`);
+  }
+  return configPath;
+}
+
+function assertKnownTarget(id: string): void {
+  if (!availableTargetAdapters().some((target) => target.id === id)) {
+    throw new Error(`Unknown target "${id}". Run sh1pt ship target available to list valid targets.`);
+  }
+}
+
+function formatTargetEntry(id: string, opts: { enabled?: boolean }): string {
+  const enabled = opts.enabled === false ? ', enabled: false' : '';
+  return `${JSON.stringify(id)}: { use: ${JSON.stringify(`target-${id}`)}${enabled}, config: {} },`;
+}
+
+function onlyLineComments(body: string): boolean {
+  return body
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .every((line) => line.startsWith('//'));
+}
+
+function removeObjectEntryFromBody(source: string, bodyStart: number, bodyEnd: number, key: string): string {
+  const entry = findTopLevelObjectEntry(source, bodyStart, bodyEnd, key);
+  if (!entry) return source;
+  return source.slice(0, entry.start) + source.slice(entry.end);
+}
+
+function findObjectProperty(source: string, property: string): { open: number; close: number } | undefined {
+  const match = new RegExp(`(?:^|[,{\\s])${escapeRegExp(property)}\\s*:`).exec(source);
+  if (!match) return undefined;
+  const open = source.indexOf('{', match.index + match[0].length);
+  if (open === -1) return undefined;
+  const close = findMatchingBrace(source, open);
+  return close === -1 ? undefined : { open, close };
+}
+
+function findTopLevelObjectEntry(
+  source: string,
+  bodyStart: number,
+  bodyEnd: number,
+  key: string,
+): { start: number; end: number } | undefined {
+  const entryRe = new RegExp(`(?:^|,)\\s*(["']?)${escapeRegExp(key)}\\1\\s*:`, 'g');
+  const body = source.slice(bodyStart, bodyEnd);
+  let match: RegExpExecArray | null;
+  while ((match = entryRe.exec(body))) {
+    const colon = bodyStart + match.index + match[0].length;
+    const open = source.indexOf('{', colon);
+    if (open === -1 || open > bodyEnd) continue;
+    const between = source.slice(colon, open).trim();
+    if (between.length > 0) continue;
+    const close = findMatchingBrace(source, open);
+    if (close === -1 || close > bodyEnd) continue;
+    let start = bodyStart + match.index;
+    let end = close + 1;
+    if (source[end] === ',') end += 1;
+    while (source[end] === '\r' || source[end] === '\n') end += 1;
+    while (start > bodyStart && /[ \t]/.test(source[start - 1]!)) start -= 1;
+    return { start, end };
+  }
+  return undefined;
+}
+
+function findMatchingBrace(source: string, open: number): number {
+  let depth = 0;
+  let quote: '"' | "'" | '`' | undefined;
+  for (let i = open; i < source.length; i += 1) {
+    const ch = source[i];
+    const prev = source[i - 1];
+    if (quote) {
+      if (ch === quote && prev !== '\\') quote = undefined;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === '`') {
+      quote = ch;
+      continue;
+    }
+    if (ch === '{') depth += 1;
+    if (ch === '}') {
+      depth -= 1;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+function escapeRegExp(input: string): string {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 targetSubCmd
   .command('add <id>')
   .description('Add a target adapter to sh1pt.config.ts')
-  .action((id: string) => {
-    console.log(kleur.cyan(`[stub] target add ${id}`));
+  .option('-c, --config <path>', 'path to sh1pt config file or directory', process.cwd())
+  .option('--disabled', 'add the target with enabled: false')
+  .action((id: string, opts: { config: string; disabled?: boolean }) => {
+    const configPath = resolveConfigPath(opts.config);
+    const next = upsertTargetInConfig(readFileSync(configPath, 'utf8'), id, {
+      enabled: opts.disabled ? false : undefined,
+    });
+    writeFileSync(configPath, next, 'utf8');
+    const status = opts.disabled ? 'disabled' : 'enabled';
+    console.log(`${kleur.green('added target')} ${kleur.cyan(id)} ${kleur.dim(`(${status})`)}`);
+    console.log(kleur.dim(`config: ${configPath}`));
   });
 
 targetSubCmd
   .command('remove <id>')
   .description('Remove a target from sh1pt.config.ts')
-  .action((id: string) => {
-    console.log(kleur.yellow(`[stub] target remove ${id}`));
+  .option('-c, --config <path>', 'path to sh1pt config file or directory', process.cwd())
+  .action((id: string, opts: { config: string }) => {
+    const configPath = resolveConfigPath(opts.config);
+    const next = removeTargetFromConfig(readFileSync(configPath, 'utf8'), id);
+    writeFileSync(configPath, next, 'utf8');
+    console.log(`${kleur.yellow('removed target')} ${kleur.cyan(id)}`);
+    console.log(kleur.dim(`config: ${configPath}`));
   });
 
 targetSubCmd

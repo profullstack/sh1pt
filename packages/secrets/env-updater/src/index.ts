@@ -1,16 +1,16 @@
 /**
  * 🔐 sh1pt env-updater plugin
  * Sync environment variables across:
- * - Local .env files
- * - Doppler
- * - Railway
- * - GitHub Secrets
+ * - Local .env files (merge-safe)
+ * - Doppler (via spawnSync, no shell injection)
+ * - Railway (via spawnSync, no shell injection)
+ * - GitHub Secrets (via stdin, no temp files)
  * 
  * One command to update all environments at once.
  */
 import { defineSecretProvider, manualSetup, type SecretRef } from '@profullstack/sh1pt-core';
 import { readFile, writeFile } from 'node:fs/promises';
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 
 interface Config {
   envFile?: string;
@@ -22,15 +22,17 @@ interface Config {
 }
 
 const DEFAULT_ENV_FILE = '.env';
+const ENV_ENTRY = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/;
 
 // ===== HELPERS =====
 
+/** Read an env file into a key-value map, preserving existing entries. */
 async function readEnvFile(file: string): Promise<Record<string, string>> {
   try {
     const text = await readFile(file, 'utf8');
     const secrets: Record<string, string> = {};
     for (const line of text.split(/\r?\n/)) {
-      const match = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(line);
+      const match = ENV_ENTRY.exec(line);
       if (match) {
         secrets[match[1]] = match[2].replace(/^["']|["']$/g, '');
       }
@@ -41,25 +43,51 @@ async function readEnvFile(file: string): Promise<Record<string, string>> {
   }
 }
 
-async function writeEnvFile(file: string, secrets: Record<string, string>): Promise<void> {
-  const lines = Object.entries(secrets).map(([key, value]) => `${key}=${value}`);
+/**
+ * Merge new secrets into an existing .env file.
+ * Existing keys are updated in-place; new keys are appended.
+ * Will not delete keys not present in the push payload.
+ */
+async function writeEnvFile(file: string, newSecrets: Record<string, string>): Promise<void> {
+  const existing = await readEnvFile(file);
+  // Merge: existing values are overridden by new ones
+  for (const [key, value] of Object.entries(newSecrets)) {
+    existing[key] = value;
+  }
+  const lines = Object.entries(existing).map(([key, value]) => `${key}=${value}`);
   await writeFile(file, lines.join('\n') + '\n', 'utf8');
 }
 
-// ===== PLATFORM UPDATERS =====
+/** Run a command with args array — no shell interpolation. */
+function run(cmd: string, args: string[], input?: string): { stdout: string; stderr: string; status: number | null } {
+  const result = spawnSync(cmd, args, {
+    input: input ?? undefined,
+    encoding: 'utf-8',
+    timeout: 30000,
+    stdio: input ? ['pipe', 'pipe', 'pipe'] : ['ignore', 'pipe', 'pipe'],
+  });
+  return {
+    stdout: result.stdout?.trim() ?? '',
+    stderr: result.stderr?.trim() ?? '',
+    status: result.status,
+  };
+}
+
+// ===== PLATFORM UPDATERS (spawnSync — no shell injection) =====
 
 async function updateDoppler(secrets: Record<string, string>, config: Config): Promise<void> {
   const project = config.dopplerProject;
   const dopplerConfig = config.dopplerConfig || 'prd';
   if (!project) throw new Error('dopplerProject required');
+
+  const args = ['secrets', 'set', '--project', project, '--config', dopplerConfig];
+  for (const [key, value] of Object.entries(secrets)) {
+    args.push(`${key}=${value}`);
+  }
   
-  try {
-    execSync(`doppler secrets set --project ${project} --config ${dopplerConfig} ${Object.entries(secrets).map(([k, v]) => `"${k}=${v}"`).join(' ')}`, {
-      stdio: 'pipe',
-      timeout: 30000
-    });
-  } catch (err) {
-    throw new Error(`Doppler update failed: ${err}`);
+  const result = run('doppler', args);
+  if (result.status !== 0) {
+    throw new Error(`Doppler update failed: ${result.stderr || result.stdout}`);
   }
 }
 
@@ -67,15 +95,12 @@ async function updateRailway(secrets: Record<string, string>, config: Config): P
   const service = config.railwayService;
   if (!service) throw new Error('railwayService required');
 
-  try {
-    for (const [key, value] of Object.entries(secrets)) {
-      execSync(`railway variables set ${key}=${value} --service ${service}`, {
-        stdio: 'pipe',
-        timeout: 15000
-      });
+  for (const [key, value] of Object.entries(secrets)) {
+    const args = ['variables', 'set', `${key}=${value}`, '--service', service];
+    const result = run('railway', args);
+    if (result.status !== 0) {
+      throw new Error(`Railway update failed for ${key}: ${result.stderr || result.stdout}`);
     }
-  } catch (err) {
-    throw new Error(`Railway update failed: ${err}`);
   }
 }
 
@@ -84,17 +109,12 @@ async function updateGitHubSecrets(secrets: Record<string, string>, config: Conf
   const owner = config.githubOwner || 'profullstack';
   if (!repo) throw new Error('githubRepo required');
 
-  try {
-    for (const [key, value] of Object.entries(secrets)) {
-      const tmpFile = `/tmp/gh-secret-${key}`;
-      await writeFile(tmpFile, value, 'utf8');
-      execSync(`gh secret set ${key} --repo ${owner}/${repo} < ${tmpFile}`, {
-        stdio: 'pipe',
-        timeout: 15000
-      });
+  for (const [key, value] of Object.entries(secrets)) {
+    // Pass secret value via stdin — no temp files, no shell
+    const result = run('gh', ['secret', 'set', key, '--repo', `${owner}/${repo}`], value);
+    if (result.status !== 0) {
+      throw new Error(`GitHub Secrets update failed for ${key}: ${result.stderr || result.stdout}`);
     }
-  } catch (err) {
-    throw new Error(`GitHub Secrets update failed: ${err}`);
   }
 }
 
@@ -140,7 +160,7 @@ export default defineSecretProvider<Config>({
     
     const results: string[] = [];
     
-    // 1. Always update local .env
+    // 1. Always update local .env (merge-safe — won't delete existing keys)
     await writeEnvFile(file, secretMap);
     results.push(`local .env (${Object.keys(secretMap).length} keys)`);
     ctx.log(`  ✓ local .env updated`);
@@ -169,7 +189,7 @@ export default defineSecretProvider<Config>({
       }
     }
     
-    // 4. GitHub Secrets
+    // 4. GitHub Secrets (via stdin — no temp files)
     if (config.githubRepo) {
       try {
         await updateGitHubSecrets(secretMap, config);

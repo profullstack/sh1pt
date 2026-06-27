@@ -1409,6 +1409,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/secrets/env-updater:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/secrets/github:
     dependencies:
       '@profullstack/sh1pt-core':

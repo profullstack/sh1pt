@@ -95,8 +95,8 @@ export const CATEGORIES: readonly AdapterCategory[] = [
   {
     id: 'secrets',
     pkgPrefix: '@profullstack/sh1pt-secrets',
-    description: 'Secrets CLIs — Doppler, dotenvx, GitHub Secrets, 1Password, Railway',
-    adapters: ['doppler', 'dotenvx', 'github', 'onepassword', 'railway'],
+    description: 'Secrets CLIs — Doppler, dotenvx, Environment Updater, GitHub Secrets, 1Password, Railway',
+    adapters: ['doppler', 'dotenvx', 'env-updater', 'github', 'onepassword', 'railway'],
   },
   {
     id: 'security',

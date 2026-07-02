@@ -8,14 +8,15 @@ function bodyHash(body: string): string {
 }
 
 function withHeader(packId: string, version: string, hash: string, body: string): string {
+  // Mirror the real renderer: single-newline header, body straight after the
+  // '# hash:' line (no blank line between header and body).
   return [
     '# Managed by sh1pt Actions Fleet',
     `# pack: ${packId}@${version}`,
     '# install: sh1pt-actions-store',
     `# hash: sha256:${hash}`,
     '',
-    body,
-  ].join('\n');
+  ].join('\n') + body;
 }
 
 function singleFileRender(hash: string): RenderResult {

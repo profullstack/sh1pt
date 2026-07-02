@@ -28,14 +28,15 @@ function makeRender(destination: string, content: string, hash: string): RenderR
 }
 
 function withHeader(hash: string, body: string): string {
+  // Mirror the real renderer: single-newline header, body straight after the
+  // '# hash:' line (no blank line between header and body).
   return [
     '# Managed by sh1pt Actions Fleet',
     '# pack: test-pack@1.0.0',
     '# install: sh1pt-actions-store',
     `# hash: sha256:${hash}`,
     '',
-    body,
-  ].join('\n');
+  ].join('\n') + body;
 }
 
 describe('installPlan', () => {

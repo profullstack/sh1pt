@@ -111,15 +111,20 @@ function sha256(text: string): string {
 }
 
 /**
- * Compute the body hash of an existing managed file. Mirrors the renderer:
- * strip the managed header (up to and including the first blank line) and
- * hash whatever remains.
+ * Compute the body hash of an existing managed file. Mirrors the renderer
+ * (`buildManagedHeader` in action-pack/render.ts), which emits the marker,
+ * `# pack:`, `# install:` and `# hash:` lines separated by single newlines
+ * and then the body immediately after the `# hash:` line's newline — there is
+ * no blank line between the header and the body. Strip through that `# hash:`
+ * line and hash whatever remains.
  */
 function existingBodyHash(content: string): string | null {
   if (!content.startsWith(HEADER_MARKER)) return null;
-  const blankAt = content.indexOf('\n\n');
-  if (blankAt < 0) return null;
-  const body = content.slice(blankAt + 2);
+  const hashAt = content.indexOf('\n# hash:');
+  if (hashAt < 0) return null;
+  const afterHashLine = content.indexOf('\n', hashAt + 1);
+  if (afterHashLine < 0) return null;
+  const body = content.slice(afterHashLine + 1);
   return sha256(body);
 }
 

@@ -30,10 +30,10 @@ export default defineWebhookTarget<Config>({
     const res = await fetch(url, {
       method: config.method ?? 'POST',
       headers: {
+        ...config.extraHeaders,
         'content-type': 'application/json',
         'X-Sh1pt-Event': payload.event,
         ...(signature ? { 'X-Sh1pt-Signature': signature } : {}),
-        ...config.extraHeaders,
       },
       body,
     });

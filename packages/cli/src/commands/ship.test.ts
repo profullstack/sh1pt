@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
   availableTargetAdapters,
   removeTargetFromConfig,
+  rollbackTargets,
+  setupTargets,
   shipCmd,
+  statusTargets,
   upsertTargetInConfig,
 } from './ship.js';
 
@@ -54,6 +57,157 @@ describe('shipCmd', () => {
     const availableCmd = targetCmd!.commands.find((c) => c.name() === 'available');
     expect(availableCmd).toBeDefined();
     expect(availableCmd!.options.map((o) => o.long)).toContain('--json');
+  });
+
+  it('builds setup checklist rows from configured targets', () => {
+    const rows = setupTargets({
+      name: 'demo',
+      version: '1.2.3',
+      channels: [],
+      targets: {
+        'deploy-vercel': { use: 'target-deploy-vercel', config: {} },
+        'pkg-npm': { use: 'target-pkg-npm', enabled: false, config: {} },
+      },
+    });
+
+    expect(rows).toEqual([
+      {
+        id: 'deploy-vercel',
+        use: 'target-deploy-vercel',
+        enabled: true,
+        package: '@profullstack/sh1pt-target-deploy-vercel',
+        setupCommand: 'sh1pt targets deploy-vercel setup',
+      },
+      {
+        id: 'pkg-npm',
+        use: 'target-pkg-npm',
+        enabled: false,
+        package: '@profullstack/sh1pt-target-pkg-npm',
+        setupCommand: 'sh1pt targets pkg-npm setup',
+      },
+    ]);
+  });
+
+  it('filters setup checklist rows by store ids', () => {
+    const rows = setupTargets({
+      name: 'demo',
+      version: '1.2.3',
+      channels: [],
+      targets: {
+        'deploy-vercel': { use: 'target-deploy-vercel', config: {} },
+        'pkg-npm': { use: 'target-pkg-npm', config: {} },
+      },
+    }, ['pkg-npm']);
+
+    expect(rows).toEqual([
+      {
+        id: 'pkg-npm',
+        use: 'target-pkg-npm',
+        enabled: true,
+        package: '@profullstack/sh1pt-target-pkg-npm',
+        setupCommand: 'sh1pt targets pkg-npm setup',
+      },
+    ]);
+  });
+
+  it('supports JSON output for setup', () => {
+    const setupCmd = shipCmd.commands.find((c) => c.name() === 'setup');
+    expect(setupCmd).toBeDefined();
+    expect(setupCmd!.options.map((o) => o.long)).toContain('--json');
+  });
+
+  it('builds ship status rows from configured targets', () => {
+    const rows = statusTargets({
+      name: 'demo',
+      version: '1.2.3',
+      channels: [],
+      targets: {
+        'pkg-npm': { use: 'target-pkg-npm', config: {} },
+        'deploy-vercel': { use: 'target-deploy-vercel', enabled: false, config: {} },
+      },
+    });
+
+    expect(rows).toEqual([
+      {
+        id: 'pkg-npm',
+        use: 'target-pkg-npm',
+        enabled: true,
+        status: 'configured',
+      },
+      {
+        id: 'deploy-vercel',
+        use: 'target-deploy-vercel',
+        enabled: false,
+        status: 'disabled',
+      },
+    ]);
+  });
+
+  it('filters ship status rows by target id', () => {
+    const rows = statusTargets({
+      name: 'demo',
+      version: '1.2.3',
+      channels: [],
+      targets: {
+        'pkg-npm': { use: 'target-pkg-npm', config: {} },
+        'deploy-vercel': { use: 'target-deploy-vercel', config: {} },
+      },
+    }, 'deploy-vercel');
+
+    expect(rows).toEqual([
+      {
+        id: 'deploy-vercel',
+        use: 'target-deploy-vercel',
+        enabled: true,
+        status: 'configured',
+      },
+    ]);
+  });
+
+  it('builds rollback plan rows from enabled configured targets', () => {
+    const rows = rollbackTargets({
+      name: 'demo',
+      version: '1.2.3',
+      channels: [],
+      targets: {
+        'pkg-npm': { use: 'target-pkg-npm', config: {} },
+        'deploy-vercel': { use: 'target-deploy-vercel', enabled: false, config: {} },
+      },
+    });
+
+    expect(rows).toEqual([
+      {
+        id: 'pkg-npm',
+        use: 'target-pkg-npm',
+        action: 'rollback-latest',
+      },
+    ]);
+  });
+
+  it('filters rollback plan rows by target ids', () => {
+    const rows = rollbackTargets({
+      name: 'demo',
+      version: '1.2.3',
+      channels: [],
+      targets: {
+        'pkg-npm': { use: 'target-pkg-npm', config: {} },
+        'deploy-vercel': { use: 'target-deploy-vercel', config: {} },
+      },
+    }, ['deploy-vercel']);
+
+    expect(rows).toEqual([
+      {
+        id: 'deploy-vercel',
+        use: 'target-deploy-vercel',
+        action: 'rollback-latest',
+      },
+    ]);
+  });
+
+  it('supports JSON output for rollback', () => {
+    const rollbackCmd = shipCmd.commands.find((c) => c.name() === 'rollback');
+    expect(rollbackCmd).toBeDefined();
+    expect(rollbackCmd!.options.map((o) => o.long)).toContain('--json');
   });
 
   it('adds a target to the init template targets block', () => {

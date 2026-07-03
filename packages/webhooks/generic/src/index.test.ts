@@ -50,6 +50,37 @@ describe('webhook-generic HTTP delivery', () => {
     });
   });
 
+  it('does not let extraHeaders override generated delivery headers', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 202,
+      text: async () => 'accepted',
+    } as any);
+
+    const ctx = {
+      ...fakeConnectContext({
+        WEBHOOK_URL: 'https://example.com/hook',
+        WEBHOOK_SECRET: 'secret',
+      }),
+      dryRun: false,
+    };
+
+    await adapter.send(ctx as any, payload, {
+      extraHeaders: {
+        'content-type': 'text/plain',
+        'X-Sh1pt-Event': 'spoofed.event',
+        'X-Sh1pt-Signature': 'sha256=spoofed',
+      },
+    });
+
+    const [, init] = fetchMock.mock.calls[0]!;
+    expect((init as RequestInit).headers).toMatchObject({
+      'content-type': 'application/json',
+      'X-Sh1pt-Event': 'ship.published',
+      'X-Sh1pt-Signature': 'sha256=688ccc580a285a37b0bbd66d9b78c43fa13fd4a4cde5e72cff6b01cb92ef6a7d',
+    });
+  });
+
   it('returns non-2xx status and response body on delivery failure', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: false,

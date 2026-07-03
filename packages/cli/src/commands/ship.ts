@@ -83,9 +83,36 @@ shipCmd
   .description('Connect store credentials')
   .option('--store <id...>', 'only set up these stores')
   .option('--poll', 're-check every 30s until all stores connected')
-  .action((opts: { store?: string[]; poll?: boolean }) => {
-    const stores = opts.store?.join(', ') ?? 'all targets from manifest';
-    console.log(kleur.cyan(`[stub] ship setup · stores=${stores}`));
+  .option('-c, --config <path>', 'path to alternate config file or directory')
+  .option('--json')
+  .action(async (opts: { store?: string[]; poll?: boolean; config?: string; json?: boolean }) => {
+    const manifest = await loadManifest(opts.config);
+    const steps = setupTargets(manifest, opts.store);
+
+    if (opts.json) {
+      console.log(JSON.stringify({
+        project: manifest.name,
+        version: manifest.version,
+        poll: !!opts.poll,
+        targets: steps,
+      }, null, 2));
+      return;
+    }
+
+    if (steps.length === 0) {
+      const suffix = opts.store?.length ? ` matching ${kleur.cyan(opts.store.join(', '))}` : '';
+      console.log(kleur.dim(`No configured ship targets${suffix} to set up.`));
+      return;
+    }
+
+    console.log(kleur.bold(`Ship setup checklist for ${manifest.name}@${manifest.version}`));
+    for (const step of steps) {
+      console.log(`  ${kleur.cyan(step.id)}  ${kleur.dim(step.package)}  ${step.enabled ? kleur.green('enabled') : kleur.dim('disabled')}`);
+      console.log(`    ${kleur.dim(step.setupCommand)}`);
+    }
+    if (opts.poll) {
+      console.log(kleur.dim('Polling is requested; credential status polling will run after platform adapters expose live checks.'));
+    }
   });
 
 shipCmd
@@ -93,21 +120,55 @@ shipCmd
   .description('Current release status across targets')
   .option('-t, --target <id>')
   .option('--json')
-  .action((opts: { target?: string; json?: boolean }) => {
+  .option('-c, --config <path>', 'path to alternate config file or directory')
+  .action(async (opts: { target?: string; json?: boolean; config?: string }) => {
+    const manifest = await loadManifest(opts.config);
+    const targets = statusTargets(manifest, opts.target);
     if (opts.json) {
-      console.log(JSON.stringify({ releases: [], live: {}, inReview: {} }, null, 2));
+      console.log(JSON.stringify({ project: manifest.name, version: manifest.version, targets }, null, 2));
       return;
     }
-    console.log(kleur.dim(`[stub] ship status · target=${opts.target ?? 'all'}`));
+    if (targets.length === 0) {
+      const suffix = opts.target ? ` matching ${kleur.cyan(opts.target)}` : '';
+      console.log(kleur.dim(`No configured ship targets${suffix}.`));
+      return;
+    }
+    console.log(kleur.bold(`Ship status for ${manifest.name}@${manifest.version}`));
+    for (const target of targets) {
+      const status = target.status === 'disabled' ? kleur.dim('disabled') : kleur.green('configured');
+      console.log(`  ${kleur.cyan(target.id)}  ${kleur.dim(`-> ${target.use}`)}  ${status}`);
+    }
   });
 
 shipCmd
   .command('rollback')
   .description('Roll back the latest release on one or more targets')
   .option('-t, --target <id...>')
-  .action((opts: { target?: string[] }) => {
-    const targets = opts.target?.join(', ') ?? 'all enabled';
-    console.log(kleur.yellow(`[stub] ship rollback · targets=${targets}`));
+  .option('-c, --config <path>', 'path to alternate config file or directory')
+  .option('--json')
+  .action(async (opts: { target?: string[]; config?: string; json?: boolean }) => {
+    const manifest = await loadManifest(opts.config);
+    const targets = rollbackTargets(manifest, opts.target);
+
+    if (opts.json) {
+      console.log(JSON.stringify({
+        project: manifest.name,
+        version: manifest.version,
+        targets,
+      }, null, 2));
+      return;
+    }
+
+    if (targets.length === 0) {
+      const suffix = opts.target?.length ? ` matching ${kleur.cyan(opts.target.join(', '))}` : '';
+      console.log(kleur.dim(`No enabled ship targets${suffix} to roll back.`));
+      return;
+    }
+
+    console.log(kleur.bold(`Rollback plan for ${manifest.name}@${manifest.version}`));
+    for (const target of targets) {
+      console.log(`  ${kleur.cyan(target.id)}  ${kleur.dim(`-> ${target.use}`)}  ${kleur.yellow(target.action)}`);
+    }
   });
 
 shipCmd
@@ -156,6 +217,61 @@ export function availableTargetAdapters(): Array<{
     package: packageFor(targets, id),
     setupCommand: `sh1pt targets ${id} setup`,
   }));
+}
+
+export function statusTargets(manifest: Manifest, targetId?: string): Array<{
+  id: string;
+  use: string;
+  enabled: boolean;
+  status: 'configured' | 'disabled';
+}> {
+  return Object.entries(manifest.targets ?? {})
+    .filter(([id]) => !targetId || id === targetId)
+    .map(([id, target]) => ({
+      id,
+      use: target.use,
+      enabled: target.enabled !== false,
+      status: target.enabled === false ? 'disabled' : 'configured',
+    }));
+}
+
+export function setupTargets(manifest: Manifest, storeIds?: string[]): Array<{
+  id: string;
+  use: string;
+  enabled: boolean;
+  package: string;
+  setupCommand: string;
+}> {
+  const requested = new Set(storeIds ?? []);
+  const available = new Map(availableTargetAdapters().map((target) => [target.id, target]));
+  return Object.entries(manifest.targets ?? {})
+    .filter(([id]) => requested.size === 0 || requested.has(id))
+    .map(([id, target]) => {
+      const adapter = available.get(id);
+      return {
+        id,
+        use: target.use,
+        enabled: target.enabled !== false,
+        package: adapter?.package ?? target.use,
+        setupCommand: adapter?.setupCommand ?? `sh1pt targets ${id} setup`,
+      };
+    });
+}
+
+export function rollbackTargets(manifest: Manifest, targetIds?: string[]): Array<{
+  id: string;
+  use: string;
+  action: 'rollback-latest';
+}> {
+  const requested = new Set(targetIds ?? []);
+  return Object.entries(manifest.targets ?? {})
+    .filter(([id]) => requested.size === 0 || requested.has(id))
+    .filter(([, target]) => target.enabled !== false)
+    .map(([id, target]) => ({
+      id,
+      use: target.use,
+      action: 'rollback-latest',
+    }));
 }
 
 export function upsertTargetInConfig(

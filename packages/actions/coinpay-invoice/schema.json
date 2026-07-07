@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CoinPayPortal Invoice Bot inputs",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "actionRef": {
+      "type": "string",
+      "default": "profullstack/coinpaybot@v0",
+      "description": "The coinpaybot action reference (owner/repo@ref) to run."
+    },
+    "coinpayBaseUrl": {
+      "type": "string",
+      "default": "https://coinpayportal.com",
+      "description": "CoinPayPortal base URL."
+    }
+  }
+}

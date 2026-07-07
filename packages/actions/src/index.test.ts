@@ -28,6 +28,48 @@ describe('built-in packs', () => {
     expect(entry?.manifest.secrets[0]?.name).toBe('ENV_FILE');
   });
 
+  it('loads the coinpay-invoice pack', async () => {
+    const catalog = await loadBuiltinPacks();
+    const entry = catalog.get('coinpay-invoice');
+    expect(entry).toBeDefined();
+    expect(entry?.manifest.name).toBe('CoinPayPortal Invoice Bot');
+    expect(entry?.manifest.files[0]?.destination).toBe('.github/workflows/coinpay.yml');
+    expect(entry?.manifest.policies.installMode).toBe('pull-request');
+    expect(entry?.manifest.secrets.map((s) => s.name)).toEqual(['COINPAY_API_KEY', 'COINPAY_BUSINESS_ID']);
+  });
+
+  it('renders coinpay-invoice with default inputs', async () => {
+    const catalog = await loadBuiltinPacks();
+    const entry = catalog.get('coinpay-invoice');
+    if (!entry) throw new Error('coinpay-invoice not in catalog');
+    const result = await renderPack({
+      packDir: entry.packDir,
+      manifest: entry.manifest,
+      inputs: {},
+    });
+    const file = result.files[0];
+    expect(file?.destination).toBe('.github/workflows/coinpay.yml');
+    // Input placeholders substituted...
+    expect(file?.content).toContain('uses: profullstack/coinpaybot@v0');
+    expect(file?.content).toContain('coinpay-base-url: https://coinpayportal.com');
+    // ...while GitHub expressions and secret refs survive untouched.
+    expect(file?.content).toContain('${{ secrets.COINPAY_API_KEY }}');
+    expect(file?.content).toContain("startsWith(github.event.comment.body, '/coinpay')");
+    expect(file?.content).toContain('# Managed by sh1pt Actions Fleet');
+  });
+
+  it('honors an overridden action ref', async () => {
+    const catalog = await loadBuiltinPacks();
+    const entry = catalog.get('coinpay-invoice');
+    if (!entry) throw new Error('coinpay-invoice not in catalog');
+    const result = await renderPack({
+      packDir: entry.packDir,
+      manifest: entry.manifest,
+      inputs: { actionRef: 'profullstack/coinpaybot@v0.1.0' },
+    });
+    expect(result.files[0]?.content).toContain('uses: profullstack/coinpaybot@v0.1.0');
+  });
+
   it('renders node-pnpm-ci with default inputs', async () => {
     const catalog = await loadBuiltinPacks();
     const entry = catalog.get('node-pnpm-ci');

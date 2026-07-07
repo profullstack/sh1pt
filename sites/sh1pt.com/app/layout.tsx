@@ -5,6 +5,7 @@ import NavLink from './components/NavLink';
 import RobautoPixel from './components/RobautoPixel';
 import CrawlproofStats from './components/CrawlproofStats';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
+import Script from "next/script";
 
 export const metadata = {
   title: 'sh1pt — Build. Promote. Scale. Iterate…',
@@ -85,7 +86,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           </div>
         </footer>
         <CrawlproofStats />
-      <script async src="https://feedback.profullstack.com/embed/profullstack-feedback.js" data-property="sh1pt.com"></script></body>
+      <script async src="https://feedback.profullstack.com/embed/profullstack-feedback.js" data-property="sh1pt.com"></script>        <div data-cp-ad="" data-slot="6faee067-68a2-40ef-aa20-2065bb306f4c" data-format="banner_300x250" />
+      <Script src="https://crawlproof.com/ad.js" strategy="afterInteractive" />
+      </body>
     </html>
   );
 }

@@ -1,4 +1,5 @@
 import CopyableCommand from './components/CopyableCommand';
+import AdUnit from './components/AdUnit';
 
 export default function Home() {
   return (
@@ -167,6 +168,12 @@ sh1pt iterate     # observe metrics → agent proposes fixes → ship, on loop`}
           <p className="muted" style={{ maxWidth: 780 }}>
             <strong>$50 credit</strong> for every paying signup you bring. Tiered bonuses: <strong>+$150</strong> at 3 invites, <strong>+$600</strong> at 10, <strong>+$2000</strong> at 25. Your referral link lives on your dashboard after signup.
           </p>
+        </div>
+      </section>
+
+      <section>
+        <div className="container">
+          <AdUnit />
         </div>
       </section>
     </main>

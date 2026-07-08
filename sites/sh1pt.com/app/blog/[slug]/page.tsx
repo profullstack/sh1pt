@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getPostBySlug, formatDate, SITE_URL } from '@/lib/blog';
+import AdUnit from '../../components/AdUnit';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,6 +80,7 @@ export default async function BlogPostPage({
           {post.content_markdown ?? ''}
         </pre>
       )}
+      <AdUnit />
     </main>
   );
 }

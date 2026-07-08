@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { listPosts, formatDate, SITE_URL } from '@/lib/blog';
+import AdUnit from '../components/AdUnit';
 
 export const metadata: Metadata = {
   title: 'Blog — sh1pt',
@@ -85,6 +86,7 @@ export default async function BlogIndexPage() {
           ))}
         </ul>
       )}
+      <AdUnit />
     </main>
   );
 }

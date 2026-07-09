@@ -84,7 +84,7 @@ export function parseSocialFollowTarget(input: string, explicitPlatform?: string
   try {
     url = new URL(input);
   } catch {
-    if (platform === 'bluesky' || looksLikeBlueskyActor(input)) {
+    if (looksLikeBlueskyActor(input)) {
       return { platform: 'bluesky', actor: input.replace(/^@/, ''), source: 'profile' };
     }
     throw new Error(`Expected a social account URL; got "${input}"`);

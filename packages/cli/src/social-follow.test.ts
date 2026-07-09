@@ -39,6 +39,12 @@ describe('social follow target parsing', () => {
     expect(() => parseSocialFollowTarget('https://example.com/alice')).toThrow('only supports bsky.app URLs');
   });
 
+  it('rejects invalid bare actors even when Bluesky is explicit', () => {
+    expect(() => parseSocialFollowTarget('not a valid handle', 'bluesky')).toThrow(
+      'Expected a social account URL',
+    );
+  });
+
   it('rejects malformed Bluesky profile URLs with a useful error', () => {
     expect(() => parseSocialFollowTarget('https://bsky.app/profile/%E0%A4%A')).toThrow(
       'Could not parse Bluesky profile URL',

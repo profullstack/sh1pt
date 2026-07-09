@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 // Document generation — pitch decks (.pptx / .pdf), one-pagers,
 // investor memos, sales collateral. The marketing side of promote
 // wants a generator that produces assets on demand.
@@ -57,10 +59,11 @@ export interface DocProvider<Config = unknown> {
     to: DocFormat,
     config: Config,
   ): Promise<DocResult>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineDocs<Config>(d: DocProvider<Config>): DocProvider<Config> {
-  return d;
+  return autoSetup(d);
 }
 
 const docRegistry = new Map<string, DocProvider<any>>();

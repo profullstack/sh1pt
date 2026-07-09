@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 // DNS management — used by `sh1pt scale` to round-robin across the
 // fleet as instances come up, and drop records as they're destroyed.
 
@@ -24,10 +26,11 @@ export interface DnsProvider<Config = unknown> {
   // Sync N IPs as round-robin A records at <name>.<zone>. sh1pt uses this
   // whenever `scale up/down` changes the fleet size.
   syncRoundRobin(opts: { zoneId: string; name: string; ips: string[]; ttl?: number; proxied?: boolean }, config: Config): Promise<DnsRecord[]>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineDns<Config>(p: DnsProvider<Config>): DnsProvider<Config> {
-  return p;
+  return autoSetup(p);
 }
 
 const dnsRegistry = new Map<string, DnsProvider<any>>();

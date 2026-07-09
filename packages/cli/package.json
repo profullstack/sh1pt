@@ -1,24 +1,57 @@
 {
-  "name": "@sh1pt/cli",
-  "version": "0.0.0",
+  "name": "@profullstack/sh1pt",
+  "version": "0.2.0",
+  "description": "One codebase → every store, registry, CDN, and channel. Build. Promote. Scale. Iterate.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/profullstack/sh1pt.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://sh1pt.com",
+  "bugs": "https://github.com/profullstack/sh1pt/issues",
+  "keywords": [
+    "cli",
+    "deploy",
+    "publish",
+    "app-store",
+    "ads",
+    "devtools"
+  ],
   "type": "module",
   "bin": {
     "sh1pt": "./bin/sh1pt.js"
   },
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "bin",
+    "dist",
+    "skills"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/index.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@sh1pt/core": "workspace:*",
-    "@sh1pt/policy": "workspace:*",
+    "@profullstack/sh1pt-action-packs": "workspace:^",
+    "@profullstack/sh1pt-actions-fleet-core": "workspace:^",
+    "@profullstack/sh1pt-core": "workspace:^",
+    "@profullstack/sh1pt-openapi": "workspace:^",
+    "@profullstack/sh1pt-policy": "workspace:^",
+    "@profullstack/sh1pt-secrets-env-updater": "workspace:^",
     "commander": "^12.1.0",
     "kleur": "^4.1.5",
+    "libsodium-wrappers": "^0.7.15",
     "prompts": "^2.4.2"
   },
   "devDependencies": {
+    "@types/libsodium-wrappers": "^0.7.14",
     "@types/prompts": "^2.4.9"
   }
 }

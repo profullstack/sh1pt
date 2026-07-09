@@ -61,6 +61,10 @@ export interface WebhookTarget<Config = unknown> {
   // just posts { event, data } — override when a platform expects
   // specific fields (e.g. Slack's blocks, Discord's embeds).
   format?(payload: WebhookPayload, config: Config): unknown;
+  // Optional: run the standard setup flow — try the fastest path
+  // (webhook URL paste / token paste / OAuth), fall back to manual
+  // instructions. Wires into `runSetup()` from ./setup.ts.
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineWebhookTarget<Config>(t: WebhookTarget<Config>): WebhookTarget<Config> {

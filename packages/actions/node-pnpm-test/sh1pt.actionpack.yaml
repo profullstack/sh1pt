@@ -1,0 +1,55 @@
+schemaVersion: 1
+id: node-pnpm-test
+name: Node pnpm Test
+description: Node/pnpm test workflow based on sh1pt's own repository test workflow.
+version: 1.2.0
+publisher: profullstack
+visibility: public
+license: MIT
+categories:
+  - ci
+  - test
+  - node
+  - typescript
+compatibility:
+  providers:
+    - github
+  languages:
+    - javascript
+    - typescript
+  packageManagers:
+    - pnpm
+pricing:
+  type: free
+inputs:
+  nodeVersion:
+    type: string
+    default: '22'
+    description: Node.js version to install.
+  pushBranch:
+    type: string
+    default: master
+    description: Branch that should trigger push tests.
+  installCommand:
+    type: string
+    default: pnpm install --frozen-lockfile
+    description: Command to install dependencies.
+  testCommand:
+    type: string
+    default: pnpm run --if-present test
+    description: Command to run tests. Uses --if-present so repos without a test script pass instead of hard-failing.
+secrets: []
+repoVariables: []
+files:
+  - source: workflow.yml
+    destination: .github/workflows/test.yml
+    mergeStrategy: replace-managed
+policies:
+  installMode: pull-request
+  managedComment: true
+  requiresReview: true
+security:
+  leastPrivilegePermissions: true
+  pinThirdPartyActions: optional
+  allowPullRequestTarget: false
+  defaultTimeoutMinutes: 15

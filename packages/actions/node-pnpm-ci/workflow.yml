@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # pnpm version is read from the "packageManager" field in package.json.
+      # Do not pin a version here — it conflicts with packageManager and fails
+      # with ERR_PNPM_BAD_PM_VERSION.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '{{nodeVersion}}'
+          cache: pnpm
+
+      - run: {{installCommand}}
+
+      # typecheck / test default to `pnpm run --if-present <script>` so a repo
+      # that hasn't defined these scripts yet gets a green workflow instead of
+      # failing on the first step. Once the scripts exist they run normally.
+      - run: {{typecheckCommand}}
+
+      - run: {{testCommand}}

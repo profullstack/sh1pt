@@ -1,4 +1,4 @@
-import { AgentProviderAdapter } from "./types";
+import type { AgentProviderAdapter } from "./types";
 
 const registry = new Map<string, AgentProviderAdapter>();
 

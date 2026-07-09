@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 // Payment providers. One interface; adapters for CoinPay (crypto,
 // default), Stripe (cards + ACH), PayPal (legacy but ubiquitous),
 // WorldRemit / Wise (cross-border FX + payout), Lemon Squeezy & Polar
@@ -55,10 +57,11 @@ export interface PaymentProvider<Config = unknown> {
   refund?(paymentId: string, amount: number | undefined, config: Config): Promise<{ id: string }>;
   // For marketplace boilerplates: move money to a connected payee.
   payout?(accountId: string, amount: number, currency: string, config: Config): Promise<{ id: string }>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function definePayment<Config>(p: PaymentProvider<Config>): PaymentProvider<Config> {
-  return p;
+  return autoSetup(p);
 }
 
 const paymentRegistry = new Map<string, PaymentProvider<any>>();

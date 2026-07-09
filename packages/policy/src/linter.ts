@@ -1,3 +1,4 @@
+import type { TargetKind } from '@profullstack/sh1pt-core';
 import type { LintContext, LintResult, Rule } from './rule.js';
 import { requiredFields } from './rules/required-fields.js';
 import { forbiddenKeywords } from './rules/forbidden-keywords.js';
@@ -16,7 +17,17 @@ export const defaultRules: Rule[] = [
 ];
 
 export async function lint(ctx: LintContext, rules: Rule[] = defaultRules): Promise<LintResult> {
-  const findings = (await Promise.all(rules.map((r) => r.run(ctx)))).flat();
+  // Filter rules to those that apply to at least one target kind present in
+  // the manifest. Rules with no appliesTo constraint run against all targets.
+  // Without this filter, mobile-only rules (e.g. mobile/bundle-id) fire
+  // false-positive errors on web/api targets that happen to carry a bundleId
+  // config field for unrelated purposes.
+  const manifestKinds = new Set(Object.keys(ctx.manifest.targets ?? {}) as TargetKind[]);
+  const applicable = rules.filter(
+    (r) => !r.appliesTo || r.appliesTo.length === 0 || r.appliesTo.some((k) => manifestKinds.has(k)),
+  );
+
+  const findings = (await Promise.all(applicable.map((r) => r.run(ctx)))).flat();
   const errors = findings.filter((f) => f.severity === 'error').length;
   const warnings = findings.filter((f) => f.severity === 'warn').length;
   return { findings, errors, warnings, passed: errors === 0 };

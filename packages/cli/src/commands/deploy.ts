@@ -1,5 +1,21 @@
-import { Command } from 'commander';
+import { Command, InvalidArgumentError } from 'commander';
 import kleur from 'kleur';
+
+export function parsePositiveSafeInteger(value: string): number {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+    throw new InvalidArgumentError('must be a positive safe integer');
+  }
+  return parsed;
+}
+
+export function parsePositiveFiniteNumber(value: string): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new InvalidArgumentError('must be a positive finite number');
+  }
+  return parsed;
+}
 
 export const deployCmd = new Command('deploy')
   .description('Provision cloud infrastructure — VPS, GPU, bare metal, managed databases, object storage')
@@ -21,10 +37,10 @@ deployCmd
   .command('quote')
   .description('Price-check a spec across every connected provider before provisioning')
   .requiredOption('--kind <kind>', 'cpu-vps | gpu | bare-metal | managed-db | block-storage | object-storage')
-  .option('--cpu <n>', 'vCPU count', Number)
-  .option('--memory <gb>', 'RAM in GB', Number)
+  .option('--cpu <n>', 'vCPU count', parsePositiveSafeInteger)
+  .option('--memory <gb>', 'RAM in GB', parsePositiveFiniteNumber)
   .option('--gpu <model>', 'GPU model, e.g. A100, H100, RTX-4090')
-  .option('--gpu-count <n>', 'GPUs per instance', Number)
+  .option('--gpu-count <n>', 'GPUs per instance', parsePositiveSafeInteger)
   .option('--region <id>')
   .option('--spot', 'accept interruptible / spot instances for lower price')
   .action((opts) => {
@@ -37,14 +53,14 @@ deployCmd
   .description('Spin up a new instance (WILL start billing — pair with a --max-hourly-price guardrail)')
   .requiredOption('--provider <id>', 'e.g. cloud-runpod, cloud-digitalocean')
   .requiredOption('--kind <kind>')
-  .option('--cpu <n>', Number)
-  .option('--memory <gb>', Number)
-  .option('--gpu <model>')
-  .option('--gpu-count <n>', Number)
+  .option('--cpu <n>', 'vCPU count', parsePositiveSafeInteger)
+  .option('--memory <gb>', 'memory in GB', parsePositiveFiniteNumber)
+  .option('--gpu <model>', 'GPU model, e.g. A100, H100')
+  .option('--gpu-count <n>', 'number of GPUs', parsePositiveSafeInteger)
   .option('--region <id>')
   .option('--image <name>')
   .option('--spot')
-  .option('--max-hourly-price <usd>', 'abort if quote exceeds this (strongly recommended for GPU)', Number)
+  .option('--max-hourly-price <usd>', 'abort if quote exceeds this (strongly recommended for GPU)', parsePositiveFiniteNumber)
   .option('--dry-run', 'show the plan without starting a bill')
   .action((opts) => {
     if (opts.kind === 'gpu' && !opts.maxHourlyPrice) {

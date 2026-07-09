@@ -1,4 +1,6 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 // SteamOS / Steam Deck — Desktop Mode path that bypasses Steam entirely.
 // The Deck runs KDE Plasma on Arch in Desktop Mode and installs Flatpaks
@@ -23,19 +25,41 @@ interface Config {
   selfHosted?: { uploadTo: 'github-pages' | 'cdn' | 's3' };
 }
 
+const APP_ID_PATTERN = /^[A-Za-z][A-Za-z0-9-]*(\.[A-Za-z][A-Za-z0-9-]*)+$/;
+
+function requireAppId(config: Config): string {
+  const appId = config.appId?.trim();
+  if (!appId) throw new Error('desktop-steamos requires appId');
+  if (!APP_ID_PATTERN.test(appId)) {
+    throw new Error('desktop-steamos appId must be a valid reverse-DNS identifier');
+  }
+  return appId;
+}
+
 export default defineTarget<Config>({
   id: 'desktop-steamos',
   kind: 'desktop',
   label: 'SteamOS / Steam Deck (Desktop Mode / Flatpak)',
   async build(ctx, config) {
+    const appId = requireAppId(config);
     ctx.log(`flatpak-builder · appId=${config.appId}`);
-    // TODO:
-    //  - flatpak-builder --repo=repo build-dir <manifest>
-    //  - flatpak build-bundle repo <appId>.flatpak <appId>
-    //  - if gamingModeLauncher: generate Steam shortcuts.vdf entry + artwork
-    return { artifact: `${ctx.outDir}/${config.appId}.flatpak` };
+    const artifactDir = join(ctx.outDir, 'steamos');
+    const planPath = join(artifactDir, 'steamos-flatpak-plan.json');
+    await mkdir(artifactDir, { recursive: true });
+    await writeFile(planPath, `${JSON.stringify({
+      appId,
+      version: ctx.version,
+      sourceDir: config.sourceDir,
+      distribution: config.distribution,
+      flatpakManifest: config.flatpakManifest,
+      gamingModeLauncher: config.gamingModeLauncher,
+      selfHosted: config.selfHosted,
+      outputArtifact: `${appId}.flatpak`,
+    }, null, 2)}\n`, 'utf-8');
+    return { artifact: planPath };
   },
   async ship(ctx, config) {
+    const appId = requireAppId(config);
     const dest = config.distribution === 'flathub' ? 'Flathub PR' : `self-hosted (${config.selfHosted?.uploadTo})`;
     ctx.log(`publish ${config.appId}@${ctx.version} → ${dest}`);
     if (ctx.dryRun) return { id: 'dry-run' };
@@ -43,11 +67,20 @@ export default defineTarget<Config>({
     //  - flathub:     open PR against flathub/flathub (like pkg-homebrew pattern)
     //  - self-hosted: sync repo dir with signed index to github-pages / cdn / s3
     return {
-      id: `${config.appId}@${ctx.version}`,
-      url: config.distribution === 'flathub' ? `https://flathub.org/apps/${config.appId}` : undefined,
+      id: `${appId}@${ctx.version}`,
+      url: config.distribution === 'flathub' ? `https://flathub.org/apps/${appId}` : undefined,
     };
   },
   async status(id) {
     return { state: 'in-review', version: id };
   },
+
+  setup: manualSetup({
+    label: "Steam Deck (Desktop Mode Flatpak)",
+    vendorDocUrl: "https://flathub.org/",
+    steps: [
+      "Steam Deck Desktop Mode uses Flathub",
+      "Follow the desktop-linux Flathub flow \u2014 no Steam-specific auth needed here",
+    ],
+  }),
 });

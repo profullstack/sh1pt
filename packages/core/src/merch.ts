@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 // Merchandise / print-on-demand. A merch provider can upload a design,
 // mint SKUs (t-shirts, hoodies, stickers, mugs, posters), list them to
 // a sales channel, and forward orders for fulfillment.
@@ -79,10 +81,11 @@ export interface MerchProvider<Config = unknown> {
   publish(ctx: { log(m: string): void; dryRun: boolean }, skuIds: string[], storefront: string, config: Config): Promise<{ urls: string[] }>;
   listOrders(config: Config): Promise<MerchOrder[]>;
   payout?(config: Config): Promise<MerchPayout>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineMerch<Config>(m: MerchProvider<Config>): MerchProvider<Config> {
-  return m;
+  return autoSetup(m);
 }
 
 const merchRegistry = new Map<string, MerchProvider<any>>();

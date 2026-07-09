@@ -1,0 +1,58 @@
+schemaVersion: 1
+id: node-pnpm-ci
+name: Node pnpm CI
+description: Least-privilege Node/TypeScript CI workflow using pnpm — install, typecheck, test.
+version: 1.2.0
+publisher: profullstack
+visibility: public
+license: MIT
+categories:
+  - ci
+  - node
+  - typescript
+compatibility:
+  providers:
+    - github
+  languages:
+    - javascript
+    - typescript
+  packageManagers:
+    - pnpm
+  frameworks:
+    - next
+    - sveltekit
+    - react
+pricing:
+  type: free
+inputs:
+  nodeVersion:
+    type: string
+    default: '22'
+    description: Node.js version to install.
+  installCommand:
+    type: string
+    default: pnpm install --frozen-lockfile
+    description: Command to install dependencies.
+  typecheckCommand:
+    type: string
+    default: pnpm run --if-present typecheck
+    description: Command to run typecheck. Uses --if-present so repos without a typecheck script pass instead of hard-failing.
+  testCommand:
+    type: string
+    default: pnpm run --if-present test
+    description: Command to run tests. Uses --if-present so repos without a test script pass instead of hard-failing.
+secrets: []
+repoVariables: []
+files:
+  - source: workflow.yml
+    destination: .github/workflows/ci.yml
+    mergeStrategy: replace-managed
+policies:
+  installMode: pull-request
+  managedComment: true
+  requiresReview: true
+security:
+  leastPrivilegePermissions: true
+  pinThirdPartyActions: optional
+  allowPullRequestTarget: false
+  defaultTimeoutMinutes: 15

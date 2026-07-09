@@ -1,4 +1,4 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   bundleId: string;
@@ -8,24 +8,49 @@ interface Config {
   testflightGroups?: string[];
 }
 
+const BUNDLE_ID_PATTERN = /^[A-Za-z][A-Za-z0-9-]*(\.[A-Za-z][A-Za-z0-9-]*)+$/;
+
+function requireBundleId(config: Config): string {
+  const bundleId = config.bundleId?.trim();
+  if (!bundleId) throw new Error('mobile-ios requires bundleId');
+  if (!BUNDLE_ID_PATTERN.test(bundleId)) {
+    throw new Error('mobile-ios bundleId must be a valid reverse-DNS identifier');
+  }
+  return bundleId;
+}
+
 export default defineTarget<Config>({
   id: 'mobile-ios',
   kind: 'mobile',
   label: 'App Store (iOS)',
   async build(ctx, config) {
-    ctx.log(`xcodebuild archive · scheme=${config.scheme ?? ctx.projectDir}`);
-    // TODO: xcodebuild archive → exportArchive → .ipa in ctx.outDir
-    // requires macOS runner; cloud builds will route to a mac worker
+    const bundleId = requireBundleId(config);
+    ctx.log(`xcodebuild archive - bundle=${bundleId} scheme=${config.scheme ?? ctx.projectDir}`);
+    // TODO: xcodebuild archive -> exportArchive -> .ipa in ctx.outDir.
+    // Requires a macOS runner; cloud builds will route to a Mac worker.
     return { artifact: `${ctx.outDir}/app.ipa` };
   },
   async ship(ctx, config) {
+    const bundleId = requireBundleId(config);
     const destination = ctx.channel === 'stable' ? 'App Store' : `TestFlight:${config.testflightGroups?.join(',') ?? 'internal'}`;
     ctx.log(`upload to ${destination} via App Store Connect API`);
     if (ctx.dryRun) return { id: 'dry-run' };
-    // TODO: altool / notarytool upload using APP_STORE_CONNECT_KEY from secrets
-    return { id: `${config.bundleId}@${ctx.version}` };
+    // TODO: altool / notarytool upload using APP_STORE_CONNECT_KEY from secrets.
+    return { id: `${bundleId}@${ctx.version}` };
   },
   async status(id) {
     return { state: 'in-review', version: id };
   },
+
+  setup: manualSetup({
+    label: 'iOS App Store',
+    vendorDocUrl: 'https://developer.apple.com/',
+    steps: [
+      'Enroll in Apple Developer Program ($99/yr) + D-U-N-S (free, 1-2 days)',
+      'Accept all Paid Apps agreements in App Store Connect',
+      'Generate an App Store Connect API key (.p8 file) with Developer role',
+      'Run: sh1pt secret set APP_STORE_CONNECT_KEY_ID <id>',
+      'Run: sh1pt secret set APP_STORE_CONNECT_ISSUER_ID <uuid>',
+    ],
+  }),
 });

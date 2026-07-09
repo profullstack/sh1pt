@@ -229,6 +229,8 @@ export interface JurisdictionPack<Config = unknown> {
     entity: Entity,
     config: Config,
   ): Promise<{ status: EntityLifecycleState; notes?: string }>;
+
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineJurisdiction<Config>(p: JurisdictionPack<Config>): JurisdictionPack<Config> {

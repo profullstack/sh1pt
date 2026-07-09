@@ -1,0 +1,45 @@
+schemaVersion: 1
+id: coinpay-invoice
+name: CoinPayPortal Invoice Bot
+description: Create CoinPayPortal crypto invoices and payment links from GitHub issue and PR comments via /coinpay commands.
+version: 1.0.0
+publisher: profullstack
+visibility: public
+license: MIT
+categories:
+  - agent
+compatibility:
+  providers:
+    - github
+pricing:
+  type: free
+inputs:
+  actionRef:
+    type: string
+    default: profullstack/coinpaybot@v0
+    description: The coinpaybot action reference (owner/repo@ref) to run.
+  coinpayBaseUrl:
+    type: string
+    default: https://coinpayportal.com
+    description: CoinPayPortal base URL.
+secrets:
+  - name: COINPAY_API_KEY
+    description: CoinPayPortal API key (cp_live_...). Store as a repository secret.
+    required: true
+  - name: COINPAY_BUSINESS_ID
+    description: CoinPayPortal business id that owns the receiving wallet.
+    required: true
+repoVariables: []
+files:
+  - source: workflow.yml
+    destination: .github/workflows/coinpay.yml
+    mergeStrategy: replace-managed
+policies:
+  installMode: pull-request
+  managedComment: true
+  requiresReview: true
+security:
+  leastPrivilegePermissions: true
+  pinThirdPartyActions: optional
+  allowPullRequestTarget: false
+  defaultTimeoutMinutes: 15

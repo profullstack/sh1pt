@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import type { ChildProcessWithoutNullStreams } from "node:child_process";
 import type { Config } from "./index.js";
 
 export interface ClaudeResult {
@@ -81,22 +82,22 @@ export class SessionManager {
 
     try {
       const args = this.buildArgs(session.aiSessionId);
-      const proc = spawn(this.config.aiCliPath, [...args, prompt], {
-        stdio: ["pipe", "pipe", "pipe"],
-        signal: session.abortController.signal,
-      });
+      const proc: ChildProcessWithoutNullStreams = spawn(this.config.aiCliPath, [...args, prompt]);
+      const abort = () => proc.kill("SIGTERM");
+      session.abortController.signal.addEventListener("abort", abort, { once: true });
 
       let stdout = "";
       let stderr = "";
 
-      proc.stdout?.on("data", (chunk) => (stdout += chunk.toString()));
-      proc.stderr?.on("data", (chunk) => (stderr += chunk.toString()));
+      proc.stdout.on("data", (chunk: Buffer) => (stdout += chunk.toString()));
+      proc.stderr.on("data", (chunk: Buffer) => (stderr += chunk.toString()));
 
       return new Promise((resolve) => {
-        proc.on("close", (code) => {
+        proc.on("close", (code: number | null) => {
+          session.abortController?.signal.removeEventListener("abort", abort);
           if (stdout.trim()) {
             try {
-              const parsed = JSON.parse(stdout.trim());
+              const parsed = JSON.parse(stdout.trim()) as Partial<ClaudeResult>;
               if (parsed.session_id) session.aiSessionId = parsed.session_id;
               resolve({
                 type: "result",
@@ -122,7 +123,8 @@ export class SessionManager {
             total_cost_usd: 0,
           });
         });
-        proc.on("error", (err) => {
+        proc.on("error", (err: Error) => {
+          session.abortController?.signal.removeEventListener("abort", abort);
           resolve({
             type: "result",
             subtype: "error",

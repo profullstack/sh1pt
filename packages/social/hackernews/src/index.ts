@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial, oauthSetup } from '@profullstack/sh1pt-core';
 
 // Hacker News — no write API. Submissions go through the web form at
 // news.ycombinator.com/submit. Browser-mode only. HN is extremely
@@ -22,10 +22,21 @@ export default defineSocial<Config>({
     return { accountId: config.username };
   },
   async post(ctx, post, config) {
-    if ((post.body?.length ?? 0) > 80) ctx.log('HN titles over 80 chars tend to fail the front page heuristic', 'warn');
+    if ((post.body?.length ?? 0) > 80) ctx.log('WARN: HN titles over 80 chars tend to fail the front page heuristic');
     ctx.log(`hackernews ${config.submissionType ?? 'show'} · "${post.body?.slice(0, 60)}…"`);
     if (ctx.dryRun) return { id: 'dry-run', url: 'https://news.ycombinator.com/', platform: 'hackernews', publishedAt: new Date().toISOString() };
     // TODO: Playwright → /login → /submit. Enforce 1/day per user in the call site.
     return { id: `hn_${Date.now()}`, url: 'https://news.ycombinator.com/newest', platform: 'hackernews', publishedAt: new Date().toISOString() };
   },
+
+  setup: oauthSetup({
+    secretKey: "HN_USERNAME",
+    label: "Hacker News",
+    vendorDocUrl: "https://news.ycombinator.com/",
+    steps: [
+      "No public write API \u2014 browser-mode submission via playwright",
+      "Paste your HN username; password prompt comes on first post",
+      "\u26a0 Respect HN ratelimits + no self-promotion threads on Ask HN",
+    ],
+  }),
 });

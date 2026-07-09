@@ -1,4 +1,5 @@
-import { defineWebhookTarget, type WebhookResult } from '@sh1pt/core';
+import { createHmac } from 'node:crypto';
+import { defineWebhookTarget, webhookUrlSetup, type WebhookResult } from '@profullstack/sh1pt-core';
 
 // Generic HTTP POST target. Use when the destination doesn't have its
 // own adapter — Zapier webhook, n8n webhook, your own server, etc.
@@ -24,10 +25,39 @@ export default defineWebhookTarget<Config>({
     ctx.log(`generic webhook · ${config.method ?? 'POST'} ${url}`);
     if (ctx.dryRun) return { ok: true, url };
 
-    // TODO:
-    //   const signature = hmacSha256(body, ctx.secret(config.secretKey ?? 'WEBHOOK_SECRET'))
-    //   headers: 'X-Sh1pt-Event': payload.event, 'X-Sh1pt-Signature': signature, ...extraHeaders
-    //   fetch(url, { method, body, headers })
-    return { ok: true, url };
+    const signingSecret = ctx.secret(config.secretKey ?? 'WEBHOOK_SECRET');
+    const signature = signingSecret ? hmacSha256(body, signingSecret) : undefined;
+    const res = await fetch(url, {
+      method: config.method ?? 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'X-Sh1pt-Event': payload.event,
+        ...(signature ? { 'X-Sh1pt-Signature': signature } : {}),
+        ...config.extraHeaders,
+      },
+      body,
+    });
+
+    if (!res.ok) {
+      const error = await res.text().catch(() => res.statusText);
+      return { ok: false, status: res.status, error, url };
+    }
+
+    return { ok: true, status: res.status, url };
   },
+
+  setup: webhookUrlSetup<Config>({
+    secretKey: 'WEBHOOK_URL',
+    label: 'Generic HTTP webhook',
+    urlPrefix: 'https://',
+    steps: [
+      'Pick the destination URL that should receive sh1pt events (Zapier, n8n, your own server, …)',
+      'Paste it when prompted',
+      'sh1pt HMAC-signs the body; set WEBHOOK_SECRET with `sh1pt secret set WEBHOOK_SECRET <secret>` so the receiver can verify',
+    ],
+  }),
 });
+
+function hmacSha256(body: string, secret: string): string {
+  return `sha256=${createHmac('sha256', secret).update(body).digest('hex')}`;
+}

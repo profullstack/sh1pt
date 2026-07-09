@@ -1,8 +1,44 @@
 {
-  "name": "@sh1pt/webhooks-discord",
-  "version": "0.0.0",
+  "name": "@profullstack/sh1pt-webhooks-discord",
+  "version": "0.1.15",
+  "description": "Discord channel-webhook target for sh1pt.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/profullstack/sh1pt.git",
+    "directory": "packages/webhooks/discord"
+  },
+  "homepage": "https://sh1pt.com",
+  "bugs": "https://github.com/profullstack/sh1pt/issues",
+  "keywords": [
+    "sh1pt",
+    "webhook",
+    "discord"
+  ],
   "type": "module",
   "main": "./src/index.ts",
-  "scripts": { "build": "tsc -p tsconfig.json", "typecheck": "tsc -p tsconfig.json --noEmit" },
-  "dependencies": { "@sh1pt/core": "workspace:*" }
+  "types": "./src/index.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@profullstack/sh1pt-core": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      }
+    }
+  }
 }

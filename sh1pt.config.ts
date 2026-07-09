@@ -1,4 +1,4 @@
-import { defineConfig } from '@sh1pt/core';
+import { defineConfig } from '@profullstack/sh1pt-core';
 
 // sh1pt uses sh1pt to publish itself.
 //
@@ -6,7 +6,8 @@ import { defineConfig } from '@sh1pt/core';
 // (packages/cli). That one CLI fans out to every package manager so
 // users can install it however they install anything else:
 //
-//   npm install -g @sh1pt/cli
+//   npm install -g @profullstack/sh1pt
+//   aube add -g @profullstack/sh1pt
 //   brew install sh1pt
 //   winget install sh1pt
 //   scoop install sh1pt
@@ -49,6 +50,7 @@ export default defineConfig({
     'policy-npm': { use: 'pkg-npm', config: { packageDir: './packages/policy', access: 'public' } },
     // target adapters publish individually so users install only what they need
     'target-pkg-npm-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/pkg-npm', access: 'public' } },
+    'target-pkg-aube-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/pkg-aube', access: 'public' } },
     'target-pkg-homebrew-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/pkg-homebrew', access: 'public' } },
     'target-mobile-ios-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/mobile-ios', access: 'public' } },
     'target-desktop-mac-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/desktop-mac', access: 'public' } },
@@ -75,10 +77,15 @@ export default defineConfig({
     'target-pkg-deno-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/pkg-deno', access: 'public' } },
     'target-pkg-ghpackages-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/pkg-ghpackages', access: 'public' } },
     'target-pkg-docker-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/pkg-docker', access: 'public' } },
+    'target-mobile-expo-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/mobile-expo', access: 'public' } },
     'target-deploy-denodeploy-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/deploy-denodeploy', access: 'public' } },
     'target-deploy-workers-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/deploy-workers', access: 'public' } },
     'target-deploy-fly-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/deploy-fly', access: 'public' } },
     'target-deploy-railway-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/deploy-railway', access: 'public' } },
+    'target-deploy-vercel-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/deploy-vercel', access: 'public' } },
+    'target-deploy-netlify-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/deploy-netlify', access: 'public' } },
+    'target-deploy-render-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/deploy-render', access: 'public' } },
+    'target-deploy-firebase-npm': { use: 'pkg-npm', config: { packageDir: './packages/targets/deploy-firebase', access: 'public' } },
   },
   hooks: {
     prebuild: 'pnpm -r build',

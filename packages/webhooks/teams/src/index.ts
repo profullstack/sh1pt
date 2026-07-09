@@ -1,4 +1,4 @@
-import { defineWebhookTarget, type WebhookResult } from '@sh1pt/core';
+import { defineWebhookTarget, webhookUrlSetup, type WebhookResult } from '@profullstack/sh1pt-core';
 
 // Microsoft Teams — Incoming Webhook connector. Channel → ... →
 // Connectors → Incoming Webhook → name + copy URL. Posts render as
@@ -13,38 +13,68 @@ export default defineWebhookTarget<Config>({
   label: 'Microsoft Teams (incoming webhook)',
 
   format(payload, config) {
-    if (config.useAdaptiveCards !== false) {
-      return {
-        type: 'message',
-        attachments: [{
-          contentType: 'application/vnd.microsoft.card.adaptive',
-          content: {
-            type: 'AdaptiveCard',
-            version: '1.5',
-            body: [
-              { type: 'TextBlock', text: payload.event, weight: 'Bolder', size: 'Large' },
-              { type: 'TextBlock', text: '```\n' + JSON.stringify(payload.data, null, 2).slice(0, 3500) + '\n```', wrap: true },
-              { type: 'TextBlock', text: payload.timestamp, isSubtle: true, spacing: 'None' },
-            ],
-          },
-        }],
-      };
-    }
-    return {
-      '@type': 'MessageCard',
-      '@context': 'https://schema.org/extensions',
-      summary: payload.event,
-      title: payload.event,
-      text: '```' + JSON.stringify(payload.data, null, 2).slice(0, 3500) + '```',
-    };
+    return formatTeamsPayload(payload, config);
   },
 
   async send(ctx, payload, config): Promise<WebhookResult> {
     const urlKey = config.urlKey ?? 'TEAMS_WEBHOOK_URL';
     const url = ctx.secret(urlKey);
-    if (!url) throw new Error(`${urlKey} not in vault`);
+    if (!url) throw new Error(`${urlKey} not in vault — run: sh1pt secret set ${urlKey} <webhook-url>`);
     ctx.log(`teams webhook · ${payload.event}`);
     if (ctx.dryRun) return { ok: true, url };
-    return { ok: true, url };
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(formatTeamsPayload(payload, config)),
+    });
+
+    if (!res.ok) {
+      const error = await res.text().catch(() => res.statusText);
+      return { ok: false, status: res.status, error, url };
+    }
+
+    return { ok: true, status: res.status, url };
   },
+
+  setup: webhookUrlSetup<Config>({
+    secretKey: 'TEAMS_WEBHOOK_URL',
+    label: 'Microsoft Teams (incoming webhook)',
+    vendorDocUrl: 'https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook',
+    steps: [
+      'Open the Teams channel → ⋯ menu → Connectors',
+      'Pick "Incoming Webhook" → Configure → give it a name and optional icon',
+      'Click Create → copy the URL shown on the next screen',
+    ],
+  }),
 });
+
+function formatTeamsPayload(
+  payload: { event: string; timestamp: string; data: Record<string, unknown> },
+  config: Config,
+): unknown {
+  if (config.useAdaptiveCards !== false) {
+    return {
+      type: 'message',
+      attachments: [{
+        contentType: 'application/vnd.microsoft.card.adaptive',
+        content: {
+          type: 'AdaptiveCard',
+          version: '1.5',
+          body: [
+            { type: 'TextBlock', text: payload.event, weight: 'Bolder', size: 'Large' },
+            { type: 'TextBlock', text: '```\n' + JSON.stringify(payload.data, null, 2).slice(0, 3500) + '\n```', wrap: true },
+            { type: 'TextBlock', text: payload.timestamp, isSubtle: true, spacing: 'None' },
+          ],
+        },
+      }],
+    };
+  }
+  return {
+    '@type': 'MessageCard',
+    '@context': 'https://schema.org/extensions',
+    summary: payload.event,
+    title: payload.event,
+    text: '```' + JSON.stringify(payload.data, null, 2).slice(0, 3500) + '```',
+  };
+}

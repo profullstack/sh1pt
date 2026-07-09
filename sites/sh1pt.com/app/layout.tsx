@@ -1,5 +1,11 @@
 import type { ReactNode } from 'react';
+import { Suspense } from 'react';
 import './globals.css';
+import NavLink from './components/NavLink';
+import RobautoPixel from './components/RobautoPixel';
+import CrawlproofStats from './components/CrawlproofStats';
+import { getSupabaseServerClient } from '@/lib/supabase/server';
+import Script from "next/script";
 
 export const metadata = {
   title: 'sh1pt — Build. Promote. Scale. Iterate…',
@@ -16,20 +22,59 @@ export const metadata = {
   icons: { icon: '/favicon.svg' },
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  // Header adapts to auth state: signed-in users see Dashboard + Sign out,
+  // signed-out users see Sign in + the primary Join-waitlist CTA.
+  //
+  // getUser() can throw on stale cookies (e.g. after a db wipe) with
+  // refresh_token_not_found. Treat any failure as "logged out" so a
+  // bad cookie can't 500 the entire site — the cookie will get cleared
+  // on the user's next auth action (sign in / sign out / magic link).
+  const user = await safeGetUser();
+
   return (
     <html lang="en">
       <body>
-        <header>
-          <nav className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem 1.5rem' }}>
-            <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', color: 'inherit', textDecoration: 'none' }}>
-              <img src="/logo.svg" alt="sh1pt" height={32} />
+        <Suspense fallback={null}>
+          <RobautoPixel />
+        </Suspense>
+        <div className="brand-stripe" aria-hidden />
+        <header className="site-header">
+          <nav className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem' }}>
+            <a href="/" className="brand-logo" aria-label="sh1pt">
+              sh1pt<span className="brand-dot" aria-hidden>.</span>
             </a>
-            <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-              <a href="#pricing">Pricing</a>
-              <a href="/investors">Investors</a>
-              <a href="https://github.com/profullstack/sh1pt" target="_blank" rel="noreferrer">GitHub</a>
-              <a className="btn" href="/waitlist">Join waitlist</a>
+            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+              <NavLink href="/getting-started" matchPrefix>Getting started</NavLink>
+              <NavLink href="/docs" matchPrefix>Docs</NavLink>
+              <NavLink href="/blog" matchPrefix>Blog</NavLink>
+              <NavLink href="/#pricing">Pricing</NavLink>
+              <NavLink href="https://github.com/profullstack/sh1pt" target="_blank" rel="noreferrer">GitHub</NavLink>
+              {user ? (
+                <>
+                  <NavLink href="/dashboard" matchPrefix>Dashboard</NavLink>
+                  <form action="/auth/signout" method="post" style={{ display: 'inline' }}>
+                    <button
+                      type="submit"
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--muted)',
+                        cursor: 'pointer',
+                        font: 'inherit',
+                        padding: 0,
+                      }}
+                    >
+                      Sign out
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <NavLink href="/login">Sign in</NavLink>
+                  <a className="btn" href="/waitlist">Join waitlist</a>
+                </>
+              )}
             </div>
           </nav>
         </header>
@@ -37,10 +82,23 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <footer className="container" style={{ padding: '3rem 1.5rem', color: 'var(--muted)', fontSize: '0.9rem' }}>
           <div>© 2026 Profullstack, Inc. — sh1pt is MIT-licensed.</div>
           <div style={{ marginTop: '0.5rem' }}>
-            <a href="/investors">Investors</a> · <a href="/waitlist">Waitlist</a> · <a href="https://github.com/profullstack/sh1pt">Source</a>
+            <a href="/blog">Blog</a> · <a href="/investors">Investors</a> · <a href="/deck">Deck</a> · <a href="/waitlist">Waitlist</a> · <a href="https://github.com/profullstack/sh1pt">Source</a> · <a href="https://vu1nz.com" target="_blank" rel="noopener noreferrer">vu1nz.com partner</a>
           </div>
         </footer>
+        <CrawlproofStats />
+      <script async src="https://feedback.profullstack.com/embed/profullstack-feedback.js" data-property="sh1pt.com"></script>
+      <Script src="https://crawlproof.com/ad.js" strategy="afterInteractive" />
       </body>
     </html>
   );
+}
+
+async function safeGetUser() {
+  try {
+    const supabase = await getSupabaseServerClient();
+    const { data } = await supabase.auth.getUser();
+    return data.user ?? null;
+  } catch {
+    return null;
+  }
 }

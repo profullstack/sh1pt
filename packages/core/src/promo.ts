@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 export type AdObjective = 'install' | 'web-traffic' | 'awareness' | 'engagement' | 'signup' | 'purchase';
 
 export interface Creative {
@@ -98,10 +100,11 @@ export interface AdPlatform<Config = unknown> {
   status(campaignId: string, config: Config): Promise<CampaignMetrics>;
   stop(campaignId: string, config: Config): Promise<void>;
   update?(campaignId: string, patch: Partial<CampaignContext>, config: Config): Promise<void>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineAdPlatform<Config>(p: AdPlatform<Config>): AdPlatform<Config> {
-  return p;
+  return autoSetup(p);
 }
 
 const adRegistry = new Map<string, AdPlatform<any>>();

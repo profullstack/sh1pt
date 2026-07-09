@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Node pnpm CI inputs",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "nodeVersion": {
+      "type": "string",
+      "default": "22",
+      "description": "Node.js version to install."
+    },
+    "installCommand": {
+      "type": "string",
+      "default": "pnpm install --frozen-lockfile",
+      "description": "Command to install dependencies."
+    },
+    "typecheckCommand": {
+      "type": "string",
+      "default": "pnpm run --if-present typecheck",
+      "description": "Command to run typecheck. Uses --if-present so repos without a typecheck script pass instead of hard-failing."
+    },
+    "testCommand": {
+      "type": "string",
+      "default": "pnpm run --if-present test",
+      "description": "Command to run tests. Uses --if-present so repos without a test script pass instead of hard-failing."
+    }
+  }
+}

@@ -2,7 +2,7 @@
 // matches its interface and passes its own instance in — one-line test
 // file per adapter, and the whole interface suite runs against it.
 //
-//   import { contractTestTarget } from '@sh1pt/core/testing';
+//   import { contractTestTarget } from '@profullstack/sh1pt-core/testing';
 //   import adapter from './index.js';
 //   contractTestTarget(adapter, { sampleConfig: { ... } });
 //
@@ -24,5 +24,6 @@ export * from './contract-bridge.js';
 export * from './contract-docs.js';
 export * from './contract-jurisdiction.js';
 export * from './contract-bot.js';
+export * from './contract-mcp-server.js';
 export * from './smoke.js';
 export * from './harness.js';

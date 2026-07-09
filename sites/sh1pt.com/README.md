@@ -1,6 +1,6 @@
 # sh1pt.com
 
-The marketing + waitlist + investor page for sh1pt itself. Built from the `next-supabase` boilerplate + `waitlist-crypto-investor` recipe — pure dogfood.
+The marketing + waitlist + investor page for Sh1pt Cloud, the hosted distribution control plane for the open-source `sh1pt` CLI. Built from the `next-supabase` boilerplate + `waitlist-crypto-investor` recipe — pure dogfood.
 
 ## Local dev
 
@@ -29,7 +29,7 @@ npx sh1pt promote ship --channel stable    # live
 
 ## What's wired
 
-- `/` — landing (hero, pricing, referral blurb)
+- `/` — landing (cloud-control-plane hero, free-vs-cloud split, pricing, referral blurb)
 - `/investors` — pitch, market, why-now, traction placeholders, team, contact
 - `/waitlist` — email + handle form → Supabase `waitlist` table + referral code
 - `/waitlist/thanks` — shows the new user's personal referral link

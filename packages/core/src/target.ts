@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 export type TargetKind =
   | 'web'
   | 'cli'
@@ -17,6 +19,7 @@ export type TargetKind =
   | 'api'
   | 'sdk'
   | 'webhook'
+  | 'payment'
   | 'package-manager';
 
 export type Channel = 'stable' | 'beta' | 'canary' | (string & {});
@@ -29,6 +32,9 @@ export interface BuildContext {
   env: Record<string, string>;
   secret(key: string): string | undefined;
   log(msg: string, level?: 'info' | 'warn' | 'error'): void;
+  // Set by the contract test harness (and by callers running validation
+  // builds) so adapters can short-circuit network/exec calls.
+  dryRun?: boolean;
 }
 
 export interface ShipContext extends BuildContext {
@@ -63,8 +69,9 @@ export interface Target<Config = unknown> {
   ship(ctx: ShipContext, config: Config): Promise<ShipResult>;
   status?(shipId: string, config: Config): Promise<TargetStatus>;
   rollback?(shipId: string, config: Config): Promise<void>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineTarget<Config>(t: Target<Config>): Target<Config> {
-  return t;
+  return autoSetup(t);
 }

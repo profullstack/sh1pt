@@ -1,0 +1,36 @@
+{
+  "name": "@profullstack/sh1pt-openapi",
+  "version": "0.1.15",
+  "description": "OpenAPI loader/IR + generators for SDKs, MCP servers, and docs sites.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/profullstack/sh1pt.git",
+    "directory": "packages/openapi"
+  },
+  "homepage": "https://sh1pt.com",
+  "bugs": "https://github.com/profullstack/sh1pt/issues",
+  "keywords": ["sh1pt", "openapi", "sdk", "mcp", "docs", "generator"],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./core": { "types": "./dist/core/index.d.ts", "import": "./dist/core/index.js" },
+    "./gen-sdk-ts": { "types": "./dist/gen-sdk-ts/index.d.ts", "import": "./dist/gen-sdk-ts/index.js" },
+    "./gen-mcp": { "types": "./dist/gen-mcp/index.d.ts", "import": "./dist/gen-mcp/index.js" },
+    "./gen-docs": { "types": "./dist/gen-docs/index.d.ts", "import": "./dist/gen-docs/index.js" }
+  },
+  "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "yaml": "^2.6.0"
+  }
+}

@@ -1,4 +1,4 @@
-import { defineMerch, type MerchSku } from '@sh1pt/core';
+import { defineMerch, tokenSetup, type MerchSku } from '@profullstack/sh1pt-core';
 
 // Printify — aggregator marketplace across many print providers; often
 // cheaper base costs than Printful but variable quality. REST API at
@@ -24,7 +24,9 @@ export default defineMerch<Config>({
   ],
 
   async connect(ctx) {
-    if (!ctx.secret('PRINTIFY_TOKEN')) throw new Error('PRINTIFY_TOKEN not set');
+    if (!ctx.secret('PRINTIFY_TOKEN')) {
+      throw new Error('PRINTIFY_TOKEN not in vault — run `sh1pt secret set PRINTIFY_TOKEN <token>`');
+    }
     return { accountId: 'printify' };
   },
 
@@ -53,6 +55,17 @@ export default defineMerch<Config>({
   },
 
   async listOrders() { return []; },
+
+  setup: tokenSetup<Config>({
+    secretKey: 'PRINTIFY_TOKEN',
+    label: 'Printify',
+    vendorDocUrl: 'https://printify.com/app/account/api',
+    steps: [
+      'Open printify.com → My Account → Connections → API',
+      'Generate a new personal access token',
+      'Copy the token (shown once)',
+    ],
+  }),
 });
 
 function stub(id: string, kind: MerchSku['kind']): MerchSku {

@@ -1,4 +1,6 @@
-import { defineTarget } from '@sh1pt/core';
+import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
+import { cp, mkdir, readdir, stat, writeFile } from 'node:fs/promises';
+import { join, relative, resolve, sep } from 'node:path';
 
 interface Config {
   dir: string;                 // built output directory
@@ -7,22 +9,120 @@ interface Config {
   domain?: string;
 }
 
+const PROVIDERS = new Set(['cloudflare-pages', 'netlify', 's3-cloudfront', 'vercel']);
+
+function requireText(value: string | undefined, field: string): string {
+  const text = value?.trim();
+  if (!text) throw new Error(`web-static requires ${field}`);
+  return text;
+}
+
+function optionalText(value: string | undefined, field: string): string | undefined {
+  return value === undefined ? undefined : requireText(value, field);
+}
+
+function provider(value: Config['provider']): Config['provider'] {
+  const text = requireText(value, 'provider') as Config['provider'];
+  if (!PROVIDERS.has(text)) throw new Error(`web-static provider "${text}" is not supported`);
+  return text;
+}
+
+function optionalSlug(value: string | undefined, field: string): string | undefined {
+  const text = optionalText(value, field);
+  if (text && !/^[A-Za-z0-9._-]+$/.test(text)) {
+    throw new Error(`web-static ${field} must contain only letters, numbers, dots, underscores, or hyphens`);
+  }
+  return text;
+}
+
+function optionalDomain(value: string | undefined): string | undefined {
+  const domain = optionalText(value, 'domain');
+  if (!domain) return undefined;
+  if (/[:/?#\s]/.test(domain)) throw new Error('web-static domain must be a hostname without protocol or path');
+  return domain;
+}
+
+function normalizedConfig(config: Config): Config {
+  return {
+    ...config,
+    dir: requireText(config.dir, 'dir'),
+    provider: provider(config.provider),
+    project: optionalSlug(config.project, 'project'),
+    domain: optionalDomain(config.domain),
+  };
+}
+
+async function listFiles(root: string, dir = root): Promise<string[]> {
+  const entries = await readdir(dir, { withFileTypes: true });
+  const files = await Promise.all(entries.map(async (entry) => {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) return listFiles(root, path);
+    if (entry.isFile()) return [relative(root, path).split(sep).join('/')];
+    return [];
+  }));
+  return files.flat().sort();
+}
+
+function resolveSourceDir(ctx: { projectDir: string }, dir: string): string {
+  return resolve(ctx.projectDir, requireText(dir, 'dir'));
+}
+
+function siteUrl(config: Config): string | undefined {
+  config = normalizedConfig(config);
+  return config.domain ? `https://${config.domain}` : undefined;
+}
+
 export default defineTarget<Config>({
   id: 'web-static',
   kind: 'web',
   label: 'Static web (CDN)',
   async build(ctx, config) {
-    ctx.log(`assume prebuilt site in ${config.dir}`);
-    // TODO: optionally run a user-defined build command; copy dir into ctx.outDir
-    return { artifact: config.dir };
+    config = normalizedConfig(config);
+    const sourceDir = resolveSourceDir(ctx, config.dir);
+    const info = await stat(sourceDir);
+    if (!info.isDirectory()) throw new Error(`web-static dir is not a directory: ${sourceDir}`);
+
+    const artifact = join(ctx.outDir, 'static');
+    await mkdir(ctx.outDir, { recursive: true });
+    await cp(sourceDir, artifact, { recursive: true, force: true });
+
+    const files = await listFiles(artifact);
+    const manifest = {
+      provider: config.provider,
+      project: config.project,
+      domain: config.domain,
+      sourceDir,
+      artifact,
+      version: ctx.version,
+      files,
+    };
+    await writeFile(join(ctx.outDir, 'web-static-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf-8');
+    ctx.log(`staged static site from ${sourceDir} · files=${files.length}`);
+    return { artifact, meta: { files: files.length, manifest: join(ctx.outDir, 'web-static-manifest.json') } };
   },
   async ship(ctx, config) {
-    ctx.log(`deploy to ${config.provider}${config.project ? `/${config.project}` : ''}`);
-    if (ctx.dryRun) return { id: 'dry-run' };
-    // TODO: dispatch to per-provider deploy (wrangler / netlify / s3 sync / vercel)
+    config = normalizedConfig(config);
+    const url = siteUrl(config);
+    const project = config.project ? `/${config.project}` : '';
+    ctx.log(`static site ready for ${config.provider}${project}${url ? ` · ${url}` : ''}`);
+    if (ctx.dryRun) return { id: 'dry-run', url, meta: { provider: config.provider, project: config.project } };
     return {
       id: `${config.provider}:${ctx.version}`,
-      url: config.domain ? `https://${config.domain}` : undefined,
+      url,
+      meta: {
+        artifact: ctx.artifact,
+        provider: config.provider,
+        project: config.project,
+      },
     };
   },
+
+  setup: manualSetup({
+    label: "Web / static hosting",
+    steps: [
+      "No auth here \u2014 web-static is a meta-target that picks the right",
+      "hosting adapter (deploy-denodeploy, deploy-workers, deploy-fly, \u2026)",
+      "based on your sh1pt.config.ts. Configure the underlying adapter instead.",
+    ],
+  }),
 });

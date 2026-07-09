@@ -1,0 +1,11 @@
+[
+  {
+    "name": "vu1nz-scan",
+    "publisher": "profullstack",
+    "version": "0.1.0",
+    "description": "Adds vu1nz security scanning to GitHub Actions.",
+    "trustLevel": "verified",
+    "category": "security",
+    "path": "packages/actions/vu1nz-scan/sh1pt.action.json"
+  }
+]

@@ -1,0 +1,29 @@
+{
+  "name": "vu1nz-scan",
+  "publisher": "profullstack",
+  "type": "github-action",
+  "version": "0.1.0",
+  "title": "vu1nz Security Scan",
+  "description": "Adds a GitHub Actions workflow for running vu1nz security scans.",
+  "trustLevel": "verified",
+  "files": [
+    {
+      "path": ".github/workflows/vu1nz-scan.yml",
+      "template": "workflows/vu1nz-scan.yml"
+    }
+  ],
+  "permissions": {
+    "contents": "read",
+    "security-events": "write"
+  },
+  "secrets": [],
+  "thirdPartyActions": [
+    {
+      "uses": "actions/checkout@v4",
+      "pinned": false,
+      "trusted": true
+    }
+  ],
+  "requiresConfirmation": true,
+  "recommendedInstallMode": "pr"
+}

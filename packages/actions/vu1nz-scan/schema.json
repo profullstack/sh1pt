@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "vu1nz Security Scan inputs",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "baseBranch": {
+      "type": "string",
+      "default": "main",
+      "description": "Base branch passed to vu1nz when reviewing pull requests."
+    },
+    "pythonVersion": {
+      "type": "string",
+      "default": "3.12",
+      "description": "Python version used to install and run vu1nz."
+    },
+    "vu1nzPackageSpec": {
+      "type": "string",
+      "default": "git+https://github.com/profullstack/vu1nz-gh-actions.git",
+      "description": "pip package spec used to install vu1nz."
+    }
+  },
+  "required": []
+}

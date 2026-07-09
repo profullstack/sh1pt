@@ -1,4 +1,4 @@
-import { defineSocial } from '@sh1pt/core';
+import { defineSocial, tokenSetup } from '@profullstack/sh1pt-core';
 
 // Primal — a Nostr client + long-form publishing. Auth with an nsec
 // (Nostr secret key); post is a signed kind:1 event (short) or kind:30023
@@ -23,4 +23,15 @@ export default defineSocial<Config>({
     // broadcast to relays via WebSocket. Hashtags become 't' tags.
     return { id: `nostr_${Date.now()}`, url: 'https://primal.net/', platform: 'primal', publishedAt: new Date().toISOString() };
   },
+
+  setup: tokenSetup({
+    secretKey: 'NOSTR_NSEC',
+    label: 'Primal (Nostr)',
+    vendorDocUrl: 'https://primal.net/',
+    steps: [
+      'Nostr auth is an nsec private key \u2014 generate one in any Nostr client',
+      'Paste your nsec (starts with "nsec1\u2026") \u2014 sh1pt encrypts it in the vault',
+      '\u26a0 Lose this key = lose the account. Back it up separately.',
+    ],
+  }),
 });

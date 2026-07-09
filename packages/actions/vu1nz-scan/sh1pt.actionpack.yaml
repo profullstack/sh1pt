@@ -1,0 +1,47 @@
+schemaVersion: 1
+id: vu1nz-scan
+name: vu1nz Security Scan
+description: AI-powered pull request vulnerability scanning with vu1nz.
+version: 1.0.0
+publisher: profullstack
+visibility: public
+license: MIT
+categories:
+  - security
+  - agent
+compatibility:
+  providers:
+    - github
+pricing:
+  type: free
+inputs:
+  baseBranch:
+    type: string
+    default: main
+    description: Base branch passed to vu1nz when reviewing pull requests.
+  pythonVersion:
+    type: string
+    default: '3.12'
+    description: Python version used to install and run vu1nz.
+  vu1nzPackageSpec:
+    type: string
+    default: git+https://github.com/profullstack/vu1nz-gh-actions.git
+    description: pip package spec used to install vu1nz.
+secrets:
+  - name: ENV_FILE
+    description: Env-file formatted secret containing ANTHROPIC_API_KEY.
+    required: true
+repoVariables: []
+files:
+  - source: workflow.yml
+    destination: .github/workflows/vu1nz-scan.yml
+    mergeStrategy: replace-managed
+policies:
+  installMode: pull-request
+  managedComment: true
+  requiresReview: true
+security:
+  leastPrivilegePermissions: true
+  pinThirdPartyActions: optional
+  allowPullRequestTarget: false
+  defaultTimeoutMinutes: 15

@@ -1,6 +1,13 @@
 import { Command } from 'commander';
 import kleur from 'kleur';
 import prompts from 'prompts';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { runSetup, type SetupContext, type SetupPromptDef, type AdapterWithSetup } from '@profullstack/sh1pt-core';
+import { ensureInstalled, loadInstalledPackage } from '../installer.js';
+import { parsePaymentsSummary, type PaymentsSummary } from './config-payments.js';
+
+export { parsePaymentsSummary } from './config-payments.js';
 
 type Stack = 'node' | 'bun' | 'python' | 'rust' | 'cpp' | 'dotnet' | 'custom';
 
@@ -41,8 +48,20 @@ const paymentsCmd = configCmd
 paymentsCmd
   .command('list')
   .description('Show enabled providers and which is the default')
-  .action(() => {
-    console.log(kleur.dim('[stub] config payments list — read manifest.payments'));
+  .option('--json', 'print machine-readable output')
+  .option('--config <path>', 'config file to read', 'sh1pt.config.ts')
+  .action((opts: { json?: boolean; config: string }) => {
+    try {
+      const summary = readPaymentsSummary(process.cwd(), opts.config);
+      if (opts.json) {
+        console.log(JSON.stringify(summary, null, 2));
+        return;
+      }
+      renderPaymentsSummary(summary);
+    } catch (err) {
+      console.error(kleur.red(err instanceof Error ? err.message : String(err)));
+      process.exit(1);
+    }
   });
 
 paymentsCmd
@@ -128,9 +147,40 @@ stackCmd
 
 stackCmd
   .command('detect')
-  .description('Auto-detect stack from project files (package.json / pyproject.toml / Cargo.toml / …)')
-  .action(() => {
-    console.log(kleur.dim('[stub] stack detect — look for package.json, pyproject.toml, Cargo.toml, *.csproj, CMakeLists.txt'));
+  .description('Auto-detect stack from project files (package.json / bun.lock / pyproject.toml / Cargo.toml / …)')
+  .option('--cwd <path>', 'directory to scan', process.cwd())
+  .action(async (opts: { cwd: string }) => {
+    const { existsSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const cwd = opts.cwd;
+    console.log(kleur.dim(`Scanning: ${cwd}`));
+    const checks = [
+      { file: 'bun.lock', stack: 'bun', label: 'Bun' },
+      { file: 'package.json', stack: 'node', label: 'Node.js / TypeScript' },
+      { file: 'pyproject.toml', stack: 'python', label: 'Python' },
+      { file: 'Cargo.toml', stack: 'rust', label: 'Rust' },
+      { file: '*.csproj', stack: 'dotnet', label: '.NET' },
+      { file: 'CMakeLists.txt', stack: 'cpp', label: 'C++' },
+    ];
+    for (const check of checks) {
+      if (check.file.includes("*")) {
+        const { readdirSync } = await import("node:fs");
+        try {
+          const files = readdirSync(cwd);
+          if (files.some(f => f.endsWith(check.file.slice(1)))) {
+            console.log(`  ${kleur.green("●")} ${kleur.bold(check.label)}  ${kleur.dim("(" + check.file + ")")}`);
+            return;
+          }
+        } catch { console.error(kleur.dim(`[debug] could not scan ${check.file}`)); }
+      } else {
+        const fullPath = join(cwd, check.file);
+        if (existsSync(fullPath)) {
+          console.log(`  ${kleur.green("●")} ${kleur.bold(check.label)}  ${kleur.dim("(" + check.file + ")")}`);
+          return;
+        }
+      }
+    }
+    console.log(`  ${kleur.yellow("○")} No supported stack detected. Run 'sh1pt config stack set' to pick one.`);
   });
 
 // ------ vcs (git / github / gitlab / gitea) -----------------------------
@@ -168,8 +218,36 @@ vcsCmd
   .command('auth')
   .description('Walk through setting the right token in the vault (GITHUB_TOKEN / GITLAB_TOKEN / GITEA_TOKEN)')
   .option('--provider <id>', 'vcs-github | vcs-gitlab | vcs-gitea')
-  .action((opts: { provider?: string }) => {
-    console.log(kleur.cyan(`[stub] vcs auth · ${opts.provider ?? 'current'} — prompt for token and write to vault`));
+  .action(async (opts: { provider?: string }) => {
+    const { setSecretInLocal } = await import("../local-vault.js");
+    let provider = opts.provider;
+    if (!provider) {
+      const resp = await prompts({
+        type: 'select',
+        name: 'p',
+        message: 'VCS provider?',
+        choices: [
+          { title: 'GitHub', description: 'github.com — GITHUB_TOKEN', value: 'vcs-github' },
+          { title: 'GitLab', description: 'gitlab.com — GITLAB_TOKEN', value: 'vcs-gitlab' },
+          { title: 'Gitea', description: 'codeberg.org etc — GITEA_TOKEN', value: 'vcs-gitea' },
+        ],
+        initial: 0,
+      });
+      provider = resp.p;
+      if (!provider) return;
+    }
+    const envVar = provider === 'vcs-github' ? 'GITHUB_TOKEN' : provider === 'vcs-gitlab' ? 'GITLAB_TOKEN' : provider === 'vcs-gitea' ? 'GITEA_TOKEN' : null;
+    if (envVar === null) { console.error(kleur.red(`Unknown provider: "${provider}". Expected vcs-github | vcs-gitlab | vcs-gitea`)); process.exit(1); }
+    console.log(kleur.dim(`Provider: ${provider}, Token env: ${envVar}`));
+    const hasExisting = process.env[envVar];
+    if (hasExisting) {
+      const overwrite = await prompts({ type: 'confirm', name: 'v', message: `${envVar} is set in env. Save to vault also?`, initial: true });
+      if (!overwrite.v) { console.log(kleur.dim(`Using environment ${envVar}`)); return; }
+    }
+    const tokenResp = await prompts({ type: 'password', name: 'v', message: `Enter ${envVar} token:` });
+    if (!tokenResp.v) { console.log(kleur.yellow("No token entered")); return; }
+    try { await setSecretInLocal(envVar, tokenResp.v); } catch (err: unknown) { console.error(kleur.red(`Failed to write vault: ${err instanceof Error ? err.message : err}`)); process.exit(1); }
+    console.log(kleur.green(`✓ ${envVar} saved to local vault`));
   });
 
 vcsCmd
@@ -217,15 +295,25 @@ webhooksCmd
   .description('Register a webhook target — paste a URL, done. e.g. sh1pt config webhooks add discord')
   .option('--events <list>', 'which events fire this target (default: all)', '*')
   .option('--name <label>', 'friendly name (for multi-channel setups)')
-  .action(async (target: string, opts: { events: string; name?: string }) => {
+  .action(async (target: string, _opts: { events: string; name?: string }) => {
     const known = ['discord', 'slack', 'telegram', 'teams', 'generic'];
     if (!known.includes(target)) {
       console.log(kleur.yellow(`unknown target "${target}". Known: ${known.join(', ')}`));
       return;
     }
-    console.log(kleur.cyan(`[stub] webhooks add ${target}`));
-    console.log(kleur.dim(`would prompt to paste the URL, store it in the vault under ${urlKeyFor(target)}, and enable for events=${opts.events}`));
-    // TODO: prompts → paste URL → secret set <KEY>, patch manifest.webhooks, test-fire with a stub payload
+    const pkg = `@profullstack/sh1pt-webhooks-${target}`;
+    try {
+      await ensureInstalled([pkg]);
+    } catch (err) {
+      console.error(kleur.red(err instanceof Error ? err.message : String(err)));
+      process.exit(1);
+    }
+    const adapter = await loadInstalledPackage<AdapterWithSetup>(pkg);
+    if (!adapter || typeof adapter !== 'object' || !('id' in adapter)) {
+      console.log(kleur.yellow(`failed to load ${pkg} after install — file an issue.`));
+      return;
+    }
+    await runSetup(adapter, makeCliSetupContext());
   });
 
 webhooksCmd
@@ -243,13 +331,46 @@ webhooksCmd
     console.log(kleur.green(`[stub] webhooks test ${target} · event=${opts.event}`));
   });
 
-webhooksCmd
+const webhooksListCmd = webhooksCmd
   .command('list')
   .description('All configured outbound targets + subscription URLs')
   .option('--json')
-  .action((opts: { json?: boolean }) => {
-    if (opts.json) { console.log(JSON.stringify({ targets: [], subscriptions: [] }, null, 2)); return; }
-    console.log(kleur.dim('[stub] webhooks list'));
+  .action(async (opts: { json?: boolean }) => {
+    // Read registered targets from the sh1pt config
+    let targets: string[] = [];
+    let subscriptions: Array<{ url: string; events: string; description?: string }> = [];
+    try {
+      const { loadLocalVaultSync } = await import('../local-vault.js');
+      const vault = loadLocalVaultSync();
+      const raw = vault.get('webhooks');
+      if (raw) {
+        const parsed = JSON.parse(typeof raw === 'string' ? raw : String(raw));
+        if (Array.isArray(parsed.targets)) targets = parsed.targets;
+        if (Array.isArray(parsed.subscriptions)) subscriptions = parsed.subscriptions;
+      }
+    } catch {
+      // Vault not available — show empty state silently
+    }
+    if (opts.json) {
+      console.log(JSON.stringify({ targets, subscriptions }, null, 2));
+      return;
+    }
+    if (targets.length === 0 && subscriptions.length === 0) {
+      console.log(kleur.dim('No webhook targets or subscriptions configured.'));
+      console.log(`  Add one: ${kleur.cyan('sh1pt config webhooks add <target>')}`);
+      return;
+    }
+    if (targets.length > 0) {
+      console.log(kleur.bold('\nTargets:'));
+      for (const t of targets) console.log(`  • ${t}`);
+    }
+    if (subscriptions.length > 0) {
+      console.log(kleur.bold('\nSubscriptions:'));
+      for (const s of subscriptions) {
+        const desc = s.description ? `  (${s.description})` : '';
+        console.log(`  • ${s.url}  events: ${s.events}${desc}`);
+      }
+    }
   });
 
 // Customer-supplied subscriptions — sh1pt cloud fires these on events.
@@ -283,4 +404,71 @@ function urlKeyFor(target: string): string {
     teams: 'TEAMS_WEBHOOK_URL',
     generic: 'WEBHOOK_URL',
   } as Record<string, string>)[target] ?? 'WEBHOOK_URL';
+}
+
+function readPaymentsSummary(cwd: string, configPath: string): PaymentsSummary {
+  const path = configPath.startsWith('/') ? configPath : join(cwd, configPath);
+  if (!existsSync(path)) {
+    throw new Error(`No ${configPath} found. Run sh1pt ship init first or pass --config <path>.`);
+  }
+  const summary = parsePaymentsSummary(readFileSync(path, 'utf8'), path);
+  if (!summary) {
+    throw new Error(`No payments block found in ${configPath}.`);
+  }
+  return summary;
+}
+
+function renderPaymentsSummary(summary: PaymentsSummary): void {
+  if (summary.providers.length === 0) {
+    console.log(kleur.yellow('No payment providers configured.'));
+    return;
+  }
+  console.log(kleur.bold('Payment providers'));
+  for (const provider of summary.providers) {
+    const icon = provider.enabled ? kleur.green('●') : kleur.gray('○');
+    const status = provider.enabled ? kleur.green('enabled') : kleur.gray('disabled');
+    const defaultLabel = provider.isDefault ? kleur.cyan(' default') : '';
+    console.log(`  ${icon} ${kleur.bold(provider.key)}  ${kleur.dim(provider.use)}  ${status}${defaultLabel}`);
+  }
+  if (summary.platformFeeBps !== undefined) {
+    console.log(kleur.dim(`platformFeeBps: ${summary.platformFeeBps}`));
+  }
+}
+
+// Build the SetupContext the CLI hands to every adapter.setup(). Today
+// secrets live in-process + logged; a real vault lands once `sh1pt login`
+// has an API to write against.
+function makeCliSetupContext(): SetupContext {
+  const memSecrets = new Map<string, string>();
+  return {
+    secret: (key) => process.env[key] ?? memSecrets.get(key),
+    async setSecret(key, value) {
+      memSecrets.set(key, value);
+      process.env[key] = value;
+      console.log(kleur.dim(`  [vault-stub] would persist ${key}=*** (vault not wired yet)`));
+    },
+    log: (m) => console.log(m),
+    async prompt<T>(def: SetupPromptDef<T>): Promise<T> {
+      const promptType =
+        def.type === 'confirm' ? 'confirm' :
+        def.type === 'select' ? 'select' :
+        def.type === 'password' ? 'password' :
+        'text';
+      const res = await prompts({
+        type: promptType as 'text' | 'password' | 'confirm' | 'select',
+        name: 'v',
+        message: def.message,
+        initial: def.initial as unknown as string | number | boolean,
+        choices: def.choices?.map((c) => ({ title: c.title, value: c.value })) as prompts.Choice[] | undefined,
+        validate: def.validate ? (v: unknown) => {
+          const r = def.validate!(v as T);
+          return r === true ? true : r;
+        } : undefined,
+      });
+      return res.v as T;
+    },
+    async open(url) {
+      console.log(kleur.dim(`  → open: ${url}`));
+    },
+  };
 }

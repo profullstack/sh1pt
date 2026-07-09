@@ -1,4 +1,4 @@
-import { defineConfig } from '@sh1pt/core';
+import { defineConfig } from '@profullstack/sh1pt-core';
 
 // sh1pt.com — sh1pt's own marketing + waitlist + investor site.
 // Uses the waitlist-crypto-investor recipe (dogfooding) and ships to

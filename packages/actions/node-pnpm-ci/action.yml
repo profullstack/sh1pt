@@ -1,0 +1,15 @@
+id: node-pnpm-ci
+name: Node pnpm CI
+version: 1.2.0
+category: ci
+description: Least-privilege Node/TypeScript CI workflow using pnpm install, typecheck, and test.
+provider: github
+public: true
+destination: .github/workflows/ci.yml
+installMode: pull-request
+supports:
+  - push
+  - pull_request
+requiredSecrets: []
+permissions:
+  contents: read

@@ -1,0 +1,16 @@
+id: vu1nz-scan
+name: vu1nz Security Scan
+version: 1.0.0
+category: security
+description: AI-powered pull request vulnerability scanning with vu1nz.
+provider: github
+public: true
+destination: .github/workflows/vu1nz-scan.yml
+installMode: pull-request
+supports:
+  - pull_request
+requiredSecrets:
+  - ENV_FILE
+permissions:
+  contents: read
+  pull-requests: write

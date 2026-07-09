@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 // AI agent CLI orchestration. sh1pt wraps agent CLIs (Claude Code,
 // Codex, Qwen, etc.) so one command can spawn an agent, hand it the
 // sh1pt manifest + context, and let it generate/modify/ship code.
@@ -34,10 +36,11 @@ export interface AgentCLI<Config = unknown> {
   check(ctx: { log: AgentRunContext['log'] }, config: Config): Promise<AgentInstallState>;
   run(ctx: AgentRunContext, config: Config): Promise<{ exitCode: number }>;
   generate?(ctx: AgentRunContext, config: Config): Promise<{ projectDir: string }>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineAgent<Config>(a: AgentCLI<Config>): AgentCLI<Config> {
-  return a;
+  return autoSetup(a);
 }
 
 const agentRegistry = new Map<string, AgentCLI<any>>();

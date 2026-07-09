@@ -1,0 +1,17 @@
+id: coinpay-invoice
+name: CoinPayPortal Invoice Bot
+version: 1.0.0
+category: agent
+description: Create CoinPayPortal crypto invoices and payment links from GitHub issue and PR comments via /coinpay commands.
+provider: github
+public: true
+destination: .github/workflows/coinpay.yml
+installMode: pull-request
+supports:
+  - issue_comment
+requiredSecrets:
+  - COINPAY_API_KEY
+  - COINPAY_BUSINESS_ID
+permissions:
+  issues: write
+  pull-requests: write

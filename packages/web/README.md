@@ -1,6 +1,6 @@
-# @sh1pt/web
+# @profullstack/sh1pt-web
 
-Dashboard UI — stub. Pick a framework (Next.js, SvelteKit, Remix) and wire it to `@sh1pt/sdk` against `@sh1pt/api`.
+Dashboard UI — stub. Pick a framework (Next.js, SvelteKit, Remix) and wire it to `@profullstack/sh1pt-sdk` against `@profullstack/sh1pt-api`.
 
 Screens to implement:
 

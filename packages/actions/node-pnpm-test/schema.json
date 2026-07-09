@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Node pnpm Test inputs",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "nodeVersion": {
+      "type": "string",
+      "default": "22",
+      "description": "Node.js version to install."
+    },
+    "pushBranch": {
+      "type": "string",
+      "default": "master",
+      "description": "Branch that should trigger push tests."
+    },
+    "installCommand": {
+      "type": "string",
+      "default": "pnpm install --frozen-lockfile",
+      "description": "Command to install dependencies."
+    },
+    "testCommand": {
+      "type": "string",
+      "default": "pnpm run --if-present test",
+      "description": "Command to run tests. Uses --if-present so repos without a test script pass instead of hard-failing."
+    }
+  }
+}

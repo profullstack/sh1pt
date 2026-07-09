@@ -11,15 +11,22 @@
     "ship:beta": "sh1pt promote ship --channel beta"
   },
   "dependencies": {
+    "@opentelemetry/exporter-logs-otlp-http": "^0.218.0",
+    "@opentelemetry/resources": "^2.7.1",
+    "@opentelemetry/sdk-logs": "^0.218.0",
+    "@profullstack/autoblog": "github:profullstack/autoblog#75e54af",
+    "@profullstack/sh1pt-action-packs": "workspace:^",
+    "@profullstack/sh1pt-actions-fleet-core": "workspace:^",
     "@supabase/ssr": "^0.5.0",
     "@supabase/supabase-js": "^2.45.0",
     "next": "^15.0.0",
+    "posthog-js": "^1.381.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@sh1pt/cli": "workspace:*",
-    "@sh1pt/core": "workspace:*",
+    "@profullstack/sh1pt": "workspace:*",
+    "@profullstack/sh1pt-core": "workspace:*",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

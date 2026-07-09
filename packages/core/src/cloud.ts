@@ -1,3 +1,5 @@
+import { autoSetup } from './setup-helpers.js';
+
 // Raw compute provisioning — VPS, GPU instances, bare metal. Different
 // abstraction from Target adapters: you OWN the resource (and the bill)
 // until you destroy it. `sh1pt deploy` drives this; `sh1pt ship` does not.
@@ -50,6 +52,7 @@ export interface Instance {
   sku?: string;
   region?: string;
   tags?: string[];
+  metadata?: Record<string, string | number | boolean>;
 }
 
 export interface ProvisionContext {
@@ -75,10 +78,11 @@ export interface CloudProvider<Config = unknown> {
   list(ctx: CloudConnectContext, config: Config): Promise<Instance[]>;
   destroy(ctx: ProvisionContext, instanceId: string, config: Config): Promise<void>;
   status(ctx: CloudConnectContext, instanceId: string, config: Config): Promise<Instance>;
+  setup?(ctx: import('./setup.js').SetupContext): Promise<import('./setup.js').SetupResult<Config>>;
 }
 
 export function defineCloud<Config>(p: CloudProvider<Config>): CloudProvider<Config> {
-  return p;
+  return autoSetup(p);
 }
 
 const cloudRegistry = new Map<string, CloudProvider<any>>();

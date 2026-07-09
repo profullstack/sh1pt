@@ -1,4 +1,4 @@
-import { defineAgent, exec, ensureCli } from '@sh1pt/core';
+import { defineAgent, exec, ensureCli, manualSetup } from '@profullstack/sh1pt-core';
 
 interface Config {
   model?: string;            // e.g. 'claude-opus-4-7', 'claude-sonnet-4-6'
@@ -19,20 +19,20 @@ export default defineAgent<Config>({
         installed: result.exitCode === 0,
         version,
         authenticated: true, // real impl: `claude --check-auth` or similar
-        installHint: 'npm install -g @anthropic-ai/claude-code',
+        installHint: 'install with mise: mise use npm:@anthropic-ai/claude-code',
       };
     } catch {
       return {
         installed: false,
         authenticated: false,
-        installHint: 'npm install -g @anthropic-ai/claude-code',
+        installHint: 'install with mise: mise use npm:@anthropic-ai/claude-code',
         authHint: 'run `claude /login` after install',
       };
     }
   },
 
   async run(ctx, config) {
-    await ensureCli('claude', 'Install: npm install -g @anthropic-ai/claude-code', ctx.log);
+    await ensureCli('claude', 'Install: mise use npm:@anthropic-ai/claude-code', ctx.log);
     const args = [
       '-p', ctx.prompt,
       ...(config.model ? ['--model', config.model] : []),
@@ -42,4 +42,14 @@ export default defineAgent<Config>({
     const { exitCode } = await exec('claude', args, { cwd: ctx.cwd, log: ctx.log });
     return { exitCode };
   },
+
+  setup: manualSetup({
+    label: "Claude Code",
+    vendorDocUrl: "https://docs.anthropic.com/en/docs/claude-code",
+    steps: [
+      "Install with mise: mise use npm:@anthropic-ai/claude-code (or use Anthropic's installer)",
+      "Authenticate: claude login",
+      "sh1pt will use `claude` CLI directly; no token in the vault needed",
+    ],
+  }),
 });

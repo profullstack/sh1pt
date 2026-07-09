@@ -1,0 +1,15 @@
+id: node-pnpm-test
+name: Node pnpm Test
+version: 1.2.0
+category: test
+description: Node/pnpm test workflow based on sh1pt's own repository test workflow.
+provider: github
+public: true
+destination: .github/workflows/test.yml
+installMode: pull-request
+supports:
+  - push
+  - pull_request
+requiredSecrets: []
+permissions:
+  contents: read

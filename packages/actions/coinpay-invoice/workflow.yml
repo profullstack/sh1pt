@@ -1,0 +1,27 @@
+name: CoinPayPortal invoice command
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: coinpay-${{ github.workflow }}-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  coinpay:
+    # Only spin up when a comment actually invokes the bot.
+    if: startsWith(github.event.comment.body, '/coinpay')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: {{actionRef}}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          coinpay-api-key: ${{ secrets.COINPAY_API_KEY }}
+          coinpay-business-id: ${{ secrets.COINPAY_BUSINESS_ID }}
+          coinpay-base-url: {{coinpayBaseUrl}}

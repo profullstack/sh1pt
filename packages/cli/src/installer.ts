@@ -23,6 +23,7 @@
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import kleur from 'kleur';
@@ -50,7 +51,7 @@ export function detectPackageManager(): PM {
 // Where the PM keeps globally-installed packages. Returns null if we
 // can't determine the path (e.g. deno; or a PM we couldn't probe).
 export function globalNodeModulesDir(pm: PM): string | null {
-  const home = process.env.HOME ?? '~';
+  const home = process.env.HOME ?? process.env.USERPROFILE ?? homedir();
   try {
     switch (pm) {
       case 'pnpm': {

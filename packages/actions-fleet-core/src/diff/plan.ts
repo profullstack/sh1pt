@@ -50,14 +50,23 @@ function resolveSafeRepoPath(repoDir: string, destination: string): string {
   if (!isAbsolute(repoDir)) {
     throw new Error(`repoDir must be absolute, got "${repoDir}"`);
   }
-  if (destination.startsWith('/')) throw new UnsafeRepoPathError(destination);
-  if (destination.includes('\0')) throw new UnsafeRepoPathError(destination);
+  assertSafeDestination(destination);
   const absolute = normalize(join(repoDir, destination));
   const repoWithSep = repoDir.endsWith(sep) ? repoDir : `${repoDir}${sep}`;
   if (!absolute.startsWith(repoWithSep) && absolute !== repoDir) {
     throw new UnsafeRepoPathError(destination);
   }
   return absolute;
+}
+
+function assertSafeDestination(destination: string): void {
+  if (isAbsolute(destination)) throw new UnsafeRepoPathError(destination);
+  if (destination.startsWith('/')) throw new UnsafeRepoPathError(destination);
+  if (destination.includes('\0')) throw new UnsafeRepoPathError(destination);
+  const normalized = normalize(destination);
+  if (normalized === '..' || normalized.startsWith(`..${sep}`) || normalized.includes(`${sep}..${sep}`)) {
+    throw new UnsafeRepoPathError(destination);
+  }
 }
 
 async function defaultReadExisting(absolutePath: string): Promise<string | null> {
@@ -269,6 +278,7 @@ export async function planRemoteDiff(options: PlanRemoteDiffOptions): Promise<Re
   const files: RemotePlannedFileDiff[] = [];
 
   for (const file of render.files) {
+    assertSafeDestination(file.destination);
     const existing = await options.readExisting(file.destination);
     let status: DiffStatus;
     if (existing === null) {

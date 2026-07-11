@@ -168,6 +168,30 @@ describe('planDiff', () => {
       await rm(repoDir, { recursive: true, force: true });
     }
   });
+
+  it('rejects nested traversal that normalizes outside the repo', async () => {
+    const repoDir = await mkdtemp(join(tmpdir(), 'sh1pt-diff-'));
+    try {
+      const render: RenderResult = {
+        packId: 'test-pack',
+        packVersion: '1.0.0',
+        files: [
+          {
+            source: 'x.hbs',
+            destination: '.github/workflows/../../../outside.yml',
+            mergeStrategy: 'replace-managed',
+            content: 'x',
+            hash: 'a',
+          },
+        ],
+      };
+      await expect(
+        planDiff({ repoDir, render, readExisting: async () => null }),
+      ).rejects.toThrow(UnsafeRepoPathError);
+    } finally {
+      await rm(repoDir, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('summarizeDiff + hasConflicts', () => {

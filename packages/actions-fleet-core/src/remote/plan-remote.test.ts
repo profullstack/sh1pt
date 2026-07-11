@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createHash } from 'node:crypto';
-import { planRemoteDiff, summarizeRemoteDiff, hasRemoteConflicts } from '../diff/plan.js';
+import { planRemoteDiff, summarizeRemoteDiff, hasRemoteConflicts, UnsafeRepoPathError } from '../diff/plan.js';
 import type { RenderResult } from '../action-pack/render.js';
 
 function bodyHash(body: string): string {
@@ -144,5 +144,28 @@ describe('planRemoteDiff', () => {
     expect(s.create).toBe(1);
     expect(s.conflict).toBe(1);
     expect(hasRemoteConflicts(plan)).toBe(true);
+  });
+
+  it('rejects remote file destinations that escape the repo', async () => {
+    await expect(
+      planRemoteDiff({
+        owner: 'acme',
+        repo: 'app',
+        baseRef: 'main',
+        render: {
+          ...singleFileRender(hash),
+          files: [
+            {
+              source: 'escape.hbs',
+              destination: '../outside.yml',
+              mergeStrategy: 'replace-managed',
+              content: 'x',
+              hash: 'h1',
+            },
+          ],
+        },
+        readExisting: async () => null,
+      }),
+    ).rejects.toThrow(UnsafeRepoPathError);
   });
 });

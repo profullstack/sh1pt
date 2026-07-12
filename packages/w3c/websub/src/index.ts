@@ -159,7 +159,7 @@ export function buildSubscriptionRequest(request: WebSubSubscriptionRequest): We
     'hub.topic': request.topicUrl,
   });
 
-  if (request.leaseSeconds !== undefined) body.set('hub.lease_seconds', String(request.leaseSeconds));
+  if (request.leaseSeconds !== undefined) body.set('hub.lease_seconds', String(validLeaseSeconds(request.leaseSeconds)));
   if (request.secret) body.set('hub.secret', request.secret);
   for (const [key, value] of Object.entries(request.extraParams ?? {})) {
     if (value !== undefined) body.set(key, String(value));
@@ -191,7 +191,7 @@ export function verifyIntentRequest(
     mode,
     topic,
     challenge,
-    leaseSeconds: lease ? Number.parseInt(lease, 10) : undefined,
+    leaseSeconds: lease ? parseLeaseSeconds(lease) : undefined,
   };
 }
 
@@ -259,6 +259,18 @@ function absolutize(value: string, baseUrl: string): string {
 
 function unique(values: string[]): string[] {
   return [...new Set(values)];
+}
+
+function validLeaseSeconds(value: number): number {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new Error('hub.lease_seconds must be a non-negative integer');
+  }
+  return value;
+}
+
+function parseLeaseSeconds(value: string): number {
+  if (!/^\d+$/.test(value)) throw new Error('invalid hub.lease_seconds');
+  return validLeaseSeconds(Number(value));
 }
 
 function valueOf(params: URLSearchParams | Record<string, string | undefined>, key: string): string | undefined {

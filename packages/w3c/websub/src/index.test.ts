@@ -120,6 +120,24 @@ describe('WebSub helpers', () => {
     })).toThrow('hub.secret must be less than 200 bytes');
   });
 
+  it('rejects invalid lease seconds when building subscription requests', () => {
+    expect(() => buildSubscriptionRequest({
+      hubUrl: 'https://hub.example/',
+      callbackUrl: 'https://subscriber.example/callback',
+      topicUrl: 'https://publisher.example/feed',
+      mode: 'subscribe',
+      leaseSeconds: -1,
+    })).toThrow('hub.lease_seconds must be a non-negative integer');
+
+    expect(() => buildSubscriptionRequest({
+      hubUrl: 'https://hub.example/',
+      callbackUrl: 'https://subscriber.example/callback',
+      topicUrl: 'https://publisher.example/feed',
+      mode: 'subscribe',
+      leaseSeconds: 1.5,
+    })).toThrow('hub.lease_seconds must be a non-negative integer');
+  });
+
   it('verifies callback intent requests and returns the challenge to echo', () => {
     const intent = verifyIntentRequest(new URLSearchParams({
       'hub.mode': 'subscribe',
@@ -134,6 +152,15 @@ describe('WebSub helpers', () => {
       challenge: 'challenge-token',
       leaseSeconds: 600,
     });
+  });
+
+  it('rejects invalid callback intent lease seconds', () => {
+    expect(() => verifyIntentRequest(new URLSearchParams({
+      'hub.mode': 'subscribe',
+      'hub.topic': 'https://publisher.example/feed',
+      'hub.challenge': 'challenge-token',
+      'hub.lease_seconds': '600s',
+    }))).toThrow('invalid hub.lease_seconds');
   });
 
   it('validates distribution signatures with a timing-safe HMAC comparison', () => {

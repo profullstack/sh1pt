@@ -316,8 +316,10 @@ function isBareMetal(plan: Pick<AtlanticPlan, 'plan_name' | 'name' | 'display_na
 
 function parseMoney(value: string | undefined): number {
   if (!value) return 0;
-  const numeric = Number(value.replace(/[^0-9.]/g, ''));
-  return Number.isFinite(numeric) ? numeric : 0;
+  const normalized = value.trim().replace(/[$,\s]/g, '');
+  const match = normalized.match(/^[-+]?\d+(?:\.\d+)?/);
+  const numeric = match ? Number(match[0]) : Number.NaN;
+  return Number.isFinite(numeric) && numeric >= 0 ? numeric : 0;
 }
 
 function parseSizeGb(value: string | undefined): number {

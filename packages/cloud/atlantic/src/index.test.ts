@@ -55,6 +55,34 @@ describe('Atlantic.Net cloud adapter', () => {
     });
   });
 
+  it('ignores malformed negative plan prices when choosing a quote', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
+      if (requestParam(init, 'Action') !== 'describe-plan') {
+        return jsonResponse({ error: 'unexpected action' }, { ok: false, status: 400, statusText: 'Bad Request' });
+      }
+      const response = describePlanResponse();
+      response['describe-planresponse'].plans['0item'] = {
+        plan_name: 'Negative.4GB',
+        display_ram: '4096MB',
+        display_disk: '100GB',
+        num_cpu: '2',
+        rate_per_hr: '-0.001',
+        rate_per_month: '-1.00',
+        platform: 'linux',
+      };
+      return jsonResponse(response);
+    }));
+
+    const quote = await adapter.quote(secret, {
+      kind: 'cpu-vps',
+      cpu: 2,
+      memory: 4,
+    }, {});
+
+    expect(quote.sku).toBe('G2.4GB');
+    expect(quote.hourly).toBe(0.0547);
+  });
+
   it('rejects missing plan matches instead of returning a fake zero dollar quote', async () => {
     await expect(adapter.quote(secret, {
       kind: 'cpu-vps',

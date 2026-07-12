@@ -305,7 +305,7 @@ function assignRel(
   const resolved = resolveHref(href, baseUrl);
   if (!resolved) return;
 
-  const rels = rel.split(/\s+/).filter(Boolean);
+  const rels = rel.toLowerCase().split(/\s+/).filter(Boolean);
   if (rels.includes('micropub')) discovery.micropubEndpoint = resolved;
   if (rels.includes('authorization_endpoint')) discovery.authorizationEndpoint = resolved;
   if (rels.includes('token_endpoint')) discovery.tokenEndpoint = resolved;

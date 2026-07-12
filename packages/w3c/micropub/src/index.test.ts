@@ -66,6 +66,25 @@ describe('w3c-micropub namespace', () => {
     });
   });
 
+  it('matches Micropub rel tokens case-insensitively', () => {
+    expect(parseMicropubLinkHeader(
+      '<https://api.example/micropub>; rel="Micropub", '
+        + '<https://id.example/token>; rel="TOKEN_ENDPOINT"',
+      'https://example.test/profile',
+    )).toEqual({
+      micropubEndpoint: 'https://api.example/micropub',
+      tokenEndpoint: 'https://id.example/token',
+    });
+
+    expect(parseEmbeddedMicropubLinks(
+      '<link rel="Authorization_Endpoint" href="/auth"><a rel="MICROPUB" href="/micropub"></a>',
+      'https://example.test/profile',
+    )).toEqual({
+      authorizationEndpoint: 'https://example.test/auth',
+      micropubEndpoint: 'https://example.test/micropub',
+    });
+  });
+
   it('builds JSON create, update, delete, and config query requests', () => {
     const create = buildMicropubCreateRequest({
       endpointUrl: 'https://example.test/micropub',

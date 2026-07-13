@@ -53,7 +53,7 @@ export default defineSocial<Config>({
       id: data.id,
       url: data.url ?? data.uri ?? `https://${instance}/`,
       platform: 'mastodon',
-      publishedAt: new Date(data.created_at ?? Date.now()).toISOString(),
+      publishedAt: mastodonTimestamp(data.created_at),
     };
   },
 
@@ -97,4 +97,11 @@ async function readMastodonError(res: Response): Promise<string> {
   } catch {
     return text;
   }
+}
+
+function mastodonTimestamp(value: string | undefined): string {
+  if (!value) return new Date().toISOString();
+  const timestamp = new Date(value);
+  if (Number.isNaN(timestamp.getTime())) return new Date().toISOString();
+  return timestamp.toISOString();
 }

@@ -72,6 +72,34 @@ describe('social-mastodon posting', () => {
     }, { instance: 'mastodon.social' })).rejects.toThrow('Text character limit');
   });
 
+  it('falls back to the current timestamp when Mastodon returns an invalid created_at', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        id: '109246',
+        url: 'https://mastodon.social/@sh1pt/109246',
+        created_at: 'not-a-date',
+      }),
+    } as Response);
+
+    const ctx = {
+      ...fakeConnectContext({ MASTODON_TOKEN_MASTODON_SOCIAL: 'mastodon-token' }),
+      dryRun: false,
+    };
+
+    const result = await adapter.post(ctx as any, {
+      body: 'Release notes',
+    }, { instance: 'mastodon.social' });
+
+    expect(result).toMatchObject({
+      id: '109246',
+      url: 'https://mastodon.social/@sh1pt/109246',
+      platform: 'mastodon',
+      publishedAt: expect.any(String),
+    });
+  });
+
   it('does not silently drop media attachments', async () => {
     const ctx = {
       ...fakeConnectContext({ MASTODON_TOKEN_MASTODON_SOCIAL: 'mastodon-token' }),

@@ -40,7 +40,7 @@ export default defineSocial<Config>({
       id: String(data.result.message_id),
       url: messageUrl(data.result, config),
       platform: 'telegram',
-      publishedAt: new Date(data.result.date * 1000).toISOString(),
+      publishedAt: telegramTimestamp(data.result.date),
     };
   },
 
@@ -65,7 +65,7 @@ interface TelegramResponse {
   description?: string;
   result?: {
     message_id: number;
-    date: number;
+    date?: number;
     chat?: {
       username?: string;
     };
@@ -93,4 +93,9 @@ async function parseTelegramResponse(res: Response): Promise<TelegramResponse> {
 function messageUrl(result: NonNullable<TelegramResponse['result']>, config: Config): string {
   const username = result.chat?.username ?? (config.chatId.startsWith('@') ? config.chatId.slice(1) : undefined);
   return username ? `https://t.me/${username}/${result.message_id}` : 'https://t.me/';
+}
+
+function telegramTimestamp(date: number | undefined): string {
+  if (typeof date !== 'number' || !Number.isFinite(date)) return new Date().toISOString();
+  return new Date(date * 1000).toISOString();
 }

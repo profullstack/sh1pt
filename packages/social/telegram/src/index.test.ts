@@ -63,4 +63,29 @@ describe('social-telegram posting', () => {
     await expect(adapter.post(ctx as any, { body: 'Release shipped' }, { chatId: '@missing' }))
       .rejects.toThrow('Bad Request: chat not found');
   });
+
+  it('falls back to the current timestamp when Telegram omits the message date', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        ok: true,
+        result: { message_id: 42, chat: { username: 'sh1pt' } },
+      }),
+    } as any);
+
+    const ctx = {
+      ...fakeConnectContext({ TELEGRAM_BOT_TOKEN: '123:abc' }),
+      dryRun: false,
+    };
+
+    const result = await adapter.post(ctx as any, { body: 'Release shipped' }, { chatId: '@sh1pt' });
+
+    expect(result).toMatchObject({
+      id: '42',
+      url: 'https://t.me/sh1pt/42',
+      platform: 'telegram',
+      publishedAt: expect.any(String),
+    });
+  });
 });

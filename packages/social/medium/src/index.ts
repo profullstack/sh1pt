@@ -178,7 +178,9 @@ function redactToken(message: string, token: string): string {
 
 function mediumPublishedAt(post: MediumPost): string {
   const value = post.publishedAt;
-  if (typeof value === 'number') return new Date(value).toISOString();
-  if (typeof value === 'string') return new Date(value).toISOString();
+  if (typeof value === 'number' || typeof value === 'string') {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) return date.toISOString();
+  }
   return new Date().toISOString();
 }

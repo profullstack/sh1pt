@@ -113,6 +113,36 @@ describe('social-medium legacy API posting', () => {
     });
   });
 
+  it('falls back when Medium returns an invalid publishedAt value', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
+      data: {
+        id: 'pub_post_invalid_date',
+        url: 'https://medium.com/developers/invalid-date-pub_post_invalid_date',
+        publishedAt: 'not-a-date',
+      },
+    }), { status: 201, headers: { 'content-type': 'application/json' } }));
+
+    const ctx = {
+      ...fakeConnectContext({ MEDIUM_INTEGRATION_TOKEN: 'medium-token' }),
+      dryRun: false,
+    };
+
+    const result = await adapter.post(ctx as any, {
+      title: 'Medium API',
+      body: 'Draft body',
+    }, {
+      mode: 'api-legacy',
+      publicationId: 'pub_123',
+    });
+
+    expect(result).toMatchObject({
+      id: 'pub_post_invalid_date',
+      url: 'https://medium.com/developers/invalid-date-pub_post_invalid_date',
+      platform: 'medium',
+    });
+    expect(new Date(result.publishedAt).toString()).not.toBe('Invalid Date');
+  });
+
   it('surfaces Medium API errors without leaking the token', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
       errors: [{ message: 'Invalid token medium-secret-token for user' }],

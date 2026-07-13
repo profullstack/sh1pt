@@ -63,4 +63,27 @@ describe('social-discord posting', () => {
     await expect(adapter.post(ctx as any, { body: 'Release shipped' }, {}))
       .rejects.toThrow('Invalid Form Body');
   });
+
+  it('replaces an existing wait query parameter while preserving thread routing', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        id: '123456789',
+        channel_id: '222',
+        guild_id: '111',
+        timestamp: '2026-05-11T20:00:00.000000+00:00',
+      }),
+    } as any);
+
+    const ctx = {
+      ...fakeConnectContext({ DISCORD_WEBHOOK_URL: 'https://discord.com/api/webhooks/1/token?thread_id=333&wait=false' }),
+      dryRun: false,
+    };
+
+    await adapter.post(ctx as any, { body: 'Release shipped' }, {});
+
+    const [url] = fetchMock.mock.calls[0]!;
+    expect(url).toBe('https://discord.com/api/webhooks/1/token?thread_id=333&wait=true');
+  });
 });

@@ -73,8 +73,9 @@ function formatDiscordPost(post: SocialPost, config: Config): unknown {
 }
 
 function withWait(webhookUrl: string): string {
-  const separator = webhookUrl.includes('?') ? '&' : '?';
-  return `${webhookUrl}${separator}wait=true`;
+  const url = new URL(webhookUrl);
+  url.searchParams.set('wait', 'true');
+  return url.toString();
 }
 
 async function readDiscordError(res: Response): Promise<string> {

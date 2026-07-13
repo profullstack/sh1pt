@@ -78,4 +78,33 @@ describe('social-codenewbie posting', () => {
       body: 'Short',
     }, {})).rejects.toThrow('Body markdown is too short');
   });
+
+  it('falls back to the current timestamp when CodeNewbie returns an invalid published_at', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        id: 414,
+        url: 'https://community.codenewbie.org/sh1pt/release-notes',
+        published_at: 'not-a-date',
+      }),
+    } as Response);
+
+    const ctx = {
+      ...fakeConnectContext({ CODENEWBIE_API_KEY: 'codenewbie-key' }),
+      dryRun: false,
+    };
+
+    const result = await adapter.post(ctx as any, {
+      title: 'Release notes',
+      body: 'Article body',
+    }, {});
+
+    expect(result).toMatchObject({
+      id: '414',
+      url: 'https://community.codenewbie.org/sh1pt/release-notes',
+      platform: 'codenewbie',
+      publishedAt: expect.any(String),
+    });
+  });
 });

@@ -42,7 +42,7 @@ export default defineSocial<Config>({
       id: String(article.id),
       url: article.url ?? CODENEWBIE_HOME,
       platform: 'codenewbie',
-      publishedAt: new Date(article.published_at ?? article.created_at ?? Date.now()).toISOString(),
+      publishedAt: codeNewbieTimestamp(article.published_at ?? article.created_at),
     };
   },
 
@@ -84,4 +84,11 @@ async function readCodeNewbieError(res: Response): Promise<string> {
   } catch {
     return text;
   }
+}
+
+function codeNewbieTimestamp(value: string | null | undefined): string {
+  if (!value) return new Date().toISOString();
+  const timestamp = new Date(value);
+  if (Number.isNaN(timestamp.getTime())) return new Date().toISOString();
+  return timestamp.toISOString();
 }

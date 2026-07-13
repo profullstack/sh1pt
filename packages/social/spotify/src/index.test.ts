@@ -88,6 +88,31 @@ describe('social-spotify playlist publishing', () => {
     });
   });
 
+  it('normalizes custom API base URLs before composing Spotify paths', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      status: 201,
+      text: async () => JSON.stringify({
+        id: 'playlist_base_url',
+        external_urls: { spotify: 'https://open.spotify.com/playlist/playlist_base_url' },
+      }),
+    } as Response);
+
+    const ctx = {
+      ...fakeConnectContext({ SPOTIFY_ACCESS_TOKEN: 'spotify-token' }),
+      dryRun: false,
+    };
+
+    await adapter.post(ctx as any, {
+      title: 'Base URL',
+      body: 'Check custom base URL handling',
+    }, {
+      baseUrl: 'https://api.spotify.example/v1/',
+    });
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.spotify.example/v1/me/playlists');
+  });
+
   it('updates an existing playlist and replaces its items', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce({

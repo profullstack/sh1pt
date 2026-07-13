@@ -179,7 +179,8 @@ async function spotifyFetch<T>(
   options: SpotifyFetchOptions = {},
 ): Promise<T> {
   const { allowEmpty, ...init } = options;
-  const res = await fetch(`${config.baseUrl ?? 'https://api.spotify.com/v1'}${path}`, {
+  const baseUrl = (config.baseUrl ?? 'https://api.spotify.com/v1').replace(/\/+$/, '');
+  const res = await fetch(`${baseUrl}${path}`, {
     ...init,
     headers: {
       authorization: `Bearer ${token}`,

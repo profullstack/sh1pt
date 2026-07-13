@@ -90,4 +90,62 @@ describe('social-reddit posting', () => {
       subreddit: 'sh1pt',
     })).rejects.toThrow('RATELIMIT: you are doing that too much');
   });
+
+  it('submits image posts with the image URL payload', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        json: {
+          data: {
+            id: 'img123',
+            url: 'https://www.reddit.com/r/sh1pt/comments/img123/image_drop/',
+          },
+          errors: [],
+        },
+      }),
+    } as any);
+
+    const ctx = {
+      ...fakeConnectContext({ REDDIT_ACCESS_TOKEN: 'reddit-token' }),
+      dryRun: false,
+    };
+
+    await adapter.post(ctx as any, {
+      title: 'Image drop',
+      body: 'Fallback body',
+      link: 'https://cdn.example.com/release.png',
+    }, {
+      subreddit: 'sh1pt',
+      kind: 'image',
+    });
+
+    const body = new URLSearchParams(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body));
+    expect(Object.fromEntries(body)).toMatchObject({
+      api_type: 'json',
+      kind: 'image',
+      sr: 'sh1pt',
+      title: 'Image drop',
+      url: 'https://cdn.example.com/release.png',
+    });
+    expect(body.has('text')).toBe(false);
+  });
+
+  it('rejects image posts without a public image URL', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    const ctx = {
+      ...fakeConnectContext({ REDDIT_ACCESS_TOKEN: 'reddit-token' }),
+      dryRun: false,
+    };
+
+    await expect(adapter.post(ctx as any, {
+      title: 'Image drop',
+      body: 'Fallback body',
+    }, {
+      subreddit: 'sh1pt',
+      kind: 'image',
+    })).rejects.toThrow('post.link');
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

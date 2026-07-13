@@ -85,6 +85,7 @@ export default defineSocial<Config>({
 
 function formatSubmitBody(post: { title?: string; body: string; link?: string }, config: Config): URLSearchParams {
   const kind = config.kind ?? (post.link ? 'link' : 'self');
+  if (kind === 'image' && !post.link) throw new Error('Reddit image submissions require post.link to contain a public image URL');
   const body = new URLSearchParams({
     api_type: 'json',
     kind,
@@ -92,7 +93,7 @@ function formatSubmitBody(post: { title?: string; body: string; link?: string },
     title: post.title ?? '',
   });
   if (config.flairId) body.set('flair_id', config.flairId);
-  if (kind === 'link') {
+  if (kind === 'link' || kind === 'image') {
     body.set('url', post.link ?? post.body);
   } else {
     body.set('text', post.body.slice(0, 40_000));

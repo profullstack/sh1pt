@@ -230,6 +230,7 @@ async function loadVideo(media: MediaAttachment): Promise<LoadedVideo> {
     const res = await fetch(media.file);
     if (!res.ok) throw new Error(`Could not fetch YouTube video media: ${res.statusText}`);
     const bytes = new Uint8Array(await res.arrayBuffer());
+    ensureVideoBytes(bytes);
     return {
       bytes,
       mimeType: normalizeVideoMime(res.headers.get('content-type')) ?? guessVideoMime(media.file),
@@ -237,10 +238,15 @@ async function loadVideo(media: MediaAttachment): Promise<LoadedVideo> {
   }
 
   const bytes = readFileSync(media.file);
+  ensureVideoBytes(bytes);
   return {
     bytes,
     mimeType: guessVideoMime(media.file),
   };
+}
+
+function ensureVideoBytes(bytes: Uint8Array): void {
+  if (bytes.byteLength === 0) throw new Error('YouTube video attachment is empty');
 }
 
 function guessVideoMime(file: string): string {

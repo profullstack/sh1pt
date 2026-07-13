@@ -203,6 +203,23 @@ describe('social-youtube upload', () => {
     }, {})).rejects.toThrow('video attachment');
   });
 
+  it('rejects empty video attachments before opening an upload session', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    const ctx = {
+      ...fakeConnectContext({ YOUTUBE_ACCESS_TOKEN: 'sekret' }),
+      dryRun: false,
+    };
+
+    await expect(adapter.post(ctx as any, {
+      body: 'Empty video',
+      media: [{ file: tempVideoFile('empty.mp4', new Uint8Array()), kind: 'video' }],
+    }, {
+      uploadBaseUrl: 'https://www.googleapis.example',
+    })).rejects.toThrow('YouTube video attachment is empty');
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('redacts OAuth secrets from token refresh errors', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
       error: 'invalid_grant',

@@ -113,8 +113,9 @@ export default defineDns<Config>({
     const existing = (await this.listRecords(zoneId, config)).filter(
       r => trimTrailingDot(r.name) === normalizedName && r.type === record.type,
     );
+    const existingTtl = existing[0]?.ttl ?? ttl;
     const deletions = existing.length > 0
-      ? [{ name, type: record.type, ttl, rrdatas: existing.map(r => r.value) }]
+      ? [{ name, type: record.type, ttl: existingTtl, rrdatas: existing.map(r => r.value) }]
       : [];
     const additions = [{ name, type: record.type, ttl, rrdatas: [record.value] }];
 

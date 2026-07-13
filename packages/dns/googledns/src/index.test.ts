@@ -54,7 +54,7 @@ describe('Google Cloud DNS adapter', () => {
       deletions: [{
         name: 'www.example.com.',
         type: 'A',
-        ttl: 600,
+        ttl: 300,
         rrdatas: ['1.1.1.1'],
       }],
       additions: [{

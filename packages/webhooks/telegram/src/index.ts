@@ -65,14 +65,24 @@ interface TelegramResponse {
 }
 
 function formatTelegramPayload(payload: WebhookPayload, config: Config): unknown {
-  const summary = `*${escape(payload.event)}*`;
-  const body = '```\n' + JSON.stringify(payload.data, null, 2).slice(0, 3500) + '\n```';
+  const parseMode = config.parseMode ?? 'MarkdownV2';
   return {
     chat_id: config.chatId,
-    text: `${summary}\n${body}`,
-    parse_mode: config.parseMode ?? 'MarkdownV2',
+    text: formatTelegramText(payload, parseMode),
+    parse_mode: parseMode,
     disable_notification: config.disableNotification,
   };
+}
+
+function formatTelegramText(payload: WebhookPayload, parseMode: NonNullable<Config['parseMode']>): string {
+  const data = JSON.stringify(payload.data, null, 2).slice(0, 3500);
+  if (parseMode === 'HTML') {
+    return `<b>${escapeHtml(payload.event)}</b>\n<pre>${escapeHtml(data)}</pre>`;
+  }
+
+  const summary = `*${escapeMarkdown(payload.event)}*`;
+  const body = '```\n' + data + '\n```';
+  return `${summary}\n${body}`;
 }
 
 async function parseTelegramResponse(res: Response): Promise<TelegramResponse> {
@@ -83,6 +93,17 @@ async function parseTelegramResponse(res: Response): Promise<TelegramResponse> {
   }
 }
 
-function escape(s: string): string {
+function escapeMarkdown(s: string): string {
   return s.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, (c) => '\\' + c);
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"]/g, (c) => {
+    switch (c) {
+      case '&': return '&amp;';
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      default: return '&quot;';
+    }
+  });
 }

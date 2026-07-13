@@ -41,7 +41,52 @@ describe('webhook-telegram HTTP delivery', () => {
     const body = JSON.parse(String((init as RequestInit).body));
     expect(body.chat_id).toBe(-1001234567890);
     expect(body.parse_mode).toBe('HTML');
-    expect(body.text).toContain('ship\\.published');
+    expect(body.text).toContain('<b>ship.published</b>');
+  });
+
+  it('keeps MarkdownV2 formatting as the default parse mode', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true, result: { message_id: 42 } }),
+    } as any);
+
+    const ctx = {
+      ...fakeConnectContext({ TELEGRAM_BOT_TOKEN: '123:abc' }),
+      dryRun: false,
+    };
+
+    await adapter.send(ctx as any, payload, { chatId: -1001234567890 });
+
+    const [, init] = fetchMock.mock.calls[0]!;
+    const body = JSON.parse(String((init as RequestInit).body));
+    expect(body.parse_mode).toBe('MarkdownV2');
+    expect(body.text).toContain('*ship\\.published*');
+  });
+
+  it('escapes HTML content when HTML parse mode is selected', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true, result: { message_id: 42 } }),
+    } as any);
+
+    const ctx = {
+      ...fakeConnectContext({ TELEGRAM_BOT_TOKEN: '123:abc' }),
+      dryRun: false,
+    };
+
+    await adapter.send(ctx as any, {
+      ...payload,
+      event: 'ship<deploy>&done',
+      data: { target: '<script>', message: 'a & b' },
+    }, { chatId: -1001234567890, parseMode: 'HTML' });
+
+    const [, init] = fetchMock.mock.calls[0]!;
+    const body = JSON.parse(String((init as RequestInit).body));
+    expect(body.text).toContain('<b>ship&lt;deploy&gt;&amp;done</b>');
+    expect(body.text).toContain('&lt;script&gt;');
+    expect(body.text).toContain('a &amp; b');
   });
 
   it('returns Telegram error descriptions when sendMessage is rejected', async () => {

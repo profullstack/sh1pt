@@ -247,13 +247,14 @@ function normalizeWebhook(event: CoinPayWebhookEvent): Webhook {
 
 function normalizeStatus(status: string | undefined): Webhook['status'] | undefined {
   if (!status) return undefined;
-  if (['confirmed', 'forwarded', 'succeeded', 'paid', 'payment.confirmed', 'payment.forwarded'].includes(status)) {
+  const normalized = status.trim().toLowerCase();
+  if (['confirmed', 'forwarded', 'succeeded', 'paid', 'payment.confirmed', 'payment.forwarded'].includes(normalized)) {
     return 'succeeded';
   }
-  if (['pending', 'awaiting_payment', 'processing', 'created'].includes(status)) return 'pending';
-  if (['expired', 'failed', 'cancelled', 'canceled', 'payment.expired'].includes(status)) return 'failed';
-  if (status === 'refunded') return 'refunded';
-  if (status === 'disputed') return 'disputed';
+  if (['pending', 'awaiting_payment', 'processing', 'created'].includes(normalized)) return 'pending';
+  if (['expired', 'failed', 'cancelled', 'canceled', 'payment.expired'].includes(normalized)) return 'failed';
+  if (normalized === 'refunded') return 'refunded';
+  if (normalized === 'disputed') return 'disputed';
   return undefined;
 }
 

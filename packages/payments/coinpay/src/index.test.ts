@@ -137,10 +137,10 @@ describe('payment-coinpay', () => {
   it('verifies CoinPay webhook signatures and normalizes payment events', async () => {
     const raw = JSON.stringify({
       id: 'evt_pay_123',
-      type: 'payment.confirmed',
+      type: 'Payment.Confirmed',
       data: {
         payment_id: 'pay_123',
-        status: 'confirmed',
+        status: 'PAID',
         amount_usd: '24.40',
         currency: 'USDC',
         metadata: { customer_email: 'buyer@example.com' },
@@ -160,7 +160,7 @@ describe('payment-coinpay', () => {
     );
 
     expect(webhook).toMatchObject({
-      type: 'payment.confirmed',
+      type: 'Payment.Confirmed',
       paymentId: 'pay_123',
       status: 'succeeded',
       amount: 2440,

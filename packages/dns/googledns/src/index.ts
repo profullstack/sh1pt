@@ -17,6 +17,14 @@ interface Config {
 const API = 'https://dns.googleapis.com/dns/v1';
 let _secret: (k: string) => string | undefined = () => undefined;
 
+function trimTrailingDot(name: string): string {
+  return name.replace(/\.$/, '');
+}
+
+function ensureTrailingDot(name: string): string {
+  return name.endsWith('.') ? name : `${name}.`;
+}
+
 async function getAccessToken(): Promise<string> {
   // Prefer GOOGLE_ACCESS_TOKEN (pre-fetched by caller or CI) for simplicity.
   // For service-account flow, use GOOGLE_APPLICATION_CREDENTIALS path.
@@ -78,7 +86,7 @@ export default defineDns<Config>({
     };
     const records: DnsRecord[] = [];
     for (const rs of rrsets ?? []) {
-      const name = rs.name.replace(/\.$/, '');
+      const name = trimTrailingDot(rs.name);
       for (const val of rs.rrdatas) {
         records.push({
           id: `${rs.type}/${rs.name}`,
@@ -98,11 +106,12 @@ export default defineDns<Config>({
     const project = config.projectId ?? _secret('GOOGLE_PROJECT_ID');
     if (!project) throw new Error('GOOGLE_PROJECT_ID not set');
     const ttl = record.ttl ?? config.defaultTtl ?? 300;
-    const name = record.name.endsWith('.') ? record.name : `${record.name}.`;
+    const name = ensureTrailingDot(record.name);
+    const normalizedName = trimTrailingDot(record.name);
 
     // Google Cloud DNS changes are atomic: DELETE old + ADD new in one call.
     const existing = (await this.listRecords(zoneId, config)).filter(
-      r => r.name === record.name && r.type === record.type,
+      r => trimTrailingDot(r.name) === normalizedName && r.type === record.type,
     );
     const deletions = existing.length > 0
       ? [{ name, type: record.type, ttl, rrdatas: existing.map(r => r.value) }]

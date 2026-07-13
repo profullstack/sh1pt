@@ -56,7 +56,8 @@ export default defineSocial<Config>({
       throw new Error('X media posts require pre-uploaded media IDs in config.mediaIds');
     }
 
-    const res = await fetch(`${config.apiBaseUrl ?? 'https://api.x.com'}/2/tweets`, {
+    const apiBaseUrl = (config.apiBaseUrl ?? 'https://api.x.com').replace(/\/+$/, '');
+    const res = await fetch(`${apiBaseUrl}/2/tweets`, {
       method: 'POST',
       headers: {
         authorization: `Bearer ${token}`,

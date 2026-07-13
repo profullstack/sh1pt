@@ -83,6 +83,28 @@ describe('social-x API posting', () => {
     });
   });
 
+  it('normalizes custom API base URLs before composing tweet paths', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({ data: { id: '1445880548472328194', text: 'Custom base' } }),
+    } as Response);
+
+    const ctx = {
+      ...fakeConnectContext({ X_BEARER_TOKEN: 'x-token' }),
+      dryRun: false,
+    };
+
+    await adapter.post(ctx as any, {
+      body: 'Custom base',
+    }, {
+      mode: 'api',
+      apiBaseUrl: 'https://api.x.example/',
+    });
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.x.example/2/tweets');
+  });
+
   it('rejects media attachments without pre-uploaded media ids', async () => {
     const ctx = {
       ...fakeConnectContext({ X_BEARER_TOKEN: 'x-token' }),

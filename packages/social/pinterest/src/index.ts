@@ -139,5 +139,7 @@ async function readPinterestResponse(res: Response): Promise<PinterestPinRespons
 function pinterestTimestamp(value: string | undefined): string {
   if (!value) return new Date().toISOString();
   const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/.test(value);
-  return new Date(hasTimezone ? value : `${value}Z`).toISOString();
+  const timestamp = new Date(hasTimezone ? value : `${value}Z`);
+  if (Number.isNaN(timestamp.getTime())) return new Date().toISOString();
+  return timestamp.toISOString();
 }

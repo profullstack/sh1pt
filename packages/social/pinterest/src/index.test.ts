@@ -103,6 +103,37 @@ describe('social-pinterest posting', () => {
     });
   });
 
+  it('falls back to the current timestamp when Pinterest returns an invalid created_at', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        id: '654321654321654321',
+        created_at: 'not-a-date',
+      }),
+    } as Response);
+
+    const ctx = {
+      ...fakeConnectContext({ PINTEREST_ACCESS_TOKEN: 'pinterest-token' }),
+      dryRun: false,
+    };
+
+    const result = await adapter.post(ctx as any, {
+      title: 'Launch visual',
+      body: 'Launch screenshot',
+      media: [{ file: 'https://cdn.example.com/launch.jpg', kind: 'image' }],
+    }, {
+      boardId: 'board_123',
+    });
+
+    expect(result).toMatchObject({
+      id: '654321654321654321',
+      url: 'https://www.pinterest.com/pin/654321654321654321/',
+      platform: 'pinterest',
+      publishedAt: expect.any(String),
+    });
+  });
+
   it('rejects local image paths because Pinterest image_url requires a URL', async () => {
     const ctx = {
       ...fakeConnectContext({ PINTEREST_ACCESS_TOKEN: 'pinterest-token' }),

@@ -84,4 +84,33 @@ describe('social-forem posting', () => {
       body: 'Article body',
     }, { host: 'community.codenewbie.org' })).rejects.toThrow('Title has already been taken');
   });
+
+  it('falls back to the current timestamp when Forem returns an invalid published_at', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        id: 313,
+        url: 'https://community.codenewbie.org/sh1pt/release-notes',
+        published_at: 'not-a-date',
+      }),
+    } as Response);
+
+    const ctx = {
+      ...fakeConnectContext({ FOREM_API_KEY_COMMUNITY_CODENEWBIE_ORG: 'forem-key' }),
+      dryRun: false,
+    };
+
+    const result = await adapter.post(ctx as any, {
+      title: 'Release notes',
+      body: 'Article body',
+    }, { host: 'community.codenewbie.org' });
+
+    expect(result).toMatchObject({
+      id: '313',
+      url: 'https://community.codenewbie.org/sh1pt/release-notes',
+      platform: 'forem',
+      publishedAt: expect.any(String),
+    });
+  });
 });

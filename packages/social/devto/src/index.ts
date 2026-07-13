@@ -42,7 +42,7 @@ export default defineSocial<Config>({
       id: String(article.id),
       url: article.url ?? 'https://dev.to/',
       platform: 'devto',
-      publishedAt: new Date(article.published_at ?? article.created_at ?? Date.now()).toISOString(),
+      publishedAt: devtoTimestamp(article.published_at ?? article.created_at),
     };
   },
 
@@ -86,4 +86,11 @@ async function readDevtoError(res: Response): Promise<string> {
   } catch {
     return text;
   }
+}
+
+function devtoTimestamp(value: string | null | undefined): string {
+  if (!value) return new Date().toISOString();
+  const timestamp = new Date(value);
+  if (Number.isNaN(timestamp.getTime())) return new Date().toISOString();
+  return timestamp.toISOString();
 }

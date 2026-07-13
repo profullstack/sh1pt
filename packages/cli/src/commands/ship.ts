@@ -16,7 +16,7 @@ import { categoryById, packageFor } from '../adapter-registry.js';
  * @param configPathOrDir  Path to a config file, or a directory (appends sh1pt.config.ts).
  *                         Defaults to process.cwd().
  */
-async function loadManifest(configPathOrDir?: string): Promise<Manifest> {
+export async function loadManifest(configPathOrDir?: string): Promise<Manifest> {
   const input = configPathOrDir ?? process.cwd();
   const resolved = resolve(input);
 
@@ -48,11 +48,8 @@ async function loadManifest(configPathOrDir?: string): Promise<Manifest> {
 
     return candidate as unknown as Manifest;
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ERR_MODULE_NOT_FOUND') {
-      console.error(kleur.red(`error: cannot load config file "${configPath}"`));
-      process.exit(1);
-    }
-    return { name: 'unknown', version: '0.0.0', channels: [], targets: {} };
+    const message = (err as Error).message || String(err);
+    throw new Error(`cannot load config file "${configPath}": ${message}`);
   }
 }
 

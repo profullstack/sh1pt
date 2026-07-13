@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { availableTargetAdapters, shipCmd } from './ship.js';
+import { mkdtemp, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { availableTargetAdapters, loadManifest, shipCmd } from './ship.js';
 
 describe('shipCmd', () => {
   it('is registered as a top-level command named "ship"', () => {
@@ -49,5 +52,13 @@ describe('shipCmd', () => {
     const availableCmd = targetCmd!.commands.find((c) => c.name() === 'available');
     expect(availableCmd).toBeDefined();
     expect(availableCmd!.options.map((o) => o.long)).toContain('--json');
+  });
+
+  it('reports broken config files instead of silently using an empty manifest', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'sh1pt-bad-config-'));
+    const file = join(dir, 'sh1pt.config.mjs');
+    await writeFile(file, 'throw new Error("boom");\nexport default {};\n');
+
+    await expect(loadManifest(file)).rejects.toThrow(/cannot load config file .*boom/);
   });
 });

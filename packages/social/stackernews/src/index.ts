@@ -42,7 +42,7 @@ export default defineSocial<Config>({
       id,
       url: item?.id ? `https://stacker.news/items/${item.id}` : 'https://stacker.news/',
       platform: 'stackernews',
-      publishedAt: new Date(item?.createdAt ?? payIn.createdAt ?? Date.now()).toISOString(),
+      publishedAt: stackerTimestamp(item?.createdAt ?? payIn.createdAt),
     };
   },
 
@@ -143,6 +143,11 @@ async function readStackerResponse<T>(res: Response): Promise<StackerGraphqlResp
 function formatText(post: SocialPost): string {
   const tags = (post.hashtags ?? []).slice(0, 3).map((tag) => `#${tag}`).join(' ');
   return [post.body, tags].filter(Boolean).join('\n\n').slice(0, 20_000);
+}
+
+function stackerTimestamp(value: string | undefined): string {
+  const date = value ? new Date(value) : new Date();
+  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
 }
 
 interface StackerGraphqlResponse<T> {

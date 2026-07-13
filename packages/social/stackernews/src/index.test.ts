@@ -128,4 +128,37 @@ describe('social-stackernews GraphQL posting', () => {
       link: 'https://sh1pt.com',
     }, { apiUrl: 'https://stacker.test/api/graphql' })).rejects.toThrow('insufficient sats');
   });
+
+  it('falls back when Stacker News returns an invalid createdAt value', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        data: {
+          upsertDiscussion: {
+            id: 57,
+            createdAt: 'not-a-date',
+            item: { id: 125, title: 'Ask SN', createdAt: 'not-a-date' },
+          },
+        },
+      }),
+    } as any);
+
+    const ctx = {
+      ...fakeConnectContext({ STACKERNEWS_COOKIE: 'next-auth.session-token=test' }),
+      dryRun: false,
+    };
+
+    const result = await adapter.post(ctx as any, {
+      title: 'Ask SN',
+      body: 'What should sh1pt support next?',
+    }, { territory: 'meta', apiUrl: 'https://stacker.test/api/graphql' });
+
+    expect(result).toMatchObject({
+      id: '125',
+      url: 'https://stacker.news/items/125',
+      platform: 'stackernews',
+    });
+    expect(new Date(result.publishedAt).toString()).not.toBe('Invalid Date');
+  });
 });

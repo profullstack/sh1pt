@@ -79,7 +79,7 @@ export default defineSocial<Config>({
       id,
       url: video.link ?? `https://vimeo.com/${id}`,
       platform: 'vimeo',
-      publishedAt: video.created_time ?? new Date().toISOString(),
+      publishedAt: vimeoTimestamp(video.created_time),
     };
   },
 
@@ -193,6 +193,13 @@ function vimeoErrorMessage(data: VimeoErrorResponse | unknown, fallback: string,
     .filter(Boolean)
     .join('; ');
   return redact([err.developer_message, err.message, err.error, invalid, fallback].find(Boolean) ?? 'unknown error', token);
+}
+
+function vimeoTimestamp(value: string | undefined): string {
+  if (!value) return new Date().toISOString();
+  const timestamp = new Date(value);
+  if (Number.isNaN(timestamp.getTime())) return new Date().toISOString();
+  return value;
 }
 
 function redact(value: string, token: string): string {

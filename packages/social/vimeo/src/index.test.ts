@@ -104,6 +104,30 @@ describe('social-vimeo', () => {
     });
   });
 
+  it('falls back when Vimeo returns an invalid creation timestamp', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-05-21T10:00:00Z'));
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(jsonResponse({
+        uri: '/videos/24680',
+        link: 'https://vimeo.com/24680',
+        created_time: 'not-a-date',
+      }, 201));
+
+      await expect(adapter.post({
+        ...ctx({ VIMEO_ACCESS_TOKEN: 'mock-vimeo-token' }),
+        dryRun: false,
+      }, samplePost, {
+        baseUrl: 'https://vimeo.test',
+      })).resolves.toMatchObject({
+        id: '24680',
+        publishedAt: '2026-05-21T10:00:00.000Z',
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('rejects local video paths because pull uploads need public URLs', async () => {
     await expect(adapter.post({
       ...ctx({ VIMEO_ACCESS_TOKEN: 'mock-vimeo-token' }),

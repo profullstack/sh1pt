@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { availableTargetAdapters, loadManifest, shipCmd } from './ship.js';
+import { addTargetToConfig, availableTargetAdapters, loadManifest, removeTargetFromConfig, shipCmd } from './ship.js';
 
 describe('shipCmd', () => {
   it('is registered as a top-level command named "ship"', () => {
@@ -60,5 +60,45 @@ describe('shipCmd', () => {
     await writeFile(file, 'throw new Error("boom");\nexport default {};\n');
 
     await expect(loadManifest(file)).rejects.toThrow(/cannot load config file .*boom/);
+  });
+
+  it('adds a target adapter to sh1pt.config.ts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'sh1pt-target-add-'));
+    const file = join(dir, 'sh1pt.config.ts');
+    await writeFile(file, `import { defineConfig } from '@profullstack/sh1pt-core';
+
+export default defineConfig({
+  name: 'demo',
+  version: '0.0.0',
+  targets: {
+    // add targets with \`sh1pt ship target add <id>\`
+  },
+});
+`);
+
+    addTargetToConfig(file, 'deploy-vercel');
+
+    const config = await readFile(file, 'utf8');
+    expect(config).toContain('"deploy-vercel": { use: "deploy-vercel", config: {} },');
+  });
+
+  it('removes target entries that were added by the CLI', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'sh1pt-target-remove-'));
+    const file = join(dir, 'sh1pt.config.ts');
+    await writeFile(file, `import { defineConfig } from '@profullstack/sh1pt-core';
+
+export default defineConfig({
+  name: 'demo',
+  version: '0.0.0',
+  targets: {
+    "deploy-vercel": { use: "deploy-vercel", config: {} },
+  },
+});
+`);
+
+    removeTargetFromConfig(file, 'deploy-vercel');
+
+    const config = await readFile(file, 'utf8');
+    expect(config).not.toContain('deploy-vercel');
   });
 });

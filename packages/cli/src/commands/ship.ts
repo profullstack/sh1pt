@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import kleur from 'kleur';
 import { lint } from '@profullstack/sh1pt-policy';
 import type { Manifest } from '@profullstack/sh1pt-core';
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { initAction } from './init.js';
 import { categoryById, packageFor } from '../adapter-registry.js';
 
@@ -141,6 +141,10 @@ shipCmd
 
 const targetSubCmd = shipCmd.command('target').description('Manage targets in the manifest');
 
+function defaultConfigPath(): string {
+  return join(process.cwd(), 'sh1pt.config.ts');
+}
+
 export function availableTargetAdapters(): Array<{
   id: string;
   package: string;
@@ -155,18 +159,108 @@ export function availableTargetAdapters(): Array<{
   }));
 }
 
+export function addTargetToConfig(configPath: string, id: string): void {
+  const adapter = availableTargetAdapters().find((target) => target.id === id);
+  if (!adapter) {
+    throw new Error(`unknown target adapter "${id}". Run \`sh1pt ship target available\` to list options.`);
+  }
+  if (!existsSync(configPath)) {
+    throw new Error(`missing ${configPath}. Run \`sh1pt init\` first.`);
+  }
+
+  const source = readFileSync(configPath, 'utf8');
+  const manifest = targetEntriesFromSource(source, configPath);
+  if (Object.hasOwn(manifest, id)) {
+    throw new Error(`target "${id}" already exists in ${configPath}`);
+  }
+
+  const range = findTargetsObject(source);
+  if (!range) {
+    throw new Error(`${configPath} does not contain a targets object`);
+  }
+
+  const entry = `    ${JSON.stringify(id)}: { use: ${JSON.stringify(id)}, config: {} },\n`;
+  const updated = `${source.slice(0, range.close)}${entry}${source.slice(range.close)}`;
+  writeFileSync(configPath, updated, 'utf8');
+}
+
+export function removeTargetFromConfig(configPath: string, id: string): void {
+  if (!existsSync(configPath)) {
+    throw new Error(`missing ${configPath}. Run \`sh1pt init\` first.`);
+  }
+
+  const source = readFileSync(configPath, 'utf8');
+  const manifest = targetEntriesFromSource(source, configPath);
+  if (!Object.hasOwn(manifest, id)) {
+    throw new Error(`target "${id}" does not exist in ${configPath}`);
+  }
+
+  const property = targetPropertyPattern(id).exec(source);
+  if (!property) {
+    throw new Error(`target "${id}" exists but cannot be removed automatically from ${configPath}`);
+  }
+
+  const updated = `${source.slice(0, property.index)}${source.slice(property.index + property[0].length)}`;
+  writeFileSync(configPath, updated, 'utf8');
+}
+
+function targetEntriesFromSource(source: string, configPath: string): Record<string, unknown> {
+  const range = findTargetsObject(source);
+  if (!range) {
+    throw new Error(`${configPath} does not contain a targets object`);
+  }
+
+  const entries = [...source.slice(range.open + 1, range.close).matchAll(/['"]?([A-Za-z0-9_-]+)['"]?\s*:/g)];
+  return Object.fromEntries(entries.map((match) => [match[1]!, true]));
+}
+
+function findTargetsObject(source: string): { open: number; close: number } | undefined {
+  const targets = /targets\s*:\s*{/.exec(source);
+  if (!targets) return undefined;
+  const open = targets.index + targets[0].lastIndexOf('{');
+  let depth = 0;
+  for (let i = open; i < source.length; i++) {
+    const char = source[i];
+    if (char === '{') depth++;
+    if (char === '}') {
+      depth--;
+      if (depth === 0) return { open, close: i };
+    }
+  }
+  return undefined;
+}
+
+function targetPropertyPattern(id: string): RegExp {
+  const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^\\s*['"]?${escaped}['"]?\\s*:\\s*\\{\\s*use:\\s*['"][^'"]+['"]\\s*,\\s*config:\\s*\\{\\s*\\}\\s*\\},?\\r?\\n`, 'm');
+}
+
 targetSubCmd
   .command('add <id>')
   .description('Add a target adapter to sh1pt.config.ts')
-  .action((id: string) => {
-    console.log(kleur.cyan(`[stub] target add ${id}`));
+  .option('-c, --config <path>', 'path to sh1pt.config.ts', defaultConfigPath())
+  .action((id: string, opts: { config: string }) => {
+    try {
+      addTargetToConfig(resolve(opts.config), id);
+      console.log(kleur.green(`added target ${id}`));
+    } catch (err) {
+      console.error(kleur.red(`error: ${(err as Error).message}`));
+      process.exit(1);
+    }
   });
 
 targetSubCmd
   .command('remove <id>')
   .description('Remove a target from sh1pt.config.ts')
-  .action((id: string) => {
-    console.log(kleur.yellow(`[stub] target remove ${id}`));
+  .option('-c, --config <path>', 'path to sh1pt.config.ts', defaultConfigPath())
+  .action((id: string, opts: { config: string }) => {
+    try {
+      removeTargetFromConfig(resolve(opts.config), id);
+      console.log(kleur.yellow(`removed target ${id}`));
+    } catch (err) {
+      console.error(kleur.red(`error: ${(err as Error).message}`));
+      process.exit(1);
+    }
   });
 
 targetSubCmd

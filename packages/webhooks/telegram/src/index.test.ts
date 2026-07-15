@@ -64,6 +64,28 @@ describe('webhook-telegram HTTP delivery', () => {
     expect(body.text).toContain('*ship\\.published*');
   });
 
+  it('escapes backticks and backslashes inside MarkdownV2 code blocks', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true, result: { message_id: 42 } }),
+    } as any);
+
+    const ctx = {
+      ...fakeConnectContext({ TELEGRAM_BOT_TOKEN: '123:abc' }),
+      dryRun: false,
+    };
+
+    await adapter.send(ctx as any, {
+      ...payload,
+      data: { message: 'path\\to `danger`' },
+    }, { chatId: -1001234567890 });
+
+    const [, init] = fetchMock.mock.calls[0]!;
+    const body = JSON.parse(String((init as RequestInit).body));
+    expect(body.text).toContain('"message": "path\\\\\\\\to \\`danger\\`"');
+  });
+
   it('escapes HTML content when HTML parse mode is selected', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,

@@ -81,8 +81,12 @@ function formatTelegramText(payload: WebhookPayload, parseMode: NonNullable<Conf
   }
 
   const summary = `*${escapeMarkdown(payload.event)}*`;
-  const body = '```\n' + data + '\n```';
+  const body = '```\n' + escapeMarkdownCode(data) + '\n```';
   return `${summary}\n${body}`;
+}
+
+function escapeMarkdownCode(s: string): string {
+  return s.replace(/[`\\]/g, (c) => '\\' + c);
 }
 
 async function parseTelegramResponse(res: Response): Promise<TelegramResponse> {

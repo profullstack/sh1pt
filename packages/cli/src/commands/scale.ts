@@ -122,27 +122,39 @@ export function getNextId(instances: FleetEntry[]): string {
 }
 
 export function parsePositiveInteger(value: string): number {
-  const parsed = Number(value);
-  if (value.trim() === '' || !Number.isSafeInteger(parsed) || parsed < 1) {
+  const parsed = parseDecimalInteger(value);
+  if (parsed === null || parsed < 1) {
     throw new InvalidArgumentError('must be a positive integer');
   }
   return parsed;
 }
 
 export function parseNonNegativeInteger(value: string): number {
-  const parsed = Number(value);
-  if (value.trim() === '' || !Number.isSafeInteger(parsed) || parsed < 0) {
+  const parsed = parseDecimalInteger(value);
+  if (parsed === null || parsed < 0) {
     throw new InvalidArgumentError('must be zero or a positive integer');
   }
   return parsed;
 }
 
 export function parsePositiveNumber(value: string): number {
-  const parsed = Number(value);
-  if (value.trim() === '' || !Number.isFinite(parsed) || parsed <= 0) {
+  const parsed = parseDecimalNumber(value);
+  if (parsed === null || parsed <= 0) {
     throw new InvalidArgumentError('must be a positive finite number');
   }
   return parsed;
+}
+
+function parseDecimalInteger(value: string): number | null {
+  if (!/^\d+$/.test(value.trim())) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
+
+function parseDecimalNumber(value: string): number | null {
+  if (!/^\d+(?:\.\d+)?$/.test(value.trim())) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 export function parsePercentage(value: string): number {

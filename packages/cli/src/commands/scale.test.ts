@@ -74,21 +74,21 @@ describe('scale numeric option parsers', () => {
     expect(parsePercentage('100')).toBe(100);
   });
 
-  it.each(['nope', '1.5', '0', '-1', 'Infinity', 'NaN', ''])(
+  it.each(['nope', '1.5', '1e2', '0x10', '0', '-1', 'Infinity', 'NaN', ''])(
     'rejects invalid positive integers: %s',
     (value) => {
       expect(() => parsePositiveInteger(value)).toThrow();
     },
   );
 
-  it.each(['nope', '1.5', '-1', 'Infinity', 'NaN', ''])(
+  it.each(['nope', '1.5', '1e2', '0x10', '-1', 'Infinity', 'NaN', ''])(
     'rejects invalid non-negative integers: %s',
     (value) => {
       expect(() => parseNonNegativeInteger(value)).toThrow();
     },
   );
 
-  it.each(['nope', '0', '-1', 'Infinity', 'NaN', ''])(
+  it.each(['nope', '1e2', '0x10', '0', '-1', 'Infinity', 'NaN', ''])(
     'rejects invalid positive finite numbers: %s',
     (value) => {
       expect(() => parsePositiveNumber(value)).toThrow();

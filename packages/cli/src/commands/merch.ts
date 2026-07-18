@@ -1,4 +1,4 @@
-import { Command } from 'commander';
+import { Command, InvalidArgumentError } from 'commander';
 import kleur from 'kleur';
 
 // Merch = swag. Shirts, stickers, hoodies, mugs, pens, notebooks, tote
@@ -7,6 +7,28 @@ import kleur from 'kleur';
 export const merchCmd = new Command('merch')
   .description('Print & ship swag via Printful / Printify — for sale or for free conference giveaways')
   .action(() => { merchCmd.help(); });
+
+export function parsePositiveInteger(value: string): number {
+  if (!/^\d+$/.test(value)) {
+    throw new InvalidArgumentError('must be a positive integer');
+  }
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+    throw new InvalidArgumentError('must be a positive integer');
+  }
+  return parsed;
+}
+
+export function parsePositiveNumber(value: string): number {
+  if (!/^\d+(?:\.\d+)?$/.test(value)) {
+    throw new InvalidArgumentError('must be a positive finite number');
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new InvalidArgumentError('must be a positive finite number');
+  }
+  return parsed;
+}
 
 merchCmd
   .command('setup')
@@ -23,8 +45,8 @@ merchCmd
   .requiredOption('--products <kind...>', 'tshirt hoodie sticker mug pen notebook etc.')
   .option('--colors <list>', 'comma-separated colors', 'black,white')
   .option('--sizes <list>', 'comma-separated sizes (apparel only)', 'S,M,L,XL,XXL')
-  .option('--price <usd>', 'retail price in USD; omit to use provider suggestion', Number)
-  .option('--markup <percent>', 'margin over base cost if --price is omitted', Number, 40)
+  .option('--price <usd>', 'retail price in USD; omit to use provider suggestion', parsePositiveNumber)
+  .option('--markup <percent>', 'margin over base cost if --price is omitted', parsePositiveNumber, 40)
   .option('--provider <id>', 'default: first configured')
   .option('--dry-run')
   .action((opts) => {
@@ -55,8 +77,8 @@ merchCmd
   .description('Bulk ship swag for free (conference, hackathon, community giveaway — no storefront)')
   .requiredOption('--sku <id...>', 'which SKU(s) to ship')
   .requiredOption('--addresses <csvPath>', 'CSV with name,email,address1,city,region,zip,country columns')
-  .option('--quantity <n>', 'items per recipient', Number, 1)
-  .option('--budget-cap <usd>', 'abort if total exceeds this (strongly recommended)', Number)
+  .option('--quantity <n>', 'items per recipient', parsePositiveInteger, 1)
+  .option('--budget-cap <usd>', 'abort if total exceeds this (strongly recommended)', parsePositiveNumber)
   .option('--dry-run')
   .action((opts) => {
     console.log(kleur.yellow(`[stub] merch giveaway ${JSON.stringify(opts)}`));

@@ -6,7 +6,7 @@ describe('parsePositiveSafeInteger', () => {
     expect(parsePositiveSafeInteger('60')).toBe(60);
   });
 
-  it.each(['nope', '0', '-1', '1.5', 'Infinity', '9007199254740992'])(
+  it.each(['nope', '0', '-1', '1.5', '1e2', '0x10', 'Infinity', '9007199254740992'])(
     'rejects invalid interval %s',
     (value) => {
       expect(() => parsePositiveSafeInteger(value)).toThrow('positive safe integer');

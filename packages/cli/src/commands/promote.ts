@@ -866,13 +866,15 @@ function stripAiPrefix(p: string): string {
   return p.replace(/^ai-/, '').toLowerCase();
 }
 
-function parsePositiveInteger(value: string): number {
+export function parsePositiveInteger(value: string): number {
+  if (!/^\d+$/.test(value)) throw new InvalidArgumentError('must be a positive integer');
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 1) throw new InvalidArgumentError('must be a positive integer');
   return parsed;
 }
 
-function parseNonNegativeInteger(value: string): number {
+export function parseNonNegativeInteger(value: string): number {
+  if (!/^\d+$/.test(value)) throw new InvalidArgumentError('must be zero or a positive integer');
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 0) throw new InvalidArgumentError('must be zero or a positive integer');
   return parsed;

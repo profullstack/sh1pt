@@ -178,5 +178,17 @@ describe('WebSub helpers', () => {
       secret,
       signatureHeader: `sha256=${'0'.repeat(signature.length)}`,
     })).toBe(false);
+
+    for (const malformed of [
+      `sha256=${signature}zz`,
+      `sha256=${signature}f`,
+      `sha256=${signature}=ignored`,
+    ]) {
+      expect(verifyDistributionSignature({
+        body,
+        secret,
+        signatureHeader: malformed,
+      })).toBe(false);
+    }
   });
 });

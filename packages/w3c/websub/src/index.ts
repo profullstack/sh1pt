@@ -201,10 +201,13 @@ export function verifyDistributionSignature(input: {
   signatureHeader?: string | null;
 }): boolean {
   if (!input.signatureHeader) return false;
-  const [algorithm, signature] = input.signatureHeader.split('=', 2);
+  const match = /^([a-z0-9]+)=([0-9a-fA-F]+)$/.exec(input.signatureHeader);
+  const algorithm = match?.[1];
+  const signature = match?.[2];
   if (!algorithm || !signature || !SUPPORTED_SIGNATURE_ALGORITHMS.has(algorithm)) return false;
 
   const expected = createHmac(algorithm, input.secret).update(input.body).digest('hex');
+  if (signature.length !== expected.length) return false;
   const expectedBytes = Buffer.from(expected, 'hex');
   const actualBytes = Buffer.from(signature, 'hex');
   return expectedBytes.length === actualBytes.length && timingSafeEqual(expectedBytes, actualBytes);

@@ -193,9 +193,10 @@ function renderUsername(msg: BridgeMessage): string {
 }
 
 function slackTimestamp(value: string): string {
+  if (!/^\d+(?:\.\d+)?$/.test(value)) return new Date().toISOString();
   const seconds = Number(value.split('.')[0]);
-  if (!Number.isFinite(seconds)) return new Date().toISOString();
-  return new Date(seconds * 1000).toISOString();
+  const date = new Date(seconds * 1000);
+  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
 }
 
 function websocketConstructor(): SlackWebSocketConstructor {

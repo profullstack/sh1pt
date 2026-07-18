@@ -214,6 +214,40 @@ describe('bridge-slack adapter', () => {
     expect(socket.closed).toBe(true);
   });
 
+  it('falls back to the current time for malformed Slack timestamps', async () => {
+    vi.useFakeTimers().setSystemTime(new Date('2026-05-22T12:00:00.000Z'));
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      ok: true,
+      url: 'wss://slack.example/socket',
+    }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('WebSocket', FakeSocket);
+
+    const onMessage = vi.fn();
+    await adapter.subscribe(subscribeCtx(), ['C-allowed'], onMessage, {});
+
+    await FakeSocket.instances[0]?.onmessage?.({
+      data: JSON.stringify({
+        envelope_id: 'env-bad-ts',
+        type: 'events_api',
+        payload: {
+          event: {
+            type: 'message',
+            channel: 'C-allowed',
+            user: 'U123',
+            text: 'bad timestamp',
+            event_ts: '.000200',
+            ts: '.000200',
+          },
+        },
+      }),
+    });
+
+    expect(onMessage).toHaveBeenCalledWith(expect.objectContaining({
+      timestamp: '2026-05-22T12:00:00.000Z',
+    }));
+  });
+
   it('redacts Slack tokens from API errors', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
       ok: false,

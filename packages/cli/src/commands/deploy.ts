@@ -2,6 +2,9 @@ import { Command, InvalidArgumentError } from 'commander';
 import kleur from 'kleur';
 
 export function parsePositiveSafeInteger(value: string): number {
+  if (!/^\d+$/.test(value)) {
+    throw new InvalidArgumentError('must be a positive safe integer');
+  }
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed) || parsed < 1) {
     throw new InvalidArgumentError('must be a positive safe integer');
@@ -10,6 +13,9 @@ export function parsePositiveSafeInteger(value: string): number {
 }
 
 export function parsePositiveFiniteNumber(value: string): number {
+  if (!/^\d+(?:\.\d+)?$/.test(value)) {
+    throw new InvalidArgumentError('must be a positive finite number');
+  }
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed <= 0) {
     throw new InvalidArgumentError('must be a positive finite number');

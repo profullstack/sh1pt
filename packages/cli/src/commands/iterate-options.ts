@@ -1,6 +1,12 @@
 import { InvalidArgumentError } from 'commander';
 
 export function parsePositiveSafeInteger(value: string): number {
+  // Only accept plain decimal digit strings. Number() would otherwise coerce
+  // scientific ("1e2"), hexadecimal ("0x10"), binary/octal, signed ("+60"), and
+  // whitespace-padded values into numbers, which are not valid interval inputs.
+  if (!/^\d+$/.test(value)) {
+    throw new InvalidArgumentError('must be a positive safe integer');
+  }
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed) || parsed < 1) {
     throw new InvalidArgumentError('must be a positive safe integer');

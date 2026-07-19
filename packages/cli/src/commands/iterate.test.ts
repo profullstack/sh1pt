@@ -12,6 +12,13 @@ describe('parsePositiveSafeInteger', () => {
       expect(() => parsePositiveSafeInteger(value)).toThrow('positive safe integer');
     },
   );
+
+  it.each(['1e2', '0x10', '0b10', '0o10', '+60', ' 60', '60 ', '1_000'])(
+    'rejects non-decimal numeric interval %s',
+    (value) => {
+      expect(() => parsePositiveSafeInteger(value)).toThrow('positive safe integer');
+    },
+  );
 });
 
 describe('parseQuietHours', () => {

@@ -52,9 +52,9 @@ export default defineCloud<Config>({
   },
 
   async quote(ctx, spec, config) {
-    const cpu = positiveNumber(spec.cpu ?? config.defaultCpu, 2);
-    const memory = positiveNumber(spec.memory ?? config.defaultMemoryGb, 4);
-    const disk = positiveNumber(spec.storage ?? config.defaultDiskGb, 20);
+    const cpu = positiveNumber(spec.cpu ?? config.defaultCpu, 2, 'cpu');
+    const memory = positiveNumber(spec.memory ?? config.defaultMemoryGb, 4, 'memory');
+    const disk = positiveNumber(spec.storage ?? config.defaultDiskGb, 20, 'disk');
 
     ctx.log(`exe.dev quote - cpu=${cpu} memory=${memory}GB disk=${disk}GB`);
     return {
@@ -73,9 +73,9 @@ export default defineCloud<Config>({
     }
 
     const name = safeName(`sh1pt-${Date.now()}`);
-    const cpu = positiveNumber(spec.cpu ?? config.defaultCpu, 2);
-    const memory = positiveNumber(spec.memory ?? config.defaultMemoryGb, 4);
-    const disk = positiveNumber(spec.storage ?? config.defaultDiskGb, 20);
+    const cpu = positiveNumber(spec.cpu ?? config.defaultCpu, 2, 'cpu');
+    const memory = positiveNumber(spec.memory ?? config.defaultMemoryGb, 4, 'memory');
+    const disk = positiveNumber(spec.storage ?? config.defaultDiskGb, 20, 'disk');
 
     if (spec.region) {
       ctx.log(`exe.dev region is account-level; ignoring per-VM region ${spec.region}`, 'warn');
@@ -234,8 +234,17 @@ function quoteArg(value: string): string {
   return JSON.stringify(value);
 }
 
-function positiveNumber(value: Numberish | undefined, fallback: number): number {
+function positiveNumber(value: Numberish | undefined, fallback: number, label = 'value'): number {
   if (value === undefined || value === '') return fallback;
-  const n = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(n) && n > 0 ? n : fallback;
+  if (typeof value === 'number') {
+    if (Number.isFinite(value) && value > 0) return value;
+    throw new Error(`exe.dev ${label} must be a positive number`);
+  }
+  const text = value.trim();
+  if (!/^(?:[1-9]\d*|0?\.\d+|[1-9]\d*\.\d+)$/.test(text)) {
+    throw new Error(`exe.dev ${label} must be a positive decimal number`);
+  }
+  const n = Number(text);
+  if (!Number.isFinite(n) || n <= 0) throw new Error(`exe.dev ${label} must be a positive number`);
+  return n;
 }

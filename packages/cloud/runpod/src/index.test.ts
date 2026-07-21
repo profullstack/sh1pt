@@ -229,6 +229,28 @@ describe('RunPod cloud adapter', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('rejects non-decimal sizing strings before provisioning', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.provision(
+      provisionCtx(),
+      { kind: 'gpu', gpu: { model: 'NVIDIA RTX A6000', count: 1 } },
+      { hourlyPrice: 0.5, imageName: 'runpod/pytorch', volumeInGb: '1e2' },
+    )).rejects.toThrow('RunPod volumeInGb must be a plain decimal number');
+    await expect(adapter.provision(
+      provisionCtx(),
+      { kind: 'gpu', gpu: { model: 'NVIDIA RTX A6000', count: 1 } },
+      { hourlyPrice: 0.5, imageName: 'runpod/pytorch', containerDiskInGb: '0x10' },
+    )).rejects.toThrow('RunPod containerDiskInGb must be a plain decimal number');
+    await expect(adapter.provision(
+      provisionCtx(),
+      { kind: 'gpu', gpu: { model: 'NVIDIA RTX A6000', count: 1 }, cpu: '-1' as any },
+      { hourlyPrice: 0.5, imageName: 'runpod/pytorch' },
+    )).rejects.toThrow('RunPod minVcpuCount must be a plain decimal number');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('does not call RunPod for dry-run provisioning without hourlyPrice', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);

@@ -428,15 +428,24 @@ function safeName(value: string): string {
 
 function optionalPositiveNumber(value: Numberish | undefined, label: string): number | undefined {
   if (value === undefined) return undefined;
-  const number = Number(value);
+  const number = plainDecimalNumber(value, label);
   if (!Number.isFinite(number) || number <= 0) throw new Error(`RunPod ${label} must be a positive number`);
   return number;
 }
 
 function nonNegativeNumber(value: Numberish, label: string): number {
-  const number = Number(value);
+  const number = plainDecimalNumber(value, label);
   if (!Number.isFinite(number) || number < 0) throw new Error(`RunPod ${label} must be a non-negative number`);
   return number;
+}
+
+function plainDecimalNumber(value: Numberish, label: string): number {
+  if (typeof value === 'number') return value;
+  const text = value.trim();
+  if (!/^(?:0|[1-9]\d*|0?\.\d+|[1-9]\d*\.\d+)$/.test(text)) {
+    throw new Error(`RunPod ${label} must be a plain decimal number`);
+  }
+  return Number(text);
 }
 
 function graphqlError(payload: RunpodGraphqlResponse<unknown>): string {

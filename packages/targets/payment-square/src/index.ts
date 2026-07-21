@@ -93,13 +93,15 @@ export default defineTarget<Config>({
       }
       case 'refund': {
         const id = requireText(config.args?.paymentId, 'paymentId');
+        const amount = requirePositiveInteger(config.args?.amount, 'amount');
+        const currency = requireCurrency(config.args?.currency);
         ctx.log(`square: refunding payment ${id}`);
         const data = await sq('/refunds', {
           method: 'POST',
           body: JSON.stringify({
             idempotency_key: `sh1pt-${Date.now()}`,
             payment_id: id,
-            amount_money: config.args?.amount,
+            amount_money: { amount, currency },
             reason: (config.args?.reason as string) || 'requested_by_customer',
           }),
         });

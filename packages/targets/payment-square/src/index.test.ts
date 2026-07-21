@@ -119,4 +119,43 @@ describe('payment-square target adapter', () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it('refunds payments with validated amount money', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ refund: { id: 'refund_123' } }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await target.build(fakeBuildContext({
+      secret: makeVault({ SQUARE_ACCESS_TOKEN: 'square-token' }),
+    }) as any, {
+      command: 'refund',
+      args: { paymentId: 'pay_123', amount: 500, currency: 'usd', reason: 'duplicate' },
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith('https://connect.squareup.com/v2/refunds', expect.objectContaining({
+      method: 'POST',
+    }));
+    const body = JSON.parse(String(fetchMock.mock.calls[0]![1].body));
+    expect(body).toMatchObject({
+      payment_id: 'pay_123',
+      amount_money: { amount: 500, currency: 'USD' },
+      reason: 'duplicate',
+    });
+  });
+
+  it('rejects invalid refund amounts before calling Square', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(target.build(fakeBuildContext({
+      secret: makeVault({ SQUARE_ACCESS_TOKEN: 'square-token' }),
+    }) as any, {
+      command: 'refund',
+      args: { paymentId: 'pay_123', amount: 1.5, currency: 'USD' },
+    })).rejects.toThrow('amount must be a positive integer');
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

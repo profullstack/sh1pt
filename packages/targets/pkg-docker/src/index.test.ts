@@ -112,4 +112,24 @@ describe('Docker buildx planning', () => {
       registries: [{ kind: 'custom' }],
     })).rejects.toThrow('pkg-docker requires a host for custom registry');
   });
+
+  it('rejects unsafe Dockerfile and context paths before writing a plan', async () => {
+    await expect(adapter.build(fakeBuildContext() as any, {
+      image: 'acme/api',
+      registries: [{ kind: 'ghcr' }],
+      dockerfile: '../Dockerfile',
+    })).rejects.toThrow('pkg-docker dockerfile must not contain empty or parent path segments');
+
+    await expect(adapter.build(fakeBuildContext() as any, {
+      image: 'acme/api',
+      registries: [{ kind: 'ghcr' }],
+      context: '/tmp/project',
+    })).rejects.toThrow('pkg-docker context must be relative');
+
+    await expect(adapter.build(fakeBuildContext() as any, {
+      image: 'acme/api',
+      registries: [{ kind: 'ghcr' }],
+      context: 'apps\\api',
+    })).rejects.toThrow('pkg-docker context must use forward slashes');
+  });
 });

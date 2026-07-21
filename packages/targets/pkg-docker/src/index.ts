@@ -54,6 +54,22 @@ function tagValue(tag: string, version: string): string {
     .replaceAll('$version', normalized);
 }
 
+function safeRelativePath(value: string | undefined, fallback: string, label: string): string {
+  const path = value ?? fallback;
+  if (path.length === 0) throw new Error(`pkg-docker ${label} must not be empty`);
+  if (path.startsWith('/')) throw new Error(`pkg-docker ${label} must be relative`);
+  if (path.includes('\\')) throw new Error(`pkg-docker ${label} must use forward slashes`);
+  if (path.includes('\0')) throw new Error(`pkg-docker ${label} contains invalid null bytes`);
+  const segments = path.split('/');
+  if (segments.some((segment) => segment === '' || segment === '..')) {
+    throw new Error(`pkg-docker ${label} must not contain empty or parent path segments`);
+  }
+  if (label !== 'context' && segments.some((segment) => segment === '.')) {
+    throw new Error(`pkg-docker ${label} must not contain current-directory segments`);
+  }
+  return path;
+}
+
 function imageRefs(ctx: { version: string }, config: Config): string[] {
   const tags = [versionTag(ctx.version), 'latest', ...(config.tags ?? []).map((tag) => tagValue(tag, ctx.version))];
   const uniqueTags = [...new Set(tags.filter(Boolean))];
@@ -69,8 +85,8 @@ function buildxArgs(
   opts: { push: boolean },
 ): string[] {
   const platforms = config.platforms ?? ['linux/amd64', 'linux/arm64'];
-  const context = config.context ?? '.';
-  const dockerfile = config.dockerfile ?? 'Dockerfile';
+  const context = safeRelativePath(config.context, '.', 'context');
+  const dockerfile = safeRelativePath(config.dockerfile, 'Dockerfile', 'dockerfile');
   const args = [
     'buildx',
     'build',
@@ -115,8 +131,8 @@ export default defineTarget<Config>({
     const plan = {
       image: config.image,
       version: versionTag(ctx.version),
-      context: config.context ?? '.',
-      dockerfile: config.dockerfile ?? 'Dockerfile',
+      context: safeRelativePath(config.context, '.', 'context'),
+      dockerfile: safeRelativePath(config.dockerfile, 'Dockerfile', 'dockerfile'),
       platforms,
       refs,
       commands: {

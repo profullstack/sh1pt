@@ -98,7 +98,10 @@ function graphApiBaseUrl(config: Config): string {
     throw new Error('chat-whatsapp graphApiBaseUrl must be a valid HTTPS URL');
   }
   if (parsed.protocol !== 'https:') throw new Error('chat-whatsapp graphApiBaseUrl must use HTTPS');
-  return baseUrl.replace(/\/+$/, '');
+  if (parsed.username || parsed.password || parsed.pathname !== '/' || parsed.search || parsed.hash) {
+    throw new Error('chat-whatsapp graphApiBaseUrl must be an HTTPS origin');
+  }
+  return parsed.origin;
 }
 
 function graphUrl(config: Config, path: string): string {

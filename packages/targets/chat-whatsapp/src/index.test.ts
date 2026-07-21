@@ -93,6 +93,11 @@ describe('WhatsApp Business Cloud API target', () => {
       ...baseConfig,
       graphApiBaseUrl: 'http://graph.facebook.com',
     })).rejects.toThrow('graphApiBaseUrl must use HTTPS');
+
+    await expect(adapter.build(fakeBuildContext() as any, {
+      ...baseConfig,
+      graphApiBaseUrl: 'https://graph.facebook.com/api?token=leak',
+    })).rejects.toThrow('graphApiBaseUrl must be an HTTPS origin');
   });
 
   it('keeps dry-run shipping side-effect free', async () => {

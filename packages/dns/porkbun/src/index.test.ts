@@ -55,6 +55,32 @@ describe('Porkbun DNS API adapter', () => {
     ]);
   });
 
+  it('falls back for non-decimal Porkbun TTL strings', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({
+        status: 'SUCCESS',
+        records: [
+          { id: 'sci', name: 'sci.example.com', type: 'A', content: '1.2.3.4', ttl: '1e2' },
+          { id: 'hex', name: 'hex.example.com', type: 'A', content: '1.2.3.5', ttl: '0x10' },
+          { id: 'decimal', name: 'decimal.example.com', type: 'A', content: '1.2.3.6', ttl: '600.5' },
+          { id: 'normal', name: 'normal.example.com', type: 'A', content: '1.2.3.7', ttl: '600' },
+        ],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await dns.connect(ctx(), {});
+    const records = await dns.listRecords('example.com', { defaultTtl: 900 });
+
+    expect(records.map((record) => [record.id, record.ttl])).toEqual([
+      ['sci', 900],
+      ['hex', 900],
+      ['decimal', 900],
+      ['normal', 600],
+    ]);
+  });
+
   it('lists API-enabled domains as zones', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

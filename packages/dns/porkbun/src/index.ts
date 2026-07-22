@@ -70,15 +70,26 @@ function ttlValue(ttl: number | undefined, config: Config): number {
   return ttl ?? config.defaultTtl ?? 600;
 }
 
+function parsePorkbunTtl(ttl: PorkbunRecord['ttl']): number | undefined {
+  if (typeof ttl === 'number') {
+    return Number.isInteger(ttl) && ttl > 0 ? ttl : undefined;
+  }
+  if (typeof ttl !== 'string' || !/^[1-9]\d*$/.test(ttl)) {
+    return undefined;
+  }
+  const parsed = Number(ttl);
+  return Number.isSafeInteger(parsed) ? parsed : undefined;
+}
+
 function mapRecord(zoneId: string, record: PorkbunRecord, config: Config): DnsRecord {
-  const ttl = Number(record.ttl);
+  const ttl = parsePorkbunTtl(record.ttl);
   return {
     id: String(record.id),
     zone: zoneId,
     name: normalizeRecordName(zoneId, record.name),
     type: record.type as DnsRecord['type'],
     value: record.content,
-    ttl: Number.isFinite(ttl) && ttl > 0 ? ttl : ttlValue(undefined, config),
+    ttl: ttl ?? ttlValue(undefined, config),
   };
 }
 

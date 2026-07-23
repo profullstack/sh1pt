@@ -84,24 +84,43 @@ describe('Together AI generation', () => {
   });
 
   it('supports text-style choices from compatible responses', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         choices: [{ text: 'legacy text response' }],
       }),
-    }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
 
     const result = await adapter.generate(
       ctx(),
       'hello',
       { model: 'Qwen/Qwen3.5-9B' },
-      { baseUrl: 'https://together.test/v1' },
+      { baseUrl: 'https://together.test/v1/' },
     );
 
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://together.test/v1/chat/completions');
     expect(result).toEqual({
       text: 'legacy text response',
       model: 'Qwen/Qwen3.5-9B',
     });
+  });
+
+  it.each([
+    ['missing scheme', 'together.test/v1'],
+    ['ftp scheme', 'ftp://together.test/v1'],
+    ['credentials', 'https://user:pass@together.test/v1'],
+    ['query string', 'https://together.test/v1?token=secret'],
+    ['fragment', 'https://together.test/v1#chat'],
+  ])('rejects unclean custom baseUrl values: %s', async (_label, baseUrl) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.generate(ctx(), 'hello', {}, { baseUrl })).rejects.toThrow(
+      /Together AI baseUrl/,
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('includes status and response body excerpt on errors', async () => {

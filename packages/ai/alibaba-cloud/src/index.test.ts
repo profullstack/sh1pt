@@ -92,13 +92,36 @@ describe('Alibaba Cloud OpenAI-compatible generation', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     await adapter.generate(ctx(), 'hello', { model: 'qwen-flash' }, {
-      baseUrl: 'https://dashscope-us.aliyuncs.com/compatible-mode/v1',
+      baseUrl: 'https://dashscope-us.aliyuncs.com/compatible-mode/v1/',
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://dashscope-us.aliyuncs.com/compatible-mode/v1/chat/completions',
       expect.any(Object)
     );
+  });
+
+  it('rejects invalid or unclean custom base URLs before network calls', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'dashscope-us.aliyuncs.com/compatible-mode/v1' }),
+    ).rejects.toThrow('valid URL');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'ftp://dashscope-us.aliyuncs.com/compatible-mode/v1' }),
+    ).rejects.toThrow('http or https');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://user:pass@dashscope-us.aliyuncs.com/compatible-mode/v1' }),
+    ).rejects.toThrow('clean API base');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://dashscope-us.aliyuncs.com/compatible-mode/v1?target=chat' }),
+    ).rejects.toThrow('clean API base');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://dashscope-us.aliyuncs.com/compatible-mode/v1#chat' }),
+    ).rejects.toThrow('clean API base');
+
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('includes status and response body excerpt on errors', async () => {

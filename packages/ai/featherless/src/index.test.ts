@@ -54,14 +54,14 @@ describe('Featherless OpenAI-compatible generation', () => {
         temperature: 0.5,
         extra: { top_p: 0.9, min_p: 0.05 },
       },
-      {}
+      { baseUrl: 'https://api.featherless.test/v1/' }
     );
 
     expect(fetchMock).toHaveBeenCalledOnce();
     const call = fetchMock.mock.calls[0];
     expect(call).toBeDefined();
     const [url, request] = call!;
-    expect(url).toBe('https://api.featherless.ai/v1/chat/completions');
+    expect(url).toBe('https://api.featherless.test/v1/chat/completions');
     expect(request.headers.authorization).toBe('Bearer test-key');
     expect(request.headers['HTTP-Referer']).toBe('https://github.com/profullstack/sh1pt');
     expect(request.headers['X-Title']).toBe('sh1pt');
@@ -82,6 +82,22 @@ describe('Featherless OpenAI-compatible generation', () => {
       inputTokens: 11,
       outputTokens: 6,
     });
+  });
+
+  it.each([
+    ['missing scheme', 'api.featherless.test/v1'],
+    ['ftp scheme', 'ftp://api.featherless.test/v1'],
+    ['credentials', 'https://user:pass@api.featherless.test/v1'],
+    ['query string', 'https://api.featherless.test/v1?token=secret'],
+    ['fragment', 'https://api.featherless.test/v1#chat'],
+  ])('rejects unclean custom baseUrl values: %s', async (_label, baseUrl) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.generate(ctx(), 'hello', {}, { baseUrl })).rejects.toThrow(
+      /Featherless baseUrl/
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('includes status and response body excerpt on errors', async () => {

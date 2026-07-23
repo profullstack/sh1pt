@@ -85,24 +85,49 @@ describe('Akash ML generation', () => {
   });
 
   it('supports text-style choices from compatible responses', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         choices: [{ text: 'legacy text response' }],
       }),
-    }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
 
     const result = await adapter.generate(
       ctx(),
       'hello',
       { model: 'Qwen/Qwen3.6-35B-A3B' },
-      { baseUrl: 'https://akash.test/api/v1' },
+      { baseUrl: 'https://akash.test/api/v1/' },
     );
 
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://akash.test/api/v1/chat/completions');
     expect(result).toEqual({
       text: 'legacy text response',
       model: 'Qwen/Qwen3.6-35B-A3B',
     });
+  });
+
+  it('rejects invalid or unclean custom base URLs before network calls', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'akash.test/api/v1' }),
+    ).rejects.toThrow('valid URL');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'ftp://akash.test/api/v1' }),
+    ).rejects.toThrow('http or https');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://user:pass@akash.test/api/v1' }),
+    ).rejects.toThrow('clean API base');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://akash.test/api/v1?target=chat' }),
+    ).rejects.toThrow('clean API base');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://akash.test/api/v1#chat' }),
+    ).rejects.toThrow('clean API base');
+
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('includes status and response body excerpt on errors', async () => {

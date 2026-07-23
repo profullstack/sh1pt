@@ -30,7 +30,8 @@ export default defineAi<Config>({
     if (opts.system) messages.push({ role: 'system', content: opts.system });
     messages.push({ role: 'user', content: prompt });
 
-    const res = await fetch(`${config.baseUrl ?? DEFAULT_BASE}/chat/completions`, {
+    const baseUrl = cleanBaseUrl(config.baseUrl ?? DEFAULT_BASE);
+    const res = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
         authorization: `Bearer ${apiKey}`,
@@ -68,6 +69,22 @@ export default defineAi<Config>({
     ],
   }),
 });
+
+function cleanBaseUrl(value: string): string {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error('Akash ML baseUrl must be a valid URL');
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    throw new Error('Akash ML baseUrl must use http or https');
+  }
+  if (url.username || url.password || url.search || url.hash) {
+    throw new Error('Akash ML baseUrl must be a clean API base without credentials, query, or hash');
+  }
+  return url.toString().replace(/\/+$/, '');
+}
 
 type AkashRole = 'system' | 'user' | 'assistant' | 'tool';
 

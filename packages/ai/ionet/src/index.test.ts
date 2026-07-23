@@ -84,20 +84,39 @@ describe('io.net IO Intelligence generation', () => {
   });
 
   it('supports text-style choices from compatible responses', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         model: 'Qwen/Qwen2-VL-7B-Instruct',
         choices: [{ text: 'legacy text response' }],
       }),
-    }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
 
-    const result = await adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://ionet.test/api/v1' });
+    const result = await adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://ionet.test/api/v1/' });
 
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://ionet.test/api/v1/chat/completions');
     expect(result).toEqual({
       text: 'legacy text response',
       model: 'Qwen/Qwen2-VL-7B-Instruct',
     });
+  });
+
+  it.each([
+    ['missing scheme', 'ionet.test/api/v1'],
+    ['ftp scheme', 'ftp://ionet.test/api/v1'],
+    ['credentials', 'https://user:pass@ionet.test/api/v1'],
+    ['query string', 'https://ionet.test/api/v1?token=secret'],
+    ['fragment', 'https://ionet.test/api/v1#chat'],
+  ])('rejects unclean custom baseUrl values: %s', async (_label, baseUrl) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.generate(ctx(), 'hello', {}, { baseUrl })).rejects.toThrow(
+      /io.net baseUrl/,
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('includes status and response body excerpt on errors', async () => {

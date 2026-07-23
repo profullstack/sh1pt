@@ -108,7 +108,7 @@ describe('Perceptron chat completions generation', () => {
           },
         },
       },
-      { baseUrl: 'https://perceptron.test/v1' }
+      { baseUrl: 'https://perceptron.test/v1/' }
     );
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -125,6 +125,22 @@ describe('Perceptron chat completions generation', () => {
         }),
       })
     );
+  });
+
+  it.each([
+    ['missing scheme', 'perceptron.test/v1'],
+    ['ftp scheme', 'ftp://perceptron.test/v1'],
+    ['credentials', 'https://user:pass@perceptron.test/v1'],
+    ['query string', 'https://perceptron.test/v1?token=secret'],
+    ['fragment', 'https://perceptron.test/v1#chat'],
+  ])('rejects unclean custom baseUrl values: %s', async (_label, baseUrl) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.generate(ctx(), 'hello', {}, { baseUrl })).rejects.toThrow(
+      /Perceptron baseUrl/
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('includes status and response body excerpt on errors', async () => {

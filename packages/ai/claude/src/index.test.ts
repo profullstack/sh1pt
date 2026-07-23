@@ -61,7 +61,7 @@ describe('Claude Messages API generation', () => {
         temperature: 0.2,
         extra: { top_p: 0.9 },
       },
-      { baseUrl: 'https://anthropic.test' },
+      { baseUrl: 'https://anthropic.test/' },
     );
 
     expect(fetchMock).toHaveBeenCalledOnce();
@@ -86,6 +86,22 @@ describe('Claude Messages API generation', () => {
       inputTokens: 11,
       outputTokens: 4,
     });
+  });
+
+  it.each([
+    ['missing scheme', 'anthropic.test'],
+    ['ftp scheme', 'ftp://anthropic.test'],
+    ['credentials', 'https://user:pass@anthropic.test'],
+    ['query string', 'https://anthropic.test?token=secret'],
+    ['fragment', 'https://anthropic.test#messages'],
+  ])('rejects unclean custom baseUrl values: %s', async (_label, baseUrl) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.generate(ctx(), 'hello', {}, { baseUrl })).rejects.toThrow(
+      /Anthropic baseUrl/,
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('uses a safe default max_tokens value when not provided', async () => {

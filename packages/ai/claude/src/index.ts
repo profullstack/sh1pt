@@ -23,7 +23,8 @@ export default defineAi<Config>({
     ctx.log(`claude · model=${model} · ${prompt.length} chars in`);
     if (ctx.dryRun) return { text: '[dry-run]', model };
 
-    const res = await fetch(`${config.baseUrl ?? DEFAULT_BASE}/v1/messages`, {
+    const baseUrl = cleanBaseUrl(config.baseUrl ?? DEFAULT_BASE);
+    const res = await fetch(`${baseUrl}/v1/messages`, {
       method: 'POST',
       headers: {
         'x-api-key': apiKey,
@@ -70,4 +71,23 @@ function redact(value: string, apiKey: string): string {
   return value
     .replaceAll(apiKey, '[redacted]')
     .replace(/sk-ant-[A-Za-z0-9._~+/=-]{12,}/g, '[redacted]');
+}
+
+function cleanBaseUrl(value: string): string {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error('Anthropic baseUrl must be a valid URL');
+  }
+
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    throw new Error('Anthropic baseUrl must use http or https');
+  }
+
+  if (url.username || url.password || url.search || url.hash) {
+    throw new Error('Anthropic baseUrl must be a clean API base without credentials, query, or hash');
+  }
+
+  return url.toString().replace(/\/+$/, '');
 }

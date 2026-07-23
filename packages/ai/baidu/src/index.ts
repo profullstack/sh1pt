@@ -37,7 +37,8 @@ export default defineAi<Config>({
     };
     if (config.appId) headers.appid = config.appId;
 
-    const res = await fetch(`${config.baseUrl ?? DEFAULT_BASE}/chat/completions`, {
+    const baseUrl = cleanBaseUrl(config.baseUrl ?? DEFAULT_BASE);
+    const res = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -72,6 +73,22 @@ export default defineAi<Config>({
     ],
   }),
 });
+
+function cleanBaseUrl(value: string): string {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error('Baidu Qianfan baseUrl must be a valid URL');
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    throw new Error('Baidu Qianfan baseUrl must use http or https');
+  }
+  if (url.username || url.password || url.search || url.hash) {
+    throw new Error('Baidu Qianfan baseUrl must be a clean API base without credentials, query, or hash');
+  }
+  return url.toString().replace(/\/+$/, '');
+}
 
 type QianfanRole = 'system' | 'user' | 'assistant' | 'tool';
 

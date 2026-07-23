@@ -6,8 +6,31 @@ interface Config {
 
 const DEFAULT_BASE = 'https://inference.phala.com';
 
+function cleanBaseUrl(baseUrl?: string): string {
+  if (!baseUrl) return DEFAULT_BASE;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(baseUrl);
+  } catch {
+    throw new Error('Phala baseUrl must be a valid URL');
+  }
+
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    throw new Error('Phala baseUrl must use http or https');
+  }
+  if (parsed.username || parsed.password) {
+    throw new Error('Phala baseUrl must not include credentials');
+  }
+  if (parsed.search || parsed.hash) {
+    throw new Error('Phala baseUrl must not include query strings or fragments');
+  }
+
+  return parsed.toString().replace(/\/+$/, '');
+}
+
 function chatCompletionsUrl(baseUrl?: string): string {
-  return `${(baseUrl ?? DEFAULT_BASE).replace(/\/+$/, '')}/v1/chat/completions`;
+  return `${cleanBaseUrl(baseUrl)}/v1/chat/completions`;
 }
 
 function redact(value: string, apiKey: string): string {

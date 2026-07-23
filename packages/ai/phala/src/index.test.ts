@@ -81,6 +81,20 @@ describe('Phala OpenAI-compatible generation', () => {
     expect(url).toBe('https://proxy.example.com/v1/chat/completions');
   });
 
+  it.each([
+    ['not-a-url', 'valid URL'],
+    ['ftp://proxy.example.com', 'http or https'],
+    ['https://user:pass@proxy.example.com', 'must not include credentials'],
+    ['https://proxy.example.com?region=us', 'must not include query strings or fragments'],
+    ['https://proxy.example.com#v1', 'must not include query strings or fragments'],
+  ])('rejects unsafe configured base URL %s', async (baseUrl, message) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.generate(ctx(), 'hello', {}, { baseUrl })).rejects.toThrow(message);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('includes status and redacted response body excerpt on errors', async () => {
     const apiKey = 'test-key-crossing-truncation-boundary';
     const prefix = 'x'.repeat(190);

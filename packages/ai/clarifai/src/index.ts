@@ -70,7 +70,12 @@ export default defineAi<Config>({
 });
 
 function cleanBaseUrl(value: string): string {
-  const url = new URL(value);
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error('Clarifai baseUrl must be a valid URL');
+  }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') {
     throw new Error('Clarifai baseUrl must use http or https');
   }

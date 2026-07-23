@@ -115,6 +115,12 @@ describe('Clarifai generation', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'clarifai.test/v2/ext/openai/v1' }),
+    ).rejects.toThrow('valid URL');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'ftp://clarifai.test/v2/ext/openai/v1' }),
+    ).rejects.toThrow('http or https');
+    await expect(
       adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://user:pass@clarifai.test/v2/ext/openai/v1' }),
     ).rejects.toThrow('clean API base');
     await expect(

@@ -62,6 +62,12 @@ describe('Parasail generation', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'gateway.example.test/v1' }),
+    ).rejects.toThrow('valid URL');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'ftp://gateway.example.test/v1' }),
+    ).rejects.toThrow('http or https');
+    await expect(
       adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://user:pass@gateway.example.test/v1' }),
     ).rejects.toThrow('clean API base');
     await expect(

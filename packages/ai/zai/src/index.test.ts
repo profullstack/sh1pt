@@ -108,6 +108,16 @@ describe('Z.ai chat completions generation', () => {
 
     await expect(
       adapter.generate(ctx(), 'hello', {}, {
+        baseUrl: 'example.test/api/paas/v4',
+      }),
+    ).rejects.toThrow('valid URL');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, {
+        baseUrl: 'ftp://example.test/api/paas/v4',
+      }),
+    ).rejects.toThrow('http or https');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, {
         baseUrl: 'https://user:pass@example.test/api/paas/v4',
       }),
     ).rejects.toThrow('clean API base');

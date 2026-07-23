@@ -72,20 +72,39 @@ describe('Nebius Token Factory chat completions generation', () => {
   });
 
   it('supports text-style choices from compatible Nebius responses', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         model: 'meta-llama/Llama-3.3-70B-Instruct',
         choices: [{ text: 'text choice response' }],
       }),
-    }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
 
-    const result = await adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://nebius.test' });
+    const result = await adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://nebius.test/' });
 
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://nebius.test/v1/chat/completions');
     expect(result).toEqual({
       text: 'text choice response',
       model: 'meta-llama/Llama-3.3-70B-Instruct',
     });
+  });
+
+  it.each([
+    ['missing scheme', 'nebius.test'],
+    ['ftp scheme', 'ftp://nebius.test'],
+    ['credentials', 'https://user:pass@nebius.test'],
+    ['query string', 'https://nebius.test?token=secret'],
+    ['fragment', 'https://nebius.test#chat'],
+  ])('rejects unclean custom baseUrl values: %s', async (_label, baseUrl) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.generate(ctx(), 'hello', {}, { baseUrl })).rejects.toThrow(
+      /Nebius baseUrl/
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('includes status and response body excerpt on errors', async () => {

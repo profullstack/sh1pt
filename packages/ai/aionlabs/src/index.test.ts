@@ -81,6 +81,53 @@ describe('AionLabs OpenAI-compatible generation', () => {
     });
   });
 
+  it('normalizes custom base URLs before building request URLs', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: 'custom gateway' } }],
+        model: 'aion-1.0-mini',
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await adapter.generate(
+      ctx(),
+      'hello',
+      {},
+      { baseUrl: 'https://aionlabs.test/v1/' },
+    );
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://aionlabs.test/v1/chat/completions');
+    expect(result).toEqual({
+      text: 'custom gateway',
+      model: 'aion-1.0-mini',
+    });
+  });
+
+  it('rejects unclean or invalid custom base URLs before network calls', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'aionlabs.test/v1' }),
+    ).rejects.toThrow('valid URL');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'ftp://aionlabs.test/v1' }),
+    ).rejects.toThrow('http or https');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://user:pass@aionlabs.test/v1' }),
+    ).rejects.toThrow('clean API base');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://aionlabs.test/v1?target=chat' }),
+    ).rejects.toThrow('clean API base');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://aionlabs.test/v1#chat' }),
+    ).rejects.toThrow('clean API base');
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('includes status and response body excerpt on errors', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: false,

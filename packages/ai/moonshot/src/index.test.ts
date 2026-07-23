@@ -54,14 +54,14 @@ describe('Moonshot OpenAI-compatible generation', () => {
         temperature: 0.2,
         extra: { thinking: { type: 'disabled' } },
       },
-      {}
+      { baseUrl: 'https://moonshot.test/v1/' }
     );
 
     expect(fetchMock).toHaveBeenCalledOnce();
     const call = fetchMock.mock.calls[0];
     expect(call).toBeDefined();
     const [url, request] = call!;
-    expect(url).toBe('https://api.moonshot.ai/v1/chat/completions');
+    expect(url).toBe('https://moonshot.test/v1/chat/completions');
     expect(request.headers.authorization).toBe('Bearer test-key');
     expect(JSON.parse(request.body)).toEqual({
       model: 'kimi-k2.5',
@@ -79,6 +79,22 @@ describe('Moonshot OpenAI-compatible generation', () => {
       inputTokens: 13,
       outputTokens: 8,
     });
+  });
+
+  it.each([
+    ['missing scheme', 'moonshot.test/v1'],
+    ['ftp scheme', 'ftp://moonshot.test/v1'],
+    ['credentials', 'https://user:pass@moonshot.test/v1'],
+    ['query string', 'https://moonshot.test/v1?token=secret'],
+    ['fragment', 'https://moonshot.test/v1#chat'],
+  ])('rejects unclean custom baseUrl values: %s', async (_label, baseUrl) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.generate(ctx(), 'hello', {}, { baseUrl })).rejects.toThrow(
+      /Moonshot baseUrl/
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('includes status and response body excerpt on errors', async () => {

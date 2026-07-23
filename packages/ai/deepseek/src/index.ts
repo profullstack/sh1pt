@@ -7,7 +7,23 @@ interface Config {
 const DEFAULT_BASE = 'https://api.deepseek.com';
 
 function chatCompletionsUrl(baseUrl?: string): string {
-  return `${(baseUrl ?? DEFAULT_BASE).replace(/\/+$/, '')}/v1/chat/completions`;
+  return `${cleanBaseUrl(baseUrl ?? DEFAULT_BASE)}/v1/chat/completions`;
+}
+
+function cleanBaseUrl(value: string): string {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error('DeepSeek baseUrl must be a valid URL');
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    throw new Error('DeepSeek baseUrl must use http or https');
+  }
+  if (url.username || url.password || url.search || url.hash) {
+    throw new Error('DeepSeek baseUrl must be a clean API base without credentials, query, or hash');
+  }
+  return url.toString().replace(/\/+$/, '');
 }
 
 function redact(value: string, apiKey: string): string {

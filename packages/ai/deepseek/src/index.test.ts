@@ -81,6 +81,22 @@ describe('DeepSeek OpenAI-compatible generation', () => {
     expect(url).toBe('https://proxy.example.com/v1/chat/completions');
   });
 
+  it.each([
+    ['missing scheme', 'proxy.example.com'],
+    ['unsupported scheme', 'ftp://proxy.example.com'],
+    ['credentials', 'https://user:pass@proxy.example.com'],
+    ['query string', 'https://proxy.example.com?debug=true'],
+    ['fragment', 'https://proxy.example.com#v1'],
+  ])('rejects unclean configured base URLs: %s', async (_case, baseUrl) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.generate(ctx(), 'hello', {}, { baseUrl })).rejects.toThrow(
+      /DeepSeek baseUrl/,
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('includes status and redacted response body excerpt on errors', async () => {
     const apiKey = 'test-key-crossing-truncation-boundary';
     const prefix = 'x'.repeat(190);

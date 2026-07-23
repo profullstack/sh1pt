@@ -96,7 +96,7 @@ describe('Mancer generation', () => {
       ctx(),
       'hello',
       { model: 'mancer/weaver' },
-      { baseUrl: 'https://gateway.example.test/v1' },
+      { baseUrl: 'https://gateway.example.test/v1/' },
     );
 
     expect(fetchMock.mock.calls[0]?.[0]).toBe('https://gateway.example.test/v1/chat/completions');
@@ -104,6 +104,23 @@ describe('Mancer generation', () => {
       text: 'legacy text response',
       model: 'mancer/weaver',
     });
+  });
+
+  it('rejects base URLs with credentials, query, or hash', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://user:pass@gateway.example.test/v1' }),
+    ).rejects.toThrow('clean API base');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://gateway.example.test/v1?target=chat' }),
+    ).rejects.toThrow('clean API base');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://gateway.example.test/v1#chat' }),
+    ).rejects.toThrow('clean API base');
+
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('includes status and response body excerpt on errors', async () => {

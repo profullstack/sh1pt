@@ -88,24 +88,43 @@ describe('Clarifai generation', () => {
   });
 
   it('supports compatible text-style choices and custom base URLs', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         choices: [{ text: 'legacy text response' }],
       }),
-    }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
 
     const result = await adapter.generate(
       ctx(),
       'hello',
       { model: 'anthropic/completion/models/claude-sonnet-4' },
-      { baseUrl: 'https://clarifai.test/v2/ext/openai/v1' },
+      { baseUrl: 'https://clarifai.test/v2/ext/openai/v1/' },
     );
 
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://clarifai.test/v2/ext/openai/v1/chat/completions');
     expect(result).toEqual({
       text: 'legacy text response',
       model: 'anthropic/completion/models/claude-sonnet-4',
     });
+  });
+
+  it('rejects base URLs with credentials, query, or hash', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://user:pass@clarifai.test/v2/ext/openai/v1' }),
+    ).rejects.toThrow('clean API base');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://clarifai.test/v2/ext/openai/v1?target=chat' }),
+    ).rejects.toThrow('clean API base');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://clarifai.test/v2/ext/openai/v1#chat' }),
+    ).rejects.toThrow('clean API base');
+
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('includes status and response body excerpt on errors', async () => {

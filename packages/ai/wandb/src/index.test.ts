@@ -85,24 +85,49 @@ describe('W&B Inference generation', () => {
   });
 
   it('supports text-style choices from compatible responses', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         choices: [{ text: 'legacy text response' }],
       }),
-    }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
 
     const result = await adapter.generate(
       ctx(),
       'hello',
       { model: 'deepseek-ai/DeepSeek-V3-0324' },
-      { baseUrl: 'https://wandb.test/v1' },
+      { baseUrl: 'https://wandb.test/v1/' },
     );
 
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://wandb.test/v1/chat/completions');
     expect(result).toEqual({
       text: 'legacy text response',
       model: 'deepseek-ai/DeepSeek-V3-0324',
     });
+  });
+
+  it('rejects invalid or unclean custom base URLs before network calls', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'wandb.test/v1' }),
+    ).rejects.toThrow('valid URL');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'ftp://wandb.test/v1' }),
+    ).rejects.toThrow('http or https');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://user:pass@wandb.test/v1' }),
+    ).rejects.toThrow('clean API base');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://wandb.test/v1?target=chat' }),
+    ).rejects.toThrow('clean API base');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://wandb.test/v1#chat' }),
+    ).rejects.toThrow('clean API base');
+
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('includes status and response body excerpt on errors', async () => {

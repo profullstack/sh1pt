@@ -87,20 +87,41 @@ describe('Infermatic chat completions generation', () => {
   });
 
   it('supports text-style choices from compatible responses', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         model: 'TheDrummer-UnslopNemo-12B-v4.1',
         choices: [{ text: 'legacy text response' }],
       }),
-    }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
 
-    const result = await adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://infermatic.test' });
+    const result = await adapter.generate(ctx(), 'hello', {}, { baseUrl: 'https://infermatic.test/' });
 
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://infermatic.test/v1/chat/completions',
+      expect.any(Object),
+    );
     expect(result).toEqual({
       text: 'legacy text response',
       model: 'TheDrummer-UnslopNemo-12B-v4.1',
     });
+  });
+
+  it.each([
+    ['missing scheme', 'infermatic.test'],
+    ['unsupported scheme', 'ftp://infermatic.test'],
+    ['credentials', 'https://user:pass@infermatic.test'],
+    ['query string', 'https://infermatic.test?debug=true'],
+    ['fragment', 'https://infermatic.test#v1'],
+  ])('rejects unclean custom baseUrl values: %s', async (_case, baseUrl) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.generate(ctx(), 'hello', {}, { baseUrl })).rejects.toThrow(
+      /Infermatic baseUrl/,
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('includes status and response body excerpt on errors', async () => {

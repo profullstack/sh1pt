@@ -27,8 +27,9 @@ export default defineAi<Config>({
     const messages: InfermaticMessage[] = [];
     if (opts.system) messages.push({ role: 'system', content: opts.system });
     messages.push({ role: 'user', content: prompt });
+    const baseUrl = cleanBaseUrl(config.baseUrl ?? DEFAULT_BASE);
 
-    const res = await fetch(`${config.baseUrl ?? DEFAULT_BASE}/v1/chat/completions`, {
+    const res = await fetch(`${baseUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: {
         authorization: `Bearer ${apiKey}`,
@@ -65,6 +66,22 @@ export default defineAi<Config>({
     ],
   }),
 });
+
+function cleanBaseUrl(value: string): string {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error('Infermatic baseUrl must be a valid URL');
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    throw new Error('Infermatic baseUrl must use http or https');
+  }
+  if (url.username || url.password || url.search || url.hash) {
+    throw new Error('Infermatic baseUrl must be a clean API base without credentials, query, or hash');
+  }
+  return url.toString().replace(/\/+$/, '');
+}
 
 type InfermaticRole = 'system' | 'user' | 'assistant' | 'tool';
 

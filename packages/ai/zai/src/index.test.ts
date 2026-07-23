@@ -93,13 +93,36 @@ describe('Z.ai chat completions generation', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     await adapter.generate(ctx(), 'hello', { model: 'glm-4.5-air' }, {
-      baseUrl: 'https://example.test/api/paas/v4',
+      baseUrl: 'https://example.test/api/paas/v4/',
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://example.test/api/paas/v4/chat/completions',
       expect.any(Object)
     );
+  });
+
+  it('rejects configured base URLs with credentials, query, or hash', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, {
+        baseUrl: 'https://user:pass@example.test/api/paas/v4',
+      }),
+    ).rejects.toThrow('clean API base');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, {
+        baseUrl: 'https://example.test/api/paas/v4?target=chat',
+      }),
+    ).rejects.toThrow('clean API base');
+    await expect(
+      adapter.generate(ctx(), 'hello', {}, {
+        baseUrl: 'https://example.test/api/paas/v4#chat',
+      }),
+    ).rejects.toThrow('clean API base');
+
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('includes status and response body excerpt on errors', async () => {

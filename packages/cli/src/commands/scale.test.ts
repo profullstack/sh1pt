@@ -15,6 +15,7 @@ import {
   parseNonNegativeInteger,
   parsePositiveNumber,
   parsePercentage,
+  aggregateFleetCosts,
 } from './scale.js';
 
 // Helper to create a temp dir and override CREDS_FILE path
@@ -63,6 +64,31 @@ describe('getNextId', () => {
       { id: 'inst-custom', provider: 'aws', status: 'running', createdAt: '', hourlyRate: 0.096 },
     ];
     expect(getNextId(instances)).toBe('inst-0001');
+  });
+});
+
+describe('aggregateFleetCosts', () => {
+  it('uses persisted instance rates and sums each provider exactly once', () => {
+    const costs = aggregateFleetCosts([
+      { provider: 'digitalocean', hourlyRate: 0.042 },
+      { provider: 'digitalocean', hourlyRate: 0.050 },
+      { provider: 'custom-cloud', hourlyRate: 0.125 },
+    ]);
+
+    expect(costs.get('digitalocean')).toEqual({
+      label: 'DigitalOcean (VPS)',
+      instances: 2,
+      hourly: 0.092,
+    });
+    expect(costs.get('custom-cloud')).toEqual({
+      label: 'custom-cloud',
+      instances: 1,
+      hourly: 0.125,
+    });
+  });
+
+  it('returns no active provider costs for an empty fleet', () => {
+    expect(aggregateFleetCosts([]).size).toBe(0);
   });
 });
 

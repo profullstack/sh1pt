@@ -194,6 +194,27 @@ const DEFAULT_PRICING: Record<string, { label: string; hourly: number }> = {
   'cloud-firebase':     { label: 'Firebase (hosting)',   hourly: 0.0   },
 };
 
+export function aggregateFleetCosts(
+  instances: Array<Pick<FleetEntry, 'provider' | 'hourlyRate'>>,
+): Map<string, { label: string; instances: number; hourly: number }> {
+  const providerMap = new Map<string, { label: string; instances: number; hourly: number }>();
+  for (const inst of instances) {
+    const current = providerMap.get(inst.provider);
+    if (current) {
+      current.instances++;
+      current.hourly += inst.hourlyRate;
+      continue;
+    }
+    const info = DEFAULT_PRICING[inst.provider] ?? DEFAULT_PRICING[`cloud-${inst.provider}`];
+    providerMap.set(inst.provider, {
+      label: info?.label ?? inst.provider,
+      instances: 1,
+      hourly: inst.hourlyRate,
+    });
+  }
+  return providerMap;
+}
+
 export const scaleCmd = new Command('scale')
   .description('Provision + scale cloud infra. DNS round-robin, rollouts, rightsizing — all the capacity ops.')
   .option('--from <input>', 'existing live url, repo, or local path to probe + propose scaling for')
@@ -874,28 +895,9 @@ scaleCmd
   .description('Current spend, per-provider breakdown, and rightsizing suggestions')
   .option('--json')
   .action((opts: { json?: boolean }) => {
-    // Try loading sh1pt cloud credentials to fetch real fleet state
-    let fleetState: { provider: string; hourlyRate: number }[] = [];
-    try {
-      const credPath = resolve(process.cwd(), '.sh1pt', 'credentials.json');
-      if (existsSync(credPath)) {
-        const creds = JSON.parse(readFileSync(credPath, 'utf-8'));
-        if (creds.fleet && Array.isArray(creds.fleet)) {
-          fleetState = creds.fleet;
-        }
-      }
-    } catch { /* no credentials — use defaults */ }
-
-    // Aggregate by provider
-    const providerMap = new Map<string, { label: string; instances: number; hourly: number }>();
-    for (const inst of fleetState) {
-      const p = inst.provider;
-      if (!providerMap.has(p)) {
-        const info = DEFAULT_PRICING[p] ?? { label: p, hourly: 0 };
-        providerMap.set(p, { label: info.label, instances: 0, hourly: info.hourly });
-      }
-      providerMap.get(p)!.instances++;
-    }
+    // Read the same canonical fleet file used by scale up/down/status.
+    const fleetState = loadFleet().instances;
+    const providerMap = aggregateFleetCosts(fleetState);
 
     // Fill in providers with known pricing even if no fleet data
     const pricingEntries = Object.entries(DEFAULT_PRICING);
@@ -927,7 +929,7 @@ scaleCmd
         hourly: e.hourly,
         monthly: e.monthly,
       };
-      totalHourly += e.hourly * Math.max(1, e.instances);
+      if (e.instances > 0) totalHourly += e.hourly;
     }
 
     const totalMonthly = totalHourly * 730;

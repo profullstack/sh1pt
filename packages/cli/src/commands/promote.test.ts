@@ -6,7 +6,7 @@ describe('promote numeric option parsers', () => {
     expect(parsePositiveInteger('25')).toBe(25);
   });
 
-  it.each(['0', '-1', '1.5', '1e2', '0x10', 'Infinity', 'NaN', 'abc'])(
+  it.each(['0', '-1', '1.5', '1e2', '0x10', 'Infinity', 'NaN', 'abc', '9007199254740993'])(
     'rejects invalid positive integer %s',
     (value) => {
       expect(() => parsePositiveInteger(value)).toThrow('positive integer');
@@ -18,7 +18,7 @@ describe('promote numeric option parsers', () => {
     expect(parseNonNegativeInteger('2000')).toBe(2000);
   });
 
-  it.each(['-1', '1.5', '1e2', '0x10', 'Infinity', 'NaN', 'abc'])(
+  it.each(['-1', '1.5', '1e2', '0x10', 'Infinity', 'NaN', 'abc', '9007199254740993'])(
     'rejects invalid non-negative integer %s',
     (value) => {
       expect(() => parseNonNegativeInteger(value)).toThrow('zero or a positive integer');

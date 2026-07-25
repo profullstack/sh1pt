@@ -869,14 +869,14 @@ function stripAiPrefix(p: string): string {
 export function parsePositiveInteger(value: string): number {
   if (!/^\d+$/.test(value)) throw new InvalidArgumentError('must be a positive integer');
   const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed < 1) throw new InvalidArgumentError('must be a positive integer');
+  if (!Number.isSafeInteger(parsed) || parsed < 1) throw new InvalidArgumentError('must be a positive integer');
   return parsed;
 }
 
 export function parseNonNegativeInteger(value: string): number {
   if (!/^\d+$/.test(value)) throw new InvalidArgumentError('must be zero or a positive integer');
   const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed < 0) throw new InvalidArgumentError('must be zero or a positive integer');
+  if (!Number.isSafeInteger(parsed) || parsed < 0) throw new InvalidArgumentError('must be zero or a positive integer');
   return parsed;
 }
 

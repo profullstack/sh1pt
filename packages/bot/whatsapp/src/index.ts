@@ -120,10 +120,26 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     aiProvider: (env.AI_PROVIDER as any) || "claude-code",
     aiCliPath: env.AI_CLI_PATH || "claude",
     aiModel: env.AI_MODEL,
-    sessionTimeoutMs: parseInt(env.SESSION_TIMEOUT_MS || "1800000", 10),
-    maxOutputLength: parseInt(env.MAX_OUTPUT_LENGTH || "4000", 10),
-    maxConcurrentSessions: parseInt(env.MAX_CONCURRENT_SESSIONS || "5", 10),
+    sessionTimeoutMs: parseEnvPositiveInteger(env.SESSION_TIMEOUT_MS, 1800000, "SESSION_TIMEOUT_MS"),
+    maxOutputLength: parseEnvPositiveInteger(env.MAX_OUTPUT_LENGTH, 4000, "MAX_OUTPUT_LENGTH"),
+    maxConcurrentSessions: parseEnvPositiveInteger(env.MAX_CONCURRENT_SESSIONS, 5, "MAX_CONCURRENT_SESSIONS"),
     allowedUsers: env.ALLOWED_USERS?.split(",").map((u) => u.trim()).filter(Boolean) || [],
     adminUsers: env.ADMIN_USERS?.split(",").map((u) => u.trim()).filter(Boolean) || [],
   });
+}
+
+function parseEnvPositiveInteger(
+  value: string | undefined,
+  defaultValue: number,
+  name: string
+): number {
+  if (value === undefined || value.trim() === "") return defaultValue;
+  if (!/^\d+$/.test(value.trim())) {
+    throw new Error(`${name} must be a positive integer`);
+  }
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+    throw new Error(`${name} must be a positive integer`);
+  }
+  return parsed;
 }

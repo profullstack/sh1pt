@@ -197,10 +197,18 @@ export function loadAIConfig(env: Record<string, string | undefined>): AIConfig 
     aiProvider: (env.AI_PROVIDER as any) || "claude-code",
     aiCliPath: env.AI_CLI_PATH || "claude",
     aiModel: env.AI_MODEL,
-    aiMaxTurns: parseInt(env.AI_MAX_TURNS || "10", 10),
-    sessionTimeoutMs: parseInt(env.SESSION_TIMEOUT_MS || "1800000", 10),
-    maxConcurrentSessions: parseInt(env.MAX_CONCURRENT_SESSIONS || "5", 10),
+    aiMaxTurns: parsePositiveIntegerEnv(env.AI_MAX_TURNS, 10),
+    sessionTimeoutMs: parsePositiveIntegerEnv(env.SESSION_TIMEOUT_MS, 1800000),
+    maxConcurrentSessions: parsePositiveIntegerEnv(env.MAX_CONCURRENT_SESSIONS, 5),
   });
+}
+
+function parsePositiveIntegerEnv(value: string | undefined, fallback: number): number {
+  const text = value?.trim();
+  if (!text) return fallback;
+  if (!/^\d+$/.test(text)) return Number.NaN;
+  const parsed = Number(text);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : Number.NaN;
 }
 
 export function chunkMessage(text: string, maxLength = 2000): string[] {

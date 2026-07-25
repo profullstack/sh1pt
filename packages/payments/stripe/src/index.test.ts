@@ -74,7 +74,7 @@ describe('payment-stripe', () => {
       },
     });
     const secret = 'whsec_test';
-    const timestamp = '1700000000';
+    const timestamp = Math.floor(Date.now() / 1000).toString();
     const signature = createHmac('sha256', secret)
       .update(`${timestamp}.${raw}`)
       .digest('hex');
@@ -97,12 +97,45 @@ describe('payment-stripe', () => {
   });
 
   it('rejects invalid Stripe webhook signatures', async () => {
+    const timestamp = Math.floor(Date.now() / 1000).toString();
     await expect(adapter.verifyWebhook(
       ctx({ STRIPE_WEBHOOK_SECRET: 'whsec_test' }),
       JSON.stringify({ type: 'checkout.session.completed' }),
-      't=1700000000,v1=bad',
+      `t=${timestamp},v1=bad`,
       {},
     )).rejects.toThrow('Invalid Stripe webhook signature');
+  });
+
+  it('rejects Stripe webhook signatures outside the timestamp tolerance', async () => {
+    const raw = JSON.stringify({ type: 'checkout.session.completed' });
+    const secret = 'whsec_test';
+    const timestamp = String(Math.floor(Date.now() / 1000) - 600);
+    const signature = createHmac('sha256', secret)
+      .update(`${timestamp}.${raw}`)
+      .digest('hex');
+
+    await expect(adapter.verifyWebhook(
+      ctx({ STRIPE_WEBHOOK_SECRET: secret }),
+      raw,
+      `t=${timestamp},v1=${signature}`,
+      {},
+    )).rejects.toThrow('Stripe webhook signature timestamp outside tolerance');
+  });
+
+  it('allows Stripe webhook timestamp tolerance to be disabled', async () => {
+    const raw = JSON.stringify({ type: 'checkout.session.completed' });
+    const secret = 'whsec_test';
+    const timestamp = '1700000000';
+    const signature = createHmac('sha256', secret)
+      .update(`${timestamp}.${raw}`)
+      .digest('hex');
+
+    await expect(adapter.verifyWebhook(
+      ctx({ STRIPE_WEBHOOK_SECRET: secret }),
+      raw,
+      `t=${timestamp},v1=${signature}`,
+      { webhookToleranceSeconds: 0 },
+    )).resolves.toMatchObject({ type: 'checkout.session.completed' });
   });
 });
 

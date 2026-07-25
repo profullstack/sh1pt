@@ -6,6 +6,7 @@ import { definePayment, tokenSetup, type CheckoutRequest, type Webhook } from '@
 interface Config {
   accountId?: string;
   apiVersion?: string;
+  webhookToleranceSeconds?: number;
 }
 
 const STRIPE_API = 'https://api.stripe.com/v1';
@@ -40,10 +41,10 @@ export default definePayment<Config>({
     };
   },
 
-  async verifyWebhook(ctx, rawBody, signature): Promise<Webhook> {
+  async verifyWebhook(ctx, rawBody, signature, config): Promise<Webhook> {
     const secret = ctx.secret('STRIPE_WEBHOOK_SECRET');
     if (!secret) throw new Error('STRIPE_WEBHOOK_SECRET not in vault');
-    verifyStripeSignature(rawBody, signature, secret);
+    verifyStripeSignature(rawBody, signature, secret, config?.webhookToleranceSeconds);
 
     const payload = JSON.parse(rawBody) as StripeEvent;
     const object = payload.data?.object ?? {};
@@ -161,7 +162,12 @@ async function readStripeJson<T>(res: Response): Promise<T> {
   return json;
 }
 
-function verifyStripeSignature(rawBody: string, header: string, secret: string): void {
+function verifyStripeSignature(
+  rawBody: string,
+  header: string,
+  secret: string,
+  toleranceSeconds = 300,
+): void {
   // Parse all key=value pairs preserving duplicate v1 keys.
   // Stripe sends multiple v1 signatures during webhook secret rotation;
   // Object.fromEntries() would silently drop all but one.
@@ -182,6 +188,13 @@ function verifyStripeSignature(rawBody: string, header: string, secret: string):
 
   if (!timestamp || v1Signatures.length === 0) {
     throw new Error('Stripe-Signature missing t or v1');
+  }
+
+  const timestampSeconds = Number(timestamp);
+  if (!Number.isFinite(timestampSeconds)) throw new Error('Stripe-Signature timestamp is invalid');
+  if (toleranceSeconds > 0) {
+    const age = Math.floor(Date.now() / 1000) - timestampSeconds;
+    if (Math.abs(age) > toleranceSeconds) throw new Error('Stripe webhook signature timestamp outside tolerance');
   }
 
   const expected = createHmac('sha256', secret)

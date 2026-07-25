@@ -213,7 +213,9 @@ function giteaErrorMessage(data: unknown, fallback: string): string {
 
 function numericIds(values?: string[]): number[] | undefined {
   if (!values?.length) return undefined;
-  const ids = values.map((v) => Number(v)).filter(Number.isInteger);
+  const ids = values
+    .map((value) => Number(value))
+    .filter((value) => Number.isSafeInteger(value) && value > 0);
   return ids.length ? ids : undefined;
 }
 

@@ -28,7 +28,7 @@ describe('vcs-gitlab REST API', () => {
       base: 'main',
       draft: true,
       labels: ['automation', 'vcs'],
-      reviewers: ['42', 'not-a-user-id'],
+      reviewers: ['42', 'not-a-user-id', '0', '-1', '1.5', '9007199254740992', ' '],
     }, { projectId: 'acme/my-app' });
 
     expect(fetchMock).toHaveBeenCalledWith('https://gitlab.com/api/v4/projects/acme%2Fmy-app/merge_requests', expect.objectContaining({

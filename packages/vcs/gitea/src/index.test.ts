@@ -95,7 +95,7 @@ describe('vcs-gitea REST API', () => {
     const issue = await adapter.createIssue(ctx(), {
       title: 'Track store upload',
       body: 'Need release evidence.',
-      labels: ['12', 'not-an-id'],
+      labels: ['12', 'not-an-id', '0', '-1', '1.5', '9007199254740992', ' '],
       assignees: ['octo'],
     }, sampleConfig());
 

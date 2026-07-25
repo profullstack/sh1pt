@@ -88,7 +88,7 @@ function readStringProperty(source: string, key: string): string | undefined {
 }
 
 function readNumberProperty(source: string, key: string): number | undefined {
-  const match = new RegExp(`${propertyKeyPattern(key)}\\s*:\\s*(\\d+)`).exec(source);
+  const match = new RegExp(`${propertyKeyPattern(key)}\\s*:\\s*(\\d+)\\s*(?=,|})`).exec(source);
   return match?.[1] ? Number(match[1]) : undefined;
 }
 

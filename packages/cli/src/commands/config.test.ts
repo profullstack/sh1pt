@@ -58,4 +58,20 @@ describe('parsePaymentsSummary', () => {
       ],
     });
   });
+
+  it('ignores malformed platform fee values instead of partially parsing them', () => {
+    const summary = parsePaymentsSummary(`
+      export default defineConfig({
+        payments: {
+          defaultProvider: 'coinpay',
+          providers: {
+            coinpay: { use: 'payment-coinpay' },
+          },
+          platformFeeBps: 1500abc,
+        },
+      });
+    `);
+
+    expect(summary?.platformFeeBps).toBeUndefined();
+  });
 });

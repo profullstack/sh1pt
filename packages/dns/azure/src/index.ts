@@ -49,6 +49,14 @@ function subRg(config: Config): { sub: string; rg: string } {
   return { sub, rg };
 }
 
+function positiveInteger(value: number | undefined): number | undefined {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : undefined;
+}
+
+function ttlValue(ttl: number | undefined, config: Config): number {
+  return positiveInteger(ttl) ?? positiveInteger(config.defaultTtl) ?? 3600;
+}
+
 export default defineDns<Config>({
   id: 'dns-azure',
   label: 'Azure DNS',
@@ -93,10 +101,10 @@ export default defineDns<Config>({
       const fqdn = rs.name === '@' ? zoneId : `${rs.name}.${zoneId}`;
       if (rtype === 'A' && rs.properties.ARecords) {
         for (const a of rs.properties.ARecords) {
-          records.push({ id: rs.etag, zone: zoneId, name: fqdn, type: 'A', value: a.ipv4Address, ttl: rs.properties.TTL });
+          records.push({ id: rs.etag, zone: zoneId, name: fqdn, type: 'A', value: a.ipv4Address, ttl: ttlValue(rs.properties.TTL, config) });
         }
       } else if (rtype === 'CNAME' && rs.properties.CNAMERecord) {
-        records.push({ id: rs.etag, zone: zoneId, name: fqdn, type: 'CNAME', value: rs.properties.CNAMERecord.cname, ttl: rs.properties.TTL });
+        records.push({ id: rs.etag, zone: zoneId, name: fqdn, type: 'CNAME', value: rs.properties.CNAMERecord.cname, ttl: ttlValue(rs.properties.TTL, config) });
       }
     }
     return records;
@@ -105,7 +113,7 @@ export default defineDns<Config>({
   async upsertRecord(zoneId, record, config) {
     const token = await getAccessToken();
     const { sub, rg } = subRg(config);
-    const ttl = record.ttl ?? config.defaultTtl ?? 3600;
+    const ttl = ttlValue(record.ttl, config);
     const name = record.name.endsWith(`.${zoneId}`)
       ? record.name.slice(0, -(zoneId.length + 1))
       : record.name === zoneId ? '@' : record.name;
@@ -143,7 +151,7 @@ export default defineDns<Config>({
     //   PUT ${MGMT}/subscriptions/${sub}/resourceGroups/${rg}/providers/
     //     Microsoft.Network/dnsZones/${zoneId}/A/${relName}?api-version=…
     //   body: { properties: { TTL, ARecords: [{ ipv4Address }] } }
-    const ttlFinal = ttl ?? config.defaultTtl ?? 3600;
+    const ttlFinal = ttlValue(ttl, config);
     return ips.map((ip, i) => ({
       id: `azure-rr-${i}`,
       zone: zoneId,

@@ -30,6 +30,18 @@ export interface IncomingMessage {
 
 type MessageHandler = (msg: IncomingMessage) => void | Promise<void>;
 
+function parsePositiveIntegerEnv(value: string | undefined, fallback: number): number {
+  if (value === undefined || value.trim() === "") return fallback;
+  if (!/^\d+$/.test(value)) return Number.NaN;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : Number.NaN;
+}
+
+function parsePortEnv(value: string | undefined, fallback: number): number {
+  const parsed = parsePositiveIntegerEnv(value, fallback);
+  return parsed <= 65535 ? parsed : Number.NaN;
+}
+
 export class SignalBot {
   private handlers: MessageHandler[] = [];
   private config: Config;
@@ -98,13 +110,13 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     botName: env.BOT_NAME || "Bot",
     signalCliPath: env.SIGNAL_CLI_PATH || "signal-cli",
     phoneNumber: env.SIGNAL_PHONE_NUMBER || "",
-    httpPort: parseInt(env.SIGNAL_HTTP_PORT || "7580", 10),
+    httpPort: parsePortEnv(env.SIGNAL_HTTP_PORT, 7580),
     aiProvider: (env.AI_PROVIDER as any) || "claude-code",
     aiCliPath: env.AI_CLI_PATH || "claude",
     aiModel: env.AI_MODEL,
-    sessionTimeoutMs: parseInt(env.SESSION_TIMEOUT_MS || "1800000", 10),
-    maxOutputLength: parseInt(env.MAX_OUTPUT_LENGTH || "4000", 10),
-    maxConcurrentSessions: parseInt(env.MAX_CONCURRENT_SESSIONS || "5", 10),
+    sessionTimeoutMs: parsePositiveIntegerEnv(env.SESSION_TIMEOUT_MS, 1800000),
+    maxOutputLength: parsePositiveIntegerEnv(env.MAX_OUTPUT_LENGTH, 4000),
+    maxConcurrentSessions: parsePositiveIntegerEnv(env.MAX_CONCURRENT_SESSIONS, 5),
     allowedUsers: env.ALLOWED_USERS?.split(",").map((u) => u.trim()).filter(Boolean) || [],
     adminUsers: env.ADMIN_USERS?.split(",").map((u) => u.trim()).filter(Boolean) || [],
   });

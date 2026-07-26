@@ -205,8 +205,8 @@ function verifyCoinPaySignature(
     throw new Error('CoinPay signature missing t or v1');
   }
 
-  const timestampSeconds = Number(timestamp);
-  if (!Number.isFinite(timestampSeconds)) throw new Error('CoinPay signature timestamp is invalid');
+  const timestampSeconds = parseWebhookTimestamp(timestamp);
+  if (timestampSeconds === undefined) throw new Error('CoinPay signature timestamp is invalid');
   if (toleranceSeconds > 0) {
     const age = Math.floor(Date.now() / 1000) - timestampSeconds;
     if (Math.abs(age) > toleranceSeconds) throw new Error('CoinPay webhook signature timestamp outside tolerance');
@@ -230,6 +230,12 @@ function verifyCoinPaySignature(
   if (!valid) {
     throw new Error('Invalid CoinPay webhook signature');
   }
+}
+
+function parseWebhookTimestamp(timestamp: string): number | undefined {
+  if (!/^\d+$/.test(timestamp)) return undefined;
+  const parsed = Number(timestamp);
+  return Number.isSafeInteger(parsed) ? parsed : undefined;
 }
 
 function normalizeWebhook(event: CoinPayWebhookEvent): Webhook {

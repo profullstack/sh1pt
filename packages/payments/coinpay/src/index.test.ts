@@ -178,6 +178,22 @@ describe('payment-coinpay', () => {
       {},
     )).rejects.toThrow('Invalid CoinPay webhook signature');
   });
+
+  it('rejects non-integer CoinPay webhook timestamps before signature matching', async () => {
+    const raw = JSON.stringify({ type: 'payment.confirmed' });
+    const timestamp = '1e9';
+    const secret = 'whsec_test';
+    const signature = createHmac('sha256', secret)
+      .update(`${timestamp}.${raw}`)
+      .digest('hex');
+
+    await expect(payment.verifyWebhook(
+      ctx({ COINPAY_WEBHOOK_SECRET: secret }),
+      raw,
+      `t=${timestamp},v1=${signature}`,
+      { webhookToleranceSeconds: 0 },
+    )).rejects.toThrow('CoinPay signature timestamp is invalid');
+  });
 });
 
 function ctx(secrets: Record<string, string>) {

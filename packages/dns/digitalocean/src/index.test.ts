@@ -97,6 +97,24 @@ describe('DigitalOcean DNS API adapter', () => {
     ]);
   });
 
+  it('falls back when DigitalOcean TTL values are not positive safe integers', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({
+      domain_records: [
+        { id: 10, name: '@', type: 'A', data: '1.2.3.4', ttl: 600.5 },
+        { id: 11, name: 'www', type: 'A', data: '2.2.3.4', ttl: Number.POSITIVE_INFINITY },
+      ],
+      links: {},
+    })));
+
+    await dns.connect(ctx(), {});
+    const records = await dns.listRecords('example.com', { defaultTtl: 900.5 });
+
+    expect(records).toEqual([
+      { id: '10', zone: 'example.com', name: 'example.com', type: 'A', value: '1.2.3.4', ttl: 1800 },
+      { id: '11', zone: 'example.com', name: 'www.example.com', type: 'A', value: '2.2.3.4', ttl: 1800 },
+    ]);
+  });
+
   it('creates a record when no matching name and type exists', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(jsonResponse({
@@ -131,6 +149,31 @@ describe('DigitalOcean DNS API adapter', () => {
       type: 'A',
       value: '1.2.3.4',
       ttl: 600,
+    });
+  });
+
+  it('does not send fractional TTL values when creating records', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({
+        domain_records: [],
+        links: {},
+      }))
+      .mockResolvedValueOnce(jsonResponse({
+        domain_record: { id: 55, name: 'www', type: 'A', data: '1.2.3.4', ttl: 1800 },
+      }, true, 201));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await dns.connect(ctx(), {});
+    await dns.upsertRecord('example.com', {
+      zone: 'example.com',
+      name: 'www.example.com',
+      type: 'A',
+      value: '1.2.3.4',
+      ttl: 600.5,
+    }, { defaultTtl: 1200 });
+
+    expect(JSON.parse(String(fetchMock.mock.calls[1]?.[1].body))).toMatchObject({
+      ttl: 1200,
     });
   });
 

@@ -62,8 +62,12 @@ function jsonHeader(): Record<string, string> {
   return { ...authHeader(), 'Content-Type': 'application/json' };
 }
 
+function positiveInteger(value: number | undefined): number | undefined {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : undefined;
+}
+
 function ttlValue(ttl: number | undefined, config: Config): number {
-  return ttl ?? config.defaultTtl ?? 1800;
+  return positiveInteger(ttl) ?? positiveInteger(config.defaultTtl) ?? 1800;
 }
 
 function pageSize(config: Config): number {
@@ -96,7 +100,7 @@ function mapRecord(zoneId: string, record: DigitalOceanRecord, config: Config): 
     name: normalizeRecordName(zoneId, record.name),
     type: record.type as DnsRecord['type'],
     value: record.data,
-    ttl: record.ttl ?? ttlValue(undefined, config),
+    ttl: ttlValue(record.ttl ?? undefined, config),
   };
 }
 

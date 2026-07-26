@@ -71,6 +71,25 @@ describe('dns-namecheap', () => {
     });
   });
 
+  it('falls back for non-integer TTL values from Namecheap', async () => {
+    await dns.connect(ctx(), {});
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(xmlResponse([
+      host({ HostId: 'sci', Name: 'sci', Type: 'A', Address: '192.0.2.20', TTL: '1e2' }),
+      host({ HostId: 'hex', Name: 'hex', Type: 'A', Address: '192.0.2.21', TTL: '0x10' }),
+      host({ HostId: 'decimal', Name: 'decimal', Type: 'A', Address: '192.0.2.22', TTL: '600.5' }),
+      host({ HostId: 'normal', Name: 'normal', Type: 'A', Address: '192.0.2.23', TTL: '600' }),
+    ]));
+
+    const records = await dns.listRecords('example.com', { defaultTtl: 900 });
+
+    expect(records.map((record) => [record.id, record.ttl])).toEqual([
+      ['sci', 900],
+      ['hex', 900],
+      ['decimal', 900],
+      ['normal', 600],
+    ]);
+  });
+
   it('creates a record via full-zone setHosts while preserving existing records', async () => {
     await dns.connect(ctx(), {});
     const fetchMock = vi.spyOn(globalThis, 'fetch')

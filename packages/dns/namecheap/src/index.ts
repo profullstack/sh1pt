@@ -113,16 +113,22 @@ function parseXml(text: string): { ok: boolean; hosts: ParsedHost[]; error?: str
 }
 
 function mapHost(zoneId: string, host: ParsedHost, config: Config): NamecheapRecord {
-  const ttl = Number(host.ttl);
+  const ttl = parseNamecheapTtl(host.ttl);
   return {
     id: host.id,
     zone: zoneId,
     name: normalizeRecordName(zoneId, host.name),
     type: host.type as DnsRecord['type'],
     value: host.address,
-    ttl: Number.isFinite(ttl) && ttl > 0 ? ttl : ttlValue(undefined, config),
+    ttl: ttl ?? ttlValue(undefined, config),
     mxPref: host.mxPref,
   };
+}
+
+function parseNamecheapTtl(ttl: string): number | undefined {
+  if (!/^[1-9]\d*$/.test(ttl)) return undefined;
+  const parsed = Number(ttl);
+  return Number.isSafeInteger(parsed) ? parsed : undefined;
 }
 
 function apiParams(command: string, extra: Record<string, string> = {}, config: Config = {}) {

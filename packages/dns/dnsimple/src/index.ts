@@ -65,8 +65,12 @@ function authHeader(): Record<string, string> {
   };
 }
 
+function positiveInteger(value: number | undefined): number | undefined {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : undefined;
+}
+
 function ttlValue(ttl: number | undefined, config: Config): number {
-  return ttl ?? config.defaultTtl ?? 3600;
+  return positiveInteger(ttl) ?? positiveInteger(config.defaultTtl) ?? 3600;
 }
 
 function pageSize(config: Config): number {
@@ -93,7 +97,7 @@ function mapRecord(zoneId: string, record: DnsimpleRecord, config: Config): DnsR
     name: normalizeRecordName(zoneId, record.name),
     type: record.type as DnsRecord['type'],
     value: record.content,
-    ttl: record.ttl ?? ttlValue(undefined, config),
+    ttl: ttlValue(record.ttl ?? undefined, config),
   };
 }
 

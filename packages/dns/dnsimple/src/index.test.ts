@@ -89,6 +89,24 @@ describe('DNSimple DNS API adapter', () => {
     ]);
   });
 
+  it('falls back when DNSimple TTL values are not positive safe integers', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({
+      data: [
+        { id: 10, name: '', type: 'A', content: '1.2.3.4', ttl: 600.5 },
+        { id: 11, name: 'www', type: 'A', content: '2.2.3.4', ttl: Number.POSITIVE_INFINITY },
+      ],
+      pagination: { current_page: 1, total_pages: 1 },
+    })));
+
+    await dns.connect(ctx(), {});
+    const records = await dns.listRecords('example.com', { accountId: '1010', defaultTtl: 900.5 });
+
+    expect(records).toEqual([
+      { id: '10', zone: 'example.com', name: 'example.com', type: 'A', value: '1.2.3.4', ttl: 3600 },
+      { id: '11', zone: 'example.com', name: 'www.example.com', type: 'A', value: '2.2.3.4', ttl: 3600 },
+    ]);
+  });
+
   it('creates a record when no matching name and type exists', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(jsonResponse({
@@ -123,6 +141,31 @@ describe('DNSimple DNS API adapter', () => {
       type: 'A',
       value: '1.2.3.4',
       ttl: 600,
+    });
+  });
+
+  it('does not send fractional TTL values when creating records', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({
+        data: [],
+        pagination: { current_page: 1, total_pages: 1 },
+      }))
+      .mockResolvedValueOnce(jsonResponse({
+        data: { id: 55, name: 'www', type: 'A', content: '1.2.3.4', ttl: 3600 },
+      }, true, 201));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await dns.connect(ctx(), {});
+    await dns.upsertRecord('example.com', {
+      zone: 'example.com',
+      name: 'www.example.com',
+      type: 'A',
+      value: '1.2.3.4',
+      ttl: 600.5,
+    }, { accountId: '1010', defaultTtl: 1200 });
+
+    expect(JSON.parse(String(fetchMock.mock.calls[1]?.[1].body))).toMatchObject({
+      ttl: 1200,
     });
   });
 

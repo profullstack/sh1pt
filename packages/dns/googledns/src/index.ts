@@ -25,6 +25,14 @@ function ensureTrailingDot(name: string): string {
   return name.endsWith('.') ? name : `${name}.`;
 }
 
+function positiveInteger(value: number | undefined): number | undefined {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : undefined;
+}
+
+function ttlValue(ttl: number | undefined, config: Config): number {
+  return positiveInteger(ttl) ?? positiveInteger(config.defaultTtl) ?? 300;
+}
+
 async function getAccessToken(): Promise<string> {
   // Prefer GOOGLE_ACCESS_TOKEN (pre-fetched by caller or CI) for simplicity.
   // For service-account flow, use GOOGLE_APPLICATION_CREDENTIALS path.
@@ -94,7 +102,7 @@ export default defineDns<Config>({
           name,
           type: rs.type as DnsRecord['type'],
           value: val.replace(/\.$/, ''),
-          ttl: rs.ttl,
+          ttl: ttlValue(rs.ttl, config),
         });
       }
     }
@@ -105,7 +113,7 @@ export default defineDns<Config>({
     const token = await getAccessToken();
     const project = config.projectId ?? _secret('GOOGLE_PROJECT_ID');
     if (!project) throw new Error('GOOGLE_PROJECT_ID not set');
-    const ttl = record.ttl ?? config.defaultTtl ?? 300;
+    const ttl = ttlValue(record.ttl, config);
     const name = ensureTrailingDot(record.name);
     const normalizedName = trimTrailingDot(record.name);
 
@@ -171,7 +179,7 @@ export default defineDns<Config>({
   async syncRoundRobin({ zoneId, name, ips, ttl }, config) {
     // Stubbed: shape-only return. Real impl POSTs an atomic change
     // (deletions + additions) to managedZones/${zoneId}/changes.
-    const ttlFinal = ttl ?? config.defaultTtl ?? 300;
+    const ttlFinal = ttlValue(ttl, config);
     return ips.map((ip, i) => ({
       id: `gcp-rr-${i}`,
       zone: zoneId,

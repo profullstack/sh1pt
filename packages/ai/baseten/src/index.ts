@@ -4,25 +4,88 @@ interface Config {
   baseUrl?: string;
 }
 
+const DEFAULT_BASE = 'https://inference.baseten.co';
+
+function chatCompletionsUrl(baseUrl?: string): string {
+  return `${cleanBaseUrl(baseUrl ?? DEFAULT_BASE)}/v1/chat/completions`;
+}
+
+function cleanBaseUrl(value: string): string {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error('Baseten baseUrl must be a valid URL');
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    throw new Error('Baseten baseUrl must use http or https');
+  }
+  if (url.username || url.password || url.search || url.hash) {
+    throw new Error('Baseten baseUrl must be a clean API base without credentials, query, or hash');
+  }
+  return url.toString().replace(/\/+$/, '');
+}
+
+function redact(value: string, apiKey: string): string {
+  return apiKey ? value.split(apiKey).join('[redacted]') : value;
+}
+
 export default defineAi<Config>({
   id: 'ai-baseten',
   label: 'Baseten',
-  defaultModel: 'BASETEN_API_KEY',
-  models: ['BASETEN_API_KEY'],
+  defaultModel: 'deepseek-ai/DeepSeek-V4-Pro',
+  models: [
+    'deepseek-ai/DeepSeek-V4-Pro',
+    'openai/gpt-oss-120b',
+    'zai-org/GLM-5.2',
+    'zai-org/GLM-5',
+  ],
 
-  async generate(ctx, prompt, _opts, _config) {
-    const apiKey = ctx.secret('https://www.baseten.co');
-    if (!apiKey) throw new Error('https://www.baseten.co not in vault — run `sh1pt promote ai setup`');
-    ctx.log(`[stub] ai-baseten · ${prompt.length} chars in — integration pending`);
-    return { text: '[stub — ai-baseten integration not yet implemented]', model: 'BASETEN_API_KEY' };
+  async generate(ctx, prompt, opts, config) {
+    const apiKey = ctx.secret('BASETEN_API_KEY');
+    if (!apiKey) throw new Error('BASETEN_API_KEY not in vault');
+    const model = opts.model ?? 'deepseek-ai/DeepSeek-V4-Pro';
+    ctx.log(`baseten · model=${model} · ${prompt.length} chars in`);
+    if (ctx.dryRun) return { text: '[dry-run]', model };
+
+    const messages: Array<{ role: string; content: string }> = [];
+    if (opts.system) messages.push({ role: 'system', content: opts.system });
+    messages.push({ role: 'user', content: prompt });
+
+    const res = await fetch(chatCompletionsUrl(config.baseUrl), {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        ...(opts.maxTokens !== undefined ? { max_tokens: opts.maxTokens } : {}),
+        ...(opts.temperature !== undefined ? { temperature: opts.temperature } : {}),
+        ...opts.extra,
+      }),
+    });
+    if (!res.ok) throw new Error(`Baseten ${res.status}: ${redact(await res.text(), apiKey).slice(0, 200)}`);
+    const data = (await res.json()) as {
+      choices: Array<{ message?: { content?: string } }>;
+      model: string;
+      usage?: { prompt_tokens?: number; completion_tokens?: number };
+    };
+    return {
+      text: data.choices[0]?.message?.content ?? '',
+      model: data.model,
+      inputTokens: data.usage?.prompt_tokens,
+      outputTokens: data.usage?.completion_tokens,
+    };
   },
 
   setup: tokenSetup<Config>({
-    secretKey: 'https://www.baseten.co',
+    secretKey: 'BASETEN_API_KEY',
     label: 'Baseten',
-    vendorDocUrl: '',
+    vendorDocUrl: 'https://app.baseten.co',
     steps: [
-      'Sign in at  and create an API key',
+      'Sign in at https://app.baseten.co and create an API key',
       'Copy the key — usually shown once',
       'Paste below; sh1pt encrypts it in the vault',
     ],

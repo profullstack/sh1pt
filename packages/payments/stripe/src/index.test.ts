@@ -137,6 +137,22 @@ describe('payment-stripe', () => {
       { webhookToleranceSeconds: 0 },
     )).resolves.toMatchObject({ type: 'checkout.session.completed' });
   });
+
+  it('falls back to the default timestamp tolerance for invalid config values', async () => {
+    const raw = JSON.stringify({ type: 'checkout.session.completed' });
+    const secret = 'whsec_test';
+    const timestamp = String(Math.floor(Date.now() / 1000) - 600);
+    const signature = createHmac('sha256', secret)
+      .update(`${timestamp}.${raw}`)
+      .digest('hex');
+
+    await expect(adapter.verifyWebhook(
+      ctx({ STRIPE_WEBHOOK_SECRET: secret }),
+      raw,
+      `t=${timestamp},v1=${signature}`,
+      { webhookToleranceSeconds: Number.NaN },
+    )).rejects.toThrow('Stripe webhook signature timestamp outside tolerance');
+  });
 });
 
 function ctx(secrets: Record<string, string>) {

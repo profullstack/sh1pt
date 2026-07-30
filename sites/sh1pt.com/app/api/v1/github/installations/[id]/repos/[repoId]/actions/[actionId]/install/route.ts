@@ -7,6 +7,7 @@ import {
 } from '@profullstack/sh1pt-actions-fleet-core';
 import { authorizeInstallation } from '@/lib/github-installation';
 import { mintInstallationToken } from '@/lib/github-app';
+import { parseGithubRepoId } from '@/lib/github-repo-id';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 
 export const runtime = 'nodejs';
@@ -34,8 +35,8 @@ export async function POST(
   const auth = await authorizeInstallation(id);
   if (auth instanceof NextResponse) return auth;
 
-  const githubRepoId = Number.parseInt(repoId, 10);
-  if (!Number.isFinite(githubRepoId)) {
+  const githubRepoId = parseGithubRepoId(repoId);
+  if (githubRepoId === null) {
     return NextResponse.json({ error: 'Invalid repo id' }, { status: 400 });
   }
 

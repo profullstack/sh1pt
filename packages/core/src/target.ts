@@ -20,7 +20,8 @@ export type TargetKind =
   | 'sdk'
   | 'webhook'
   | 'payment'
-  | 'package-manager';
+  | 'package-manager'
+  | 'seedbox';
 
 export type Channel = 'stable' | 'beta' | 'canary' | (string & {});
 

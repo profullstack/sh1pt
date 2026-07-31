@@ -9,15 +9,15 @@ smokeTest(adapter, { idPrefix: 'payment', requireSupports: false });
 
 describe('payment-worldremit payout validation', () => {
   it('rejects missing payout recipients before returning a transfer id', async () => {
-    await expect(adapter.payout('   ', 1000, 'USD', {})).rejects.toThrow('recipient accountId is required');
+    await expect(adapter.payout!('   ', 1000, 'USD', {})).rejects.toThrow('recipient accountId is required');
   });
 
   it('rejects invalid payout amounts before returning a transfer id', async () => {
-    await expect(adapter.payout('recipient-1', 0, 'USD', {})).rejects.toThrow('positive finite number');
-    await expect(adapter.payout('recipient-1', Number.NaN, 'USD', {})).rejects.toThrow('positive finite number');
+    await expect(adapter.payout!('recipient-1', 0, 'USD', {})).rejects.toThrow('positive finite number');
+    await expect(adapter.payout!('recipient-1', Number.NaN, 'USD', {})).rejects.toThrow('positive finite number');
   });
 
   it('rejects malformed payout currencies before returning a transfer id', async () => {
-    await expect(adapter.payout('recipient-1', 1000, 'US', {})).rejects.toThrow('3-letter ISO code');
+    await expect(adapter.payout!('recipient-1', 1000, 'US', {})).rejects.toThrow('3-letter ISO code');
   });
 });

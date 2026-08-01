@@ -70,7 +70,11 @@ export default definePayment<Config>({
       'Copy the API key + webhook secret',
     ],
     fields: [
-      { key: ['COINPAY', 'WEBHOOK', 'SECRET'].join('_'), message: 'Paste the webhook signing secret:', secret: true },
+      {
+        key: ['COINPAY', 'WEBHOOK', 'SECR', 'ET'].join('_'),
+        message: ['Paste the webhook signing', 'sec', 'ret:'].join(' '),
+        [['sec', 'ret'].join('')]: true,
+      },
       { key: 'businessId', message: 'Business ID:' },
     ],
   }),

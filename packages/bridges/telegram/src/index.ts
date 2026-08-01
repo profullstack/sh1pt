@@ -90,7 +90,7 @@ export default defineBridge<Config>({
         text: renderTelegramText(msg, config).slice(0, 4096),
         parse_mode: config.parseMode,
         disable_notification: config.disableNotification,
-        reply_to_message_id: msg.replyToId ? Number(msg.replyToId) : undefined,
+        reply_to_message_id: telegramReplyToMessageId(msg.replyToId),
       }),
     });
     const body = await readTelegramJson<TelegramSendResponse>(res);
@@ -139,6 +139,12 @@ function renderTelegramText(msg: BridgeMessage, config: Config): string {
     return `<b>${escapeHtml(source)}</b>: ${escapeHtml(text)}`;
   }
   return `${source}: ${text}`;
+}
+
+function telegramReplyToMessageId(value: string | undefined): number | undefined {
+  if (!value || !/^\d+$/.test(value)) return undefined;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 function toBridgeMessage(message: TelegramMessage): BridgeMessage {

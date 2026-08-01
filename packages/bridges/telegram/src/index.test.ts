@@ -24,6 +24,7 @@ describe('bridge-telegram Bot API integration', () => {
       channel: 'discord-1',
       identity: { network: 'discord', username: 'alice' },
       text: 'release shipped',
+      replyToId: '41',
       attachments: [{ kind: 'file', url: 'https://example.com/log.txt', filename: 'log.txt' }],
       timestamp: '2026-05-21T00:00:00.000Z',
       originalNetwork: 'discord',
@@ -44,7 +45,33 @@ describe('bridge-telegram Bot API integration', () => {
       text: '<b>alice [discord]</b>: release shipped\nfile: https://example.com/log.txt',
       parse_mode: 'HTML',
       disable_notification: true,
+      reply_to_message_id: 41,
     });
+  });
+
+  it.each([
+    ['non-decimal', 'discord-message-123'],
+    ['zero', '0'],
+    ['unsafe integer', '9007199254740992'],
+  ])('omits %s reply ids that Telegram cannot represent', async (_label, replyToId) => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true, result: { message_id: 42 } }),
+    } as any);
+
+    await adapter.send(ctx({ TELEGRAM_BRIDGE_BOT_TOKEN: '123:abc' }), '-1001234567890', {
+      id: 'src-1',
+      channel: 'discord-1',
+      identity: { network: 'discord', username: 'alice' },
+      text: 'release shipped',
+      replyToId,
+      timestamp: '2026-05-21T00:00:00.000Z',
+      originalNetwork: 'discord',
+    }, { baseUrl: 'https://telegram.test' });
+
+    const body = JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body));
+    expect(body).not.toHaveProperty('reply_to_message_id');
   });
 
   it('surfaces Telegram sendMessage errors', async () => {

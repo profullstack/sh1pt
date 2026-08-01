@@ -7,18 +7,13 @@ import { randomBytes } from 'node:crypto';
 import kleur from 'kleur';
 import { describeInput, resolveInput } from '../input.js';
 import type { ResolvedInput } from '../input.js';
+import { runCommand } from '../run-command.js';
 import { entityCmd } from './entity.js';
 import { createActionsCmd } from './build-actions.js';
 
 function run(argv: string[], env?: Record<string, string>): number {
   console.log(kleur.cyan(`→ ${argv.join(' ')}`));
-  const [cmd, ...rest] = argv;
-  if (!cmd) throw new Error('empty command');
-  const r = spawnSync(cmd, rest, {
-    stdio: 'inherit',
-    env: env ? { ...process.env, ...env } : process.env,
-  });
-  return r.status ?? 0;
+  return runCommand(argv, env);
 }
 
 // --- Stack detection ---------------------------------------------------------

@@ -6,20 +6,17 @@
 // `bun install -g`, `aube add -g`, or `deno install`.
 
 import { Command } from 'commander';
-import { spawnSync } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import kleur from 'kleur';
 import prompts from 'prompts';
 import { detectPackageManager } from '../installer.js';
+import { runCommand } from '../run-command.js';
 
 const PKG = '@profullstack/sh1pt';
 
 function run(argv: string[]): number {
   console.log(kleur.cyan(`→ ${argv.join(' ')}`));
-  const [cmd, ...rest] = argv;
-  if (!cmd) throw new Error('empty command');
-  const r = spawnSync(cmd, rest, { stdio: 'inherit' });
-  return r.status ?? 0;
+  return runCommand(argv);
 }
 
 export const updateCmd = new Command('update')

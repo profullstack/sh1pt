@@ -828,6 +828,14 @@ function inferMediaKind(file: string): 'image' | 'video' | 'gif' {
   return 'image';
 }
 
+export function parseSchedule(value: string): Date {
+  const schedule = new Date(value);
+  if (Number.isNaN(schedule.getTime())) {
+    throw new InvalidArgumentError('must be a valid ISO timestamp');
+  }
+  return schedule;
+}
+
 socialCmd
   .command('post')
   .description('Cross-post to every connected platform with per-platform adaptation')
@@ -837,7 +845,7 @@ socialCmd
   .option('--media <path...>', 'images and/or videos — adapters enforce kind requirements')
   .option('--link <url>', 'CTA URL')
   .option('--platform <id...>', 'subset; default: all connected')
-  .option('--schedule <iso>', 'publish at ISO timestamp; omit for now')
+  .option('--schedule <iso>', 'publish at ISO timestamp; omit for now', parseSchedule)
   .option('--dry-run')
   .action(async (opts: {
     body: string;
@@ -846,7 +854,7 @@ socialCmd
     media?: string[];
     link?: string;
     platform?: string[];
-    schedule?: string;
+    schedule?: Date;
     dryRun?: boolean;
   }) => {
     const post: SocialPost = {
@@ -855,7 +863,7 @@ socialCmd
       hashtags: opts.hashtags ? opts.hashtags.split(',').map((h) => h.trim()).filter(Boolean) : undefined,
       media: opts.media?.map((file) => ({ file, kind: inferMediaKind(file) })),
       link: opts.link,
-      schedule: opts.schedule ? new Date(opts.schedule) : undefined,
+      schedule: opts.schedule,
     };
 
     const names = (opts.platform ?? SOCIAL_PLATFORMS).map(stripSocialPrefix).filter(Boolean);

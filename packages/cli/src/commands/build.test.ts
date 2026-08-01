@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execSync } from 'node:child_process';
-import { detectStack, cloneAndDetect } from './build.js';
+import { detectStack, cloneAndDetect, summarizeManifestBuild } from './build.js';
 import type { ResolvedInput } from '../input.js';
 
 describe('detectStack', () => {
@@ -262,5 +262,61 @@ describe('cloneAndDetect', () => {
     // Cleanup
     rmSync(result1.cloneDir, { recursive: true, force: true });
     rmSync(result2.cloneDir, { recursive: true, force: true });
+  });
+});
+
+describe('summarizeManifestBuild', () => {
+  let tempDir: string;
+
+  afterEach(() => {
+    if (tempDir) rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('summarizes a JSON manifest with object targets', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'sh1pt-json-build-'));
+    const file = join(tempDir, 'manifest.json');
+    writeFileSync(file, JSON.stringify({
+      name: 'demo-app',
+      version: '1.2.3',
+      targets: { 'pkg-npm': {}, 'web-static': {} },
+    }));
+
+    const result = summarizeManifestBuild({
+      kind: 'doc',
+      raw: file,
+      value: file,
+      inferredName: 'fallback-name',
+      exists: true,
+    });
+
+    expect(result.projectName).toBe('demo-app');
+    expect(result.version).toBe('1.2.3');
+    expect(result.targetIds).toEqual(['pkg-npm', 'web-static']);
+  });
+
+  it('rejects malformed JSON with an actionable error', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'sh1pt-json-build-'));
+    const file = join(tempDir, 'manifest.json');
+    writeFileSync(file, '{"name":');
+
+    expect(() => summarizeManifestBuild({
+      kind: 'doc',
+      raw: file,
+      value: file,
+      exists: true,
+    })).toThrow('build manifest is not valid JSON');
+  });
+
+  it('rejects non-JSON manifest documents until their parser is implemented', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'sh1pt-json-build-'));
+    const file = join(tempDir, 'manifest.yaml');
+    writeFileSync(file, 'name: demo-app\n');
+
+    expect(() => summarizeManifestBuild({
+      kind: 'doc',
+      raw: file,
+      value: file,
+      exists: true,
+    })).toThrow('build manifest must be a JSON file');
   });
 });

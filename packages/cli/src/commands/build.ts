@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { spawnSync } from 'node:child_process';
 import { readFileSync, rmSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, extname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomBytes } from 'node:crypto';
 import kleur from 'kleur';
@@ -111,6 +111,53 @@ export function detectStack(dir: string): DetectedStack | undefined {
   return undefined;
 }
 
+export interface ManifestBuildSummary {
+  sourceFile: string;
+  projectName: string;
+  version: string | undefined;
+  targetIds: string[];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Parse a JSON manifest supplied to build --from and expose its build shape. */
+export function summarizeManifestBuild(input: ResolvedInput): ManifestBuildSummary {
+  if (input.kind !== 'doc') {
+    throw new Error(`expected a manifest document, received ${input.kind}`);
+  }
+  if (!existsSync(input.value)) {
+    throw new Error(`build manifest does not exist: ${input.value}`);
+  }
+  if (extname(input.value).toLowerCase() !== '.json') {
+    throw new Error(`build manifest must be a JSON file: ${input.value}`);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(input.value, 'utf8'));
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : 'invalid JSON';
+    throw new Error(`build manifest is not valid JSON: ${detail}`);
+  }
+  if (!isRecord(parsed)) {
+    throw new Error('build manifest root must be a JSON object');
+  }
+
+  const targetsValue = parsed.targets;
+  const targetIds = Array.isArray(targetsValue)
+    ? targetsValue.filter((target): target is string => typeof target === 'string')
+    : isRecord(targetsValue) ? Object.keys(targetsValue) : [];
+
+  return {
+    sourceFile: input.value,
+    projectName: typeof parsed.name === 'string' ? parsed.name : input.inferredName ?? input.value,
+    version: typeof parsed.version === 'string' ? parsed.version : undefined,
+    targetIds,
+  };
+}
+
 // --- Git clone ---------------------------------------------------------------
 
 export interface CloneResult {
@@ -175,6 +222,20 @@ export const buildCmd = new Command('build')
           rmSync(cloneDir, { recursive: true, force: true });
           console.log(kleur.dim('  (clone removed — use --keep-clone to retain)'));
         }
+        return;
+      }
+
+      if (input.kind === 'doc' && extname(input.value).toLowerCase() === '.json') {
+        const summary = summarizeManifestBuild(input);
+        console.log(kleur.green('[ok] JSON manifest resolved'));
+        console.log();
+        console.log(kleur.bold('Build summary'));
+        console.log(`  project:  ${summary.projectName}`);
+        console.log(`  version:  ${summary.version ?? 'unknown'}`);
+        console.log(`  targets:  ${summary.targetIds.length ? summary.targetIds.join(', ') : 'none declared'}`);
+        console.log(`  channel:  ${opts.channel}`);
+        console.log(`  target:   ${where}`);
+        console.log(`  manifest: ${summary.sourceFile}`);
         return;
       }
 

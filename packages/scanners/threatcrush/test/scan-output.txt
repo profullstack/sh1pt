@@ -1,0 +1,68 @@
+--- threatcrush scan vulns ---
+
+  ████████╗██╗  ██╗██████╗ ███████╗ █████╗ ████████╗ ██████╗██████╗ ██╗   ██╗███████╗██╗  ██╗
+  ╚══██╔══╝██║  ██║██╔══██╗██╔════╝██╔══██╗╚══██╔══╝██╔════╝██╔══██╗██║   ██║██╔════╝██║  ██║
+     ██║   ███████║██████╔╝█████╗  ███████║   ██║   ██║     ██████╔╝██║   ██║███████╗███████║
+     ██║   ██╔══██║██╔══██╗██╔══╝  ██╔══██║   ██║   ██║     ██╔══██╗██║   ██║╚════██║██╔══██║
+     ██║   ██║  ██║██║  ██║███████╗██║  ██║   ██║   ╚██████╗██║  ██║╚██████╔╝███████║██║  ██║
+     ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚═╝    ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
+  
+  All-in-one security agent daemon — v0.1.0
+
+2026-08-01 06:06:07 [INFO]    Scanning vulns for security issues...
+
+- Scanning files...
+✔ Scanned 30 files
+
+  Scan Results
+  ──────────────────────────────────────────────────────────────────────
+  4 critical  4 high  1 medium  0 low
+  ──────────────────────────────────────────────────────────────────────
+
+   CRITICAL  AWS Access Key
+    File: secrets/aws-credentials-hardcoded.env:23
+    Info: Possible AWS Access Key detected
+    Code: ****************
+
+   CRITICAL  Stripe Key
+    File: secrets/aws-credentials-hardcoded.env:36
+    Info: Possible Stripe Key detected
+    Code: ****************
+
+   CRITICAL  GitHub Token
+    File: secrets/github-pat-in-code.js:25
+    Info: Possible GitHub Token detected
+    Code: const GITHUB_TOKEN = '****************'; // VULNERABLE: CWE-798
+
+   CRITICAL  Slack Token
+    File: secrets/slack-webhook-url.py:40
+    Info: Possible Slack Token detected
+    Code: SLACK_BOT_TOKEN = "****************"  # VULNERABLE: CWE-798
+
+  [HIGH] Sensitive File
+    File: secrets/aws-credentials-hardcoded.env:0
+    Info: .env file found — may contain secrets
+
+  [HIGH] Database URL
+    File: secrets/aws-credentials-hardcoded.env:30
+    Info: Possible Database URL detected
+    Code: ****************://app_user:****************@db.example.invalid:5432/appdb
+
+  [HIGH] Database URL
+    File: secrets/aws-credentials-hardcoded.env:32
+    Info: Possible Database URL detected
+    Code: REDIS_URL=redis://:****************@cache.example.invalid:6379/0
+
+  [HIGH] Generic Secret
+    File: secrets/slack-webhook-url.py:41
+    Info: Possible Generic Secret detected
+    Code: **************** = "****************"  # VULNERABLE: CWE-798
+
+  [MEDIUM] Hex Token (32+)
+    File: secrets/slack-webhook-url.py:41
+    Info: Possible Hex Token (32+) detected
+    Code: **************** = "****************"  # VULNERABLE: CWE-798
+
+  ──────────────────────────────────────────────────────────────────────
+  9 issue(s) found across 30 files
+

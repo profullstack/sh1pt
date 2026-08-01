@@ -169,6 +169,32 @@ describe('payment-coinpay', () => {
     });
   });
 
+  it.each([
+    ['0.29', 29],
+    ['24.4', 2440],
+    ['90071992547409.91', Number.MAX_SAFE_INTEGER],
+    [0.29, 29],
+    [-1.25, -125],
+  ])('converts exact CoinPay USD amount %s to minor units', async (amountUsd, expected) => {
+    const webhook = await signedWebhook(amountUsd);
+    expect(webhook.amount).toBe(expected);
+  });
+
+  it.each([
+    '1e2',
+    '0x10',
+    ' 1.00 ',
+    '+1.00',
+    '.50',
+    '1.',
+    '1.001',
+    '90071992547409.92',
+    Number.POSITIVE_INFINITY,
+  ])('ignores invalid or unsafe CoinPay USD amount %s', async (amountUsd) => {
+    const webhook = await signedWebhook(amountUsd);
+    expect(webhook.amount).toBeUndefined();
+  });
+
   it('rejects invalid CoinPay webhook signatures', async () => {
     const timestamp = Math.floor(Date.now() / 1000).toString();
     await expect(payment.verifyWebhook(
@@ -226,4 +252,24 @@ function jsonResponse(json: unknown): Response {
     ok: true,
     json: async () => json,
   } as Response;
+}
+
+async function signedWebhook(amountUsd: string | number) {
+  const raw = JSON.stringify({
+    id: 'evt_amount',
+    type: 'Payment.Confirmed',
+    data: { payment_id: 'pay_amount', status: 'PAID', amount_usd: amountUsd },
+  });
+  const secret = 'whsec_amount';
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const signature = createHmac('sha256', secret)
+    .update(`${timestamp}.${raw}`)
+    .digest('hex');
+
+  return payment.verifyWebhook(
+    ctx({ COINPAY_WEBHOOK_SECRET: secret }),
+    raw,
+    `t=${timestamp},v1=${signature}`,
+    {},
+  );
 }

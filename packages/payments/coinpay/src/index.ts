@@ -309,8 +309,21 @@ function toUsdDecimal(amount: number, currency: string): string {
 
 function usdDecimalToMinor(value: string | number | undefined): number | undefined {
   if (value === undefined) return undefined;
-  const parsed = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(parsed) ? Math.round(parsed * 100) : undefined;
+  if (typeof value === 'number' && !Number.isFinite(value)) return undefined;
+
+  const decimal = String(value);
+  const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(decimal);
+  if (!match) return undefined;
+
+  const sign = match[1];
+  const whole = match[2]!;
+  const fraction = match[3] ?? '';
+  const minor = BigInt(whole) * 100n + BigInt(fraction.padEnd(2, '0'));
+  const signedMinor = sign === '-' ? -minor : minor;
+  if (signedMinor > BigInt(Number.MAX_SAFE_INTEGER) || signedMinor < BigInt(Number.MIN_SAFE_INTEGER)) {
+    return undefined;
+  }
+  return Number(signedMinor);
 }
 
 function resolveBusinessId(config: Config): string | undefined {

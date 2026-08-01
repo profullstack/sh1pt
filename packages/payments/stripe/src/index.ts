@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { definePayment, tokenSetup, type CheckoutRequest, type Webhook } from '@profullstack/sh1pt-core';
+import { parseStripeWebhookTimestamp } from './webhook-timestamp.js';
 
 // Stripe — cards + ACH + Link + local payment methods. Checkout API
 // for one-time + subscriptions; Connect for marketplace payouts.
@@ -192,8 +193,8 @@ function verifyStripeSignature(
     throw new Error('Stripe-Signature missing t or v1');
   }
 
-  const timestampSeconds = Number(timestamp);
-  if (!Number.isFinite(timestampSeconds)) throw new Error('Stripe-Signature timestamp is invalid');
+  const timestampSeconds = parseStripeWebhookTimestamp(timestamp);
+  if (timestampSeconds === undefined) throw new Error('Stripe-Signature timestamp is invalid');
   if (effectiveToleranceSeconds > 0) {
     const age = Math.floor(Date.now() / 1000) - timestampSeconds;
     if (Math.abs(age) > effectiveToleranceSeconds) throw new Error('Stripe webhook signature timestamp outside tolerance');

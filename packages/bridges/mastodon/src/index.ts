@@ -1,4 +1,5 @@
 import { defineBridge, type BridgeAttachment, type BridgeMessage, tokenSetup } from '@profullstack/sh1pt-core';
+import { decodeHtmlEntities } from './html-entities.js';
 
 // Mastodon bridge — streaming API for receive (/api/v1/streaming/user),
 // /api/v1/statuses for send. "Channels" on Mastodon are hashtag streams
@@ -289,22 +290,6 @@ function htmlToText(value: string): string {
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim());
-}
-
-function decodeHtmlEntities(value: string): string {
-  const named: Record<string, string> = {
-    amp: '&',
-    apos: "'",
-    gt: '>',
-    lt: '<',
-    nbsp: ' ',
-    quot: '"',
-  };
-
-  return value
-    .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, code: string) => String.fromCodePoint(Number.parseInt(code, 16)))
-    .replace(/&([a-z]+);/gi, (entity, name: string) => named[name.toLowerCase()] ?? entity);
 }
 
 function mastodonAttachment(media: MastodonMediaAttachment): BridgeAttachment | undefined {

@@ -1,27 +1,12 @@
 import { createPublicKey, verify as verifySignature } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import { z } from 'zod';
 import { defineBot, tokenSetup, type BotCtx, type BotEvent, type BotHandler, type BotReply } from '@profullstack/sh1pt-core';
 
 // Telnyx - programmable SMS + Voice, similar surface to Twilio, often
 // lower egress cost. API key auth (TELNYX_API_KEY). SMS via Messaging
 // Profile + phone number; Voice via Call Control (webhook-driven state
 // machine) with built-in STT via "transcription.started" events.
-interface Config {
-  messagingProfileId?: string;
-  connectionId?: string;
-  from?: string;
-  mode?: 'sms' | 'voice' | 'both';
-  commandPrefix?: string;
-  webhookHost?: string;
-  webhookPort?: number;
-  messagingPath?: string;
-  callControlPath?: string;
-  webhookUrl?: string;
-  publicKey?: string;
-  validateSignature?: boolean;
-  signatureToleranceSeconds?: number;
-  voice?: string;
-}
 
 const API = 'https://api.telnyx.com/v2';
 const DEFAULT_COMMAND_PREFIX = '!';
@@ -29,6 +14,25 @@ const DEFAULT_MESSAGING_PATH = '/telnyx/messaging';
 const DEFAULT_CALL_CONTROL_PATH = '/telnyx/call-control';
 const DEFAULT_VOICE = 'female';
 const DEFAULT_SIGNATURE_TOLERANCE_SECONDS = 300;
+
+const configSchema = z.object({
+  messagingProfileId: z.string().optional(),
+  connectionId: z.string().optional(),
+  from: z.string().optional(),
+  mode: z.enum(['sms', 'voice', 'both']).optional().default('both'),
+  commandPrefix: z.string().default(DEFAULT_COMMAND_PREFIX),
+  webhookHost: z.string().default('127.0.0.1'),
+  webhookPort: z.number().int().nonnegative().optional(),
+  messagingPath: z.string().default(DEFAULT_MESSAGING_PATH),
+  callControlPath: z.string().default(DEFAULT_CALL_CONTROL_PATH),
+  webhookUrl: z.string().optional(),
+  publicKey: z.string().optional(),
+  validateSignature: z.boolean().optional(),
+  signatureToleranceSeconds: z.number().int().positive().default(DEFAULT_SIGNATURE_TOLERANCE_SECONDS),
+  voice: z.string().default(DEFAULT_VOICE),
+});
+
+export type Config = z.infer<typeof configSchema>;
 
 class TelnyxWebhookServer {
   private server?: Server;
@@ -377,22 +381,24 @@ function redact(value: string, token: string): string {
   return value.split(token).join('[redacted]');
 }
 
-export default defineBot<Config>({
+export default defineBot<Partial<Config>>({
   id: 'bot-telnyx',
   label: 'Telnyx (SMS + Voice)',
   supports: ['message', 'command', 'call.start', 'call.end', 'call.utterance'],
 
   async register(ctx, handlers, config) {
+    const parsed = configSchema.parse(config);
     const token = apiKey(ctx);
-    const resolved = resolveConfig(ctx, config);
+    const resolved = resolveConfig(ctx, parsed);
     ctx.log(`bot-telnyx · register ${handlers.length} handlers (mode=${resolved.mode ?? 'both'}, from=${resolved.from ?? 'not-set'})`);
     if (ctx.dryRun) return { async close() {} };
     return new TelnyxWebhookServer(ctx, handlers, resolved, token).start();
   },
 
   async send(ctx, channel, reply, config) {
+    const parsed = configSchema.parse(config);
     const token = apiKey(ctx);
-    const resolved = resolveConfig(ctx, config);
+    const resolved = resolveConfig(ctx, parsed);
     ctx.log(`bot-telnyx · send → ${channel}`);
     if (ctx.dryRun) return { id: 'dry-run' };
     if (reply.voice) {

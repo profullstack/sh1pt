@@ -8,6 +8,7 @@ import {
   type ProvisionContext,
   type Quote,
 } from '@profullstack/sh1pt-core';
+import { normalizeCloudflareTimestamp } from './timestamp.js';
 
 type ResourceType = 'r2-bucket' | 'd1-database' | 'queue' | 'tunnel';
 type ConfigResourceType = ResourceType | 'worker';
@@ -432,7 +433,7 @@ function bucketInstance(bucket: R2Bucket, kind: InstanceKind, quote: Quote, fall
     id: prefixedId('r2-bucket', name),
     kind,
     status: 'running',
-    createdAt: iso(bucket.creation_date),
+    createdAt: normalizeCloudflareTimestamp(bucket.creation_date),
     hourlyRate: quote.hourly,
     currency: quote.currency,
     sku: quote.sku,
@@ -446,7 +447,7 @@ function d1Instance(db: D1Database, kind: InstanceKind, quote: Quote, fallbackRe
     id: prefixedId('d1-database', id),
     kind,
     status: 'running',
-    createdAt: iso(db.created_at),
+    createdAt: normalizeCloudflareTimestamp(db.created_at),
     hourlyRate: quote.hourly,
     currency: quote.currency,
     sku: quote.sku,
@@ -460,7 +461,7 @@ function queueInstance(queue: Queue, kind: InstanceKind, quote: Quote, fallbackR
     id: prefixedId('queue', id),
     kind,
     status: 'running',
-    createdAt: iso(queue.created_on ?? queue.modified_on),
+    createdAt: normalizeCloudflareTimestamp(queue.created_on ?? queue.modified_on),
     hourlyRate: quote.hourly,
     currency: quote.currency,
     sku: quote.sku,
@@ -474,7 +475,7 @@ function tunnelInstance(tunnel: Tunnel, kind: InstanceKind, quote: Quote, fallba
     id: prefixedId('tunnel', id),
     kind,
     status: tunnelStatus(tunnel.status),
-    createdAt: iso(tunnel.created_at),
+    createdAt: normalizeCloudflareTimestamp(tunnel.created_at),
     hourlyRate: quote.hourly,
     currency: quote.currency,
     sku: quote.sku,
@@ -528,10 +529,6 @@ function safeName(value: string): string {
 function requiredId(value: string | undefined, label: string): string {
   if (!value) throw new Error(`${label} response did not include an id`);
   return value;
-}
-
-function iso(value: string | undefined): string {
-  return value ? new Date(value).toISOString() : new Date().toISOString();
 }
 
 function arrayFromResult<T>(result: unknown, arrayKey: string): T[] {

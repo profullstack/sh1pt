@@ -117,6 +117,15 @@ function parsePositiveIntegerEnv(value: string | undefined, fallback: number): n
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+export function parseTelegramChatId(value: string): number {
+  if (!/^-?\d+$/.test(value)) throw new Error(`Invalid Telegram chat id: ${value}`);
+  const chatId = Number(value);
+  if (!Number.isSafeInteger(chatId) || chatId === 0) {
+    throw new Error(`Invalid Telegram chat id: ${value}`);
+  }
+  return chatId;
+}
+
 function toBotEvent(msg: IncomingMessage): BotEvent {
   return {
     type: "message",
@@ -161,8 +170,7 @@ export default defineBot<Partial<Config>>({
     ctx.log(`bot-telegram · send → chat=${channel}`);
     if (ctx.dryRun) return { id: "dry-run" };
 
-    const chatId = Number(channel);
-    if (!Number.isFinite(chatId)) throw new Error(`Invalid Telegram chat id: ${channel}`);
+    const chatId = parseTelegramChatId(channel);
     const bot = new TelegramBot(configSchema.parse({ ...config, botToken: token }));
     await bot.send(chatId, reply.text ?? "");
     return { id: `tg_${Date.now()}` };

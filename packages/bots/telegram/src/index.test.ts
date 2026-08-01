@@ -1,8 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { contractTestBot } from '@profullstack/sh1pt-core/testing';
-import bot, { loadConfig } from './index.js';
+import bot, { loadConfig, parseTelegramChatId } from './index.js';
 
 contractTestBot(bot, { sampleConfig: {}, sampleChannel: '1234567890' });
+
+describe('parseTelegramChatId', () => {
+  it('accepts positive user and negative group chat ids', () => {
+    expect(parseTelegramChatId('1234567890')).toBe(1234567890);
+    expect(parseTelegramChatId('-1001234567890')).toBe(-1001234567890);
+  });
+
+  it.each(['', '0', '-0', '1.5', '1e2', '0x10', ' 123 ', 'NaN', '9007199254740993'])(
+    'rejects malformed or unsafe chat id %j',
+    (value) => {
+      expect(() => parseTelegramChatId(value)).toThrow(`Invalid Telegram chat id: ${value}`);
+    },
+  );
+});
 
 describe('loadConfig', () => {
   it('accepts positive integer env values', () => {

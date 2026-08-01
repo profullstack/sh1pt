@@ -3,10 +3,88 @@ import type { BotHandler } from '@profullstack/sh1pt-core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import bot from './index.js';
 
-contractTestBot(bot, { sampleConfig: { homeserver: 'https://matrix.example' }, sampleChannel: '!room:matrix.example' });
+contractTestBot(bot, { sampleConfig: { homeserver: 'https://matrix.example', accessToken: 'token' }, sampleChannel: '!room:matrix.example' });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe('bot-matrix config validation', () => {
+  it('rejects empty accessToken', async () => {
+    await expect(bot.register(ctx(), [handler()], { homeserver: 'https://matrix.example', accessToken: '' }))
+      .rejects.toThrow('MATRIX_ACCESS_TOKEN must not be empty');
+    await expect(bot.register(ctx(), [handler()], { homeserver: 'https://matrix.example', accessToken: '  ' }))
+      .rejects.toThrow('MATRIX_ACCESS_TOKEN must not be empty');
+  });
+
+  it('rejects invalid homeserver URLs', async () => {
+    await expect(bot.register(ctx(), [handler()], { homeserver: 'not-a-url', accessToken: 'token' }))
+      .rejects.toThrow('homeserver must be a valid HTTP/HTTPS URL');
+    await expect(bot.register(ctx(), [handler()], { homeserver: 'ftp://matrix.example', accessToken: 'token' }))
+      .rejects.toThrow('homeserver must be a valid HTTP/HTTPS URL');
+  });
+
+  it('rejects empty homeserver', async () => {
+    await expect(bot.register(ctx(), [handler()], { homeserver: '', accessToken: 'token' }))
+      .rejects.toThrow('homeserver must not be empty');
+    await expect(bot.register(ctx(), [handler()], { homeserver: '  ', accessToken: 'token' }))
+      .rejects.toThrow('homeserver must not be empty');
+  });
+
+  it('rejects invalid Matrix user IDs', async () => {
+    await expect(bot.register(ctx(), [handler()], { homeserver: 'https://matrix.example', accessToken: 'token', userId: 'invalid' }))
+      .rejects.toThrow('userId must be a valid Matrix user ID');
+    await expect(bot.register(ctx(), [handler()], { homeserver: 'https://matrix.example', accessToken: 'token', userId: 'user@domain' }))
+      .rejects.toThrow('userId must be a valid Matrix user ID');
+  });
+
+  it('accepts valid Matrix user IDs', async () => {
+    const seen: string[] = [];
+    const handle = await bot.register(ctx(), [handler()], {
+      homeserver: 'https://matrix.example',
+      accessToken: 'token',
+      userId: '@user:matrix.example',
+    });
+    await handle.close();
+    await expect(bot.register(ctx(), [handler()], { homeserver: 'https://matrix.example', accessToken: 'token', userId: '@bot.name:domain.org' }))
+      .rejects.not.toThrow();
+  });
+
+  it('rejects invalid syncTimeoutMs values', async () => {
+    await expect(bot.register(ctx(), [handler()], { homeserver: 'https://matrix.example', accessToken: 'token', syncTimeoutMs: 0 }))
+      .rejects.toThrow('syncTimeoutMs must be an integer between 1 and 300000');
+    await expect(bot.register(ctx(), [handler()], { homeserver: 'https://matrix.example', accessToken: 'token', syncTimeoutMs: 300001 }))
+      .rejects.toThrow('syncTimeoutMs must be an integer between 1 and 300000');
+    await expect(bot.register(ctx(), [handler()], { homeserver: 'https://matrix.example', accessToken: 'token', syncTimeoutMs: 1.5 }))
+      .rejects.toThrow('syncTimeoutMs must be an integer between 1 and 300000');
+  });
+
+  it('rejects invalid pollIntervalMs values', async () => {
+    await expect(bot.register(ctx(), [handler()], { homeserver: 'https://matrix.example', accessToken: 'token', pollIntervalMs: -1 }))
+      .rejects.toThrow('pollIntervalMs must be a non-negative integer');
+    await expect(bot.register(ctx(), [handler()], { homeserver: 'https://matrix.example', accessToken: 'token', pollIntervalMs: 1.5 }))
+      .rejects.toThrow('pollIntervalMs must be a non-negative integer');
+  });
+
+  it('validates config on send as well', async () => {
+    await expect(bot.send(ctx(), '!room:matrix.example', { text: 'hi' }, { homeserver: 'https://matrix.example', accessToken: '' }))
+      .rejects.toThrow('MATRIX_ACCESS_TOKEN must not be empty');
+  });
+
+  it('accepts valid configurations', async () => {
+    const calls: Array<{ url: string; init: RequestInit }> = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init: RequestInit) => {
+      calls.push({ url, init });
+      return jsonResponse({ event_id: '$event1:matrix.example' });
+    }));
+
+    const result = await bot.send(ctx(), '!room:matrix.example', { text: 'test' }, {
+      homeserver: 'https://matrix.example',
+      accessToken: 'matrix-access-token',
+    });
+    expect(result.id).toBe('$event1:matrix.example');
+    vi.unstubAllGlobals();
+  });
 });
 
 describe('bot-matrix Client-Server API behavior', () => {
@@ -158,6 +236,13 @@ function ctx() {
     secret(key: string) {
       return key === 'MATRIX_ACCESS_TOKEN' ? 'matrix-access-token' : undefined;
     },
+  };
+}
+
+function handler(): BotHandler {
+  return {
+    match: { type: 'message' as const },
+    handle: () => undefined,
   };
 }
 

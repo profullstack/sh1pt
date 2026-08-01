@@ -4,6 +4,11 @@ import { parseMatrixTimestamp } from './timestamp.js';
 // Matrix bot — sync loop against homeserver. Access token via MATRIX_ACCESS_TOKEN
 // (obtain via /login). E2EE rooms need an Olm/Megolm-capable client;
 // default to unencrypted rooms until crypto is wired.
+
+const MATRIX_USER_ID_RE = /^@[a-zA-Z0-9._=-]+:[a-zA-Z0-9._=-]+$/;
+const URL_RE = /^https?:\/\/.+/;
+const MAX_TIMEOUT_MS = 300_000;
+
 interface Config {
   homeserver?: string;
   accessToken?: string;
@@ -42,6 +47,28 @@ interface MatrixSyncResponse {
 const DEFAULT_HOMESERVER = 'https://matrix.org';
 const DEFAULT_COMMAND_PREFIX = '!';
 const DEFAULT_SYNC_TIMEOUT_MS = 30_000;
+
+function validateConfig(config: Config): void {
+  if (!config.accessToken || !config.accessToken.trim()) {
+    throw new Error('MATRIX_ACCESS_TOKEN must not be empty');
+  }
+  if (config.homeserver !== undefined) {
+    const hs = config.homeserver.trim();
+    if (!hs) throw new Error('homeserver must not be empty');
+    if (!URL_RE.test(hs)) throw new Error('homeserver must be a valid HTTP/HTTPS URL');
+  }
+  if (config.userId !== undefined && config.userId !== '') {
+    if (!MATRIX_USER_ID_RE.test(config.userId)) {
+      throw new Error('userId must be a valid Matrix user ID (e.g., @user:domain)');
+    }
+  }
+  if (config.syncTimeoutMs !== undefined && (!Number.isInteger(config.syncTimeoutMs) || config.syncTimeoutMs < 1 || config.syncTimeoutMs > MAX_TIMEOUT_MS)) {
+    throw new Error(`syncTimeoutMs must be an integer between 1 and ${MAX_TIMEOUT_MS}`);
+  }
+  if (config.pollIntervalMs !== undefined && (!Number.isInteger(config.pollIntervalMs) || config.pollIntervalMs < 0)) {
+    throw new Error('pollIntervalMs must be a non-negative integer');
+  }
+}
 
 class MatrixClient {
   private readonly homeserver: string;
@@ -213,6 +240,7 @@ export default defineBot<Config>({
 
   async register(ctx, handlers, config) {
     const resolved = resolveConfig(ctx, config);
+    validateConfig(resolved);
     if (!resolved.accessToken) throw new Error('MATRIX_ACCESS_TOKEN not in vault');
     ctx.log(`bot-matrix · register ${handlers.length} handlers (hs=${resolved.homeserver ?? 'matrix.org'})`);
     if (ctx.dryRun) return { async close() {} };
@@ -223,6 +251,7 @@ export default defineBot<Config>({
 
   async send(ctx, channel, reply, config) {
     const resolved = resolveConfig(ctx, config);
+    validateConfig(resolved);
     if (!resolved.accessToken) throw new Error('MATRIX_ACCESS_TOKEN not in vault');
     ctx.log(`bot-matrix · send → room=${channel}`);
     if (ctx.dryRun) return { id: 'dry-run' };

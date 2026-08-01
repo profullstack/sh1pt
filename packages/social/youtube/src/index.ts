@@ -79,7 +79,7 @@ export default defineSocial<Config>({
       id: uploaded.id,
       url: `https://www.youtube.com/watch?v=${uploaded.id}`,
       platform: 'youtube',
-      publishedAt: new Date(uploaded.status?.publishAt ?? uploaded.snippet?.publishedAt ?? Date.now()).toISOString(),
+      publishedAt: publishedAt(uploaded),
     };
   },
 
@@ -291,6 +291,15 @@ async function readYouTubeResponse(res: Response): Promise<YouTubeVideoResponse>
 
 function youtubeErrorMessage(data: YouTubeVideoResponse, fallback: string): string {
   return data.error?.errors?.[0]?.message ?? data.error?.message ?? fallback;
+}
+
+function publishedAt(video: YouTubeVideoResponse): string {
+  for (const value of [video.status?.publishAt, video.snippet?.publishedAt]) {
+    if (!value) continue;
+    const timestamp = new Date(value);
+    if (!Number.isNaN(timestamp.getTime())) return timestamp.toISOString();
+  }
+  return new Date().toISOString();
 }
 
 function redactSecrets(message: string, secrets: Array<string | undefined>): string {

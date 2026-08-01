@@ -18,6 +18,7 @@ contractTestSocial(adapter, {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.restoreAllMocks();
   while (tempDirs.length) rmSync(tempDirs.pop()!, { recursive: true, force: true });
 });
@@ -157,6 +158,53 @@ describe('social-youtube upload', () => {
       'x-upload-content-length': '3',
       'x-upload-content-type': 'video/webm',
     });
+  });
+
+  it('uses a valid snippet timestamp when publishAt is malformed', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response('', {
+        status: 200,
+        headers: { location: 'https://uploads.youtube.example/session/timestamp' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        id: 'timestamp123',
+        snippet: { publishedAt: '2026-05-21T08:00:00Z' },
+        status: { publishAt: 'not-a-date' },
+      }), { status: 200, headers: { 'content-type': 'application/json' } }));
+
+    const result = await adapter.post({
+      ...fakeConnectContext({ YOUTUBE_ACCESS_TOKEN: 'sekret' }),
+      dryRun: false,
+    } as any, {
+      body: 'Timestamp fallback',
+      media: [{ file: tempVideoFile(), kind: 'video' }],
+    }, { uploadBaseUrl: 'https://www.googleapis.example' });
+
+    expect(result.publishedAt).toBe('2026-05-21T08:00:00.000Z');
+  });
+
+  it('uses the current time when YouTube returns no valid timestamp', async () => {
+    vi.useFakeTimers().setSystemTime(new Date('2026-05-22T12:00:00.000Z'));
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response('', {
+        status: 200,
+        headers: { location: 'https://uploads.youtube.example/session/no-timestamp' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        id: 'no-timestamp123',
+        snippet: { publishedAt: 'invalid' },
+        status: { publishAt: 'also-invalid' },
+      }), { status: 200, headers: { 'content-type': 'application/json' } }));
+
+    const result = await adapter.post({
+      ...fakeConnectContext({ YOUTUBE_ACCESS_TOKEN: 'sekret' }),
+      dryRun: false,
+    } as any, {
+      body: 'No timestamp',
+      media: [{ file: tempVideoFile(), kind: 'video' }],
+    }, { uploadBaseUrl: 'https://www.googleapis.example' });
+
+    expect(result.publishedAt).toBe('2026-05-22T12:00:00.000Z');
   });
 
   it('forces scheduled uploads to private with publishAt metadata', async () => {

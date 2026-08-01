@@ -121,12 +121,18 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     aiProvider: (env.AI_PROVIDER as any) || "claude-code",
     aiCliPath: env.AI_CLI_PATH || "claude",
     aiModel: env.AI_MODEL,
-    sessionTimeoutMs: parseInt(env.SESSION_TIMEOUT_MS || "1800000", 10),
-    maxOutputLength: parseInt(env.MAX_OUTPUT_LENGTH || "4000", 10),
-    maxConcurrentSessions: parseInt(env.MAX_CONCURRENT_SESSIONS || "5", 10),
+    sessionTimeoutMs: parsePositiveIntegerEnv(env.SESSION_TIMEOUT_MS, 1800000),
+    maxOutputLength: parsePositiveIntegerEnv(env.MAX_OUTPUT_LENGTH, 4000),
+    maxConcurrentSessions: parsePositiveIntegerEnv(env.MAX_CONCURRENT_SESSIONS, 5),
     allowedUsers: env.ALLOWED_USERS?.split(",").map((u) => u.trim()).filter(Boolean) || [],
     adminUsers: env.ADMIN_USERS?.split(",").map((u) => u.trim()).filter(Boolean) || [],
   });
+}
+
+function parsePositiveIntegerEnv(value: string | undefined, fallback: number): number {
+  if (!value) return fallback;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function toBotEvent(msg: IncomingMessage): BotEvent {

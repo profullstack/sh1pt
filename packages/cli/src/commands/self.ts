@@ -9,6 +9,7 @@ import { Command } from 'commander';
 import { promises as fs } from 'node:fs';
 import kleur from 'kleur';
 import prompts from 'prompts';
+import { configDir } from '@profullstack/sh1pt-core';
 import { detectPackageManager } from '../installer.js';
 import { runCommand } from '../run-command.js';
 
@@ -69,10 +70,7 @@ export const removeCmd = new Command('remove')
 
     const code = run(argv);
     if (code === 0 && deleteConfig) {
-      const xdg = process.env.XDG_CONFIG_HOME;
-      const dir = xdg && xdg.length > 0
-        ? `${xdg}/sh1pt`
-        : `${process.env.HOME}/.config/sh1pt`;
+      const dir = configDir();
       try {
         await fs.rm(dir, { recursive: true, force: true });
         console.log(kleur.dim(`removed ${dir}`));

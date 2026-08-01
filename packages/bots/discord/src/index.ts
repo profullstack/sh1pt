@@ -178,7 +178,8 @@ function isTextChannel(channel: unknown): channel is SendableChannel {
   return !!channel && typeof channel === "object" && "send" in channel;
 }
 
-function toBotEvent(msg: IncomingMessage): BotEvent {
+export function toBotEvent(msg: IncomingMessage): BotEvent {
+  const date = new Date(msg.timestamp);
   return {
     type: "message",
     channel: msg.channelId,
@@ -192,7 +193,7 @@ function toBotEvent(msg: IncomingMessage): BotEvent {
       filename: a.filename,
       mimeType: a.contentType,
     })),
-    timestamp: new Date(msg.timestamp).toISOString(),
+    timestamp: Number.isNaN(date.getTime()) ? new Date(0).toISOString() : date.toISOString(),
     raw: msg.raw,
   };
 }

@@ -1,7 +1,7 @@
 import { contractTestBot } from '@profullstack/sh1pt-core/testing';
 import { request, type Server } from 'node:http';
 import { describe, expect, it } from 'vitest';
-import bot, { slackSignature, type FetchLike } from './index.js';
+import bot, { slackSignature, slackTimestamp, type FetchLike } from './index.js';
 import type { BotCtx, BotEvent, BotHandler } from '@profullstack/sh1pt-core';
 
 contractTestBot(bot, { sampleConfig: {}, sampleChannel: 'C0123456789' });
@@ -75,6 +75,10 @@ function serverPort(server: Server): number {
 }
 
 describe('Slack bot adapter', () => {
+  it('falls back for out-of-range event timestamps', () => {
+    expect(slackTimestamp('1e20')).toBe('1970-01-01T00:00:00.000Z');
+  });
+
   it('posts proactive messages with Slack Web API JSON and bearer auth', async () => {
     const { calls, fetcher } = captureFetch([{ ok: true, ts: '1700000000.123456' }]);
 

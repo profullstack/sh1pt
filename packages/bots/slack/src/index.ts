@@ -451,10 +451,12 @@ function firstHeader(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function slackTimestamp(value: string | undefined): string {
+export function slackTimestamp(value: string | undefined): string {
   if (!value) return new Date().toISOString();
   const timestamp = Number(value);
-  return Number.isFinite(timestamp) ? new Date(timestamp * 1000).toISOString() : new Date().toISOString();
+  if (!Number.isFinite(timestamp)) return new Date().toISOString();
+  const date = new Date(timestamp * 1000);
+  return Number.isNaN(date.getTime()) ? new Date(0).toISOString() : date.toISOString();
 }
 
 async function readBody(req: IncomingMessage): Promise<string> {

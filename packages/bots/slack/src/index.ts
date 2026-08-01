@@ -1,22 +1,10 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { z } from "zod";
 import { defineBot, tokenSetup, type BotCtx, type BotEvent, type BotHandler, type BotReply } from "@profullstack/sh1pt-core";
 
 // Slack bot using the Events API over HTTP plus Web API chat.postMessage for
 // outbound messages and handler replies.
-export interface Config {
-  mode?: "events";
-  port?: number;
-  path?: string;
-  botToken?: string;
-  signingSecret?: string;
-  commandPrefix?: string;
-  webApiBaseUrl?: string;
-  timestampToleranceSeconds?: number;
-  fetch?: FetchLike;
-  onServerReady?: (server: Server) => void;
-}
-
 export interface SlackApiResponse {
   ok?: boolean;
   error?: string;
@@ -72,26 +60,42 @@ const DEFAULT_COMMAND_PREFIX = "!";
 const DEFAULT_TIMESTAMP_TOLERANCE_SECONDS = 300;
 const DEFAULT_WEB_API_BASE = "https://slack.com/api";
 
-export default defineBot<Config>({
+const configSchema = z.object({
+  mode: z.literal("events").optional(),
+  port: z.number().int().positive().default(DEFAULT_PORT),
+  path: z.string().default(DEFAULT_EVENTS_PATH),
+  botToken: z.string().optional(),
+  signingSecret: z.string().optional(),
+  commandPrefix: z.string().default(DEFAULT_COMMAND_PREFIX),
+  webApiBaseUrl: z.string().default(DEFAULT_WEB_API_BASE),
+  timestampToleranceSeconds: z.number().int().positive().default(DEFAULT_TIMESTAMP_TOLERANCE_SECONDS),
+  fetch: z.any().optional(),
+  onServerReady: z.any().optional(),
+});
+
+export type Config = z.infer<typeof configSchema>;
+
+export default defineBot<Partial<Config>>({
   id: "bot-slack",
   label: "Slack",
   supports: ["message", "command", "interaction", "reaction", "join", "leave"],
 
   async register(ctx, handlers, config) {
-    const token = getBotToken(ctx, config);
-    const signingKey = getSigningSecret(ctx, config);
-    ctx.log(`bot-slack register ${handlers.length} handlers (mode=${config.mode ?? "events"})`);
+    const parsed = configSchema.parse(config);
+    const token = getBotToken(ctx, parsed);
+    const signingKey = getSigningSecret(ctx, parsed);
+    ctx.log(`bot-slack register ${handlers.length} handlers (mode=${parsed.mode ?? "events"})`);
     if (ctx.dryRun) return { async close() {} };
 
-    if (config.mode && config.mode !== "events") {
+    if (parsed.mode && parsed.mode !== "events") {
       throw new Error("bot-slack currently supports Events API mode");
     }
 
     const server = createServer((req, res) => {
-      void handleSlackRequest(ctx, handlers, token, signingKey, config, req, res);
+      void handleSlackRequest(ctx, handlers, token, signingKey, parsed, req, res);
     });
-    await listen(server, config.port ?? DEFAULT_PORT);
-    config.onServerReady?.(server);
+    await listen(server, parsed.port ?? DEFAULT_PORT);
+    parsed.onServerReady?.(server);
 
     const abort = () => server.close();
     ctx.signal?.addEventListener("abort", abort, { once: true });
@@ -105,10 +109,11 @@ export default defineBot<Config>({
   },
 
   async send(ctx, channel, reply, config) {
-    const token = getBotToken(ctx, config);
+    const parsed = configSchema.parse(config);
+    const token = getBotToken(ctx, parsed);
     ctx.log(`bot-slack send channel=${channel}`);
     if (ctx.dryRun) return { id: "dry-run" };
-    return await sendSlackMessage(token, channel, reply, config);
+    return await sendSlackMessage(token, channel, reply, parsed);
   },
 
   setup: tokenSetup({

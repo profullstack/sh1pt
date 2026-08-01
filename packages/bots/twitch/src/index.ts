@@ -1,6 +1,7 @@
 import { connect as netConnect, type Socket } from "node:net";
 import { connect as tlsConnect } from "node:tls";
 import { defineBot, tokenSetup, type BotCtx, type BotEvent, type BotHandler } from "@profullstack/sh1pt-core";
+import { parseTwitchTimestamp } from "./timestamp.js";
 
 // Twitch bot using Twitch IRC chat over TLS. OAuth token via TWITCH_OAUTH_TOKEN
 // with chat:read and chat:write scopes.
@@ -203,7 +204,7 @@ function toBotEvent(message: IrcMessage, commandPrefix: string): BotEvent | unde
     const channel = toChannelName(message.params[0] ?? "");
     const text = message.trailing ?? "";
     const user = parseUser(message);
-    const timestamp = tagTimestamp(message.tags["tmi-sent-ts"]);
+    const timestamp = parseTwitchTimestamp(message.tags["tmi-sent-ts"]);
     if (text.startsWith(commandPrefix) && text.length > commandPrefix.length) {
       const [command, ...args] = text.slice(commandPrefix.length).trim().split(/\s+/).filter(Boolean);
       if (command) {
@@ -252,12 +253,6 @@ function parseUser(message: IrcMessage): BotEvent["user"] {
     displayName: message.tags["display-name"] || username,
     isBot: false,
   };
-}
-
-function tagTimestamp(value: string | undefined): string {
-  if (!value) return new Date().toISOString();
-  const timestamp = Number(value);
-  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : new Date().toISOString();
 }
 
 function matches(handler: BotHandler, event: BotEvent): boolean {

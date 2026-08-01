@@ -1,5 +1,6 @@
 import { createHmac, randomUUID } from 'node:crypto';
 import { defineCloud, tokenSetup, type Instance, type InstanceSpec, type Quote } from '@profullstack/sh1pt-core';
+import { normalizeAtlanticTimestamp } from './timestamp.js';
 
 // Atlantic.Net Cloud API — classic signed query API for Cloud Servers.
 // API docs: https://www.atlantic.net/docs/api/
@@ -211,7 +212,7 @@ function instanceToInstance(record: AtlanticInstanceRecord): Instance {
     kind: isBareMetal({ plan_name: sku }) ? 'bare-metal' : 'cpu-vps',
     status,
     publicIp: firstNonEmpty(record.vm_ip_address, record.ip_address),
-    createdAt: toIso(record.vm_created_date ?? record.created_date),
+    createdAt: normalizeAtlanticTimestamp(record.vm_created_date ?? record.created_date),
     hourlyRate: parseMoney(record.rate_per_hr),
     currency: 'USD',
     sku,
@@ -228,16 +229,6 @@ function mapStatus(value: string | undefined): Instance['status'] {
   if (status.includes('fail') || status.includes('error')) return 'failed';
   if (status.includes('terminat') || status.includes('remove') || status.includes('delete')) return 'destroyed';
   return 'provisioning';
-}
-
-function toIso(value: string | undefined): string {
-  if (!value) return new Date().toISOString();
-  const numeric = Number(value);
-  if (Number.isFinite(numeric) && numeric > 0) {
-    return new Date(numeric < 10_000_000_000 ? numeric * 1000 : numeric).toISOString();
-  }
-  const parsed = Date.parse(value);
-  return Number.isFinite(parsed) ? new Date(parsed).toISOString() : new Date().toISOString();
 }
 
 function planToQuote(plan: AtlanticPlan): Quote {

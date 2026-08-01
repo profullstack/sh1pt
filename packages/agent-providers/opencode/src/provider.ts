@@ -119,8 +119,9 @@ function resolveConfig(env: Record<string, string | undefined>): OpencodeConfig 
 
 function parseTimeout(value: string | undefined): number {
   if (!value) return 120_000;
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
+  const normalized = value.trim();
+  const parsed = Number(normalized);
+  if (!/^\d+$/.test(normalized) || !Number.isSafeInteger(parsed) || parsed <= 0) {
     throw new AgentProviderConfigError("OPENCODE_TIMEOUT_MS must be a positive integer");
   }
   return parsed;

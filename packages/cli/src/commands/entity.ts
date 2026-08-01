@@ -8,19 +8,19 @@ const KNOWN_PACKS = [
   'sg', 'tt', 'tz', 'ug', 'uk', 'us', 'za', 'zm', 'zw',
 ] as const;
 
-// `sh1pt entity` â auxiliary command for entity-ops (formation + name
+// `sh1pt entity` — auxiliary command for entity-ops (formation + name
 // checks + doc generation + filing handoff + compliance tracking).
 // Cross-cuts the 4 primary verbs so it lives top-level alongside
 // login/secret/config. Packs live under packages/entity/* and implement
 // the JurisdictionPack interface in @profullstack/sh1pt-core.
 export const entityCmd = new Command('entity')
-  .description('Entity operations â formation, compliance, spinouts (uses jurisdiction packs)')
+  .description('Entity operations — formation, compliance, spinouts (uses jurisdiction packs)')
   .action(() => { entityCmd.help(); });
 
 // ---- pack ------------------------------------------------------------
 const packCmd = entityCmd
   .command('pack')
-  .description('Jurisdiction pack registry â list, inspect support level')
+  .description('Jurisdiction pack registry — list, inspect support level')
   .action(() => { packCmd.help(); });
 
 packCmd
@@ -39,7 +39,7 @@ packCmd
     if (!results.length) { console.log(kleur.dim('no entity packs installed')); return; }
     const C1 = 12, C2 = 14;
     console.log(kleur.bold('CODE'.padEnd(C1) + 'SUPPORT'.padEnd(C2) + 'ENTITY TYPES'));
-    console.log('â'.repeat(70));
+    console.log('─'.repeat(70));
     for (const d of results) {
       const lc = d.supportLevel === 'full' ? kleur.green : d.supportLevel === 'assisted' ? kleur.yellow : kleur.dim;
       console.log(kleur.cyan(d.jurisdictionCode.padEnd(C1)) + lc(d.supportLevel.padEnd(C2)) + kleur.dim((d.entityTypesSupported ?? []).join(', ')));
@@ -64,7 +64,7 @@ packCmd
       console.log(`  filing:   ${(d.filingModesSupported ?? []).join(', ')}`);
       if (d.requiredInputs?.length) console.log(`  inputs:   ${d.requiredInputs.join(', ')}`);
       if (d.requiredManualSteps?.length) console.log(`  manual:   ${d.requiredManualSteps.join(', ')}`);
-      if (d.experimental) console.log(kleur.magenta('  â  experimental'));
+      if (d.experimental) console.log(kleur.magenta('  ⚠ experimental'));
     } catch {
       console.error(kleur.red(`pack not found: ${code}`)); process.exit(1);
     }

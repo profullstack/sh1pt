@@ -33,6 +33,10 @@ function captureFetch(responses: Array<{ ok: boolean; ts?: string; error?: strin
 
 function signHeaders(body: string, signingKey = 'synthetic-signing-key'): Record<string, string> {
   const timestamp = String(Math.floor(Date.now() / 1000));
+  return signHeadersAt(body, timestamp, signingKey);
+}
+
+function signHeadersAt(body: string, timestamp: string, signingKey = 'synthetic-signing-key'): Record<string, string> {
   return {
     'x-slack-request-timestamp': timestamp,
     'x-slack-signature': slackSignature(body, timestamp, signingKey),
@@ -193,6 +197,24 @@ describe('Slack bot adapter', () => {
       'x-slack-request-timestamp': String(Math.floor(Date.now() / 1000)),
       'x-slack-signature': 'v0=bad',
     });
+
+    expect(response.status).toBe(401);
+    expect(JSON.parse(response.body)).toEqual({ ok: false, error: 'invalid_signature' });
+    await closeable.close();
+  });
+
+  it('uses the default timestamp tolerance when config contains an invalid value', async () => {
+    const { fetcher } = captureFetch();
+    let server: Server | undefined;
+    const closeable = await bot.register(
+      ctx(),
+      [],
+      { port: 0, fetch: fetcher, timestampToleranceSeconds: Number.NaN, onServerReady: (value) => { server = value; } },
+    );
+    const body = JSON.stringify({ type: 'event_callback', event: { type: 'message', channel: 'C123' } });
+    const staleTimestamp = String(Math.floor(Date.now() / 1000) - 600);
+
+    const response = await post(serverPort(server!), '/slack/events', body, signHeadersAt(body, staleTimestamp));
 
     expect(response.status).toBe(401);
     expect(JSON.parse(response.body)).toEqual({ ok: false, error: 'invalid_signature' });

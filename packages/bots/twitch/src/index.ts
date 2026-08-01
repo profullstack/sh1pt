@@ -305,12 +305,15 @@ function parseIrcMessage(line: string): IrcMessage {
 }
 
 function unescapeTagValue(value: string): string {
-  return value
-    .replace(/\\s/g, " ")
-    .replace(/\\:/g, ";")
-    .replace(/\\r/g, "\r")
-    .replace(/\\n/g, "\n")
-    .replace(/\\\\/g, "\\");
+  return value.replace(/\\(?:s|:|\r|n|\\)/g, (match) => {
+    switch (match) {
+      case "\\s": return " ";
+      case "\\:": return ";";
+      case "\\r": return "\r";
+      case "\\n": return "\n";
+      default: return "\\";
+    }
+  });
 }
 
 function escapeTagValue(value: string): string {

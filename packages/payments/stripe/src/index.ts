@@ -168,6 +168,8 @@ function verifyStripeSignature(
   secret: string,
   toleranceSeconds = 300,
 ): void {
+  const effectiveToleranceSeconds = normalizeWebhookToleranceSeconds(toleranceSeconds);
+
   // Parse all key=value pairs preserving duplicate v1 keys.
   // Stripe sends multiple v1 signatures during webhook secret rotation;
   // Object.fromEntries() would silently drop all but one.
@@ -192,9 +194,9 @@ function verifyStripeSignature(
 
   const timestampSeconds = Number(timestamp);
   if (!Number.isFinite(timestampSeconds)) throw new Error('Stripe-Signature timestamp is invalid');
-  if (toleranceSeconds > 0) {
+  if (effectiveToleranceSeconds > 0) {
     const age = Math.floor(Date.now() / 1000) - timestampSeconds;
-    if (Math.abs(age) > toleranceSeconds) throw new Error('Stripe webhook signature timestamp outside tolerance');
+    if (Math.abs(age) > effectiveToleranceSeconds) throw new Error('Stripe webhook signature timestamp outside tolerance');
   }
 
   const expected = createHmac('sha256', secret)
@@ -215,6 +217,12 @@ function verifyStripeSignature(
   if (!valid) {
     throw new Error('Invalid Stripe webhook signature');
   }
+}
+
+function normalizeWebhookToleranceSeconds(value: number): number {
+  if (value === 0) return 0;
+  if (Number.isFinite(value) && value > 0) return value;
+  return 300;
 }
 
 function normalizeStripeStatus(status: unknown): Webhook['status'] | undefined {

@@ -184,6 +184,45 @@ describe('bot-telnyx webhook behavior', () => {
       await handle.close();
     }
   });
+
+  it('falls back to the default signature tolerance for invalid config values', async () => {
+    const keys = generateKeyPairSync('ed25519');
+    const publicKey = Buffer.from(keys.publicKey.export({ format: 'der', type: 'spki' })).toString('base64');
+    const handler = vi.fn();
+    const handle = await bot.register(ctx(), [{ match: { type: 'message' }, handle: handler }], {
+      from: '+15551234567',
+      webhookPort: 0,
+      publicKey,
+      signatureToleranceSeconds: Number.POSITIVE_INFINITY,
+    }) as { close(): Promise<void>; port: number };
+
+    try {
+      const body = JSON.stringify({
+        data: {
+          event_type: 'message.received',
+          payload: {
+            from: { phone_number: '+15559876543' },
+            text: 'hello',
+          },
+        },
+      });
+      const staleTimestamp = String(Math.floor(Date.now() / 1000) - 600);
+      const response = await fetch(`http://127.0.0.1:${handle.port}/telnyx/messaging`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'telnyx-timestamp': staleTimestamp,
+          'telnyx-signature-ed25519': signature(keys.privateKey, staleTimestamp, body),
+        },
+        body,
+      });
+
+      expect(response.status).toBe(403);
+      expect(handler).not.toHaveBeenCalled();
+    } finally {
+      await handle.close();
+    }
+  });
 });
 
 function ctx() {

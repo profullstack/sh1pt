@@ -416,18 +416,28 @@ function verifySlackSignature(
   signingKey: string,
   toleranceSeconds = DEFAULT_TIMESTAMP_TOLERANCE_SECONDS,
 ): boolean {
+  const effectiveToleranceSeconds = normalizeTimestampToleranceSeconds(toleranceSeconds);
   const timestamp = firstHeader(headers["x-slack-request-timestamp"]);
   const signature = firstHeader(headers["x-slack-signature"]);
   if (!timestamp || !signature) return false;
   const timestampNumber = Number(timestamp);
   if (!Number.isFinite(timestampNumber)) return false;
-  if (toleranceSeconds > 0 && Math.abs(Math.floor(Date.now() / 1000) - timestampNumber) > toleranceSeconds) {
+  if (
+    effectiveToleranceSeconds > 0
+    && Math.abs(Math.floor(Date.now() / 1000) - timestampNumber) > effectiveToleranceSeconds
+  ) {
     return false;
   }
   const expected = slackSignature(rawBody, timestamp, signingKey);
   const actual = Buffer.from(signature, "utf8");
   const expectedBuffer = Buffer.from(expected, "utf8");
   return actual.length === expectedBuffer.length && timingSafeEqual(actual, expectedBuffer);
+}
+
+function normalizeTimestampToleranceSeconds(value: number): number {
+  if (value === 0) return 0;
+  if (Number.isFinite(value) && value > 0) return value;
+  return DEFAULT_TIMESTAMP_TOLERANCE_SECONDS;
 }
 
 export function slackSignature(rawBody: string, timestamp: string, signingKey: string): string {

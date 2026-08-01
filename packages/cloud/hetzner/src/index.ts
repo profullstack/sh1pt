@@ -131,8 +131,8 @@ export default defineCloud<Config>({
     }
 
     const priceForLocation = match.prices.find(p => p.location === location) ?? match.prices[0];
-    const hourly = parseFloat(priceForLocation?.price_hourly?.net ?? '0');
-    const monthly = parseFloat(priceForLocation?.price_monthly?.net ?? '0');
+    const hourly = parseHetznerPrice(priceForLocation?.price_hourly?.net);
+    const monthly = parseHetznerPrice(priceForLocation?.price_monthly?.net);
 
     return {
       hourly,
@@ -167,7 +167,7 @@ export default defineCloud<Config>({
         kind: spec.kind,
         status: 'provisioning',
         createdAt: vol.volume.created,
-        hourlyRate: parseFloat(vol.volume.price_per_month) / 730,
+        hourlyRate: parseHetznerPrice(vol.volume.price_per_month) / 730,
         currency: 'EUR',
         region: vol.volume.location.name,
       } satisfies Instance;
@@ -319,7 +319,7 @@ function volumeToInstance(v: HcloudVolume): Instance {
     kind: 'block-storage',
     status: statusMap[v.status] ?? 'provisioning',
     createdAt: v.created,
-    hourlyRate: parseFloat(v.price_per_month) / 730,
+    hourlyRate: parseHetznerPrice(v.price_per_month) / 730,
     currency: 'EUR',
     region: v.location.name,
   };
@@ -338,7 +338,7 @@ function pickServerType(serverTypes: HcloudServerType[], spec: InstanceSpec, loc
   let candidates = serverTypes.filter(st =>
     !st.deprecated &&
     st.prices.some(p => p.location === location) &&
-    parseFloat(st.prices.find(p => p.location === location)?.price_monthly?.net ?? '0') > 0
+    parseHetznerPrice(st.prices.find(p => p.location === location)?.price_monthly?.net) > 0
   );
 
   // Kind-based filtering
@@ -363,18 +363,25 @@ function pickServerType(serverTypes: HcloudServerType[], spec: InstanceSpec, loc
   if (spec.maxHourlyPrice) {
     candidates = candidates.filter(st => {
       const priceForLocation = st.prices.find(p => p.location === location);
-      return priceForLocation ? parseFloat(priceForLocation.price_hourly.net) <= spec.maxHourlyPrice! : false;
+      return priceForLocation ? parseHetznerPrice(priceForLocation.price_hourly.net) <= spec.maxHourlyPrice! : false;
     });
   }
 
   // Cheapest first (by monthly net price for target location)
   candidates.sort((a, b) => {
-    const aPrice = parseFloat(a.prices.find(p => p.location === location)?.price_monthly?.net ?? '0');
-    const bPrice = parseFloat(b.prices.find(p => p.location === location)?.price_monthly?.net ?? '0');
+    const aPrice = parseHetznerPrice(a.prices.find(p => p.location === location)?.price_monthly?.net);
+    const bPrice = parseHetznerPrice(b.prices.find(p => p.location === location)?.price_monthly?.net);
     return aPrice - bPrice;
   });
 
   return candidates[0] ?? null;
+}
+
+export function parseHetznerPrice(value: string | undefined): number {
+  const text = value?.trim();
+  if (!text || !/^\d+(?:\.\d+)?$/.test(text)) return 0;
+  const parsed = Number(text);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 let serverTypesCache: HcloudServerType[] | null = null;

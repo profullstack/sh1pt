@@ -39,7 +39,7 @@ export default defineSocial<Config>({
       id: message.id,
       url: messageUrl(message),
       platform: 'discord',
-      publishedAt: new Date(message.timestamp).toISOString(),
+      publishedAt: publishedAt(message.timestamp),
     };
   },
 
@@ -61,6 +61,11 @@ interface DiscordMessage {
   channel_id: string;
   guild_id?: string;
   timestamp: string;
+}
+
+function publishedAt(value: string): string {
+  const timestamp = new Date(value);
+  return Number.isNaN(timestamp.getTime()) ? new Date().toISOString() : timestamp.toISOString();
 }
 
 function formatDiscordPost(post: SocialPost, config: Config): unknown {

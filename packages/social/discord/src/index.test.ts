@@ -10,6 +10,7 @@ contractTestSocial(adapter, {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 describe('social-discord posting', () => {
@@ -62,6 +63,29 @@ describe('social-discord posting', () => {
 
     await expect(adapter.post(ctx as any, { body: 'Release shipped' }, {}))
       .rejects.toThrow('Invalid Form Body');
+  });
+
+  it('falls back to the current time when Discord returns a malformed timestamp', async () => {
+    vi.useFakeTimers().setSystemTime(new Date('2026-08-01T19:30:00.000Z'));
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        id: '123456789',
+        channel_id: '222',
+        guild_id: '111',
+        timestamp: 'not-a-date',
+      }),
+    } as any);
+
+    const ctx = {
+      ...fakeConnectContext({ DISCORD_WEBHOOK_URL: 'https://discord.com/api/webhooks/1/token' }),
+      dryRun: false,
+    };
+
+    const result = await adapter.post(ctx as any, { body: 'Release shipped' }, {});
+
+    expect(result.publishedAt).toBe('2026-08-01T19:30:00.000Z');
   });
 
   it('replaces an existing wait query parameter while preserving thread routing', async () => {

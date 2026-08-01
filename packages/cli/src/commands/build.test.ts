@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execSync } from 'node:child_process';
-import { detectStack, cloneAndDetect } from './build.js';
+import { detectStack, cloneAndDetect, summarizeLocalBuild } from './build.js';
 import type { ResolvedInput } from '../input.js';
 
 describe('detectStack', () => {
@@ -262,5 +262,57 @@ describe('cloneAndDetect', () => {
     // Cleanup
     rmSync(result1.cloneDir, { recursive: true, force: true });
     rmSync(result2.cloneDir, { recursive: true, force: true });
+  });
+});
+
+describe('summarizeLocalBuild', () => {
+  let tempDir: string;
+
+  afterEach(() => {
+    if (tempDir) rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('resolves a local project and reports its detected stack', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'sh1pt-local-build-'));
+    writeFileSync(join(tempDir, 'package.json'), JSON.stringify({
+      name: 'local-app',
+      packageManager: 'pnpm@9.12.0',
+    }));
+
+    const result = summarizeLocalBuild({
+      kind: 'path',
+      raw: tempDir,
+      value: tempDir,
+      inferredName: 'fallback-name',
+      exists: true,
+    });
+
+    expect(result.sourceDir).toBe(tempDir);
+    expect(result.projectName).toBe('local-app');
+    expect(result.stack?.runtime).toBe('node');
+    expect(result.stack?.packageManager).toBe('pnpm');
+  });
+
+  it('rejects a missing local project path', () => {
+    const missing = join(tmpdir(), 'sh1pt-missing-build-input');
+    expect(() => summarizeLocalBuild({
+      kind: 'path',
+      raw: missing,
+      value: missing,
+      exists: false,
+    })).toThrow('build input path does not exist');
+  });
+
+  it('rejects a file when a directory is required', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'sh1pt-local-build-'));
+    const file = join(tempDir, 'package.json');
+    writeFileSync(file, '{}');
+
+    expect(() => summarizeLocalBuild({
+      kind: 'path',
+      raw: file,
+      value: file,
+      exists: true,
+    })).toThrow('build input path must be a directory');
   });
 });

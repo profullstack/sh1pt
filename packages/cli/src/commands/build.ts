@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { spawnSync } from 'node:child_process';
-import { readFileSync, rmSync, existsSync } from 'node:fs';
+import { readFileSync, rmSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomBytes } from 'node:crypto';
@@ -111,6 +111,38 @@ export function detectStack(dir: string): DetectedStack | undefined {
   return undefined;
 }
 
+export interface LocalBuildSummary {
+  sourceDir: string;
+  projectName: string;
+  stack: DetectedStack | undefined;
+}
+
+/**
+ * Resolve a local --from path before a build is attempted.
+ *
+ * Keeping this validation separate from the Commander action makes the
+ * behavior reusable by future build backends and gives callers a precise
+ * error instead of silently falling back to the old stub path.
+ */
+export function summarizeLocalBuild(input: ResolvedInput): LocalBuildSummary {
+  if (input.kind !== 'path') {
+    throw new Error(`expected a local path, received ${input.kind}`);
+  }
+  if (!existsSync(input.value)) {
+    throw new Error(`build input path does not exist: ${input.value}`);
+  }
+  if (!statSync(input.value).isDirectory()) {
+    throw new Error(`build input path must be a directory: ${input.value}`);
+  }
+
+  const stack = detectStack(input.value);
+  return {
+    sourceDir: input.value,
+    projectName: stack?.projectName ?? input.inferredName ?? input.value,
+    stack,
+  };
+}
+
 // --- Git clone ---------------------------------------------------------------
 
 export interface CloneResult {
@@ -175,6 +207,19 @@ export const buildCmd = new Command('build')
           rmSync(cloneDir, { recursive: true, force: true });
           console.log(kleur.dim('  (clone removed — use --keep-clone to retain)'));
         }
+        return;
+      }
+
+      if (input.kind === 'path') {
+        const summary = summarizeLocalBuild(input);
+        console.log(kleur.green('[ok] Local source resolved'));
+        console.log();
+        console.log(kleur.bold('Build summary'));
+        console.log(`  project:  ${summary.projectName}`);
+        console.log(`  stack:    ${summary.stack ? `${summary.stack.runtime} (${summary.stack.packageManager ?? 'unknown'})` : 'unknown'}`);
+        console.log(`  channel:  ${opts.channel}`);
+        console.log(`  target:   ${where}`);
+        console.log(`  source:   ${summary.sourceDir}`);
         return;
       }
 

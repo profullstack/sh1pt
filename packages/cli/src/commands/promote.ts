@@ -1,6 +1,8 @@
 import { Command, InvalidArgumentError } from 'commander';
 import kleur from 'kleur';
 import prompts from 'prompts';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   runSetup,
   type AdapterWithSetup,
@@ -19,6 +21,133 @@ import {
   runBlueskySocialFollow,
   type SocialFollowAction,
 } from '../social-follow.js';
+
+export type CampaignState = 'pending' | 'active' | 'paused' | 'ended' | 'failed' | 'rejected';
+
+export interface CampaignSnapshot {
+  id: string;
+  platform: string;
+  state: CampaignState;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  installs: number;
+  conversions: number;
+}
+
+export interface CampaignPlatformSummary {
+  platform: string;
+  campaigns: number;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  installs: number;
+  conversions: number;
+  states: Record<CampaignState, number>;
+}
+
+export interface CampaignStatusReport {
+  platforms: CampaignPlatformSummary[];
+  totals: Omit<CampaignPlatformSummary, 'platform' | 'states'>;
+}
+
+export const DEFAULT_CAMPAIGN_SNAPSHOT = resolve('.sh1pt', 'campaigns.json');
+
+const CAMPAIGN_STATES: CampaignState[] = ['pending', 'active', 'paused', 'ended', 'failed', 'rejected'];
+
+function finiteNumber(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function campaignState(value: unknown): CampaignState {
+  return typeof value === 'string' && CAMPAIGN_STATES.includes(value as CampaignState)
+    ? value as CampaignState
+    : 'pending';
+}
+
+function normalizeCampaign(value: unknown): CampaignSnapshot | null {
+  if (!value || typeof value !== 'object') return null;
+  const raw = value as Record<string, unknown>;
+  if (typeof raw.id !== 'string' || typeof raw.platform !== 'string') return null;
+  return {
+    id: raw.id,
+    platform: raw.platform,
+    state: campaignState(raw.state),
+    spend: finiteNumber(raw.spend),
+    impressions: finiteNumber(raw.impressions),
+    clicks: finiteNumber(raw.clicks),
+    installs: finiteNumber(raw.installs),
+    conversions: finiteNumber(raw.conversions),
+  };
+}
+
+export function loadCampaignSnapshots(filePath = DEFAULT_CAMPAIGN_SNAPSHOT): CampaignSnapshot[] {
+  if (!existsSync(filePath)) return [];
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(filePath, 'utf8'));
+    const entries = Array.isArray(parsed)
+      ? parsed
+      : parsed && typeof parsed === 'object' && Array.isArray((parsed as { campaigns?: unknown }).campaigns)
+        ? (parsed as { campaigns: unknown[] }).campaigns
+        : [];
+    return entries.map(normalizeCampaign).filter((entry): entry is CampaignSnapshot => entry !== null);
+  } catch {
+    return [];
+  }
+}
+
+function emptyStates(): Record<CampaignState, number> {
+  return Object.fromEntries(CAMPAIGN_STATES.map((state) => [state, 0])) as Record<CampaignState, number>;
+}
+
+export function aggregateCampaignStatus(
+  campaigns: CampaignSnapshot[],
+  platform?: string,
+): CampaignStatusReport {
+  const selected = platform ? campaigns.filter((campaign) => campaign.platform === platform) : campaigns;
+  const byPlatform = new Map<string, CampaignPlatformSummary>();
+  const totals: CampaignStatusReport['totals'] = {
+    campaigns: 0,
+    spend: 0,
+    impressions: 0,
+    clicks: 0,
+    installs: 0,
+    conversions: 0,
+  };
+
+  for (const campaign of selected) {
+    const summary = byPlatform.get(campaign.platform) ?? {
+      platform: campaign.platform,
+      campaigns: 0,
+      spend: 0,
+      impressions: 0,
+      clicks: 0,
+      installs: 0,
+      conversions: 0,
+      states: emptyStates(),
+    };
+    summary.campaigns += 1;
+    summary.spend += campaign.spend;
+    summary.impressions += campaign.impressions;
+    summary.clicks += campaign.clicks;
+    summary.installs += campaign.installs;
+    summary.conversions += campaign.conversions;
+    summary.states[campaign.state] += 1;
+    byPlatform.set(campaign.platform, summary);
+
+    totals.campaigns += 1;
+    totals.spend += campaign.spend;
+    totals.impressions += campaign.impressions;
+    totals.clicks += campaign.clicks;
+    totals.installs += campaign.installs;
+    totals.conversions += campaign.conversions;
+  }
+
+  return {
+    platforms: [...byPlatform.values()].sort((a, b) => a.platform.localeCompare(b.platform)),
+    totals,
+  };
+}
 
 export const promoteCmd = new Command('promote')
   .description('Run ads + ship swag + list in affiliate marketplaces. Reddit, Meta, TikTok, Google, YouTube, X, Apple Search, LinkedIn, Microsoft — plus Printful/Printify merch and CJ/Rakuten/Impact/etc affiliate programs.')
@@ -78,15 +207,32 @@ promoteCmd
 
 promoteCmd
   .command('status')
-  .description('Aggregated metrics across active campaigns')
+  .description('Aggregated metrics across campaigns in the local snapshot')
   .option('--platform <id>', 'filter to one platform')
   .option('--json', 'machine-readable output')
-  .action((opts: { platform?: string; json?: boolean }) => {
+  .option('--file <path>', 'campaign snapshot path', DEFAULT_CAMPAIGN_SNAPSHOT)
+  .action((opts: { platform?: string; json?: boolean; file: string }) => {
+    const campaigns = loadCampaignSnapshots(opts.file);
+    const report = aggregateCampaignStatus(campaigns, opts.platform);
     if (opts.json) {
-      console.log(JSON.stringify({ platforms: [], totals: { spend: 0, impressions: 0, clicks: 0, installs: 0 } }, null, 2));
+      console.log(JSON.stringify({ source: opts.file, ...report }, null, 2));
       return;
     }
-    console.log(kleur.dim(`[stub] promote status · platform=${opts.platform ?? 'all'}`));
+    console.log(kleur.bold('Campaign status'));
+    console.log(kleur.dim(`Source: ${opts.file}`));
+    if (campaigns.length === 0) {
+      console.log(kleur.yellow('No campaign snapshot found. Launch a campaign or sync .sh1pt/campaigns.json first.'));
+      return;
+    }
+    for (const summary of report.platforms) {
+      const states = Object.entries(summary.states)
+        .filter(([, count]) => count > 0)
+        .map(([state, count]) => `${state}=${count}`)
+        .join(', ');
+      console.log(`  ${kleur.cyan(summary.platform.padEnd(16))} ${summary.campaigns} campaigns  ${states}`);
+      console.log(`    spend=$${summary.spend.toFixed(2)}  impressions=${summary.impressions}  clicks=${summary.clicks}  installs=${summary.installs}  conversions=${summary.conversions}`);
+    }
+    console.log(kleur.bold(`Totals: ${report.totals.campaigns} campaigns  spend=$${report.totals.spend.toFixed(2)}  impressions=${report.totals.impressions}  clicks=${report.totals.clicks}  installs=${report.totals.installs}  conversions=${report.totals.conversions}`));
   });
 
 promoteCmd

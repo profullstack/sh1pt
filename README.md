@@ -430,6 +430,8 @@ sh1pt promote stop [--platform id]
 sh1pt promote creatives
 ```
 
+`promote status` is read-only and aggregates the local `.sh1pt/campaigns.json` snapshot. Use `--file <path>` to inspect a different snapshot; it never launches or changes a campaign.
+
 Publishing alone is table stakes. `promote` closes the loop — one command runs install / traffic / awareness campaigns on Reddit, Meta, TikTok, Google, YouTube, X, Apple Search, LinkedIn, and Microsoft Ads at once.
 
 For launch surfaces like **Product Hunt**, sh1pt can prepare the launch workflow and metadata, but the final submission still runs through browser/manual steps to stay aligned with platform rules.

@@ -34,4 +34,19 @@ describe('loadConfig', () => {
     expect(config.maxOutputLength).toBe(4000);
     expect(config.maxConcurrentSessions).toBe(5);
   });
+
+  it('uses defaults for non-positive and non-decimal integer values', () => {
+    const config = loadConfig({
+      SIGNAL_PHONE_NUMBER: '+15551234567',
+      SIGNAL_HTTP_PORT: '0x1f90',
+      SESSION_TIMEOUT_MS: '0',
+      MAX_OUTPUT_LENGTH: '-1',
+      MAX_CONCURRENT_SESSIONS: '1e2',
+    });
+
+    expect(config.httpPort).toBe(7580);
+    expect(config.sessionTimeoutMs).toBe(1800000);
+    expect(config.maxOutputLength).toBe(4000);
+    expect(config.maxConcurrentSessions).toBe(5);
+  });
 });

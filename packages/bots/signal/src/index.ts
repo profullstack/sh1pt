@@ -99,21 +99,22 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     botName: env.BOT_NAME || "Bot",
     signalCliPath: env.SIGNAL_CLI_PATH || "signal-cli",
     phoneNumber: env.SIGNAL_PHONE_NUMBER || "",
-    httpPort: parsePositiveIntegerEnv(env.SIGNAL_HTTP_PORT, 7580),
+    httpPort: parsePositiveSafeIntegerEnv(env.SIGNAL_HTTP_PORT, 7580),
     aiProvider: (env.AI_PROVIDER as any) || "claude-code",
     aiCliPath: env.AI_CLI_PATH || "claude",
     aiModel: env.AI_MODEL,
-    sessionTimeoutMs: parsePositiveIntegerEnv(env.SESSION_TIMEOUT_MS, 1800000),
-    maxOutputLength: parsePositiveIntegerEnv(env.MAX_OUTPUT_LENGTH, 4000),
-    maxConcurrentSessions: parsePositiveIntegerEnv(env.MAX_CONCURRENT_SESSIONS, 5),
+    sessionTimeoutMs: parsePositiveSafeIntegerEnv(env.SESSION_TIMEOUT_MS, 1800000),
+    maxOutputLength: parsePositiveSafeIntegerEnv(env.MAX_OUTPUT_LENGTH, 4000),
+    maxConcurrentSessions: parsePositiveSafeIntegerEnv(env.MAX_CONCURRENT_SESSIONS, 5),
     allowedUsers: env.ALLOWED_USERS?.split(",").map((u) => u.trim()).filter(Boolean) || [],
     adminUsers: env.ADMIN_USERS?.split(",").map((u) => u.trim()).filter(Boolean) || [],
   });
 }
 
-function parsePositiveIntegerEnv(value: string | undefined, fallback: number): number {
-  if (!value) return fallback;
-  const parsed = Number(value);
+function parsePositiveSafeIntegerEnv(value: string | undefined, fallback: number): number {
+  const text = value?.trim();
+  if (!text || !/^\d+$/.test(text)) return fallback;
+  const parsed = Number(text);
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 

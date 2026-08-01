@@ -28,4 +28,16 @@ describe('loadConfig', () => {
     expect(config.maxOutputLength).toBe(4000);
     expect(config.maxConcurrentSessions).toBe(5);
   });
+
+  it('uses defaults for non-positive and non-decimal integer values', () => {
+    const config = loadConfig({
+      SESSION_TIMEOUT_MS: '0',
+      MAX_OUTPUT_LENGTH: '0x7d0',
+      MAX_CONCURRENT_SESSIONS: '1e2',
+    });
+
+    expect(config.sessionTimeoutMs).toBe(1800000);
+    expect(config.maxOutputLength).toBe(4000);
+    expect(config.maxConcurrentSessions).toBe(5);
+  });
 });

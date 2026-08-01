@@ -8,6 +8,7 @@ import {
   type BotHandler,
   type BotReply,
 } from "@profullstack/sh1pt-core";
+import { decodeBotFrameworkJwt, type ParsedJwt } from "./jwt.js";
 
 const DEFAULT_PATH = "/api/messages";
 const DEFAULT_PORT = 3978;
@@ -110,24 +111,6 @@ interface OpenIdMetadata {
 
 interface JsonWebKeySet {
   keys?: Array<JsonWebKey & { kid?: string; x5t?: string; endorsements?: string[] }>;
-}
-
-interface ParsedJwt {
-  header: {
-    alg?: string;
-    kid?: string;
-    x5t?: string;
-  };
-  payload: {
-    aud?: string | string[];
-    iss?: string;
-    exp?: number;
-    nbf?: number;
-    serviceurl?: string;
-    serviceUrl?: string;
-  };
-  signed: string;
-  signature: Buffer;
 }
 
 export class HttpError extends Error {
@@ -620,25 +603,12 @@ async function getSigningKeys(fetcher: FetchLike, url: string): Promise<JsonWebK
 }
 
 function parseJwt(token: string): ParsedJwt {
-  const parts = token.split(".");
-  if (parts.length !== 3) throw new HttpError(403, "Bot Framework JWT must have three parts");
-  const [encodedHeader, encodedPayload, encodedSignature] = parts;
-  if (!encodedHeader || !encodedPayload || !encodedSignature) throw new HttpError(403, "Bot Framework JWT part missing");
-  const header = JSON.parse(base64UrlDecode(encodedHeader).toString("utf8")) as unknown;
-  const payload = JSON.parse(base64UrlDecode(encodedPayload).toString("utf8")) as unknown;
-  if (!isRecord(header) || !isRecord(payload)) throw new HttpError(403, "Bot Framework JWT payload invalid");
-  return {
-    header: header as ParsedJwt["header"],
-    payload: payload as ParsedJwt["payload"],
-    signed: `${encodedHeader}.${encodedPayload}`,
-    signature: base64UrlDecode(encodedSignature),
-  };
-}
-
-function base64UrlDecode(value: string): Buffer {
-  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
-  return Buffer.from(`${normalized}${padding}`, "base64");
+  try {
+    return decodeBotFrameworkJwt(token);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Bot Framework JWT malformed";
+    throw new HttpError(403, message);
+  }
 }
 
 function hasAudience(aud: string | string[] | undefined, appId: string): boolean {

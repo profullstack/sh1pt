@@ -2,10 +2,10 @@ import { readFileSync } from 'node:fs';
 import { extname } from 'node:path';
 import { defineSocial, oauthSetup, type MediaAttachment, type SocialPost } from '@profullstack/sh1pt-core';
 
-const YOUTUBE_ACCESS_TOKEN_SECRET = 'YOUTUBE_ACCESS_TOKEN';
-const YOUTUBE_REFRESH_TOKEN_SECRET = 'YOUTUBE_OAUTH_REFRESH_TOKEN';
-const YOUTUBE_CLIENT_ID_SECRET = 'YOUTUBE_CLIENT_ID';
-const YOUTUBE_CLIENT_SECRET_SECRET = 'YOUTUBE_CLIENT_SECRET';
+const YOUTUBE_ACCESS_TOKEN_KEY = 'YOUTUBE_ACCESS_TOKEN';
+const YOUTUBE_REFRESH_TOKEN_KEY = 'YOUTUBE_OAUTH_REFRESH_TOKEN';
+const YOUTUBE_CLIENT_ID_KEY = 'YOUTUBE_CLIENT_ID';
+const YOUTUBE_CLIENT_SECRET_KEY = 'YOUTUBE_CLIENT_SECRET';
 const DEFAULT_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const DEFAULT_UPLOAD_BASE_URL = 'https://www.googleapis.com';
 
@@ -84,32 +84,32 @@ export default defineSocial<Config>({
   },
 
   setup: oauthSetup({
-    secretKey: YOUTUBE_ACCESS_TOKEN_SECRET,
+    secretKey: YOUTUBE_ACCESS_TOKEN_KEY,
     label: 'YouTube',
     vendorDocUrl: 'https://developers.google.com/youtube/v3/docs/videos/insert',
     steps: [
       'Enable YouTube Data API v3 in Google Cloud Console',
       'Create OAuth 2.0 credentials and request https://www.googleapis.com/auth/youtube.upload',
-      `Store either ${YOUTUBE_ACCESS_TOKEN_SECRET}, or ${YOUTUBE_REFRESH_TOKEN_SECRET} plus ${YOUTUBE_CLIENT_ID_SECRET} and optional ${YOUTUBE_CLIENT_SECRET_SECRET}`,
+      `Store either ${YOUTUBE_ACCESS_TOKEN_KEY}, or ${YOUTUBE_REFRESH_TOKEN_KEY} plus ${YOUTUBE_CLIENT_ID_KEY} and optional ${YOUTUBE_CLIENT_SECRET_KEY}`,
       'Provide a video media attachment; this adapter starts a resumable upload session and uploads the bytes',
     ],
   }),
 });
 
 function hasAccessPath(ctx: { secret(k: string): string | undefined }): boolean {
-  return Boolean(ctx.secret(YOUTUBE_ACCESS_TOKEN_SECRET))
-    || Boolean(ctx.secret(YOUTUBE_REFRESH_TOKEN_SECRET) && ctx.secret(YOUTUBE_CLIENT_ID_SECRET));
+  return Boolean(ctx.secret(YOUTUBE_ACCESS_TOKEN_KEY))
+    || Boolean(ctx.secret(YOUTUBE_REFRESH_TOKEN_KEY) && ctx.secret(YOUTUBE_CLIENT_ID_KEY));
 }
 
 async function accessToken(ctx: { secret(k: string): string | undefined }, config: Config): Promise<string> {
-  const existing = ctx.secret(YOUTUBE_ACCESS_TOKEN_SECRET);
+  const existing = ctx.secret(YOUTUBE_ACCESS_TOKEN_KEY);
   if (existing) return existing;
 
-  const refreshToken = ctx.secret(YOUTUBE_REFRESH_TOKEN_SECRET);
-  const clientId = ctx.secret(YOUTUBE_CLIENT_ID_SECRET);
-  const clientSecret = ctx.secret(YOUTUBE_CLIENT_SECRET_SECRET);
+  const refreshToken = ctx.secret(YOUTUBE_REFRESH_TOKEN_KEY);
+  const clientId = ctx.secret(YOUTUBE_CLIENT_ID_KEY);
+  const clientSecret = ctx.secret(YOUTUBE_CLIENT_SECRET_KEY);
   if (!refreshToken || !clientId) {
-    throw new Error(`YouTube upload needs ${YOUTUBE_ACCESS_TOKEN_SECRET} or ${YOUTUBE_REFRESH_TOKEN_SECRET} + ${YOUTUBE_CLIENT_ID_SECRET} in vault`);
+    throw new Error(`YouTube upload needs ${YOUTUBE_ACCESS_TOKEN_KEY} or ${YOUTUBE_REFRESH_TOKEN_KEY} + ${YOUTUBE_CLIENT_ID_KEY} in vault`);
   }
 
   const body = new URLSearchParams({

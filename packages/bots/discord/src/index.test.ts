@@ -17,4 +17,17 @@ describe('loadConfig', () => {
     expect(config.maxOutputLength).toBe(2000);
     expect(config.maxConcurrentSessions).toBe(5);
   });
+
+  it.each(['1e3', '0x10', ' 10 ', '+10', '10.5', '9007199254740992'])('rejects non-decimal integer env value %s', (value) => {
+    const config = loadConfig({
+      DISCORD_BOT_TOKEN: 'discord-token',
+      SESSION_TIMEOUT_MS: value,
+      MAX_OUTPUT_LENGTH: value,
+      MAX_CONCURRENT_SESSIONS: value,
+    });
+
+    expect(config.sessionTimeoutMs).toBe(1800000);
+    expect(config.maxOutputLength).toBe(2000);
+    expect(config.maxConcurrentSessions).toBe(5);
+  });
 });

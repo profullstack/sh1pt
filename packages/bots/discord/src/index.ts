@@ -164,9 +164,9 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
 }
 
 function parsePositiveIntegerEnv(value: string | undefined, fallback: number): number {
-  if (!value) return fallback;
+  if (!value || !/^\d+$/.test(value)) return fallback;
   const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 interface SendableChannel {

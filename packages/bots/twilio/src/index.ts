@@ -1,26 +1,24 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import { z } from 'zod';
 import { defineBot, tokenSetup, type BotCtx, type BotEvent, type BotHandler, type BotReply } from '@profullstack/sh1pt-core';
 
-// Twilio — SMS (Programmable Messaging) + Voice (Programmable Voice) from
-// the same account. Channel strings are E.164 phone numbers for both.
-// SMS: inbound via webhook → 'message'; outbound via /Messages.json.
-// Voice: inbound call webhook → 'call.start' / 'call.utterance' events
-// (after <Gather>/STT step); outbound via /Calls.json with TwiML <Say>.
-interface Config {
-  accountSid?: string;
-  from?: string;
-  messagingServiceSid?: string;
-  mode?: 'sms' | 'voice' | 'both';
-  commandPrefix?: string;
-  webhookHost?: string;
-  webhookPort?: number;
-  smsPath?: string;
-  voicePath?: string;
-  webhookBaseUrl?: string;
-  validateSignature?: boolean;
-  statusCallbackUrl?: string;
-}
+const configSchema = z.object({
+  accountSid: z.string().optional(),
+  from: z.string().optional(),
+  messagingServiceSid: z.string().optional(),
+  mode: z.enum(['sms', 'voice', 'both']).optional().default('both'),
+  commandPrefix: z.string().default('!'),
+  webhookHost: z.string().default('127.0.0.1'),
+  webhookPort: z.number().int().nonnegative().optional(),
+  smsPath: z.string().default('/twilio/sms'),
+  voicePath: z.string().default('/twilio/voice'),
+  webhookBaseUrl: z.string().optional(),
+  validateSignature: z.boolean().optional(),
+  statusCallbackUrl: z.string().optional(),
+});
+
+export type Config = z.infer<typeof configSchema>;
 
 const API = 'https://api.twilio.com/2010-04-01';
 const DEFAULT_COMMAND_PREFIX = '!';
@@ -284,13 +282,14 @@ function redact(value: string, token: string): string {
   return value.split(token).join('[redacted]');
 }
 
-export default defineBot<Config>({
+export default defineBot<Partial<Config>>({
   id: 'bot-twilio',
   label: 'Twilio (SMS + Voice)',
   supports: ['message', 'command', 'call.start', 'call.end', 'call.utterance'],
 
   async register(ctx, handlers, config) {
-    const resolved = resolveConfig(ctx, config);
+    const parsed = configSchema.parse(config);
+    const resolved = resolveConfig(ctx, parsed);
     const token = authToken(ctx, resolved);
     if (!resolved.from) throw new Error('TWILIO_FROM_NUMBER is required');
     ctx.log(`bot-twilio · register ${handlers.length} handlers (mode=${resolved.mode ?? 'both'}, from=${resolved.from})`);
@@ -304,7 +303,8 @@ export default defineBot<Config>({
   },
 
   async send(ctx, channel, reply, config) {
-    const resolved = resolveConfig(ctx, config);
+    const parsed = configSchema.parse(config);
+    const resolved = resolveConfig(ctx, parsed);
     const token = authToken(ctx, resolved);
     ctx.log(`bot-twilio · send → ${channel}`);
     if (ctx.dryRun) return { id: 'dry-run' };

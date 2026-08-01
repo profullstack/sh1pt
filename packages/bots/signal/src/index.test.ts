@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { contractTestBot } from '@profullstack/sh1pt-core/testing';
-import bot, { loadConfig } from './index.js';
+import bot, { loadConfig, toBotEvent } from './index.js';
 
 contractTestBot(bot, { sampleConfig: {}, sampleChannel: '+15551234567' });
 
@@ -48,5 +48,19 @@ describe('loadConfig', () => {
     expect(config.sessionTimeoutMs).toBe(1800000);
     expect(config.maxOutputLength).toBe(4000);
     expect(config.maxConcurrentSessions).toBe(5);
+  });
+});
+
+describe('toBotEvent', () => {
+  it('falls back when Signal provides an out-of-range timestamp', () => {
+    expect(toBotEvent({
+      source: 'user-1',
+      sourceName: 'User',
+      text: 'hello',
+      timestamp: Number.POSITIVE_INFINITY,
+      groupId: undefined,
+      attachments: [],
+      raw: {},
+    }).timestamp).toBe('1970-01-01T00:00:00.000Z');
   });
 });

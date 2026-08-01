@@ -118,7 +118,8 @@ function parsePositiveSafeIntegerEnv(value: string | undefined, fallback: number
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function toBotEvent(msg: IncomingMessage): BotEvent {
+export function toBotEvent(msg: IncomingMessage): BotEvent {
+  const date = new Date(msg.timestamp);
   return {
     type: "message",
     channel: msg.groupId ?? msg.source,
@@ -128,7 +129,7 @@ function toBotEvent(msg: IncomingMessage): BotEvent {
     },
     text: msg.text,
     attachments: msg.attachments.map((a) => ({ url: a.url, filename: a.filename })),
-    timestamp: new Date(msg.timestamp).toISOString(),
+    timestamp: Number.isNaN(date.getTime()) ? new Date(0).toISOString() : date.toISOString(),
   };
 }
 

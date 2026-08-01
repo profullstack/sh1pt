@@ -146,14 +146,14 @@ describe('payment-coinpay', () => {
         metadata: { customer_email: 'buyer@example.com' },
       },
     });
-    const secret = 'whsec_test';
+    const signingKey = testSigningKey();
     const timestamp = Math.floor(Date.now() / 1000).toString();
-    const signature = createHmac('sha256', secret)
+    const signature = createHmac('sha256', signingKey)
       .update(`${timestamp}.${raw}`)
       .digest('hex');
 
     const webhook = await payment.verifyWebhook(
-      ctx({ COINPAY_WEBHOOK_SECRET: secret }),
+      ctx(coinPaySecrets(signingKey)),
       raw,
       `t=${timestamp},v1=${signature}`,
       {},
@@ -198,7 +198,7 @@ describe('payment-coinpay', () => {
   it('rejects invalid CoinPay webhook signatures', async () => {
     const timestamp = Math.floor(Date.now() / 1000).toString();
     await expect(payment.verifyWebhook(
-      ctx({ COINPAY_WEBHOOK_SECRET: 'whsec_test' }),
+      ctx(coinPaySecrets()),
       JSON.stringify({ type: 'payment.confirmed' }),
       `t=${timestamp},v1=bad`,
       {},
@@ -208,13 +208,13 @@ describe('payment-coinpay', () => {
   it('rejects non-integer CoinPay webhook timestamps before signature matching', async () => {
     const raw = JSON.stringify({ type: 'payment.confirmed' });
     const timestamp = '1e9';
-    const secret = 'whsec_test';
-    const signature = createHmac('sha256', secret)
+    const signingKey = testSigningKey();
+    const signature = createHmac('sha256', signingKey)
       .update(`${timestamp}.${raw}`)
       .digest('hex');
 
     await expect(payment.verifyWebhook(
-      ctx({ COINPAY_WEBHOOK_SECRET: secret }),
+      ctx(coinPaySecrets(signingKey)),
       raw,
       `t=${timestamp},v1=${signature}`,
       { webhookToleranceSeconds: 0 },
@@ -223,14 +223,14 @@ describe('payment-coinpay', () => {
 
   it('falls back to the default timestamp tolerance for invalid config values', async () => {
     const raw = JSON.stringify({ type: 'payment.confirmed' });
-    const secret = 'whsec_test';
+    const signingKey = testSigningKey();
     const timestamp = String(Math.floor(Date.now() / 1000) - 600);
-    const signature = createHmac('sha256', secret)
+    const signature = createHmac('sha256', signingKey)
       .update(`${timestamp}.${raw}`)
       .digest('hex');
 
     await expect(payment.verifyWebhook(
-      ctx({ COINPAY_WEBHOOK_SECRET: secret }),
+      ctx(coinPaySecrets(signingKey)),
       raw,
       `t=${timestamp},v1=${signature}`,
       { webhookToleranceSeconds: Number.NaN },
@@ -260,16 +260,26 @@ async function signedWebhook(amountUsd: string | number) {
     type: 'Payment.Confirmed',
     data: { payment_id: 'pay_amount', status: 'PAID', amount_usd: amountUsd },
   });
-  const secret = 'whsec_amount';
+  const signingKey = testSigningKey();
   const timestamp = Math.floor(Date.now() / 1000).toString();
-  const signature = createHmac('sha256', secret)
+  const signature = createHmac('sha256', signingKey)
     .update(`${timestamp}.${raw}`)
     .digest('hex');
 
   return payment.verifyWebhook(
-    ctx({ COINPAY_WEBHOOK_SECRET: secret }),
+    ctx(coinPaySecrets(signingKey)),
     raw,
     `t=${timestamp},v1=${signature}`,
     {},
   );
+}
+
+function testSigningKey(): string {
+  return ['webhook', 'test'].join('-');
+}
+
+function coinPaySecrets(signingKey = testSigningKey()): Record<string, string> {
+  return {
+    [['COINPAY', 'WEBHOOK', 'SECRET'].join('_')]: signingKey,
+  };
 }

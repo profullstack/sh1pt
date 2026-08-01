@@ -168,6 +168,20 @@ export class SessionManager {
           });
         });
       });
+    } catch (err) {
+      session.busy = false;
+      session.abortController = null;
+      this.processQueue(session);
+      return {
+        type: "result",
+        subtype: "error",
+        is_error: true,
+        result: err instanceof Error ? err.message : String(err),
+        duration_ms: 0,
+        num_turns: 0,
+        session_id: "",
+        total_cost_usd: 0,
+      };
     }
   }
 

@@ -1,4 +1,5 @@
 import { defineBot, tokenSetup, type BotCtx, type BotEvent, type BotHandler, type BotReply } from '@profullstack/sh1pt-core';
+import { parseMatrixTimestamp } from './timestamp.js';
 
 // Matrix bot — sync loop against homeserver. Access token via MATRIX_ACCESS_TOKEN
 // (obtain via /login). E2EE rooms need an Olm/Megolm-capable client;
@@ -165,7 +166,7 @@ function toBotEvent(roomId: string, event: MatrixEvent, config: Config): BotEven
     text,
     command,
     args: isCommand ? args : undefined,
-    timestamp: new Date(event.origin_server_ts ?? Date.now()).toISOString(),
+    timestamp: parseMatrixTimestamp(event.origin_server_ts),
     raw: event,
   };
 }

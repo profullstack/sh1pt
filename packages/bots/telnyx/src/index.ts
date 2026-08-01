@@ -302,8 +302,9 @@ function telnyxPublicKey(value: string): ReturnType<typeof createPublicKey> {
 }
 
 function validTimestamp(value: string, toleranceSeconds: number): boolean {
+  if (!/^\d+$/.test(value)) return false;
   const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return false;
+  if (!Number.isSafeInteger(parsed)) return false;
   return Math.abs(Date.now() / 1000 - parsed) <= toleranceSeconds;
 }
 

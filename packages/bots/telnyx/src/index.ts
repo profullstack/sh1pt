@@ -130,7 +130,7 @@ class TelnyxWebhookServer {
     const signature = request.headers['telnyx-signature-ed25519'];
     const timestamp = request.headers['telnyx-timestamp'];
     if (typeof signature !== 'string' || typeof timestamp !== 'string') return false;
-    const tolerance = this.config.signatureToleranceSeconds ?? DEFAULT_SIGNATURE_TOLERANCE_SECONDS;
+    const tolerance = normalizeSignatureToleranceSeconds(this.config.signatureToleranceSeconds);
     if (!validTimestamp(timestamp, tolerance)) return false;
     return verifyTelnyxSignature(publicKey, timestamp, body, signature);
   }
@@ -305,6 +305,12 @@ function validTimestamp(value: string, toleranceSeconds: number): boolean {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return false;
   return Math.abs(Date.now() / 1000 - parsed) <= toleranceSeconds;
+}
+
+function normalizeSignatureToleranceSeconds(value: number | undefined): number {
+  if (value === undefined) return DEFAULT_SIGNATURE_TOLERANCE_SECONDS;
+  if (Number.isFinite(value) && value >= 0) return value;
+  return DEFAULT_SIGNATURE_TOLERANCE_SECONDS;
 }
 
 function parseEvent(body: string): TelnyxEvent {

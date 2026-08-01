@@ -30,6 +30,9 @@ export type NormalizedTelnyxVoiceEvent = {
 
 const API = 'https://api.telnyx.com/v2';
 const DEFAULT_SIGNATURE_TOLERANCE_SECONDS = 300;
+const DEFAULT_GATHER_TIMEOUT_MS = 8000;
+const DEFAULT_GATHER_INTER_DIGIT_TIMEOUT_MS = 3000;
+const DEFAULT_OWNER_DECISION_TIMEOUT_MS = 20000;
 
 export type TelnyxClientState =
   | { role: 'owner_review'; handoffId: string }
@@ -177,8 +180,11 @@ export async function gatherUsingSpeak(callControlId: string, text: string, comm
     language: process.env.TELNYX_VOICE_LANGUAGE ?? 'en-US',
     maximum_digits: 0,
     valid_digits: '',
-    timeout_millis: Number(process.env.TELNYX_GATHER_TIMEOUT_MS ?? 8000),
-    inter_digit_timeout_millis: Number(process.env.TELNYX_GATHER_INTER_DIGIT_TIMEOUT_MS ?? 3000),
+    timeout_millis: positiveEnvNumber(process.env.TELNYX_GATHER_TIMEOUT_MS, DEFAULT_GATHER_TIMEOUT_MS),
+    inter_digit_timeout_millis: positiveEnvNumber(
+      process.env.TELNYX_GATHER_INTER_DIGIT_TIMEOUT_MS,
+      DEFAULT_GATHER_INTER_DIGIT_TIMEOUT_MS,
+    ),
     command_id: commandId(commandTag, 'gather'),
   });
 }
@@ -196,7 +202,10 @@ export async function gatherOwnerDecision(
     minimum_digits: 1,
     maximum_digits: 1,
     valid_digits: '12',
-    timeout_millis: Number(process.env.TELNYX_OWNER_DECISION_TIMEOUT_MS ?? 20000),
+    timeout_millis: positiveEnvNumber(
+      process.env.TELNYX_OWNER_DECISION_TIMEOUT_MS,
+      DEFAULT_OWNER_DECISION_TIMEOUT_MS,
+    ),
     command_id: commandId(commandTag, 'owner-gather'),
     client_state: encodeClientState(clientState),
   });
@@ -360,6 +369,11 @@ function validTimestamp(value: string, toleranceSeconds: number): boolean {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return false;
   return Math.abs(Date.now() / 1000 - parsed) <= toleranceSeconds;
+}
+
+export function positiveEnvNumber(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function transcriptText(payload: Record<string, unknown>): string | undefined {

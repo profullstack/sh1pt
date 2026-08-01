@@ -111,12 +111,27 @@ export class SessionManager {
       proc.stderr?.on("data", (chunk) => (stderr += chunk.toString()));
 
       return new Promise((resolve) => {
+        const finish = (result: {
+          type: string;
+          subtype: string;
+          is_error: boolean;
+          result: string;
+          duration_ms: number;
+          num_turns: number;
+          session_id: string;
+          total_cost_usd: number;
+        }) => {
+          session.busy = false;
+          session.abortController = null;
+          resolve(result);
+          this.processQueue(session);
+        };
         proc.on("close", (code) => {
           if (stdout.trim()) {
             try {
               const parsed = JSON.parse(stdout.trim());
               if (parsed.session_id) session.aiSessionId = parsed.session_id;
-              resolve({
+              finish({
                 type: "result",
                 subtype: parsed.is_error ? "error" : "success",
                 is_error: parsed.is_error || false,
@@ -129,7 +144,7 @@ export class SessionManager {
               return;
             } catch {}
           }
-          resolve({
+          finish({
             type: "result",
             subtype: code === 0 ? "success" : "error",
             is_error: code !== 0,
@@ -141,7 +156,7 @@ export class SessionManager {
           });
         });
         proc.on("error", (err) => {
-          resolve({
+          finish({
             type: "result",
             subtype: "error",
             is_error: true,
@@ -153,10 +168,20 @@ export class SessionManager {
           });
         });
       });
-    } finally {
+    } catch (err) {
       session.busy = false;
       session.abortController = null;
       this.processQueue(session);
+      return {
+        type: "result",
+        subtype: "error",
+        is_error: true,
+        result: err instanceof Error ? err.message : String(err),
+        duration_ms: 0,
+        num_turns: 0,
+        session_id: "",
+        total_cost_usd: 0,
+      };
     }
   }
 

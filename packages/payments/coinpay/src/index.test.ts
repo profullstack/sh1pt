@@ -194,6 +194,22 @@ describe('payment-coinpay', () => {
       { webhookToleranceSeconds: 0 },
     )).rejects.toThrow('CoinPay signature timestamp is invalid');
   });
+
+  it('falls back to the default timestamp tolerance for invalid config values', async () => {
+    const raw = JSON.stringify({ type: 'payment.confirmed' });
+    const secret = 'whsec_test';
+    const timestamp = String(Math.floor(Date.now() / 1000) - 600);
+    const signature = createHmac('sha256', secret)
+      .update(`${timestamp}.${raw}`)
+      .digest('hex');
+
+    await expect(payment.verifyWebhook(
+      ctx({ COINPAY_WEBHOOK_SECRET: secret }),
+      raw,
+      `t=${timestamp},v1=${signature}`,
+      { webhookToleranceSeconds: Number.NaN },
+    )).rejects.toThrow('CoinPay webhook signature timestamp outside tolerance');
+  });
 });
 
 function ctx(secrets: Record<string, string>) {

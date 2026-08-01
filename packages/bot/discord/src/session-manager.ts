@@ -72,7 +72,7 @@ export class SessionManager {
     prompt: string,
     senderName: string
   ): Promise<ClaudeResult> {
-    if (this.sessions.size >= this.config.maxConcurrentSessions) {
+    if (this.activeSessions >= this.config.maxConcurrentSessions) {
       throw new Error("Too many concurrent sessions");
     }
 

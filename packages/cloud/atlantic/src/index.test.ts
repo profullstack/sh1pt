@@ -61,7 +61,8 @@ describe('Atlantic.Net cloud adapter', () => {
         return jsonResponse({ error: 'unexpected action' }, { ok: false, status: 400, statusText: 'Bad Request' });
       }
       const response = describePlanResponse();
-      response['describe-planresponse'].plans['0item'] = {
+      const plans: Record<string, Record<string, string>> = response['describe-planresponse'].plans;
+      plans['0item'] = {
         plan_name: 'Negative.4GB',
         display_ram: '4096MB',
         display_disk: '100GB',

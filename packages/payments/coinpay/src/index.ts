@@ -183,6 +183,8 @@ function verifyCoinPaySignature(
   secret: string,
   toleranceSeconds = 300,
 ): void {
+  const effectiveToleranceSeconds = normalizeWebhookToleranceSeconds(toleranceSeconds);
+
   // Parse all key=value pairs, preserving duplicate keys as arrays.
   // CoinPay can send multiple v1 signatures during secret rotation;
   // using Object.fromEntries() would silently drop all but one.
@@ -207,9 +209,9 @@ function verifyCoinPaySignature(
 
   const timestampSeconds = parseWebhookTimestamp(timestamp);
   if (timestampSeconds === undefined) throw new Error('CoinPay signature timestamp is invalid');
-  if (toleranceSeconds > 0) {
+  if (effectiveToleranceSeconds > 0) {
     const age = Math.floor(Date.now() / 1000) - timestampSeconds;
-    if (Math.abs(age) > toleranceSeconds) throw new Error('CoinPay webhook signature timestamp outside tolerance');
+    if (Math.abs(age) > effectiveToleranceSeconds) throw new Error('CoinPay webhook signature timestamp outside tolerance');
   }
 
   const expected = createHmac('sha256', secret)
@@ -230,6 +232,12 @@ function verifyCoinPaySignature(
   if (!valid) {
     throw new Error('Invalid CoinPay webhook signature');
   }
+}
+
+function normalizeWebhookToleranceSeconds(value: number): number {
+  if (value === 0) return 0;
+  if (Number.isFinite(value) && value > 0) return value;
+  return 300;
 }
 
 function parseWebhookTimestamp(timestamp: string): number | undefined {

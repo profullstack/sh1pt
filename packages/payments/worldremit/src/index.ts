@@ -23,6 +23,10 @@ export default definePayment<Config>({
     return { type: 'unknown', payload: JSON.parse(rawBody) };
   },
   async payout(accountId, amount, currency) {
+    const recipient = accountId.trim();
+    if (!recipient) throw new Error('WorldRemit payout recipient accountId is required');
+    if (!Number.isFinite(amount) || amount <= 0) throw new Error('WorldRemit payout amount must be a positive finite number');
+    if (!/^[a-z]{3}$/i.test(currency)) throw new Error('WorldRemit payout currency must be a 3-letter ISO code');
     // TODO: quote → create transfer → pay via saved funding source
     return { id: `wr_${Date.now()}` };
   },

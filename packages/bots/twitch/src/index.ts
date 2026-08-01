@@ -1,20 +1,31 @@
 import { connect as netConnect, type Socket } from "node:net";
 import { connect as tlsConnect } from "node:tls";
+import { z } from "zod";
 import { defineBot, tokenSetup, type BotCtx, type BotEvent, type BotHandler } from "@profullstack/sh1pt-core";
 import { parseTwitchTimestamp } from "./timestamp.js";
 
-// Twitch bot using Twitch IRC chat over TLS. OAuth token via TWITCH_OAUTH_TOKEN
-// with chat:read and chat:write scopes.
-export interface Config {
-  channel: string;
-  channels?: string[];
-  username?: string;
-  host?: string;
-  port?: number;
-  secure?: boolean;
-  commandPrefix?: string;
-  connectionFactory?: TwitchConnectionFactory;
-}
+const DEFAULT_HOST = "irc.chat.twitch.tv";
+const DEFAULT_TLS_PORT = 6697;
+const DEFAULT_PLAIN_PORT = 6667;
+const DEFAULT_COMMAND_PREFIX = "!";
+
+export type TwitchConnectionFactory = (
+  options: TwitchConnectionOptions,
+  onConnect: () => void,
+) => Socket;
+
+const configSchema = z.object({
+  channel: z.string(),
+  channels: z.array(z.string()).optional(),
+  username: z.string().optional(),
+  host: z.string().default(DEFAULT_HOST),
+  port: z.number().int().positive().optional(),
+  secure: z.boolean().default(true),
+  commandPrefix: z.string().default(DEFAULT_COMMAND_PREFIX),
+  connectionFactory: z.any().optional(),
+});
+
+export type Config = z.infer<typeof configSchema>;
 
 export interface TwitchConnectionOptions {
   host: string;
@@ -41,19 +52,20 @@ const DEFAULT_TLS_PORT = 6697;
 const DEFAULT_PLAIN_PORT = 6667;
 const DEFAULT_COMMAND_PREFIX = "!";
 
-export default defineBot<Config>({
+export default defineBot<Partial<Config>>({
   id: "bot-twitch",
   label: "Twitch",
   supports: ["message", "command", "join", "leave"],
 
   async register(ctx, handlers, config) {
+    const parsed = configSchema.parse(config);
     const token = getOAuthToken(ctx);
-    const username = getUsername(ctx, config);
-    const channels = getChannels(config);
+    const username = getUsername(ctx, parsed);
+    const channels = getChannels(parsed);
     ctx.log(`bot-twitch register ${handlers.length} handlers (${channels.join(", ")})`);
     if (ctx.dryRun) return { async close() {} };
 
-    const socket = await connectToTwitch(config);
+    const socket = await connectToTwitch(parsed);
     socket.setEncoding("utf8");
     authenticate(socket, token, username, channels);
 
@@ -62,7 +74,7 @@ export default defineBot<Config>({
       buffer += String(chunk);
       const lines = buffer.split("\r\n");
       buffer = lines.pop() ?? "";
-      for (const line of lines) void handleIrcLine(ctx, handlers, socket, line, config);
+      for (const line of lines) void handleIrcLine(ctx, handlers, socket, line, parsed);
     };
     socket.on("data", onData);
 
@@ -79,13 +91,14 @@ export default defineBot<Config>({
   },
 
   async send(ctx, channel, reply, config) {
+    const parsed = configSchema.parse(config);
     const token = getOAuthToken(ctx);
-    const username = getUsername(ctx, config);
-    const targetChannel = toChannelName(channel || config.channel);
+    const username = getUsername(ctx, parsed);
+    const targetChannel = toChannelName(channel || parsed.channel);
     ctx.log(`bot-twitch send #${targetChannel}`);
     if (ctx.dryRun) return { id: "dry-run" };
 
-    const socket = await connectToTwitch(config);
+    const socket = await connectToTwitch(parsed);
     authenticate(socket, token, username, [targetChannel]);
     if (reply.text) sendPrivmsg(socket, targetChannel, reply.text);
     socket.end();

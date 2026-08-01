@@ -1,21 +1,22 @@
 import { defineBot, manualSetup } from '@profullstack/sh1pt-core';
+import { z } from 'zod';
 
-// phonenumbers.bot — phone-number-native bot platform. User brings a
-// number (BYON), the service handles SMS + voice webhook routing and
-// speaks back in the sh1pt BotEvent shape. Thin wrapper — the heavy
-// lifting (STT, TTS, call-control state machine) is handled service-side.
-//
-// Auth: PHONENUMBERS_API_KEY. Endpoint: api.phonenumbers.bot/v1.
-interface Config { numberId?: string; defaultVoice?: string }
+const configSchema = z.object({
+  numberId: z.string().optional(),
+  defaultVoice: z.string().optional(),
+});
 
-export default defineBot<Config>({
+export type Config = z.infer<typeof configSchema>;
+
+export default defineBot<Partial<Config>>({
   id: 'bot-phonenumbers',
   label: 'phonenumbers.bot',
   supports: ['message', 'command', 'call.start', 'call.end', 'call.utterance'],
 
   async register(ctx, handlers, config) {
+    const parsed = configSchema.parse(config);
     if (!ctx.secret('PHONENUMBERS_API_KEY')) throw new Error('PHONENUMBERS_API_KEY not in vault');
-    ctx.log(`bot-phonenumbers · register ${handlers.length} handlers (num=${config.numberId ?? 'any'})`);
+    ctx.log(`bot-phonenumbers · register ${handlers.length} handlers (num=${parsed.numberId ?? 'any'})`);
     if (ctx.dryRun) return { async close() {} };
     // TODO: POST /v1/subscriptions with a sh1pt-hosted webhook URL;
     // service translates SMS + voice events into BotEvent directly.

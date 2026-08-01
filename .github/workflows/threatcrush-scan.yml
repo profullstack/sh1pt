@@ -1,0 +1,268 @@
+name: threatcrush security scan
+
+# Scans pull requests with the ThreatCrush CLI.
+#
+# The CLI runs *inside the runner container* — installed from npm and executed
+# locally. Nothing is uploaded and no scanning API is called; ThreatCrush needs
+# no account for local code scans (see packages/scanners/threatcrush).
+#
+# Companion to vu1nz-scan.yml, which is AI-backed and reviews the PR diff.
+# This one is a local static/secrets scan, so the two are complementary rather
+# than redundant.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: threatcrush-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Scan PR for vulnerabilities and secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # Full history so the PR's changed files can be resolved against the base.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Node 22 matches mise.toml. It also matters here: the CLI depends on
+      # better-sqlite3 ^11.7.0, which publishes prebuilt binaries for ABI 127
+      # (Node 22) but not ABI 137 (Node 24). On Node 24 the install falls back
+      # to a node-gyp source build and fails.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install ThreatCrush CLI
+        id: install
+        run: |
+          set -uo pipefail
+          if npm install -g @profullstack/threatcrush@latest; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            threatcrush --version
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::error title=ThreatCrush unavailable::Could not install \
+            @profullstack/threatcrush. Nothing was scanned."
+            exit 1
+          fi
+
+      - name: Collect changed files
+        id: changed
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git diff --name-only --diff-filter=d "$BASE_SHA" "$HEAD_SHA" \
+            > "$RUNNER_TEMP/changed.txt" || : > "$RUNNER_TEMP/changed.txt"
+          echo "count=$(wc -l < "$RUNNER_TEMP/changed.txt")" >> "$GITHUB_OUTPUT"
+          echo "Changed files:"; cat "$RUNNER_TEMP/changed.txt"
+
+      - name: Run ThreatCrush
+        id: scan
+        env:
+          NO_COLOR: "1"
+          TERM: dumb
+        run: |
+          set -uo pipefail
+
+          # Scanned from the repository root so reported paths are already
+          # repository-relative and line up with the changed-file list.
+          # Dependencies are deliberately NOT installed: node_modules would add
+          # scan time and third-party noise, and the PR only changes source.
+          threatcrush scan . > "$RUNNER_TEMP/threatcrush.txt" 2>&1
+          STATUS=$?
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+
+          # The CLI exits non-zero when it finds issues; only >1 is operational
+          # failure (matching packages/scanners/threatcrush).
+          if [ "$STATUS" -gt 1 ]; then
+            echo "::error title=Scan failed::threatcrush exited $STATUS"
+            tail -40 "$RUNNER_TEMP/threatcrush.txt"
+            exit 1
+          fi
+
+          echo "::group::raw scanner output"
+          cat "$RUNNER_TEMP/threatcrush.txt"
+          echo "::endgroup::"
+
+      - name: Build PR comment
+        id: comment
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          python3 << 'PYEOF'
+          import json, os, re, sys
+
+          tmp = os.environ["RUNNER_TEMP"]
+          raw = open(f"{tmp}/threatcrush.txt", encoding="utf-8", errors="replace").read()
+          raw = re.sub(r"\x1b\[[0-9;]*m", "", raw)
+
+          changed = {
+              line.strip()
+              for line in open(f"{tmp}/changed.txt", encoding="utf-8")
+              if line.strip()
+          }
+
+          # ThreatCrush prints a multi-line block per finding. `scan` has no
+          # machine-readable mode -- only `harden` accepts --json -- so the text
+          # output is parsed:
+          #
+          #      CRITICAL  AWS Access Key
+          #       File: path/to/file.env:23
+          #       Info: Possible AWS Access Key detected
+          #       Code: ****************
+          #
+          # Severity is bare for CRITICAL and bracketed for the rest. "Code:" is
+          # a redacted excerpt, not a location, so it is skipped.
+          header_re = re.compile(r"^\s*\[?(CRITICAL|HIGH|MEDIUM|LOW|INFO)\]?\s{1,}(\S.*?)\s*$")
+          file_re = re.compile(r"^\s*File:\s*(\S+?)(?::(\d+))?\s*$")
+          info_re = re.compile(r"^\s*Info:\s*(\S.*?)\s*$")
+
+          findings = []
+          severity, title = "MEDIUM", "Finding"
+          for line in raw.splitlines():
+              stripped = line.strip()
+              header = header_re.match(line)
+              if header and not stripped.startswith(("File:", "Info:", "Code:")):
+                  severity, title = header.group(1).upper(), header.group(2)
+                  continue
+              located = file_re.match(line)
+              if located:
+                  path, line_no = located.groups()
+                  findings.append({
+                      "severity": severity,
+                      "title": title,
+                      "file": path.lstrip("./"),
+                      # :0 means a whole-file finding.
+                      "line": int(line_no) if line_no else 0,
+                      "info": "",
+                  })
+                  continue
+              info = info_re.match(line)
+              if info and findings:
+                  findings[-1]["info"] = info.group(1)
+
+          in_pr = [f for f in findings if f["file"] in changed]
+          pre_existing = len(findings) - len(in_pr)
+
+          order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}
+          in_pr.sort(key=lambda f: (order.get(f["severity"], 9), f["file"], f["line"]))
+
+          counts = {}
+          for finding in in_pr:
+              counts[finding["severity"]] = counts.get(finding["severity"], 0) + 1
+          blocking = counts.get("CRITICAL", 0) + counts.get("HIGH", 0)
+
+          out = ["## ThreatCrush security scan", ""]
+          out.append(
+              f"**{len(in_pr)}** finding(s) in files changed by this PR "
+              f"(scanned {len(changed)} changed file(s); {pre_existing} further "
+              f"finding(s) elsewhere in the repository are not attributed to this PR)."
+          )
+          out.append("")
+
+          badges = [f"**{sev}**: {counts[sev]}" for sev in
+                    ("CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO") if counts.get(sev)]
+          if badges:
+              out += [" | ".join(badges), ""]
+
+          if blocking:
+              out += ["> **High or critical findings in changed files — review before merging.**", ""]
+
+          if in_pr:
+              out += ["### Findings", "",
+                      "| Severity | File | Issue |", "|---|---|---|"]
+              for finding in in_pr:
+                  where = finding["file"] + (f":{finding['line']}" if finding["line"] else "")
+                  detail = finding["info"] or finding["title"]
+                  out.append(f"| {finding['severity']} | `{where}` | {finding['title']} — {detail} |")
+              out.append("")
+          else:
+              out += ["No new findings in the files this PR changes.", ""]
+
+          out.append(
+              "<sub>ThreatCrush CLI ran locally in the runner "
+              "(`npm i -g @profullstack/threatcrush`); no code left the container.</sub>"
+          )
+
+          body = "\n".join(out)
+          with open(f"{tmp}/threatcrush-comment.md", "w", encoding="utf-8") as handle:
+              handle.write(body)
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"total={len(in_pr)}\n")
+              handle.write(f"blocking={'true' if blocking else 'false'}\n")
+
+          if blocking:
+              print(f"::error::ThreatCrush found {blocking} high/critical finding(s) in changed files")
+              sys.exit(1)
+          print(f"::notice::ThreatCrush: {len(in_pr)} finding(s) in changed files, none high/critical")
+          PYEOF
+
+      - name: Write report to job summary
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/threatcrush-comment.md" ]; then
+            cat "$RUNNER_TEMP/threatcrush-comment.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## ThreatCrush security scan" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Scan did not complete; see the job log." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Comment on PR
+        # Best-effort, matching vu1nz-scan.yml. Fork PRs and Dependabot get a
+        # read-only token, so posting fails with 403; the findings are in the job
+        # summary either way and the pass/fail decision belongs to the previous
+        # step.
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body;
+            try {
+              body = fs.readFileSync(`${process.env.RUNNER_TEMP}/threatcrush-comment.md`, 'utf8');
+            } catch {
+              body = '## ThreatCrush security scan\n\nScan did not complete; see the job log.';
+            }
+
+            try {
+              const { data: comments } = await github.rest.issues.listComments({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
+
+              const existing = comments.find(c =>
+                c.user.type === 'Bot' && c.body.includes('ThreatCrush security scan')
+              );
+
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  comment_id: existing.id,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body,
+                });
+              }
+            } catch (err) {
+              core.warning(`Could not post PR comment (status ${err.status ?? 'unknown'}): ${err.message}. Findings are in the job summary.`);
+            }

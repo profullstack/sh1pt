@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execSync } from 'node:child_process';
-import { detectStack, cloneAndDetect, summarizeLocalBuild } from './build.js';
+import { detectStack, cloneAndDetect, probeRemoteBuild, summarizeLocalBuild } from './build.js';
 import type { ResolvedInput } from '../input.js';
 
 describe('detectStack', () => {
@@ -262,6 +262,77 @@ describe('cloneAndDetect', () => {
     // Cleanup
     rmSync(result1.cloneDir, { recursive: true, force: true });
     rmSync(result2.cloneDir, { recursive: true, force: true });
+  });
+});
+
+describe('probeRemoteBuild', () => {
+  it('uses HEAD and reports the remote content type', async () => {
+    const methods: string[] = [];
+    const fetcher: typeof fetch = async (_input, init) => {
+      methods.push(init?.method ?? 'GET');
+      return new Response(null, {
+        status: 200,
+        headers: { 'content-type': 'text/html; charset=utf-8' },
+      });
+    };
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetcher;
+    try {
+      const result = await probeRemoteBuild({
+        kind: 'url',
+        raw: 'https://example.com/app',
+        value: 'https://example.com/app',
+        inferredName: 'app',
+      });
+      expect(result.status).toBe(200);
+      expect(result.contentType).toBe('text/html; charset=utf-8');
+      expect(methods).toEqual(['HEAD']);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('falls back to a range GET when HEAD is unsupported', async () => {
+    const requests: RequestInit[] = [];
+    const fetcher: typeof fetch = async (_input, init) => {
+      requests.push(init ?? {});
+      if (requests.length === 1) return new Response(null, { status: 405 });
+      return new Response(null, {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetcher;
+    try {
+      const result = await probeRemoteBuild({
+        kind: 'url',
+        raw: 'https://example.com/manifest.json',
+        value: 'https://example.com/manifest.json',
+      });
+      expect(result.status).toBe(200);
+      expect(requests.map((request) => request.method)).toEqual(['HEAD', 'GET']);
+      expect(requests[1]?.headers).toEqual({ Range: 'bytes=0-0' });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('fails with the HTTP status when the source is unavailable', async () => {
+    const fetcher: typeof fetch = async () => new Response(null, { status: 404 });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetcher;
+    try {
+      await expect(probeRemoteBuild({
+        kind: 'url',
+        raw: 'https://example.com/missing',
+        value: 'https://example.com/missing',
+      })).rejects.toThrow('build source returned HTTP 404');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });
 

@@ -6,16 +6,24 @@ import { defineSecurityProvider, exec, manualSetup, type SecurityFinding, type S
  * that monitors connections, scans codebases for vulnerabilities/secrets/CVEs,
  * and pentests APIs.
  *
- * This adapter wraps `threatcrush scan <path>`, whose structured result
- * (`RunResult`) is shaped like:
+ * `connect` verifies the CLI is present; `scan` shells out to
+ * `threatcrush scan <path>` and maps each finding.
+ *
+ * The scan command takes a path and nothing else. Verified against the
+ * published bundle (@profullstack/threatcrush 0.2.2):
+ *
+ *   .command("scan").description("Scan codebase for vulnerabilities and secrets")
+ *     .argument("[path]", "Path to scan", ".")
+ *
+ * In particular there is no `--json`: only `threatcrush harden` accepts it, and
+ * passing it to `scan` fails with `error: unknown option '--json'`. So the
+ * human-readable output is parsed instead — see {@link parseTextFindings}.
+ *
+ * {@link extractFindings} still tries JSON first, so if `scan` gains a
+ * machine-readable mode the adapter picks it up with no further change. The
+ * expected shape is:
  *   { type, target, findings: [{ type, severity, message, location, details }],
  *     severity_summary, summary }
- *
- * It is a starter: `connect` verifies the CLI is present and `scan` shells out
- * to `threatcrush scan <path> --json` and maps each finding. Note that the
- * `threatcrush scan` command currently prints human-readable output; `--json`
- * is the assumed machine-readable mode (today only `threatcrush harden` ships
- * `--json`). Adjust {@link scanArgs} once `scan` exposes JSON output.
  */
 interface Config {
   /** Only keep findings at or above this severity. */
@@ -54,7 +62,7 @@ export default defineSecurityProvider<Config>({
       throw new Error(`threatcrush scan failed (${result.exitCode}): ${detail.slice(0, 500)}`);
     }
 
-    const findings = extractFindings(parseJson(result.stdout));
+    const findings = extractFindings(result.stdout, req.path);
     return { findings: filterBySeverity(findings, config.severityThreshold) };
   },
 
@@ -78,7 +86,8 @@ async function runThreatcrush(ctx: Ctx, args: string[], options: { throwOnNonZer
 }
 
 function scanArgs(req: SecurityScanRequest): string[] {
-  return ['scan', req.path, '--json'];
+  // No flags: `scan` accepts a path only. See the note at the top of this file.
+  return ['scan', req.path];
 }
 
 function filterBySeverity(findings: SecurityFinding[], threshold?: SecurityFinding['severity']): SecurityFinding[] {
@@ -99,18 +108,96 @@ function parseJson(text: string): JsonRecord | JsonRecord[] {
   return {};
 }
 
-function extractFindings(data: JsonRecord | JsonRecord[]): SecurityFinding[] {
-  const findings: SecurityFinding[] = [];
+/**
+ * Map scanner output to findings.
+ *
+ * JSON is tried first so a future machine-readable `scan` mode is picked up
+ * automatically; today's CLI prints text, which {@link parseTextFindings}
+ * handles.
+ */
+function extractFindings(stdout: string, scanPath: string): SecurityFinding[] {
+  const fromJson = dedupe(
+    issueObjects(parseJson(stdout))
+      .map(findingFromIssue)
+      .filter((f): f is SecurityFinding => f !== undefined),
+  );
+  if (fromJson.length > 0) return fromJson;
+  return dedupe(parseTextFindings(stdout, scanPath));
+}
+
+function dedupe(findings: SecurityFinding[]): SecurityFinding[] {
   const seen = new Set<string>();
-  for (const issue of issueObjects(data)) {
-    const finding = findingFromIssue(issue);
-    if (!finding) continue;
+  return findings.filter((finding) => {
     const key = `${finding.id}\0${finding.path ?? ''}`;
-    if (seen.has(key)) continue;
+    if (seen.has(key)) return false;
     seen.add(key);
-    findings.push(finding);
+    return true;
+  });
+}
+
+/**
+ * Parse the CLI's human-readable output.
+ *
+ * Each finding is a multi-line block:
+ *
+ *      CRITICAL  AWS Access Key
+ *       File: secrets/config.env:23
+ *       Info: Possible AWS Access Key detected
+ *       Code: ****************
+ *
+ * Severity is printed bare for CRITICAL and bracketed for the rest
+ * (`[HIGH]`, `[MEDIUM]`, `[LOW]`). `Code:` is a redacted excerpt rather than a
+ * location, so it is skipped — matching it would double-count every finding.
+ *
+ * Paths are reported relative to the directory the CLI was given, so they are
+ * re-joined with `scanPath` to stay resolvable from the caller's cwd.
+ */
+function parseTextFindings(stdout: string, scanPath: string): SecurityFinding[] {
+  const findings: SecurityFinding[] = [];
+  let severity: SecurityFinding['severity'] | undefined;
+  let title: string | undefined;
+
+  for (const raw of stripAnsi(stdout).split('\n')) {
+    const line = raw.trimEnd();
+    const trimmed = line.trim();
+
+    const header = /^\s*\[?(CRITICAL|HIGH|MEDIUM|LOW|INFO)\]?\s{1,}(\S.*?)\s*$/i.exec(line);
+    if (header && !/^(File|Info|Code):/.test(trimmed)) {
+      severity = severityValue(header[1]);
+      title = header[2];
+      continue;
+    }
+
+    const located = /^\s*File:\s*(\S+?)(?::(\d+))?\s*$/.exec(line);
+    const file = located?.[1];
+    if (file && severity && title) {
+      const lineNumber = located?.[2];
+      // Line 0 means a whole-file finding; omit it rather than report ":0".
+      const suffix = lineNumber && lineNumber !== '0' ? `:${lineNumber}` : '';
+      findings.push({
+        id: title,
+        severity,
+        title,
+        packageName: undefined,
+        path: `${joinPath(scanPath, file)}${suffix}`,
+      });
+    }
   }
+
   return findings;
+}
+
+function joinPath(scanPath: string, file: string): string {
+  const base = scanPath.replace(/^\.\//, '').replace(/\/+$/, '');
+  const rel = file.replace(/^\.\//, '');
+  if (!base || base === '.' || rel.startsWith(`${base}/`) || rel.startsWith('/')) return rel;
+  return `${base}/${rel}`;
+}
+
+function stripAnsi(text: string): string {
+  // Anchored on ESC (\u001b). A bare /\[[0-9;]*[A-Za-z]/ would also eat the
+  // "[HIGH]" severity labels this parser depends on.
+  return text.replace(/\u001b\[[0-9;]*[A-Za-z]/g, '');
 }
 
 function issueObjects(data: JsonRecord | JsonRecord[]): JsonRecord[] {

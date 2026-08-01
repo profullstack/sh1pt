@@ -111,6 +111,39 @@ export function detectStack(dir: string): DetectedStack | undefined {
   return undefined;
 }
 
+export interface RemoteBuildSummary {
+  sourceUrl: string;
+  finalUrl: string;
+  status: number;
+  contentType: string | undefined;
+}
+
+/** Probe a live --from URL without downloading its response body. */
+export async function probeRemoteBuild(input: ResolvedInput): Promise<RemoteBuildSummary> {
+  if (input.kind !== 'url') {
+    throw new Error(`expected a live URL, received ${input.kind}`);
+  }
+
+  let response = await fetch(input.value, { method: 'HEAD', redirect: 'follow' });
+  if (response.status === 405 || response.status === 501) {
+    response = await fetch(input.value, {
+      method: 'GET',
+      headers: { Range: 'bytes=0-0' },
+      redirect: 'follow',
+    });
+  }
+  if (!response.ok) {
+    throw new Error(`build source returned HTTP ${response.status}: ${input.value}`);
+  }
+
+  return {
+    sourceUrl: input.value,
+    finalUrl: response.url || input.value,
+    status: response.status,
+    contentType: response.headers.get('content-type') ?? undefined,
+  };
+}
+
 export interface LocalBuildSummary {
   sourceDir: string;
   projectName: string;
@@ -185,7 +218,7 @@ export const buildCmd = new Command('build')
   .option('--cloud', 'run build in sh1pt cloud instead of locally')
   .option('--from <input>', 'existing git repo, live url, local path, or manifest doc to build from')
   .option('--keep-clone', 'keep the cloned repo instead of cleaning up after build')
-  .action((opts: { target?: string[]; channel: string; cloud?: boolean; from?: string; keepClone?: boolean }) => {
+  .action(async (opts: { target?: string[]; channel: string; cloud?: boolean; from?: string; keepClone?: boolean }) => {
     const targets = opts.target?.join(', ') ?? 'all enabled';
     const where = opts.cloud ? 'cloud' : 'local';
     if (opts.from) {
@@ -207,6 +240,20 @@ export const buildCmd = new Command('build')
           rmSync(cloneDir, { recursive: true, force: true });
           console.log(kleur.dim('  (clone removed — use --keep-clone to retain)'));
         }
+        return;
+      }
+
+      if (input.kind === 'url') {
+        const summary = await probeRemoteBuild(input);
+        console.log(kleur.green('[ok] Remote source reachable'));
+        console.log();
+        console.log(kleur.bold('Build summary'));
+        console.log(`  project:  ${input.inferredName ?? summary.finalUrl}`);
+        console.log(`  status:   ${summary.status}`);
+        console.log(`  type:     ${summary.contentType ?? 'unknown'}`);
+        console.log(`  channel:  ${opts.channel}`);
+        console.log(`  target:   ${where}`);
+        console.log(`  source:   ${summary.finalUrl}`);
         return;
       }
 

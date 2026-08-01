@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { z } from 'zod';
 import { defineBot, tokenSetup, type BotEvent, type BotHandler, type BotReply } from '@profullstack/sh1pt-core';
 import { parseWeChatTimestamp } from './timestamp.js';
 
@@ -18,20 +19,6 @@ export interface WeChatServerInfo {
   port: number;
   path: string;
   url: string;
-}
-
-export interface Config {
-  appId?: string;
-  appSecret?: string;
-  token?: string;
-  accessToken?: string;
-  port?: number;
-  path?: string;
-  commandPrefix?: string;
-  apiBaseUrl?: string;
-  accessTokenUrl?: string;
-  fetch?: FetchLike;
-  onServerReady?: (info: WeChatServerInfo) => void | Promise<void>;
 }
 
 interface WeChatXmlMessage {
@@ -83,6 +70,22 @@ const DEFAULT_API_BASE_URL = 'https://api.weixin.qq.com';
 const DEFAULT_CALLBACK_PATH = '/wechat';
 const DEFAULT_PORT = 3979;
 const DEFAULT_COMMAND_PREFIX = '/';
+
+const configSchema = z.object({
+  appId: z.string().optional(),
+  appSecret: z.string().optional(),
+  token: z.string().optional(),
+  accessToken: z.string().optional(),
+  port: z.number().int().positive().optional(),
+  path: z.string().optional(),
+  commandPrefix: z.string().default(DEFAULT_COMMAND_PREFIX),
+  apiBaseUrl: z.string().optional(),
+  accessTokenUrl: z.string().optional(),
+  fetch: z.any().optional(),
+  onServerReady: z.any().optional(),
+});
+
+export type Config = z.infer<typeof configSchema>;
 
 function ensureFetch(fetchImpl?: FetchLike): FetchLike {
   if (fetchImpl) return fetchImpl;
@@ -390,13 +393,14 @@ async function sendCustomText(config: ResolvedConfig, openId: string, reply: Bot
   return { id: payload.msgid ? String(payload.msgid) : `wc_${Date.now()}` };
 }
 
-export default defineBot<Config>({
+export default defineBot<Partial<Config>>({
   id: 'bot-wechat',
   label: 'WeChat',
   supports: ['message', 'command', 'interaction', 'join', 'leave'],
 
   async register(ctx, handlers, config) {
-    const resolved = resolveConfig(ctx.secret, config);
+    const parsed = configSchema.parse(config);
+    const resolved = resolveConfig(ctx.secret, parsed);
     ctx.log(`bot-wechat · register ${handlers.length} handlers (app=${resolved.appId})`);
     if (ctx.dryRun) return { async close() {} };
 
@@ -468,7 +472,8 @@ export default defineBot<Config>({
   },
 
   async send(ctx, channel, reply, config) {
-    const resolved = resolveConfig(ctx.secret, config);
+    const parsed = configSchema.parse(config);
+    const resolved = resolveConfig(ctx.secret, parsed);
     ctx.log(`bot-wechat · send → openid=${channel}`);
     if (ctx.dryRun) return { id: 'dry-run' };
     return sendCustomText(resolved, channel, reply);

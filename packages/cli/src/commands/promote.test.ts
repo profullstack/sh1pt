@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseNonNegativeInteger, parsePositiveInteger } from './promote.js';
+import { parseNonNegativeInteger, parsePositiveInteger, stopCampaigns } from './promote.js';
 
 describe('promote numeric option parsers', () => {
   it('accepts decimal positive integers', () => {
@@ -24,4 +24,37 @@ describe('promote numeric option parsers', () => {
       expect(() => parseNonNegativeInteger(value)).toThrow('zero or a positive integer');
     },
   );
+});
+
+describe('promote stop selection', () => {
+  it('ends only the campaign selected by id', () => {
+    const campaigns = [
+      { id: 'meta-1', platform: 'meta', state: 'active' },
+      { id: 'reddit-1', platform: 'reddit', state: 'active' },
+    ];
+
+    expect(stopCampaigns(campaigns, { id: 'meta-1' }).campaigns).toEqual([
+      { id: 'meta-1', platform: 'meta', state: 'ended' },
+      campaigns[1],
+    ]);
+  });
+
+  it('ends all selected platforms while preserving unrelated campaigns', () => {
+    const campaigns = [
+      { id: 'meta-1', platform: 'Meta', state: 'active', spend: 3 },
+      { id: 'meta-2', platform: 'meta', state: 'paused' },
+      { id: 'reddit-1', platform: 'reddit', state: 'active' },
+    ];
+
+    expect(stopCampaigns(campaigns, { platforms: ['META'] }).campaigns).toEqual([
+      { id: 'meta-1', platform: 'Meta', state: 'ended', spend: 3 },
+      { id: 'meta-2', platform: 'meta', state: 'ended' },
+      campaigns[2],
+    ]);
+  });
+
+  it('leaves an already-ended campaign unchanged', () => {
+    const campaign = { id: 'meta-1', platform: 'meta', state: 'ended', note: 'kept' };
+    expect(stopCampaigns([campaign], { id: 'meta-1' })).toEqual({ campaigns: [campaign], changed: 0 });
+  });
 });

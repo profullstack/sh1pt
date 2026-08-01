@@ -1,6 +1,8 @@
 import { Command, InvalidArgumentError } from 'commander';
 import kleur from 'kleur';
 import prompts from 'prompts';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   runSetup,
   type AdapterWithSetup,
@@ -19,6 +21,32 @@ import {
   runBlueskySocialFollow,
   type SocialFollowAction,
 } from '../social-follow.js';
+
+export interface CampaignStopSelection {
+  id?: string;
+  platforms?: string[];
+}
+
+export interface CampaignStopResult {
+  campaigns: unknown[];
+  changed: number;
+}
+
+export function stopCampaigns(campaigns: unknown[], selection: CampaignStopSelection): CampaignStopResult {
+  const platforms = new Set((selection.platforms ?? []).map((platform) => platform.toLowerCase()));
+  let changed = 0;
+  const updated = campaigns.map((campaign) => {
+    if (!campaign || typeof campaign !== 'object') return campaign;
+    const record = campaign as Record<string, unknown>;
+    const matchesId = selection.id ? record.id === selection.id : false;
+    const matchesPlatform = typeof record.platform === 'string' && platforms.has(record.platform.toLowerCase());
+    if (!matchesId && !matchesPlatform) return campaign;
+    if (record.state === 'ended') return campaign;
+    changed += 1;
+    return { ...record, state: 'ended' };
+  });
+  return { campaigns: updated, changed };
+}
 
 export const promoteCmd = new Command('promote')
   .description('Run ads + ship swag + list in affiliate marketplaces. Reddit, Meta, TikTok, Google, YouTube, X, Apple Search, LinkedIn, Microsoft — plus Printful/Printify merch and CJ/Rakuten/Impact/etc affiliate programs.')
@@ -94,8 +122,58 @@ promoteCmd
   .description('Pause or end campaigns')
   .option('--platform <id...>')
   .option('--id <campaignId>')
-  .action((opts: { platform?: string[]; id?: string }) => {
-    console.log(kleur.yellow(`[stub] promote stop · ${JSON.stringify(opts)}`));
+  .option('--file <path>', 'campaign snapshot path', resolve('.sh1pt', 'campaigns.json'))
+  .option('--dry-run', 'preview changes without writing the snapshot')
+  .action((opts: { platform?: string[]; id?: string; file: string; dryRun?: boolean }) => {
+    const platforms = (opts.platform ?? []).map((platform) => platform.toLowerCase());
+    if (!opts.id && platforms.length === 0) {
+      console.error(kleur.red('Provide --id or --platform to select campaigns.'));
+      process.exitCode = 1;
+      return;
+    }
+
+    if (!existsSync(opts.file)) {
+      console.error(kleur.red(`Campaign snapshot not found: ${opts.file}`));
+      process.exitCode = 1;
+      return;
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(readFileSync(opts.file, 'utf8')) as unknown;
+    } catch {
+      console.error(kleur.red(`Campaign snapshot is not valid JSON: ${opts.file}`));
+      process.exitCode = 1;
+      return;
+    }
+
+    const campaigns = Array.isArray(parsed)
+      ? parsed
+      : parsed && typeof parsed === 'object' && Array.isArray((parsed as { campaigns?: unknown }).campaigns)
+        ? (parsed as { campaigns: unknown[] }).campaigns
+        : null;
+    if (!campaigns) {
+      console.error(kleur.red('Campaign snapshot must be an array or an object with a campaigns array.'));
+      process.exitCode = 1;
+      return;
+    }
+
+    const result = stopCampaigns(campaigns, { id: opts.id, platforms });
+    const { changed, campaigns: updated } = result;
+
+    if (changed === 0) {
+      console.log(kleur.yellow('No active campaigns matched the selection.'));
+      return;
+    }
+
+    if (opts.dryRun) {
+      console.log(kleur.cyan(`[dry-run] would end ${changed} campaign${changed === 1 ? '' : 's'} in ${opts.file}`));
+      return;
+    }
+
+    const output = Array.isArray(parsed) ? updated : { ...(parsed as Record<string, unknown>), campaigns: updated };
+    writeFileSync(opts.file, `${JSON.stringify(output, null, 2)}\n`, 'utf8');
+    console.log(kleur.green(`Ended ${changed} campaign${changed === 1 ? '' : 's'} in ${opts.file}`));
   });
 
 promoteCmd

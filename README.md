@@ -426,7 +426,7 @@ sh1pt promote [--platform X] [--budget N] [--duration 7d] [--objective install] 
 
 sh1pt promote setup [--platform id] [--poll]   # org + ad account + funding + OAuth
 sh1pt promote status [--platform id] [--json]  # aggregated spend / impressions / installs
-sh1pt promote stop [--platform id]
+sh1pt promote stop [--platform id] [--id campaignId] [--file path] [--dry-run]
 sh1pt promote creatives
 ```
 

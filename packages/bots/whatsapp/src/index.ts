@@ -136,6 +136,11 @@ function parsePositiveSafeIntegerEnv(value: string | undefined, fallback: number
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+export function toIsoTimestamp(value: number): string {
+  const timestamp = new Date(value);
+  return Number.isNaN(timestamp.getTime()) ? new Date().toISOString() : timestamp.toISOString();
+}
+
 function toBotEvent(msg: IncomingMessage): BotEvent {
   return {
     type: "message",
@@ -146,7 +151,7 @@ function toBotEvent(msg: IncomingMessage): BotEvent {
     },
     text: msg.text,
     attachments: msg.attachments.map((a) => ({ url: a.url, filename: a.filename })),
-    timestamp: new Date(msg.timestamp).toISOString(),
+    timestamp: toIsoTimestamp(msg.timestamp),
     raw: msg.raw,
   };
 }

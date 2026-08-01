@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { contractTestBridge } from '@profullstack/sh1pt-core/testing';
-import adapter from './index.js';
+import adapter, { telegramTimestamp } from './index.js';
 
 contractTestBridge(adapter, {
   sampleConfig: {},
@@ -9,6 +9,18 @@ contractTestBridge(adapter, {
 
 afterEach(() => {
   vi.restoreAllMocks();
+});
+
+describe('telegramTimestamp', () => {
+  it('maps valid Unix seconds to ISO timestamps', () => {
+    expect(telegramTimestamp(1_779_321_600)).toBe('2026-05-21T00:00:00.000Z');
+  });
+
+  it('falls back instead of throwing for invalid or out-of-range dates', () => {
+    for (const value of [undefined, Number.NaN, Number.POSITIVE_INFINITY, 1e20]) {
+      expect(telegramTimestamp(value)).toBe('1970-01-01T00:00:00.000Z');
+    }
+  });
 });
 
 describe('bridge-telegram Bot API integration', () => {

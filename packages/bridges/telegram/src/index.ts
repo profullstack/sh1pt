@@ -161,9 +161,15 @@ function toBridgeMessage(message: TelegramMessage): BridgeMessage {
     text: message.text ?? message.caption ?? '',
     replyToId: message.reply_to_message?.message_id ? String(message.reply_to_message.message_id) : undefined,
     attachments: telegramAttachments(message),
-    timestamp: new Date(message.date * 1000).toISOString(),
+    timestamp: telegramTimestamp(message.date),
     originalNetwork: 'telegram',
   };
+}
+
+export function telegramTimestamp(seconds: number | undefined): string {
+  if (typeof seconds !== 'number' || !Number.isFinite(seconds)) return new Date(0).toISOString();
+  const date = new Date(seconds * 1000);
+  return Number.isNaN(date.getTime()) ? new Date(0).toISOString() : date.toISOString();
 }
 
 function telegramUsername(user: TelegramUser | TelegramChat): string {

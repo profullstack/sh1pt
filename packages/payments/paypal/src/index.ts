@@ -266,11 +266,23 @@ function formatMinorAmount(amount: number, currency: string): string {
   return (amount / (10 ** decimals)).toFixed(decimals);
 }
 
-function amountToMinor(value: string | undefined, currency: string | undefined): number | undefined {
+export function amountToMinor(value: string | undefined, currency: string | undefined): number | undefined {
   if (!value || !currency) return undefined;
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return undefined;
-  return Math.round(parsed * (10 ** minorUnit(currency)));
+  const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(value);
+  if (!match) return undefined;
+
+  const decimals = minorUnit(currency);
+  const fraction = match[3] ?? '';
+  if (fraction.length > decimals) return undefined;
+
+  const scale = 10n ** BigInt(decimals);
+  const wholeMinor = BigInt(match[2]!) * scale;
+  const fractionMinor = fraction ? BigInt(fraction.padEnd(decimals, '0')) : 0n;
+  const unsigned = wholeMinor + fractionMinor;
+  if (unsigned > BigInt(Number.MAX_SAFE_INTEGER)) return undefined;
+
+  const amount = Number(unsigned);
+  return match[1] === '-' && amount !== 0 ? -amount : amount;
 }
 
 function minorUnit(currency: string): number {

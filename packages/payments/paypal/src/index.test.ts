@@ -1,8 +1,32 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { smokeTest } from '@profullstack/sh1pt-core/testing';
-import adapter from './index.js';
+import adapter, { amountToMinor } from './index.js';
 
 smokeTest(adapter, { idPrefix: 'payment', requireSupports: true });
+
+describe('PayPal webhook amounts', () => {
+  it.each([
+    ['24.40', 'USD', 2440],
+    ['24.4', 'USD', 2440],
+    ['100', 'JPY', 100],
+    ['-1.25', 'USD', -125],
+    ['90071992547409.91', 'USD', Number.MAX_SAFE_INTEGER],
+  ] as const)('converts %s %s to exact minor units', (value, currency, expected) => {
+    expect(amountToMinor(value, currency)).toBe(expected);
+  });
+
+  it.each([
+    ['1e2', 'USD'],
+    ['0x10', 'USD'],
+    [' 1.00 ', 'USD'],
+    ['1.005', 'USD'],
+    ['1.0', 'JPY'],
+    ['90071992547409.92', 'USD'],
+    ['Infinity', 'USD'],
+  ] as const)('rejects malformed, imprecise, or unsafe amount %s %s', (value, currency) => {
+    expect(amountToMinor(value, currency)).toBeUndefined();
+  });
+});
 
 describe('payment-paypal', () => {
   afterEach(() => {

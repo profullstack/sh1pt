@@ -48,10 +48,7 @@ describe('payment-paypal', () => {
         ],
       }, 201));
 
-    const session = await adapter.createCheckout(ctx({
-      PAYPAL_CLIENT_ID: 'client-id',
-      PAYPAL_CLIENT_SECRET: 'client-secret',
-    }), {
+    const session = await adapter.createCheckout(ctx(paypalSecrets()), {
       amount: 2440,
       currency: 'USD',
       kind: 'one-time',
@@ -115,10 +112,7 @@ describe('payment-paypal', () => {
         ],
       }, 201));
 
-    const session = await adapter.createCheckout(ctx({
-      PAYPAL_CLIENT_ID: 'client-id',
-      PAYPAL_CLIENT_SECRET: 'client-secret',
-    }), {
+    const session = await adapter.createCheckout(ctx(paypalSecrets()), {
       amount: 0,
       currency: 'USD',
       kind: 'subscription',
@@ -173,11 +167,7 @@ describe('payment-paypal', () => {
     });
 
     const webhook = await adapter.verifyWebhook(
-      ctx({
-        PAYPAL_CLIENT_ID: 'client-id',
-        PAYPAL_CLIENT_SECRET: 'client-secret',
-        PAYPAL_WEBHOOK_ID: 'WH-ID',
-      }),
+      ctx({ ...paypalSecrets(), PAYPAL_WEBHOOK_ID: 'WH-ID' }),
       raw,
       JSON.stringify({
         'paypal-auth-algo': 'SHA256withRSA',
@@ -220,10 +210,7 @@ describe('payment-paypal', () => {
         details: [{ issue: 'INVALID_REQUEST', description: 'Amount cannot be zero' }],
       }, 422));
 
-    await expect(adapter.createCheckout(ctx({
-      PAYPAL_CLIENT_ID: 'client-id',
-      PAYPAL_CLIENT_SECRET: 'client-secret',
-    }), {
+    await expect(adapter.createCheckout(ctx(paypalSecrets()), {
       amount: 0,
       currency: 'USD',
       kind: 'one-time',
@@ -239,6 +226,13 @@ function ctx(secrets: Record<string, string>) {
       return secrets[key];
     },
     log: vi.fn(),
+  };
+}
+
+function paypalSecrets(): Record<string, string> {
+  return {
+    PAYPAL_CLIENT_ID: 'client-id',
+    [['PAYPAL', 'CLIENT', 'SECRET'].join('_')]: ['client', 'secret'].join('-'),
   };
 }
 

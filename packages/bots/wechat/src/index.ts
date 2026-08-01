@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { defineBot, tokenSetup, type BotEvent, type BotHandler, type BotReply } from '@profullstack/sh1pt-core';
+import { parseWeChatTimestamp } from './timestamp.js';
 
 type FetchLike = (url: string, init?: {
   method?: string;
@@ -217,9 +218,7 @@ function renderReplyText(reply: BotReply): string {
 function toBotEvent(input: WeChatXmlMessage, commandPrefix: string): BotEvent | undefined {
   const fromUser = input.FromUserName ?? '';
   const msgType = (input.MsgType ?? '').toLowerCase();
-  const timestamp = input.CreateTime
-    ? new Date(Number(input.CreateTime) * 1000).toISOString()
-    : new Date().toISOString();
+  const timestamp = parseWeChatTimestamp(input.CreateTime);
 
   if (msgType === 'event') {
     return toEventBotEvent(input, fromUser, timestamp);

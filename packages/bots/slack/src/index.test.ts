@@ -203,6 +203,32 @@ describe('Slack bot adapter', () => {
     await closeable.close();
   });
 
+  it('rejects non-decimal-integer Slack signature timestamps', async () => {
+    const { fetcher } = captureFetch();
+    let server: Server | undefined;
+    const closeable = await bot.register(
+      ctx(),
+      [],
+      { port: 0, fetch: fetcher, onServerReady: (value) => { server = value; } },
+    );
+    const body = JSON.stringify({ type: 'event_callback', event: { type: 'message', channel: 'C123' } });
+    const now = Math.floor(Date.now() / 1000);
+    const invalidTimestamps = [
+      `${now}e0`,
+      `0x${now.toString(16)}`,
+      `${now}.5`,
+      ` ${now} `,
+      `+${now}`,
+    ];
+
+    for (const timestamp of invalidTimestamps) {
+      const response = await post(serverPort(server!), '/slack/events', body, signHeadersAt(body, timestamp));
+      expect(response.status).toBe(401);
+      expect(JSON.parse(response.body)).toEqual({ ok: false, error: 'invalid_signature' });
+    }
+    await closeable.close();
+  });
+
   it('uses the default timestamp tolerance when config contains an invalid value', async () => {
     const { fetcher } = captureFetch();
     let server: Server | undefined;

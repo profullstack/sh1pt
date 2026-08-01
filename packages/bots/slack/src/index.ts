@@ -420,8 +420,9 @@ function verifySlackSignature(
   const timestamp = firstHeader(headers["x-slack-request-timestamp"]);
   const signature = firstHeader(headers["x-slack-signature"]);
   if (!timestamp || !signature) return false;
+  if (!/^\d+$/.test(timestamp)) return false;
   const timestampNumber = Number(timestamp);
-  if (!Number.isFinite(timestampNumber)) return false;
+  if (!Number.isSafeInteger(timestampNumber)) return false;
   if (
     effectiveToleranceSeconds > 0
     && Math.abs(Math.floor(Date.now() / 1000) - timestampNumber) > effectiveToleranceSeconds

@@ -220,8 +220,11 @@ promoteCmd
     }
     console.log(kleur.bold('Campaign status'));
     console.log(kleur.dim(`Source: ${opts.file}`));
-    if (campaigns.length === 0) {
-      console.log(kleur.yellow('No campaign snapshot found. Launch a campaign or sync .sh1pt/campaigns.json first.'));
+    if (report.totals.campaigns === 0) {
+      const message = campaigns.length === 0
+        ? 'No campaign snapshot found. Launch a campaign or sync .sh1pt/campaigns.json first.'
+        : `No campaigns matched platform filter: ${opts.platform}`;
+      console.log(kleur.yellow(message));
       return;
     }
     for (const summary of report.platforms) {

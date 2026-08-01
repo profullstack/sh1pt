@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import {
   aggregateCampaignStatus,
   loadCampaignSnapshots,
@@ -61,7 +64,18 @@ describe('promote campaign status', () => {
     expect(campaigns).toHaveLength(2);
   });
 
-  it('returns an empty list for missing or malformed snapshots', () => {
+  it('returns an empty list for a missing snapshot', () => {
     expect(loadCampaignSnapshots('missing-campaigns.json')).toEqual([]);
+  });
+
+  it('returns an empty list for malformed JSON', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'sh1pt-promote-status-'));
+    const filePath = join(directory, 'campaigns.json');
+    writeFileSync(filePath, '{ not valid json');
+    try {
+      expect(loadCampaignSnapshots(filePath)).toEqual([]);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });

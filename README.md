@@ -425,7 +425,7 @@ sh1pt ship target add|remove|list|available
 sh1pt promote [--platform X] [--budget N] [--duration 7d] [--objective install] [--dry-run]
 
 sh1pt promote setup [--platform id] [--poll]   # org + ad account + funding + OAuth
-sh1pt promote status [--platform id] [--json]  # aggregated spend / impressions / installs
+sh1pt promote status [--platform id] [--json] [--file path]  # aggregated spend / impressions / installs
 sh1pt promote stop [--platform id]
 sh1pt promote creatives
 ```

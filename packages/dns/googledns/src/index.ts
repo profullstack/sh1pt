@@ -101,7 +101,7 @@ export default defineDns<Config>({
           zone: zoneId,
           name,
           type: rs.type as DnsRecord['type'],
-          value: val.replace(/\.$/, ''),
+          value: val,
           ttl: ttlValue(rs.ttl, config),
         });
       }

@@ -28,6 +28,23 @@ describe('built-in packs', () => {
     expect(entry?.manifest.secrets[0]?.name).toBe('ENV_FILE');
   });
 
+  it('loads the threatcrush-scan pack', async () => {
+    const catalog = await loadBuiltinPacks();
+    const entry = catalog.get('threatcrush-scan');
+    expect(entry).toBeDefined();
+    expect(entry?.manifest.name).toBe('ThreatCrush Security Scan');
+    expect(entry?.manifest.files[0]?.destination).toBe('.github/workflows/threatcrush-scan.yml');
+    // No secrets: the scanner is entirely local to the runner. A pack that
+    // needs no credentials is a pack that can be installed fleet-wide without
+    // provisioning anything first.
+    expect(entry?.manifest.secrets).toHaveLength(0);
+    // Workflow plus the legacy-output converter it falls back to.
+    expect(entry?.manifest.files.map((f) => f.destination)).toEqual([
+      '.github/workflows/threatcrush-scan.yml',
+      '.github/scripts/threatcrush-to-sarif.py',
+    ]);
+  });
+
   it('loads the coinpay-invoice pack', async () => {
     const catalog = await loadBuiltinPacks();
     const entry = catalog.get('coinpay-invoice');
@@ -144,5 +161,91 @@ describe('built-in packs', () => {
     expect(file?.content).toContain('${{ secrets.ENV_FILE }}');
     expect(file?.content).toContain('${{ github.repository }}');
     expect(file?.content).toContain('# Managed by sh1pt Actions Fleet');
+  });
+
+  it('renders threatcrush-scan report-only by default', async () => {
+    const catalog = await loadBuiltinPacks();
+    const entry = catalog.get('threatcrush-scan');
+    if (!entry) throw new Error('threatcrush-scan not in catalog');
+    const result = await renderPack({
+      packDir: entry.packDir,
+      manifest: entry.manifest,
+      inputs: {},
+    });
+    const file = result.files[0];
+    expect(file?.destination).toBe('.github/workflows/threatcrush-scan.yml');
+    expect(file?.content).toContain('node-version: "20"');
+    expect(file?.content).toContain('--format sarif --output threatcrush.sarif');
+    // Empty by default, so a first install reports rather than blocks.
+    expect(file?.content).toContain('FAIL_ON=""');
+    expect(file?.content).toContain('# Managed by sh1pt Actions Fleet');
+  });
+
+  it('renders threatcrush-scan with a failure gate when asked', async () => {
+    const catalog = await loadBuiltinPacks();
+    const entry = catalog.get('threatcrush-scan');
+    if (!entry) throw new Error('threatcrush-scan not in catalog');
+    const result = await renderPack({
+      packDir: entry.packDir,
+      manifest: entry.manifest,
+      inputs: { failOn: 'critical,high' },
+    });
+    expect(result.files[0]?.content).toContain('FAIL_ON="critical,high"');
+  });
+
+  it('refuses to run against a CLI that cannot emit SARIF', async () => {
+    // Regression: moshcoder/moshpit-name run 30803607991 installed the
+    // published 0.2.2, which has no --format. The scan died with
+    // `unknown option '--format'` and commander exited 1 — the same code the
+    // CLI uses for "findings at or above --fail-on" — so the step read a
+    // failure as a result and the PR comment said "0 findings". Green check,
+    // nothing scanned. Exit codes cannot separate those two cases, so the
+    // interface is checked up front and the SARIF file is treated as the only
+    // evidence a scan happened.
+    const catalog = await loadBuiltinPacks();
+    const entry = catalog.get('threatcrush-scan');
+    if (!entry) throw new Error('threatcrush-scan not in catalog');
+    const result = await renderPack({
+      packDir: entry.packDir,
+      manifest: entry.manifest,
+      inputs: {},
+    });
+    const content = result.files[0]?.content ?? '';
+    expect(content).toContain("grep -q -- '--format'");
+    expect(content).toContain('if [ ! -s threatcrush.sarif ]; then');
+    // A CLI without --format takes the converter path rather than failing the
+    // repo out of being scanned at all.
+    expect(content).toContain('.github/scripts/threatcrush-to-sarif.py');
+    expect(content).toContain('this diff was NOT scanned');
+    // And the report must be fail-closed. Testing for status == "error" was
+    // fail-open: when the capability check fails the scan step is *skipped*,
+    // so status is the empty string, and the comment reported "0 findings"
+    // for a scan that never started.
+    expect(content).toContain('if status not in ("clean", "findings")');
+  });
+
+  it('never uses pull_request_target', async () => {
+    // That event runs with repository secrets in scope; combined with a
+    // checkout of the PR head it executes untrusted contributor code with
+    // access to them. Asserted rather than documented so it cannot regress.
+    const catalog = await loadBuiltinPacks();
+    const entry = catalog.get('threatcrush-scan');
+    if (!entry) throw new Error('threatcrush-scan not in catalog');
+    const result = await renderPack({
+      packDir: entry.packDir,
+      manifest: entry.manifest,
+      inputs: {},
+    });
+    // Comments are stripped first: the workflow documents why it stays on
+    // `pull_request`, and a raw substring check would forbid explaining the
+    // very decision it exists to protect. What matters is that no directive
+    // selects the event.
+    const directives = (result.files[0]?.content ?? '')
+      .split('\n')
+      .filter((line) => !/^\s*#/.test(line))
+      .join('\n');
+    expect(directives).not.toContain('pull_request_target');
+    expect(directives).toMatch(/^on:\n\s+pull_request:\s*$/m);
+    expect(entry.manifest.security.allowPullRequestTarget).toBe(false);
   });
 });

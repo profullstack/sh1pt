@@ -1,0 +1,76 @@
+schemaVersion: 1
+id: threatcrush-scan
+name: ThreatCrush Security Scan
+description: >-
+  Scans pull requests for hardcoded credentials, injection, SSRF, unsafe
+  deserialisation and dependency tampering, and uploads SARIF to the Security
+  tab.
+version: 1.1.0
+publisher: profullstack
+visibility: public
+license: MIT
+categories:
+  - security
+  - ci
+compatibility:
+  providers:
+    - github
+pricing:
+  type: free
+inputs:
+  scanPath:
+    type: string
+    default: '.'
+    description: Path to scan, relative to the repository root.
+  nodeVersion:
+    type: string
+    default: '20'
+    description: >-
+      Node version used to install the CLI. 20 deliberately — the CLI depends
+      on better-sqlite3, and 20 is the newest runtime with reliable prebuilt
+      binaries for it. Newer runtimes fall through to a node-gyp source build
+      that fails without a full toolchain.
+  threatcrushPackageSpec:
+    type: string
+    default: '@profullstack/threatcrush@latest'
+    description: npm spec used to install the CLI.
+  failOn:
+    type: string
+    default: ''
+    description: >-
+      Comma-separated severities that fail the job (e.g. "critical,high").
+      Empty means report-only, which is the right default for a first install:
+      a repository with pre-existing findings should get a report, not a
+      blocked pull request. Tighten it once the backlog is triaged.
+  uploadSarif:
+    type: string
+    default: 'true'
+    enum:
+      - 'true'
+      - 'false'
+    description: >-
+      Upload results to the GitHub Security tab. Requires code scanning, which
+      is free on public repositories and needs Advanced Security on private
+      ones. The workflow skips the upload gracefully when it is unavailable.
+secrets: []
+repoVariables: []
+files:
+  - source: workflow.yml
+    destination: .github/workflows/threatcrush-scan.yml
+    mergeStrategy: replace-managed
+  # Compatibility shim for CLI versions older than native `--format sarif`.
+  # Unused once the installed CLI can emit SARIF itself — the workflow picks
+  # the native path whenever it is available — but shipping it means a repo is
+  # scanned today rather than waiting on a release.
+  - source: threatcrush-to-sarif.py
+    destination: .github/scripts/threatcrush-to-sarif.py
+    mergeStrategy: replace-managed
+policies:
+  installMode: pull-request
+  managedComment: true
+  requiresReview: true
+security:
+  leastPrivilegePermissions: true
+  pinThirdPartyActions: optional
+  allowPullRequestTarget: false
+  defaultTimeoutMinutes: 15

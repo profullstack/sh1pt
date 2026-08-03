@@ -139,6 +139,12 @@ describe('validateManifest path safety', () => {
     expect(isSafeDestination('docs/setup.md')).toBe(true);
   });
 
+  it('allows workflow helper scripts under .github/scripts', () => {
+    expect(isSafeDestination('.github/scripts/to-sarif.py')).toBe(true);
+    expect(isSafeDestination('.github/scripts/prepare.sh')).toBe(true);
+    expect(isSafeDestination('.github/scripts/report.mjs')).toBe(true);
+  });
+
   it('rejects sneaky destinations', () => {
     expect(isSafeDestination('.github/workflows/../../etc/passwd')).toBe(false);
     expect(isSafeDestination('.github/workflows/')).toBe(false);
@@ -146,6 +152,19 @@ describe('validateManifest path safety', () => {
     expect(isSafeDestination('.github\\workflows\\ci.yml')).toBe(false);
     expect(isSafeDestination('')).toBe(false);
     expect(isSafeDestination('.github/workflows/ci.yml\0.bad')).toBe(false);
+  });
+
+  it('confines helper scripts to .github/scripts', () => {
+    // A script alongside dependabot.yml / CODEOWNERS is out of bounds...
+    expect(isSafeDestination('.github/to-sarif.py')).toBe(false);
+    // ...as is anywhere outside .github, however plausible the name.
+    expect(isSafeDestination('scripts/to-sarif.py')).toBe(false);
+    // Flat directory only — no nesting to hide files in.
+    expect(isSafeDestination('.github/scripts/nested/to-sarif.py')).toBe(false);
+    // Executable formats a workflow would not invoke stay out.
+    expect(isSafeDestination('.github/scripts/setup.exe')).toBe(false);
+    expect(isSafeDestination('.github/scripts/.env')).toBe(false);
+    expect(isSafeDestination('.github/scripts/../workflows/ci.yml')).toBe(false);
   });
 });
 

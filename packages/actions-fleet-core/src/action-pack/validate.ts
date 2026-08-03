@@ -8,6 +8,12 @@ const ALLOWED_DESTINATIONS: RegExp[] = [
   /^\.github\/release-please\.ya?ml$/,
   /^\.github\/release-drafter\.ya?ml$/,
   /^\.github\/CODEOWNERS$/,
+  // Helper scripts a pack's workflow invokes. Confined to .github/scripts/ so a
+  // pack cannot land a file next to dependabot.yml or CODEOWNERS, and kept to
+  // one flat directory so every managed script is visible in one listing. This
+  // grants no privilege a pack lacks — workflow `run:` blocks already execute
+  // arbitrary code — it just keeps that code in a reviewable file.
+  /^\.github\/scripts\/[A-Za-z0-9._-]+\.(py|sh|js|mjs)$/,
   /^docs\/[A-Za-z0-9._/-]+\.(md|mdx)$/,
 ];
 

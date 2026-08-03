@@ -4,6 +4,14 @@ import { connect as tlsConnect } from 'node:tls';
 
 // IRC bot — classic RFC 2812. Minimal interactivity (no rich components),
 // commands are !trigger or PRIVMSG parsing. SASL auth via IRC_PASSWORD.
+
+// RFC 2812 § 2.3.1: nick = ( letter / special ) *8( letter / digit / special / "-" )
+const NICK_RE = /^[a-zA-Z\[\]\\`_^{|}][a-zA-Z0-9\[\]\\`_^{|}\-]{0,8}$/;
+// RFC 2812 § 1.3: channel = ( "#" / "&" / "+" / "!" ) chanstring
+const CHANNEL_RE = /^[#&+!]/;
+const CHANNEL_MAX_LENGTH = 200;
+const PORT_MIN = 1;
+const PORT_MAX = 65535;
 interface Config {
   server: string;
   port?: number;
@@ -21,6 +29,32 @@ interface Config {
 const DEFAULT_PORT = 6667;
 const DEFAULT_TLS_PORT = 6697;
 const DEFAULT_COMMAND_PREFIX = '!';
+
+function validateConfig(config: Config): void {
+  if (!config.server || !config.server.trim()) {
+    throw new Error('IRC server hostname must not be empty');
+  }
+  if (config.port !== undefined && (!Number.isInteger(config.port) || config.port < PORT_MIN || config.port > PORT_MAX)) {
+    throw new Error(`IRC port must be an integer between ${PORT_MIN} and ${PORT_MAX}`);
+  }
+  if (!config.nick || !NICK_RE.test(config.nick)) {
+    throw new Error(`IRC nick "${config.nick}" is not a valid RFC 2812 nickname`);
+  }
+  if (!Array.isArray(config.channels)) {
+    throw new Error('IRC channels must be an array of channel names');
+  }
+  for (const channel of config.channels) {
+    if (typeof channel !== 'string' || !channel.trim()) {
+      throw new Error('IRC channel name must be a non-empty string');
+    }
+    if (!CHANNEL_RE.test(channel)) {
+      throw new Error(`IRC channel "${channel}" must start with one of: # & + !`);
+    }
+    if (channel.length > CHANNEL_MAX_LENGTH) {
+      throw new Error(`IRC channel "${channel}" exceeds maximum length of ${CHANNEL_MAX_LENGTH}`);
+    }
+  }
+}
 
 class IrcClient {
   private socket?: Socket;
@@ -176,6 +210,7 @@ export default defineBot<Config>({
 
   async register(ctx, handlers, config) {
     const resolved = resolveConfig(ctx, config);
+    validateConfig(resolved);
     ctx.log(`bot-irc · register ${handlers.length} handlers (${resolved.nick}@${resolved.server})`);
     if (ctx.dryRun) return { async close() {} };
     const client = new IrcClient(resolved as Required<Pick<Config, 'server' | 'nick' | 'channels'>> & Config, ctx);
@@ -185,6 +220,7 @@ export default defineBot<Config>({
 
   async send(ctx, channel, reply, config) {
     const resolved = resolveConfig(ctx, config);
+    validateConfig(resolved);
     ctx.log(`bot-irc · send → ${channel}`);
     if (ctx.dryRun) return { id: 'dry-run' };
     const client = new IrcClient(resolved as Required<Pick<Config, 'server' | 'nick' | 'channels'>> & Config, ctx);

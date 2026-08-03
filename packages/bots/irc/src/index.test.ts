@@ -12,6 +12,86 @@ afterEach(async () => {
   await Promise.all(servers.splice(0).map((server) => new Promise<void>((resolve) => server.close(() => resolve()))));
 });
 
+describe('bot-irc config validation', () => {
+  it('rejects empty server hostname', async () => {
+    await expect(bot.register(ctx(), [handler()], { server: '', nick: 'bot', channels: ['#test'] }))
+      .rejects.toThrow('IRC server hostname must not be empty');
+  });
+
+  it('rejects whitespace-only server hostname', async () => {
+    await expect(bot.register(ctx(), [handler()], { server: '  ', nick: 'bot', channels: ['#test'] }))
+      .rejects.toThrow('IRC server hostname must not be empty');
+  });
+
+  it('rejects out-of-range port numbers', async () => {
+    await expect(bot.register(ctx(), [handler()], { server: 'irc.test', nick: 'bot', channels: ['#test'], port: 0 }))
+      .rejects.toThrow('IRC port must be an integer between 1 and 65535');
+    await expect(bot.register(ctx(), [handler()], { server: 'irc.test', nick: 'bot', channels: ['#test'], port: 70000 }))
+      .rejects.toThrow('IRC port must be an integer between 1 and 65535');
+  });
+
+  it('rejects non-integer port values', async () => {
+    await expect(bot.register(ctx(), [handler()], { server: 'irc.test', nick: 'bot', channels: ['#test'], port: 6667.5 }))
+      .rejects.toThrow('IRC port must be an integer between 1 and 65535');
+  });
+
+  it('rejects invalid IRC nicknames', async () => {
+    await expect(bot.register(ctx(), [handler()], { server: 'irc.test', nick: '', channels: ['#test'] }))
+      .rejects.toThrow('is not a valid RFC 2812 nickname');
+    await expect(bot.register(ctx(), [handler()], { server: 'irc.test', nick: 'bot name', channels: ['#test'] }))
+      .rejects.toThrow('is not a valid RFC 2812 nickname');
+    await expect(bot.register(ctx(), [handler()], { server: 'irc.test', nick: '123', channels: ['#test'] }))
+      .rejects.toThrow('is not a valid RFC 2812 nickname');
+  });
+
+  it('rejects valid but too-long nicknames', async () => {
+    await expect(bot.register(ctx(), [handler()], { server: 'irc.test', nick: 'a'.repeat(10), channels: ['#test'] }))
+      .rejects.toThrow('is not a valid RFC 2812 nickname');
+  });
+
+  it('rejects invalid channel prefixes', async () => {
+    await expect(bot.register(ctx(), [handler()], { server: 'irc.test', nick: 'bot', channels: ['test'] }))
+      .rejects.toThrow('must start with one of: # & + !');
+    await expect(bot.register(ctx(), [handler()], { server: 'irc.test', nick: 'bot', channels: ['@channel'] }))
+      .rejects.toThrow('must start with one of: # & + !');
+  });
+
+  it('rejects empty channel names', async () => {
+    await expect(bot.register(ctx(), [handler()], { server: 'irc.test', nick: 'bot', channels: [''] }))
+      .rejects.toThrow('IRC channel name must be a non-empty string');
+  });
+
+  it('rejects non-array channels', async () => {
+    await expect(bot.register(ctx(), [handler()], { server: 'irc.test', nick: 'bot', channels: '#test' as unknown as string[] }))
+      .rejects.toThrow('IRC channels must be an array of channel names');
+  });
+
+  it('accepts valid IRC configurations', async () => {
+    const seen: string[] = [];
+    const server = await fakeIrcServer((socket) => {
+      socket.on('data', (chunk) => seen.push(...lines(chunk)));
+    });
+    const handle = await bot.register(ctx(), [handler()], {
+      server: '127.0.0.1',
+      port: addressPort(server),
+      nick: 'test-bot',
+      username: 'test',
+      channels: ['#test', '&local'],
+    });
+    try {
+      await waitFor(() => seen.some((line) => line.startsWith('NICK')));
+      expect(seen).toEqual(expect.arrayContaining(['NICK test-bot']));
+    } finally {
+      await handle.close();
+    }
+  });
+
+  it('validates config on send as well', async () => {
+    await expect(bot.send(ctx(), '#chan', { text: 'hi' }, { server: '', nick: 'bot', channels: [] }))
+      .rejects.toThrow('IRC server hostname must not be empty');
+  });
+});
+
 describe('bot-irc live socket behavior', () => {
   it('registers, joins channels, dispatches messages, and replies to handlers', async () => {
     const seen: string[] = [];
@@ -105,6 +185,13 @@ function ctx() {
     dryRun: false,
     log: () => {},
     secret: () => undefined,
+  };
+}
+
+function handler(): BotHandler {
+  return {
+    match: { type: 'message' as const },
+    handle: () => undefined,
   };
 }
 

@@ -111,16 +111,7 @@ export class SessionManager {
       proc.stderr?.on("data", (chunk) => (stderr += chunk.toString()));
 
       return new Promise((resolve) => {
-        const finish = (result: {
-          type: string;
-          subtype: string;
-          is_error: boolean;
-          result: string;
-          duration_ms: number;
-          num_turns: number;
-          session_id: string;
-          total_cost_usd: number;
-        }) => {
+        const finish = (result: AIResult) => {
           session.busy = false;
           session.abortController = null;
           resolve(result);

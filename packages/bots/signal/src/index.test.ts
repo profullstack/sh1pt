@@ -58,9 +58,9 @@ describe('toBotEvent', () => {
       sourceName: 'User',
       text: 'hello',
       timestamp: Number.POSITIVE_INFINITY,
-      groupId: undefined,
+      groupId: null,
+      isGroup: false,
       attachments: [],
-      raw: {},
     }).timestamp).toBe('1970-01-01T00:00:00.000Z');
   });
 });

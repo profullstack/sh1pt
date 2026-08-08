@@ -611,57 +611,6 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
-  packages/bot/core:
-    dependencies:
-      zod:
-        specifier: ^3.24.0
-        version: 3.25.76
-
-  packages/bot/discord:
-    dependencies:
-      '@sh1pt/bot-core':
-        specifier: workspace:*
-        version: link:../core
-      discord.js:
-        specifier: ^14.26.3
-        version: 14.26.3(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      zod:
-        specifier: ^3.24.0
-        version: 3.25.76
-
-  packages/bot/signal:
-    dependencies:
-      '@sh1pt/bot-core':
-        specifier: workspace:*
-        version: link:../core
-      zod:
-        specifier: ^3.24.0
-        version: 3.25.76
-
-  packages/bot/telegram:
-    dependencies:
-      '@sh1pt/bot-core':
-        specifier: workspace:*
-        version: link:../core
-      grammy:
-        specifier: ^1.21.0
-        version: 1.42.0
-      zod:
-        specifier: ^3.24.0
-        version: 3.25.76
-
-  packages/bot/whatsapp:
-    dependencies:
-      '@sh1pt/bot-core':
-        specifier: workspace:*
-        version: link:../core
-      baileys:
-        specifier: ^6.10.0
-        version: 6.17.16(bufferutil@4.1.0)(eslint@9.39.4)(typescript@5.9.3)(utf-8-validate@5.0.10)
-      zod:
-        specifier: ^3.24.0
-        version: 3.25.76
-
   packages/bots/core:
     dependencies:
       zod:

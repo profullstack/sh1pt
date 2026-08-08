@@ -16,6 +16,7 @@ import {
   parsePositiveNumber,
   parsePercentage,
   aggregateFleetCosts,
+  rollbackPlanIps,
 } from './scale.js';
 
 // Helper to create a temp dir and override CREDS_FILE path
@@ -373,5 +374,50 @@ describe('auto-scale rules', () => {
     expect(rules.maxInstances).toBe(20);
     expect(rules.targetCpuPercent).toBe(65);
     expect(rules.cooldownSeconds).toBe(300);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// rollbackPlanIps — rollback plan must list the OLD fleet, not the new one
+// ---------------------------------------------------------------------------
+
+describe('rollbackPlanIps', () => {
+  const fleet: FleetState = {
+    instances: [
+      { id: 'inst-0001', provider: 'aws', status: 'stopped', createdAt: '', hourlyRate: 0.1, publicIp: '10.0.0.1' },
+      { id: 'inst-0002', provider: 'aws', status: 'stopped', createdAt: '', hourlyRate: 0.1, publicIp: '10.0.0.2' },
+      { id: 'inst-0003', provider: 'aws', status: 'running', createdAt: '', hourlyRate: 0.1, publicIp: '10.1.0.1' },
+    ],
+  };
+  const rollout: RolloutRecord = {
+    id: 'roll-1',
+    version: 'v2',
+    strategy: 'blue-green',
+    status: 'completed',
+    startedAt: '2026-08-08T00:00:00.000Z',
+    newInstanceIds: ['inst-0003'],
+    oldInstanceIds: ['inst-0001', 'inst-0002'],
+  };
+
+  it('lists the old (pre-rollout) instances, not the new ones', () => {
+    const ips = rollbackPlanIps(fleet, rollout);
+    expect(ips).toEqual(['10.0.0.1', '10.0.0.2']);
+    expect(ips).not.toContain('10.1.0.1');
+  });
+
+  it('falls back to privateIp when publicIp is missing', () => {
+    const fleetNoPub: FleetState = {
+      instances: [
+        { id: 'inst-0001', provider: 'aws', status: 'stopped', createdAt: '', hourlyRate: 0.1, privateIp: '172.16.0.5' },
+      ],
+    };
+    expect(rollbackPlanIps(fleetNoPub, rollout)).toEqual(['172.16.0.5']);
+  });
+
+  it('returns placeholder for instances without any ip', () => {
+    const fleetNoIp: FleetState = {
+      instances: [{ id: 'inst-0001', provider: 'aws', status: 'stopped', createdAt: '', hourlyRate: 0.1 }],
+    };
+    expect(rollbackPlanIps(fleetNoIp, rollout)).toEqual(['?.?.?.?']);
   });
 });

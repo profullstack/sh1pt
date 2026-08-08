@@ -215,6 +215,13 @@ export function aggregateFleetCosts(
   return providerMap;
 }
 
+/** Resolve the IPs of the old (pre-rollout) fleet for a rollback plan display. */
+export function rollbackPlanIps(fleet: FleetState, target: RolloutRecord): string[] {
+  return fleet.instances
+    .filter(i => target.oldInstanceIds.includes(i.id))
+    .map(i => i.publicIp || i.privateIp || '?.?.?.?');
+}
+
 export const scaleCmd = new Command('scale')
   .description('Provision + scale cloud infra. DNS round-robin, rollouts, rightsizing — all the capacity ops.')
   .option('--from <input>', 'existing live url, repo, or local path to probe + propose scaling for')
@@ -728,9 +735,7 @@ scaleCmd
         process.exit(1);
       }
       const fleet = loadFleet();
-      const oldIps = fleet.instances
-        .filter(i => target.newInstanceIds.includes(i.id))
-        .map(i => i.publicIp || i.privateIp || '?.?.?.?');
+      const oldIps = rollbackPlanIps(fleet, target);
       console.log(kleur.bold('\\n⏮ Rollback Plan'));
       console.log(kleur.dim('─'.repeat(56)));
       console.log(`${kleur.cyan('Rollout ID:'.padEnd(20))} ${target.id.slice(0, 8)} (v${target.version})`);

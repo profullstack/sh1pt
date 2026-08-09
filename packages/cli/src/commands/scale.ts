@@ -116,9 +116,9 @@ export function getNextId(instances: FleetEntry[]): string {
   const nums = instances
     .map((i) => /^inst-(\d+)$/.exec(i.id)?.[1])
     .filter((value): value is string => value !== undefined)
-    .map((value) => Number.parseInt(value, 10));
-  const max = nums.length > 0 ? Math.max(...nums) : 0;
-  return `inst-${String(max + 1).padStart(4, '0')}`;
+    .map((value) => BigInt(value));
+  const max = nums.reduce((highest, value) => value > highest ? value : highest, 0n);
+  return `inst-${String(max + 1n).padStart(4, '0')}`;
 }
 
 export function parsePositiveInteger(value: string): number {

@@ -58,6 +58,13 @@ describe('getNextId', () => {
     expect(getNextId(instances)).toBe('inst-0100');
   });
 
+  it('increments ids beyond the safe integer range without collisions', () => {
+    const instances: FleetEntry[] = [
+      { id: 'inst-9007199254740992', provider: 'aws', status: 'running', createdAt: '', hourlyRate: 0.096 },
+    ];
+    expect(getNextId(instances)).toBe('inst-9007199254740993');
+  });
+
   it('ignores ids that do not match the inst- pattern', () => {
     const instances: FleetEntry[] = [
       { id: 'custom-id', provider: 'aws', status: 'running', createdAt: '', hourlyRate: 0.096 },

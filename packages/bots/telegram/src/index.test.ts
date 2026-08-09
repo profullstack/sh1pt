@@ -1,8 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { contractTestBot } from '@profullstack/sh1pt-core/testing';
-import bot, { loadConfig, parseTelegramChatId } from './index.js';
+import bot, { loadConfig, parseTelegramChatId, toBotEvent } from './index.js';
 
 contractTestBot(bot, { sampleConfig: {}, sampleChannel: '1234567890' });
+
+describe('toBotEvent', () => {
+  it('falls back when Telegram provides an out-of-range timestamp', () => {
+    expect(toBotEvent({
+      source: 'user-1',
+      sourceName: 'User',
+      text: 'hello',
+      timestamp: Number.NaN,
+      chatId: 123,
+      isGroup: false,
+      attachments: [],
+      raw: null as never,
+    }).timestamp).toBe('1970-01-01T00:00:00.000Z');
+  });
+});
 
 describe('parseTelegramChatId', () => {
   it('accepts positive user and negative group chat ids', () => {

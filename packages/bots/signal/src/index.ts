@@ -24,7 +24,7 @@ export interface IncomingMessage {
   sourceName: string;
   text: string;
   timestamp: number;
-  groupId: string | null;
+  groupId: string | null | undefined;
   isGroup: boolean;
   attachments: Array<{ filename: string; url: string }>;
 }

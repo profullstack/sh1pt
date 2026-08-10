@@ -126,7 +126,8 @@ export function parseTelegramChatId(value: string): number {
   return chatId;
 }
 
-function toBotEvent(msg: IncomingMessage): BotEvent {
+export function toBotEvent(msg: IncomingMessage): BotEvent {
+  const date = new Date(msg.timestamp);
   return {
     type: "message",
     channel: String(msg.chatId),
@@ -136,7 +137,7 @@ function toBotEvent(msg: IncomingMessage): BotEvent {
     },
     text: msg.text,
     attachments: msg.attachments.map((a) => ({ url: a.url, filename: a.filename })),
-    timestamp: new Date(msg.timestamp).toISOString(),
+    timestamp: Number.isNaN(date.getTime()) ? new Date(0).toISOString() : date.toISOString(),
     raw: msg.raw,
   };
 }

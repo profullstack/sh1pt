@@ -24,6 +24,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "20"
+          # setup-node v5 caches for the package.json `packageManager` by
+          # default, which would shell out to a pnpm this job never installs.
+          package-manager-cache: false
 
       # An unretried `npm i -g` is a network call to a registry that decides
       # whether a security gate runs at all. Retry before giving up; a

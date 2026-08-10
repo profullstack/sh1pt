@@ -60,3 +60,18 @@ describe('loadConfig', () => {
     expect(config.maxConcurrentSessions).toBe(5);
   });
 });
+
+describe('toBotEvent', () => {
+  it('falls back when Telegram provides an out-of-range timestamp', () => {
+    expect(toBotEvent({
+      source: 'user-1',
+      sourceName: 'User',
+      text: 'hello',
+      timestamp: Number.NEGATIVE_INFINITY,
+      chatId: 1234567890,
+      isGroup: false,
+      attachments: [],
+      raw: undefined as never,
+    }).timestamp).toBe('1970-01-01T00:00:00.000Z');
+  });
+});

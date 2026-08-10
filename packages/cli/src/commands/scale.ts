@@ -116,9 +116,9 @@ export function getNextId(instances: FleetEntry[]): string {
   const nums = instances
     .map((i) => /^inst-(\d+)$/.exec(i.id)?.[1])
     .filter((value): value is string => value !== undefined)
-    .map((value) => Number.parseInt(value, 10));
-  const max = nums.length > 0 ? Math.max(...nums) : 0;
-  return `inst-${String(max + 1).padStart(4, '0')}`;
+    .map((value) => BigInt(value));
+  const max = nums.reduce((highest, value) => value > highest ? value : highest, 0n);
+  return `inst-${String(max + 1n).padStart(4, '0')}`;
 }
 
 export function parsePositiveInteger(value: string): number {
@@ -213,6 +213,13 @@ export function aggregateFleetCosts(
     });
   }
   return providerMap;
+}
+
+/** Resolve the IPs of the old (pre-rollout) fleet for a rollback plan display. */
+export function rollbackPlanIps(fleet: FleetState, target: RolloutRecord): string[] {
+  return fleet.instances
+    .filter(i => target.oldInstanceIds.includes(i.id))
+    .map(i => i.publicIp || i.privateIp || '?.?.?.?');
 }
 
 export const scaleCmd = new Command('scale')
@@ -728,9 +735,7 @@ scaleCmd
         process.exit(1);
       }
       const fleet = loadFleet();
-      const oldIps = fleet.instances
-        .filter(i => target.newInstanceIds.includes(i.id))
-        .map(i => i.publicIp || i.privateIp || '?.?.?.?');
+      const oldIps = rollbackPlanIps(fleet, target);
       console.log(kleur.bold('\\n⏮ Rollback Plan'));
       console.log(kleur.dim('─'.repeat(56)));
       console.log(`${kleur.cyan('Rollout ID:'.padEnd(20))} ${target.id.slice(0, 8)} (v${target.version})`);

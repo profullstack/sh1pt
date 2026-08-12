@@ -171,6 +171,17 @@ describe('CJ affiliate adapter', () => {
       accountId: 'affiliate-cj',
     });
   });
+  it('rejects invalid and reversed commission date windows before calling CJ', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(adapter.stats?.(ctx(), '123', { accountId: '45628', from: 'not-a-date', to: '2026-05-20' }))
+      .rejects.toThrow('requires valid from/to dates');
+    await expect(adapter.stats?.(ctx(), '123', { accountId: '45628', from: '2026-05-20', to: '2026-05-01' }))
+      .rejects.toThrow('requires to >= from');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
 });
 
 function xmlResponse(body: string) {

@@ -218,7 +218,12 @@ function isoDateTime(value: string, endOfDay: boolean): string {
 function ensureSupportedWindow(from: string, to: string): void {
   const start = Date.parse(from);
   const end = Date.parse(to);
-  if (!Number.isFinite(start) || !Number.isFinite(end)) return;
+  if (!Number.isFinite(start) || !Number.isFinite(end)) {
+    throw new Error('CJ Commission Detail API requires valid from/to dates');
+  }
+  if (end < start) {
+    throw new Error('CJ Commission Detail API requires to >= from');
+  }
   const days = (end - start) / 86_400_000;
   if (days > 31) throw new Error('CJ Commission Detail API supports a maximum 31-day date range per query');
 }

@@ -157,28 +157,30 @@ export interface TokenSetupOpts<C = unknown> {
 export function tokenSetup<C = unknown>(opts: TokenSetupOpts<C>): SetupFn<C> {
   return async (ctx) => {
     const existing = ctx.secret(opts.secretKey);
+    let reuseExisting = false;
     if (existing) {
-      const reuse = await ctx.prompt<boolean>({
+      reuseExisting = await ctx.prompt<boolean>({
         type: 'confirm',
         message: `${opts.secretKey} already in vault — reuse it?`,
         initial: true,
       });
-      if (reuse) return { ok: true, config: (opts.config ?? {}) as C };
     }
 
-    ctx.log(`${opts.label} setup:`);
-    for (const line of opts.steps) ctx.log(`  ${line}`);
-    if (opts.vendorDocUrl) await ctx.open(opts.vendorDocUrl);
+    if (!reuseExisting) {
+      ctx.log(`${opts.label} setup:`);
+      for (const line of opts.steps) ctx.log(`  ${line}`);
+      if (opts.vendorDocUrl) await ctx.open(opts.vendorDocUrl);
 
-    const token = await ctx.prompt<string>({
-      type: 'password',
-      message: `Paste the ${opts.label} API token:`,
-    });
+      const token = await ctx.prompt<string>({
+        type: 'password',
+        message: `Paste the ${opts.label} API token:`,
+      });
 
-    if (!token) {
-      return { ok: false, config: (opts.config ?? {}) as C, manual: opts.steps };
+      if (!token) {
+        return { ok: false, config: (opts.config ?? {}) as C, manual: opts.steps };
+      }
+      await ctx.setSecret(opts.secretKey, token);
     }
-    await ctx.setSecret(opts.secretKey, token);
 
     const configExtras: Record<string, string> = {};
     for (const field of opts.fields ?? []) {

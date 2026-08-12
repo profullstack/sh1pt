@@ -67,11 +67,11 @@ export default defineAdPlatform<Config>({
   },
 
   async start(ctx, config) {
-    const key = ctx.secret(POSTHOG_KEY_SECRET) ?? config.personalApiKey;
-    if (!key) throw new Error(`${POSTHOG_KEY_SECRET} not in vault`);
     if (!config.projectId) throw new Error('projectId required to create experiments');
     ctx.log(`posthog experiment create · project=${config.projectId} · objective=${ctx.objective}`);
     if (ctx.dryRun) return { id: 'dry-run' };
+    const key = ctx.secret(POSTHOG_KEY_SECRET) ?? config.personalApiKey;
+    if (!key) throw new Error(`${POSTHOG_KEY_SECRET} not in vault`);
 
     const creative = ctx.creatives[0];
     const experiment = await phPost<ExperimentResponse>(

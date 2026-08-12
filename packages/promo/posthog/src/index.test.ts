@@ -42,7 +42,7 @@ describe('PostHog experiment API integration', () => {
     expect(calls[0]!.init.method).toBe('POST');
   });
 
-  it('returns dry-run result without hitting the API', async () => {
+  it('returns dry-run result without credentials or an API call', async () => {
     vi.stubGlobal('fetch', async () => {
       throw new Error('should not call fetch in dry-run');
     });
@@ -56,7 +56,7 @@ describe('PostHog experiment API integration', () => {
         start: new Date(),
         objective: 'awareness',
         creatives: [],
-        secret: (k) => (k === 'POSTHOG_PERSONAL_API_KEY' ? 'phx_secret' : undefined),
+        secret: () => undefined,
         log: () => {},
         dryRun: true,
       },

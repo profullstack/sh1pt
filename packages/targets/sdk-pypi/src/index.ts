@@ -34,22 +34,22 @@ export default defineTarget<Config>({
   },
 
   async ship(ctx, config) {
-    const token = ctx.secret('PYPI_TOKEN');
-    if (!token) {
-      throw new Error('PYPI_TOKEN not set. Run: sh1pt secret set PYPI_TOKEN <token>');
-    }
-
     const repository = config.repository ?? 'https://upload.pypi.org/legacy/';
-    const repoFlag = config.repository === 'testpypi'
-      ? ['--repository', 'testpypi']
-      : ['--repository-url', repository];
-
-    ctx.log(`pypi: uploading to ${repository}`);
     if (ctx.dryRun) {
       ctx.log('pypi: dry-run — would upload distribution');
       return { id: 'dry-run', meta: { repository } };
     }
 
+    const token = ctx.secret('PYPI_TOKEN');
+    if (!token) {
+      throw new Error('PYPI_TOKEN not set. Run: sh1pt secret set PYPI_TOKEN <token>');
+    }
+
+    const repoFlag = config.repository === 'testpypi'
+      ? ['--repository', 'testpypi']
+      : ['--repository-url', repository];
+
+    ctx.log(`pypi: uploading to ${repository}`);
     const { stdout } = await exec(
       'twine',
       [

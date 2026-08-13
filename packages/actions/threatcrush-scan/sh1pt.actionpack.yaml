@@ -5,7 +5,7 @@ description: >-
   Scans pull requests for hardcoded credentials, injection, SSRF, unsafe
   deserialisation and dependency tampering, and uploads SARIF to the Security
   tab.
-version: 1.1.0
+version: 1.2.0
 publisher: profullstack
 visibility: public
 license: MIT
@@ -32,8 +32,15 @@ inputs:
       that fails without a full toolchain.
   threatcrushPackageSpec:
     type: string
-    default: '@profullstack/threatcrush@latest'
-    description: npm spec used to install the CLI.
+    default: '@profullstack/threatcrush@0.11.0'
+    description: >-
+      npm spec used to install the CLI. An exact version, not a range and not
+      `@latest`: a floating spec means the workflow committed to a repository
+      today installs something nobody reviewed tomorrow, and static analysis
+      reads it as exactly that — SonarQube's githubactions:S8543 fails a
+      quality gate on it. Whoever installs the pack should render the version
+      current at install time; from then on the repository upgrades when it
+      decides to, which is the whole point of a pin.
   failOn:
     type: string
     default: ''

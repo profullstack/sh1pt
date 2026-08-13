@@ -34,13 +34,12 @@ inputs:
     type: string
     default: '@profullstack/threatcrush@0.11.0'
     description: >-
-      npm spec used to install the CLI. An exact version, not a range and not
-      `@latest`: a floating spec means the workflow committed to a repository
-      today installs something nobody reviewed tomorrow, and static analysis
-      reads it as exactly that — SonarQube's githubactions:S8543 fails a
-      quality gate on it. Whoever installs the pack should render the version
-      current at install time; from then on the repository upgrades when it
-      decides to, which is the whole point of a pin.
+      npm spec used to install the CLI. Pinned, not `@latest`: a scanner that
+      runs on every pull request is a dependency, and `@latest` means one bad
+      publish breaks CI in every repo that installed this pack at once — which
+      is exactly what a `workspace:` protocol slip in 0.7.0/0.7.1 did. Bump this
+      deliberately, in a pack release, so the fleet re-syncs consumers to a
+      version that was checked first.
   failOn:
     type: string
     default: ''

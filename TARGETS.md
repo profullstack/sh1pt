@@ -92,7 +92,7 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 | `plugin-slack` | Slack App Directory | 🚧 |
 | `plugin-zapier` | Zapier Platform | 🚧 |
 | `plugin-shopify` | Shopify App Store | 🚧 |
-| `plugin-wordpress` | wordpress.org plugins | 🚧 |
+| `plugin-wordpress` | wordpress.org plugins (SVN release) — for a live install, see `deploy-wordpress` | 🚧 |
 | `plugin-notion` | Notion integrations | — |
 
 ### Voice
@@ -169,6 +169,7 @@ Each row is a **target adapter** — one plugin in `packages/targets/*`. Status 
 | `deploy-firebase` | Firebase Hosting / Functions | ✅ |
 | `deploy-lambda` | AWS Lambda | — |
 | `deploy-cloudrun` | Google Cloud Run | — |
+| `deploy-wordpress` | Live WordPress install via [wp-cli](https://github.com/wp-cli/wp-cli) (plugin/theme) | ✅ |
 
 ---
 

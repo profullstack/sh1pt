@@ -1817,6 +1817,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/targets/deploy-wordpress:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/targets/deploy-workers:
     dependencies:
       '@profullstack/sh1pt-core':

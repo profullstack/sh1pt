@@ -35,6 +35,7 @@ These have real CLIs and map directly to existing or planned adapter surfaces.
 | Expo / EAS | `expo`, `eas` | `targets/mobile-expo` | Exists | `mise x npm:expo -- expo --help`; `mise x npm:eas-cli -- eas --help` |
 | Doppler | `doppler` | `secrets/doppler` | Exists | official package manager install |
 | dotenvx | `dotenvx` | `secrets/dotenvx` | Exists | `mise x npm:@dotenvx/dotenvx -- dotenvx --help` |
+| WordPress | `wp` | `targets/deploy-wordpress` | Exists | `brew install wp-cli`, or the phar from https://wp-cli.org/#installing |
 
 ## Strong next candidates
 

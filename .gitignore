@@ -22,3 +22,10 @@ notes/
 .session/
 CLAUDE-*.md
 supabase/.temp
+
+# Python bytecode. The repository has one Python file — the SARIF converter in
+# the threatcrush-scan pack — and importing it to test it writes a .pyc next to
+# it, which a `git add -A` on that directory then sweeps in. That is how
+# __pycache__/threatcrush-to-sarif.cpython-314.pyc reached master in #963.
+__pycache__/
+*.py[cod]

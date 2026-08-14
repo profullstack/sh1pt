@@ -5,7 +5,7 @@ description: >-
   Scans pull requests for hardcoded credentials, injection, SSRF, unsafe
   deserialisation and dependency tampering, and uploads SARIF to the Security
   tab.
-version: 1.3.0
+version: 1.4.0
 publisher: profullstack
 visibility: public
 license: MIT
@@ -96,6 +96,11 @@ policies:
   requiresReview: true
 security:
   leastPrivilegePermissions: true
-  pinThirdPartyActions: optional
+  # Required, not optional. Asking a repository to trust a pinned npm package
+  # while the workflow around it floats on mutable tags is an argument that
+  # does not survive being read, and the SAG maintainers read it: the job holds
+  # pull-requests: write and security-events: write, so every action in it is
+  # the same class of grant the npm pin exists to close.
+  pinThirdPartyActions: required
   allowPullRequestTarget: false
   defaultTimeoutMinutes: 15

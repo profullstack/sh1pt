@@ -110,4 +110,25 @@ weakness classes that are deliberately not implemented.
 Snippets in the report are redacted — the CLI never prints matched credential
 material, because CI logs are retained and, on public forks, published.
 
+## What the integrity check does not cover
+
+`threatcrushIntegrity` covers the published CLI tarball and nothing else.
+`npm install -g` still resolves that package's own runtime dependencies from
+version ranges, so the code the CLI actually loads at runtime is **not** fully
+covered by the hash. Raised in review by the SAG maintainers, who verified the
+hash matched and then pointed at the gap behind it.
+
+Two ways to close it, neither free:
+
+- **A committed lockfile with `npm ci`.** Complete — it pins integrity for
+  every package in the tree. It is also 210 packages and about 2,500 lines of
+  `package-lock.json` landing in the consuming repository, which is a large
+  diff to put in front of a maintainer who did not ask for it.
+- **A bundled artifact** whose tarball contains its runtime. Only partial here:
+  the CLI depends on `better-sqlite3`, which is a native module and cannot be
+  bundled into a single JavaScript file.
+
+Neither is the default. A repository that wants the first should say so, and
+the lockfile can be supplied for it.
+
 [testbed]: https://github.com/profullstack/malware-test-prs

@@ -5,7 +5,7 @@ description: >-
   Scans pull requests for hardcoded credentials, injection, SSRF, unsafe
   deserialisation and dependency tampering, and uploads SARIF to the Security
   tab.
-version: 1.2.0
+version: 1.3.0
 publisher: profullstack
 visibility: public
 license: MIT
@@ -40,6 +40,25 @@ inputs:
       is exactly what a `workspace:` protocol slip in 0.7.0/0.7.1 did. Bump this
       deliberately, in a pack release, so the fleet re-syncs consumers to a
       version that was checked first.
+  threatcrushIntegrity:
+    type: string
+    default: 'sha512-EKcaxsgiydi7qCH0FhvNviKUpyVi/CImwNS6Kx3IbWMuUjUPCXISAUIzFnYo8BiC+jG9dxfFDMBlwZdhqhwWfQ=='
+    description: >-
+      Subresource-integrity hash of the tarball named by threatcrushPackageSpec,
+      in npm's own `sha512-<base64>` form. The workflow downloads, hashes and
+      compares before installing, and refuses to install on a mismatch.
+
+      A version pin says which release to fetch. It does not say the bytes are
+      the ones that release was published with, and the party answering the
+      first question is the party serving the bytes. This is the other half,
+      and it is what Haven's maintainer asked for when they declined on
+      "exact version + integrity hash".
+
+      Must be bumped together with threatcrushPackageSpec — a hash from a
+      different version fails closed, which is the correct direction to fail
+      but a confusing one to debug. Read it from
+      `npm view <spec> dist.integrity`. Empty skips verification, for a
+      consumer pointing the spec at something they build themselves.
   failOn:
     type: string
     default: ''

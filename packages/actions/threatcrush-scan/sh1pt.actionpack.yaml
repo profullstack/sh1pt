@@ -5,7 +5,7 @@ description: >-
   Scans pull requests for hardcoded credentials, injection, SSRF, unsafe
   deserialisation and dependency tampering, and uploads SARIF to the Security
   tab.
-version: 1.4.0
+version: 1.5.0
 publisher: profullstack
 visibility: public
 license: MIT
@@ -59,6 +59,32 @@ inputs:
       but a confusing one to debug. Read it from
       `npm view <spec> dist.integrity`. Empty skips verification, for a
       consumer pointing the spec at something they build themselves.
+  commentOnPr:
+    type: string
+    default: 'true'
+    enum:
+      - 'true'
+      - 'false'
+    description: >-
+      Post the report as a pull request comment. Requires
+      `pull-requests: write`.
+
+      Set this and uploadSarif both to 'false' and the workflow requests
+      `contents: read` and nothing else — findings arrive in the job summary
+      and the SARIF artifact instead. That is the configuration for a
+      repository that wants the scan without granting a third-party CLI any
+      write scope, which is a substantial part of what reviewers decline on.
+  extraPermissions:
+    type: string
+    default: "  pull-requests: write\n  security-events: write"
+    description: >-
+      The permission lines added beneath `contents: read`, computed from
+      uploadSarif and commentOnPr rather than set by hand. Two spaces of
+      indentation per line; empty when neither output is enabled.
+
+      An input rather than a fixed block because a workflow that asks for a
+      write scope it will not use cannot argue it is least-privilege, and the
+      two scopes here only exist to serve features a consumer can switch off.
   failOn:
     type: string
     default: ''

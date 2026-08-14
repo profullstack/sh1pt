@@ -3,10 +3,18 @@ name: threatcrush security scan
 on:
   pull_request:
 
+# Only what the enabled outputs actually need. Both write scopes exist to
+# serve an optional feature — the Security tab upload and the PR comment — and
+# were requested unconditionally even when both were switched off.
+#
+# With uploadSarif and commentOnPr both false this reads `contents: read` and
+# nothing else, and the findings arrive in the job summary and the artifact.
+# SAG declined partly on "an externally maintained CLI ... together with PR and
+# security-reporting permissions"; a scanner that asks for write scopes it is
+# not going to use has no answer to that, and now it does not have to ask.
 permissions:
   contents: read
-  pull-requests: write
-  security-events: write
+{{extraPermissions}}
 
 jobs:
   scan:
@@ -305,7 +313,10 @@ jobs:
       # get a writable token: that event runs with repository secrets in scope
       # against a checkout of untrusted contributor code.
       - name: Comment on PR
-        if: always() && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
+        if: >-
+          always() && '{{commentOnPr}}' == 'true'
+          && github.event.pull_request.head.repo.full_name == github.repository
+          && github.actor != 'dependabot[bot]'
         continue-on-error: true
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:

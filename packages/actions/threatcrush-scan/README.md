@@ -14,10 +14,31 @@ sh1pt actions install threatcrush-scan --repo owner/name --pr
 | --- | --- | --- |
 | `scanPath` | `.` | Path to scan, relative to the repository root. |
 | `nodeVersion` | `20` | See *Node 20, deliberately*, below. |
-| `threatcrushPackageSpec` | `@profullstack/threatcrush@0.11.0` | npm spec used to install the CLI. Pinned rather than `@latest` so one bad publish cannot break every consumer at once; bump it in a pack release. |
-| `threatcrushIntegrity` | *(sha512 of 0.11.0)* | SRI hash of that tarball. The workflow downloads, hashes and compares before installing, and refuses to install on a mismatch. Bump it with the spec — read it from `npm view <spec> dist.integrity`. Empty skips the check. |
+| `threatcrushPackageSpec` | `@profullstack/threatcrush@0.11.2` | npm spec used to install the CLI. Pinned rather than `@latest` so one bad publish cannot break every consumer at once; bump it in a pack release. |
+| `threatcrushIntegrity` | *(sha512 of 0.11.2)* | SRI hash of that tarball. The workflow downloads, hashes and compares before installing, and refuses to install on a mismatch. Bump it with the spec — read it from `npm view <spec> dist.integrity`. Empty skips the check. |
 | `failOn` | *(empty)* | Comma-separated severities that fail the job, e.g. `critical,high`. Empty is report-only. |
 | `uploadSarif` | `true` | Upload to the Security tab. |
+
+## Pinned means pinned — including for fixes
+
+The pin protects consumers from a bad publish. It equally withholds a good one:
+a repository on this pack does **not** pick up a scanner release until
+`threatcrushPackageSpec` and `threatcrushIntegrity` are bumped here and the
+fleet re-syncs.
+
+That has already produced the counter-intuitive case. Pack `1.6.0` pinned
+`0.11.0`, which predates the false-positive work in `0.11.2` — so a consumer on
+the *newer* pack got the *noisier* scanner, while an older install tracking
+`@latest` got the fixed one. On qryptchat-web that was the difference between 91
+findings and 13, with five spurious HIGHs.
+
+So a scanner release is not finished until this pin moves. Bump both inputs in
+the same edit — a hash from a different version fails closed, which is the right
+direction to fail but a confusing one to debug:
+
+```bash
+npm view @profullstack/threatcrush@<version> dist.integrity
+```
 
 ## Report-only by default
 

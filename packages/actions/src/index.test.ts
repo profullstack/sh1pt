@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { parse as parseYaml } from 'yaml';
 import { renderPack } from '@profullstack/sh1pt-actions-fleet-core';
@@ -235,6 +237,30 @@ describe('built-in packs', () => {
       expect(names).toContain('Determine which files this pull request touches');
       expect(names).toContain('Build the report');
     }
+  });
+
+  it('pins the CLI and its integrity hash to the same version', async () => {
+    // These two must move together. A hash left behind from the previous
+    // version fails *closed* — the workflow refuses to install and every
+    // consumer's scan stops — which is the right direction to fail and a
+    // thoroughly confusing one to debug from the job log.
+    const catalog = await loadBuiltinPacks();
+    const entry = catalog.get('threatcrush-scan');
+    if (!entry) throw new Error('threatcrush-scan not in catalog');
+
+    const inputs = entry.manifest.inputs as Record<string, { default?: string }>;
+    const spec = inputs.threatcrushPackageSpec?.default ?? '';
+    const integrity = inputs.threatcrushIntegrity?.default ?? '';
+
+    expect(spec).toMatch(/^@profullstack\/threatcrush@\d+\.\d+\.\d+$/);
+    expect(integrity).toMatch(/^sha512-[A-Za-z0-9+/]+={0,2}$/);
+
+    // The README's inputs table quotes both, and a stale table is how someone
+    // ends up bumping the spec while reading the old version's hash.
+    const readme = await readFile(join(entry.packDir, 'README.md'), 'utf-8');
+    const version = spec.split('@').pop();
+    expect(readme).toContain(spec);
+    expect(readme).toContain(`sha512 of ${version}`);
   });
 
   it('orders the report by severity rather than by file', async () => {

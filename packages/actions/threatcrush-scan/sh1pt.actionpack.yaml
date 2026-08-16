@@ -5,7 +5,7 @@ description: >-
   Scans pull requests for hardcoded credentials, injection, SSRF, unsafe
   deserialisation and dependency tampering, and uploads SARIF to the Security
   tab.
-version: 1.6.1
+version: 1.7.0
 publisher: profullstack
 visibility: public
 license: MIT
@@ -108,13 +108,6 @@ repoVariables: []
 files:
   - source: workflow.yml
     destination: .github/workflows/threatcrush-scan.yml
-    mergeStrategy: replace-managed
-  # Compatibility shim for CLI versions older than native `--format sarif`.
-  # Unused once the installed CLI can emit SARIF itself — the workflow picks
-  # the native path whenever it is available — but shipping it means a repo is
-  # scanned today rather than waiting on a release.
-  - source: threatcrush-to-sarif.py
-    destination: .github/scripts/threatcrush-to-sarif.py
     mergeStrategy: replace-managed
 policies:
   installMode: pull-request

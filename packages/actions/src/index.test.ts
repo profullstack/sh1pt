@@ -41,10 +41,11 @@ describe('built-in packs', () => {
     // needs no credentials is a pack that can be installed fleet-wide without
     // provisioning anything first.
     expect(entry?.manifest.secrets).toHaveLength(0);
-    // Workflow plus the legacy-output converter it falls back to.
+    // One file. The legacy-output converter was removed in 1.7.0 once the
+    // pinned CLI could emit SARIF itself; every file a pack writes into
+    // somebody else's repository is surface their reviewer has to read.
     expect(entry?.manifest.files.map((f) => f.destination)).toEqual([
       '.github/workflows/threatcrush-scan.yml',
-      '.github/scripts/threatcrush-to-sarif.py',
     ]);
   });
 
@@ -310,11 +311,13 @@ describe('built-in packs', () => {
       inputs: {},
     });
     const content = result.files[0]?.content ?? '';
-    expect(content).toContain("grep -q -- '--format'");
+    expect(content).toContain('--format sarif --output threatcrush.sarif');
     expect(content).toContain('if [ ! -s threatcrush.sarif ]; then');
-    // A CLI without --format takes the converter path rather than failing the
-    // repo out of being scanned at all.
-    expect(content).toContain('.github/scripts/threatcrush-to-sarif.py');
+    // The capability probe and the converter it guarded are both gone. The
+    // spec is pinned and the install refuses other bytes, so the interface is
+    // decided by the pack rather than discovered on the runner.
+    expect(content).not.toContain("grep -q -- '--format'");
+    expect(content).not.toContain('.github/scripts/threatcrush-to-sarif.py');
     expect(content).toContain('this diff was NOT scanned');
     // And the report must be fail-closed. Testing for status == "error" was
     // fail-open: when the capability check fails the scan step is *skipped*,

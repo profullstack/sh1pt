@@ -5,7 +5,7 @@ description: >-
   Scans pull requests for hardcoded credentials, injection, SSRF, unsafe
   deserialisation and dependency tampering, and uploads SARIF to the Security
   tab.
-version: 1.5.1
+version: 1.6.0
 publisher: profullstack
 visibility: public
 license: MIT

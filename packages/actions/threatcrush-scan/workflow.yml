@@ -31,6 +31,43 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          # Two commits, so the merge ref's own parents are present and the
+          # report can tell this pull request's files from the rest of the
+          # repository. See "Determine which files this pull request touches".
+          fetch-depth: 2
+
+      # Which findings belong to this review?
+      #
+      # The scan covers the whole tree, and it should: a credential three
+      # directories away is still committed. But a *pull request comment* is a
+      # review artifact, and a review is about the change under review. Posting
+      # the repository's entire standing backlog on every pull request means an
+      # author who changed two files is handed ninety findings they did not
+      # write, cannot action, and did not ask about — and the one finding that
+      # is theirs sits somewhere in the middle of it.
+      #
+      # `refs/pull/N/merge` has the base branch as its first parent and the
+      # pull request head as its second, so `HEAD^1..HEAD` is exactly this
+      # pull request's diff, with no API call and no token.
+      #
+      # That identity only holds for a real merge ref. When the pull request
+      # has conflicts GitHub cannot produce one, checkout falls back to the
+      # head commit, and `HEAD^1` silently becomes "the previous commit on the
+      # branch" — a plausible-looking answer to a different question. So the
+      # shape is verified before it is trusted, and a failure falls back to
+      # reporting everything unscoped rather than scoping to the wrong set.
+      - name: Determine which files this pull request touches
+        id: changed
+        run: |
+          if [ "$(git rev-list --parents --max-count=1 HEAD | wc -w)" -eq 3 ]; then
+            git diff --name-only HEAD^1 HEAD > "$RUNNER_TEMP/threatcrush-changed.txt"
+            echo "scoped=true" >> "$GITHUB_OUTPUT"
+            echo "Scoping the report to $(wc -l < "$RUNNER_TEMP/threatcrush-changed.txt") changed file(s)."
+          else
+            : > "$RUNNER_TEMP/threatcrush-changed.txt"
+            echo "scoped=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No merge ref (conflicted pull request?) — reporting every finding, unscoped."
+          fi
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -254,54 +291,122 @@ jobs:
                   "This is not a clean result. See the job log.",
               ]
           else:
-              counts = {"error": 0, "warning": 0, "note": 0}
-              for result in results:
-                  level = result.get("level", "warning")
-                  if level in counts:
-                      counts[level] += 1
+              LABELS = {"error": "HIGH", "warning": "MEDIUM", "note": "LOW"}
+              # Most serious first. The old order was SARIF's, which is file
+              # order — so the 50-row cap was decided by where a finding sat in
+              # the tree, and a `high` in the last file scanned could be cut
+              # while fifty `note`s from the first file were printed in full.
+              RANK = {"error": 0, "warning": 1, "note": 2}
 
-              lines.append(f"**{len(results)}** finding(s)")
-              lines.append("")
+              def locate(result):
+                  locations = result.get("locations") or []
+                  physical = (locations[0] if locations else {}).get("physicalLocation", {})
+                  uri = physical.get("artifactLocation", {}).get("uri", "")
+                  return uri, physical.get("region", {}).get("startLine", 1)
 
-              if results:
-                  badges = []
+              def tally(rows):
+                  counts = {"error": 0, "warning": 0, "note": 0}
+                  for row in rows:
+                      level = row.get("level", "warning")
+                      if level in counts:
+                          counts[level] += 1
+                  return counts
+
+              def badges(counts):
+                  out = []
                   if counts["error"]:
-                      badges.append(f"**HIGH/CRITICAL**: {counts['error']}")
+                      out.append(f"**HIGH/CRITICAL**: {counts['error']}")
                   if counts["warning"]:
-                      badges.append(f"**MEDIUM**: {counts['warning']}")
+                      out.append(f"**MEDIUM**: {counts['warning']}")
                   if counts["note"]:
-                      badges.append(f"**LOW**: {counts['note']}")
-                  if badges:
-                      lines += [" | ".join(badges), ""]
+                      out.append(f"**LOW**: {counts['note']}")
+                  return " | ".join(out)
 
-                  lines += ["| Severity | Rule | Location |", "|---|---|---|"]
-                  for result in results[:50]:
+              def table(rows, limit):
+                  out = ["| Severity | Rule | Location |", "|---|---|---|"]
+                  for result in rows[:limit]:
                       # SARIF permits a result with no locations, and the native
                       # --format sarif path is written by the CLI rather than by
                       # the converter beside this file. Indexing [0] there threw
                       # out of the enclosing try, so the report file was never
                       # written and the comment fell back to "could not be read"
                       # — a message that hides real findings behind a wrong one.
-                      locations = result.get("locations") or []
-                      location = (locations[0] if locations else {}).get("physicalLocation", {})
-                      uri = location.get("artifactLocation", {}).get("uri", "(no location)")
-                      line_no = location.get("region", {}).get("startLine", 1)
-                      label = {"error": "HIGH", "warning": "MEDIUM", "note": "LOW"}.get(
-                          result.get("level", "warning"), "INFO"
-                      )
-                      lines.append(f"| {label} | `{result.get('ruleId','?')}` | `{uri}`:{line_no} |")
-                  if len(results) > 50:
+                      uri, line_no = locate(result)
+                      label = LABELS.get(result.get("level", "warning"), "INFO")
+                      where = f"`{uri}`:{line_no}" if uri else "_(no location)_"
+                      out.append(f"| {label} | `{result.get('ruleId','?')}` | {where} |")
+                  if len(rows) > limit:
                       # Say so. A silent truncation reads as "that was everything".
-                      lines += ["", f"_…and {len(results) - 50} more. Full results in the Security tab._"]
-                  lines += ["", "Snippets are redacted; ThreatCrush never prints matched credential material."]
+                      out += ["", f"_…and {len(rows) - limit} more. Full results in the Security tab._"]
+                  return out
+
+              try:
+                  with open(os.environ["RUNNER_TEMP"] + "/threatcrush-changed.txt") as handle:
+                      changed = {entry.strip() for entry in handle if entry.strip()}
+              except Exception:
+                  changed = set()
+
+              scoped = os.environ.get("SCAN_SCOPED", "") == "true"
+              results.sort(key=lambda r: (RANK.get(r.get("level", "warning"), 3), locate(r)))
+
+              if scoped:
+                  touched = [r for r in results if locate(r)[0] in changed]
+                  backlog = [r for r in results if locate(r)[0] not in changed]
               else:
+                  touched, backlog = results, []
+
+              if not results:
                   lines.append("No findings.")
+              else:
+                  if scoped:
+                      lines += [
+                          f"**{len(touched)}** finding(s) in the {len(changed)} file(s) this "
+                          "pull request changes.",
+                          "",
+                      ]
+                  else:
+                      lines += [f"**{len(results)}** finding(s)", ""]
+
+                  if touched:
+                      badge_line = badges(tally(touched))
+                      if badge_line:
+                          lines += [badge_line, ""]
+                      lines += table(touched, 50)
+                  elif scoped:
+                      lines.append("Nothing in the files this pull request changes.")
+
+                  # The rest of the repository is reported, but not *at* the
+                  # author of an unrelated change. It is a standing backlog, it
+                  # was there before this branch, and it belongs behind a fold
+                  # — not in ninety rows above the review.
+                  if backlog:
+                      summary = badges(tally(backlog)) or "no severities"
+                      lines += [
+                          "",
+                          "<details>",
+                          f"<summary>{len(backlog)} pre-existing finding(s) elsewhere in the "
+                          f"repository — {summary}</summary>",
+                          "",
+                          "Not introduced by this pull request. The full set is in the "
+                          "Security tab.",
+                          "",
+                      ]
+                      lines += table(backlog, 20)
+                      lines += ["", "</details>"]
+
+                  lines += [
+                      "",
+                      "Snippets are redacted; ThreatCrush never prints matched credential material.",
+                  ]
 
           with open(os.environ["RUNNER_TEMP"] + "/threatcrush-comment.md", "w") as handle:
               handle.write("\n".join(lines) + "\n")
           PYEOF
         env:
           SCAN_STATUS: ${{ steps.scan.outputs.status }}
+          # Empty when the changed-file step was skipped or could not identify
+          # a merge ref, which reads as "not scoped" and reports everything.
+          SCAN_SCOPED: ${{ steps.changed.outputs.scoped }}
 
       - name: Write report to job summary
         if: always()

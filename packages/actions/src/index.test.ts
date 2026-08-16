@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { parse as parseYaml } from 'yaml';
 import { renderPack } from '@profullstack/sh1pt-actions-fleet-core';
 import { loadBuiltinPacks } from './index.js';
 
@@ -179,6 +180,78 @@ describe('built-in packs', () => {
     // Empty by default, so a first install reports rather than blocks.
     expect(file?.content).toContain('FAIL_ON=""');
     expect(file?.content).toContain('# Managed by sh1pt Actions Fleet');
+  });
+
+  it('scopes the pull request comment to the files the pull request changes', async () => {
+    // qryptchat-web#258 changed two files and was handed 91 findings, five of
+    // them HIGH, none of them from the diff under review. The scan still
+    // covers the whole tree and the Security tab still receives all of it —
+    // but the comment leads with the change being reviewed, and the standing
+    // backlog goes behind a fold.
+    const catalog = await loadBuiltinPacks();
+    const entry = catalog.get('threatcrush-scan');
+    if (!entry) throw new Error('threatcrush-scan not in catalog');
+    const result = await renderPack({
+      packDir: entry.packDir,
+      manifest: entry.manifest,
+      inputs: {},
+    });
+    const content = result.files[0]?.content ?? '';
+
+    // The merge ref's parents are what identify the diff, so the checkout has
+    // to be deep enough to have them.
+    expect(content).toContain('fetch-depth: 2');
+    expect(content).toContain('git diff --name-only HEAD^1 HEAD');
+    expect(content).toContain('SCAN_SCOPED: ${{ steps.changed.outputs.scoped }}');
+    expect(content).toContain('pre-existing finding(s) elsewhere in the');
+
+    // A conflicted pull request has no merge ref, and `HEAD^1` would then
+    // answer a different question. That case must report everything rather
+    // than scope to the wrong set of files.
+    expect(content).toContain('echo "scoped=false" >> "$GITHUB_OUTPUT"');
+  });
+
+  it('still renders valid YAML with the report steps in place', async () => {
+    // The report builder is a heredoc'd Python program inside a `run:` block,
+    // so an indentation slip there produces a workflow GitHub refuses to load
+    // — and every assertion above would still pass on the broken file.
+    const catalog = await loadBuiltinPacks();
+    const entry = catalog.get('threatcrush-scan');
+    if (!entry) throw new Error('threatcrush-scan not in catalog');
+
+    const variants = [
+      {},
+      { failOn: 'critical,high', commentOnPr: 'true', uploadSarif: 'true' },
+      // Both outputs off is the minimum-permission install, and it renders a
+      // different `permissions:` block — so it is a different YAML document.
+      { commentOnPr: 'false', uploadSarif: 'false' },
+    ];
+    for (const inputs of variants) {
+      const result = await renderPack({ packDir: entry.packDir, manifest: entry.manifest, inputs });
+      const workflow = parseYaml(result.files[0]?.content ?? '');
+      const steps = workflow?.jobs?.scan?.steps ?? [];
+      const names = steps.map((step: { name?: string }) => step?.name);
+      expect(names).toContain('Determine which files this pull request touches');
+      expect(names).toContain('Build the report');
+    }
+  });
+
+  it('orders the report by severity rather than by file', async () => {
+    // The 50-row cap used to be applied in SARIF order, which is file order,
+    // so which findings survived truncation was decided by where they sat in
+    // the tree — a HIGH in the last file scanned could be cut while fifty
+    // notes from the first were printed in full.
+    const catalog = await loadBuiltinPacks();
+    const entry = catalog.get('threatcrush-scan');
+    if (!entry) throw new Error('threatcrush-scan not in catalog');
+    const result = await renderPack({
+      packDir: entry.packDir,
+      manifest: entry.manifest,
+      inputs: {},
+    });
+    const content = result.files[0]?.content ?? '';
+    expect(content).toContain('RANK = {"error": 0, "warning": 1, "note": 2}');
+    expect(content).toContain('results.sort(key=lambda r:');
   });
 
   it('renders threatcrush-scan with a failure gate when asked', async () => {

@@ -26,6 +26,10 @@ importers:
       '@profullstack/sh1pt-actions-fleet-core':
         specifier: workspace:^
         version: link:../actions-fleet-core
+    devDependencies:
+      yaml:
+        specifier: ^2.6.0
+        version: 2.9.0
 
   packages/actions-fleet-core:
     dependencies:

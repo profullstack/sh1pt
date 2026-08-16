@@ -27,6 +27,41 @@ fires on everything gets switched off within a day, and a gate that is off is
 worse than one that was never installed. Tighten it to `critical,high` once the
 backlog is triaged.
 
+## The comment is scoped to the pull request; the scan is not
+
+The scan always covers the whole tree, and the Security tab always receives all
+of it. A credential three directories away is still committed, and narrowing
+what gets *scanned* would be a real loss of coverage.
+
+The **comment** is a different artifact. It is part of a review, and a review is
+about the change under review. Reporting the repository's whole standing backlog
+on every pull request means an author who touched two files is handed ninety
+findings they did not write and cannot action — and the one that is theirs is
+somewhere in the middle of it. That is how a scanner teaches a team to scroll
+past it.
+
+So the comment leads with findings in the files the pull request changes, and
+folds the rest into one `<details>` line with its severity counts. Nothing is
+hidden: the fold lists the most serious twenty, and the Security tab has
+everything.
+
+The diff comes from `HEAD^1..HEAD`. `refs/pull/N/merge` has the base branch as
+its first parent and the pull request head as its second, so that range is
+exactly the pull request — no API call, no token, no extra permission. It needs
+`fetch-depth: 2`, which is why checkout asks for it.
+
+A conflicted pull request has no merge ref. Checkout then falls back to the head
+commit, where `HEAD^1` means "the previous commit on this branch" — a
+plausible-looking answer to a different question. The workflow checks that HEAD
+really has two parents before trusting the range, and when it does not, it
+reports every finding unscoped and says so in the log. Scoping to the wrong set
+of files is worse than not scoping.
+
+Within each section, findings are ordered **most severe first**. They used to
+print in SARIF order, which is file order, so the 50-row cap was decided by where
+a finding sat in the tree: a `high` in the last file scanned could be truncated
+away while fifty `note`s from the first file printed in full.
+
 ## Two output paths, chosen up front
 
 The workflow checks `threatcrush scan --help` for `--format` **before**

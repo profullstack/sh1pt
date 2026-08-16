@@ -62,40 +62,37 @@ print in SARIF order, which is file order, so the 50-row cap was decided by wher
 a finding sat in the tree: a `high` in the last file scanned could be truncated
 away while fifty `note`s from the first file printed in full.
 
-## Two output paths, chosen up front
+## One output path
 
-The workflow checks `threatcrush scan --help` for `--format` **before**
-scanning, and picks accordingly:
+The CLI emits SARIF itself. The workflow asks for it and nothing parses
+anything:
 
-| CLI | Path |
-| --- | --- |
-| Has `--format` | Native SARIF. Preferred; nothing is parsed. |
-| Older | Runs the text scan and converts it with `.github/scripts/threatcrush-to-sarif.py`. |
+```
+threatcrush scan "$SCAN_PATH" --format sarif --output threatcrush.sarif
+```
 
-The check happens up front because exit codes cannot tell the two failures
-apart. The published `0.2.2` has no `--format`: the scan died with
-`error: unknown option '--format'` and commander exited `1` — *the same code
-the CLI uses for findings at or above `failOn`*. Read as a result, that
-produced no SARIF, the empty-run fallback supplied one, and the PR comment
-said **0 findings**. A green check on a repository that was never scanned.
+There used to be a second path — a capability probe on `--format`, and a
+235-line Python converter that reconstructed findings by regex from the
+terminal output when the probe said no. Both were removed in 1.7.0, because
+the premise stopped holding: `threatcrushPackageSpec` pins an exact version
+and the install step refuses any other bytes, so which interface the CLI has
+is decided by the pack rather than discovered on the runner. The probe could
+only ever answer yes.
 
-The converter **fails closed**: if it cannot recognise the output it exits
-non-zero and writes nothing, dumping what it saw. Emitting empty SARIF instead
-would report "0 findings", which is indistinguishable from a clean scan.
+Removing it is a security change more than a tidying one. The converter read a
+*display* format, which is free to change between releases — the failure mode
+being a silent undercount that still looks like a completed scan. And every
+file a pack writes into somebody else's repository is surface a reviewer has
+to read; this pack now installs one workflow and nothing else. That was a
+direct ask from a maintainer reviewing the supply chain before merging.
 
-Three details of the legacy format are load-bearing, and the converter is
-tested against real captured output rather than assumption:
-
-- Severity is bare for `CRITICAL`, bracketed for `[HIGH]`/`[MEDIUM]`/`[LOW]`.
-  One regex shape misses half the findings.
-- `File:` paths are relative to the scan root, not the repository root.
-  Unprefixed, every finding resolves to nothing in the consumer's view.
-- Whole-file findings report line `:0`; SARIF requires `startLine >= 1`.
-
-**The legacy path is a stopgap, not a destination.** `0.2.2` is a secrets
-scanner: it scores 12.9% against the testbed. Once a CLI with `--format` is
-published the workflow switches to it automatically and coverage goes to
-90.32%.
+The history is worth keeping, because it is the reason the exit-code handling
+below is written the way it is. The published `0.2.2` had no `--format`: the
+scan died with `error: unknown option '--format'` and commander exited `1` —
+*the same code the CLI uses for findings at or above `failOn`*. Read as a
+result, that produced no SARIF, the empty-run fallback supplied one, and the
+comment said **0 findings**. A green check on a repository that was never
+scanned.
 
 ## Exit codes are distinguished
 

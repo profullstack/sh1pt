@@ -146,65 +146,35 @@ jobs:
           threatcrush --version || true
           threatcrush scan --help || true
 
-      # Which interface does the installed CLI actually have?
+      # The CLI emits SARIF itself, so this asks for it and nothing converts
+      # anything.
       #
-      # Determined up front rather than inferred from an exit code, because
-      # exit codes cannot tell the two failures apart. `0.2.2` has no
-      # `--format`: the scan died with `error: unknown option '--format'` and
-      # commander exited 1 — the same code the CLI uses for "findings at or
-      # above --fail-on". Read as a result, that produced a green check and a
-      # "0 findings" comment on a repository nothing had scanned.
-      - name: Detect the CLI output interface
-        id: iface
-        run: |
-          if threatcrush scan --help 2>&1 | grep -q -- '--format'; then
-            echo "native=true" >> "$GITHUB_OUTPUT"
-            echo "Native SARIF output available."
-          else
-            echo "native=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::CLI $(threatcrush --version 2>/dev/null || echo unknown) predates --format; converting terminal output instead."
-          fi
-
+      # There used to be a second path here: a capability probe on `--format`,
+      # and a 235-line Python converter that parsed the terminal output when
+      # the probe said no. Both are gone, because the premise stopped holding.
+      # `threatcrushPackageSpec` pins an exact version and the step above
+      # refuses to install any other bytes, so "which interface does the
+      # installed CLI have" is answered by the pack, not discovered at
+      # runtime — the probe could only ever say yes.
+      #
+      # Deleting it is a security change more than a tidying one. The
+      # converter reconstructed findings by regex out of a display format that
+      # is free to change, which is a silent-undercount waiting to happen; and
+      # every file a pack installs into somebody else's repository is surface
+      # they have to review. This one now installs a single workflow.
       - name: Scan
         id: scan
-        # Through env rather than expanded into the script. The value comes from
-        # our own iface step so it is not attacker-controlled, but "a workflow
-        # expression interpolated into a shell body" is the shape of a template
-        # injection and static analysis reads the shape, not the provenance.
-        env:
-          NATIVE: ${{ steps.iface.outputs.native }}
         run: |
           set -o pipefail
           FAIL_ON="{{failOn}}"
           SCAN_PATH="{{scanPath}}"
           code=0
 
-          if [ "$NATIVE" = "true" ]; then
-            ARGS=(scan "$SCAN_PATH" --format sarif --output threatcrush.sarif)
-            if [ -n "$FAIL_ON" ]; then
-              ARGS+=(--fail-on "$FAIL_ON")
-            fi
-            threatcrush "${ARGS[@]}" || code=$?
-          else
-            # Compatibility path for CLIs older than native SARIF. The
-            # converter fails closed: if it cannot recognise the output it
-            # exits non-zero and writes nothing, so an unparseable scan can
-            # never arrive downstream looking like a clean one.
-            threatcrush scan "$SCAN_PATH" 2>&1 | tee threatcrush-output.txt || true
-            PREFIX=""
-            if [ "$SCAN_PATH" != "." ]; then
-              # Paths in terminal output are relative to the scan root. Left
-              # unprefixed they resolve to nothing in the repository view, and
-              # every finding reads as out-of-scope.
-              PREFIX="$SCAN_PATH"
-            fi
-            python3 .github/scripts/threatcrush-to-sarif.py \
-              --input threatcrush-output.txt \
-              --output threatcrush.sarif \
-              --path-prefix "$PREFIX" \
-              --tool-version "$(threatcrush --version 2>/dev/null || echo unknown)" \
-              --fail-on "$FAIL_ON" || code=$?
+          ARGS=(scan "$SCAN_PATH" --format sarif --output threatcrush.sarif)
+          if [ -n "$FAIL_ON" ]; then
+            ARGS+=(--fail-on "$FAIL_ON")
           fi
+          threatcrush "${ARGS[@]}" || code=$?
 
           # The SARIF file is the evidence that a scan happened, and it is the
           # only evidence worth trusting. An exit code says what the process

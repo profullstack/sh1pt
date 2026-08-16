@@ -5,7 +5,7 @@ description: >-
   Scans pull requests for hardcoded credentials, injection, SSRF, unsafe
   deserialisation and dependency tampering, and uploads SARIF to the Security
   tab.
-version: 1.6.0
+version: 1.7.0
 publisher: profullstack
 visibility: public
 license: MIT
@@ -32,7 +32,7 @@ inputs:
       that fails without a full toolchain.
   threatcrushPackageSpec:
     type: string
-    default: '@profullstack/threatcrush@0.11.0'
+    default: '@profullstack/threatcrush@0.11.2'
     description: >-
       npm spec used to install the CLI. Pinned, not `@latest`: a scanner that
       runs on every pull request is a dependency, and `@latest` means one bad
@@ -42,7 +42,7 @@ inputs:
       version that was checked first.
   threatcrushIntegrity:
     type: string
-    default: 'sha512-EKcaxsgiydi7qCH0FhvNviKUpyVi/CImwNS6Kx3IbWMuUjUPCXISAUIzFnYo8BiC+jG9dxfFDMBlwZdhqhwWfQ=='
+    default: 'sha512-8N3jqCQixK0Onc+/bvuJaNCSvGZlJYZcSAGsd1nEfRZ4kOu1Ifom7Bd1t2muYJAmAxBTPmz1iseWSay/0gg3Gw=='
     description: >-
       Subresource-integrity hash of the tarball named by threatcrushPackageSpec,
       in npm's own `sha512-<base64>` form. The workflow downloads, hashes and
@@ -108,13 +108,6 @@ repoVariables: []
 files:
   - source: workflow.yml
     destination: .github/workflows/threatcrush-scan.yml
-    mergeStrategy: replace-managed
-  # Compatibility shim for CLI versions older than native `--format sarif`.
-  # Unused once the installed CLI can emit SARIF itself — the workflow picks
-  # the native path whenever it is available — but shipping it means a repo is
-  # scanned today rather than waiting on a release.
-  - source: threatcrush-to-sarif.py
-    destination: .github/scripts/threatcrush-to-sarif.py
     mergeStrategy: replace-managed
 policies:
   installMode: pull-request

@@ -42,8 +42,42 @@ export class MissingInputError extends Error {
 const TAG_RE = /(?<!\$)\{\{([^{}]*)\}\}/g;
 const SAFE_VAR_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
+// A whole-line {{#if varName}} … {{/if}} pair, markers included.
+//
+// Deliberately the only control construct, and deliberately not nestable: the
+// point is to *omit* an optional step rather than leave it in the file behind a
+// false `if:` condition. A workflow that ships a disabled Security-tab upload
+// still asks a reviewer to read and trust that upload, which is the objection
+// this exists to answer — dead surface in a security-sensitive file is surface
+// all the same.
+//
+// Still a bare variable name inside the marker, so the "only {{varName}}"
+// guarantee below is unchanged: there is no expression to evaluate, only a
+// value to compare against 'true'.
+const BLOCK_RE = /^[ \t]*\{\{#if ([^{}]*)\}\}[ \t]*\n([\s\S]*?)^[ \t]*\{\{\/if\}\}[ \t]*\n/gm;
+
+function applyBlocks(template: string, values: Record<string, string>): string {
+  return template.replace(BLOCK_RE, (_match, rawExpr: string, body: string) => {
+    const expr = rawExpr.trim();
+    if (!SAFE_VAR_RE.test(expr)) {
+      throw new TemplateRenderError(
+        `unsupported template expression "{{#if ${rawExpr}}}" — only {{#if varName}} is allowed`,
+      );
+    }
+    if (!Object.prototype.hasOwnProperty.call(values, expr)) {
+      throw new TemplateRenderError(`template referenced unknown variable "${expr}"`);
+    }
+    // Anything other than the literal 'true' drops the block. Pack inputs are
+    // strings with a 'true'/'false' enum, and treating a stray value as truthy
+    // would turn a typo into a granted write scope.
+    return values[expr] === 'true' ? body : '';
+  });
+}
+
 export function applyTemplate(template: string, values: Record<string, string>): string {
-  return template.replace(TAG_RE, (_match, rawExpr: string) => {
+  // Blocks first: a dropped block must not have its {{vars}} resolved, and an
+  // unresolvable variable inside a dropped block is not an error.
+  return applyBlocks(template, values).replace(TAG_RE, (_match, rawExpr: string) => {
     const expr = rawExpr.trim();
     if (!SAFE_VAR_RE.test(expr)) {
       throw new TemplateRenderError(

@@ -350,4 +350,70 @@ describe('built-in packs', () => {
     expect(directives).toMatch(/^on:\n\s+pull_request:\s*$/m);
     expect(entry.manifest.security.allowPullRequestTarget).toBe(false);
   });
+
+  it('omits the write scopes and the steps that need them, rather than disabling them', async () => {
+    // The read-only install is the version a first-time reviewer is asked to
+    // trust, so "least privilege" has to be a property of the rendered file
+    // rather than of a condition inside it. A shipped-but-disabled Security
+    // tab upload still asks a maintainer to read and reason about an upload.
+    //
+    // mac-developer-bridge declined the earlier shape on exactly this: the two
+    // write scopes were requested unconditionally even though the workflow was
+    // described as report-only, and GitHub downgrades them on fork pull
+    // requests anyway — so the richest outputs were the least reliable ones
+    // precisely where the scan is most useful.
+    const catalog = await loadBuiltinPacks();
+    const entry = catalog.get('threatcrush-scan');
+    if (!entry) throw new Error('threatcrush-scan not in catalog');
+    const result = await renderPack({
+      packDir: entry.packDir,
+      manifest: entry.manifest,
+      inputs: { commentOnPr: 'false', uploadSarif: 'false' },
+    });
+    const content = result.files[0]?.content ?? '';
+    const workflow = parseYaml(content);
+
+    expect(workflow.permissions).toEqual({ contents: 'read' });
+
+    const names = (workflow?.jobs?.scan?.steps ?? []).map((step: { name?: string }) => step?.name);
+    expect(names).not.toContain('Upload to the Security tab');
+    expect(names).not.toContain('Comment on PR');
+
+    // Gone from the file, not merely unreachable in it. `upload-sarif` and
+    // `github-script` are the two actions that would hold those scopes.
+    expect(content).not.toContain('upload-sarif');
+    expect(content).not.toContain('github-script');
+    expect(content).not.toContain('security-events');
+    expect(content).not.toContain('pull-requests: write');
+
+    // The read-only outputs are the ones that survive, and they are also the
+    // two that work on a fork pull request.
+    expect(names).toContain('Build the report');
+    expect(names).toContain('Upload SARIF artifact');
+    expect(content).toContain('$GITHUB_STEP_SUMMARY');
+  });
+
+  it('still asks for a write scope only when the output that needs it is on', async () => {
+    // Each scope is emitted by its own output, so the block cannot drift out
+    // of step with what the workflow does. It used to be one hand-assembled
+    // `extraPermissions` string, which made least privilege something a caller
+    // had to remember.
+    const catalog = await loadBuiltinPacks();
+    const entry = catalog.get('threatcrush-scan');
+    if (!entry) throw new Error('threatcrush-scan not in catalog');
+
+    const permissionsFor = async (inputs: Record<string, string>) => {
+      const result = await renderPack({ packDir: entry.packDir, manifest: entry.manifest, inputs });
+      return parseYaml(result.files[0]?.content ?? '').permissions;
+    };
+
+    expect(await permissionsFor({ commentOnPr: 'true', uploadSarif: 'false' })).toEqual({
+      contents: 'read',
+      'pull-requests': 'write',
+    });
+    expect(await permissionsFor({ commentOnPr: 'false', uploadSarif: 'true' })).toEqual({
+      contents: 'read',
+      'security-events': 'write',
+    });
+  });
 });

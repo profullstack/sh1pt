@@ -67,6 +67,50 @@ describe('applyTemplate', () => {
   it('rejects unknown variables', () => {
     expect(() => applyTemplate('{{missing}}', {})).toThrow(TemplateRenderError);
   });
+
+  it('keeps a {{#if}} block when the variable is exactly "true"', () => {
+    const out = applyTemplate('a\n{{#if on}}\nb\n{{/if}}\nc\n', { on: 'true' });
+    expect(out).toBe('a\nb\nc\n');
+  });
+
+  it('drops a {{#if}} block, and its markers, otherwise', () => {
+    for (const value of ['false', '', 'TRUE', 'yes', '1']) {
+      const out = applyTemplate('a\n{{#if on}}\nb\n{{/if}}\nc\n', { on: value });
+      // Anything but the literal 'true' drops it: pack inputs are strings with
+      // a 'true'/'false' enum, and treating a stray value as truthy would turn
+      // a typo into a granted write scope.
+      expect(out).toBe('a\nc\n');
+    }
+  });
+
+  it('leaves variables inside a dropped block unresolved rather than erroring', () => {
+    // The block is removed before substitution, so a variable that only makes
+    // sense when the block is on does not have to be supplied when it is off.
+    const out = applyTemplate('a\n{{#if on}}\n{{onlyWhenOn}}\n{{/if}}\nc\n', { on: 'false' });
+    expect(out).toBe('a\nc\n');
+  });
+
+  it('still substitutes variables inside a kept block', () => {
+    const out = applyTemplate('{{#if on}}\nnode: {{nodeVersion}}\n{{/if}}\n', {
+      on: 'true',
+      nodeVersion: '22',
+    });
+    expect(out).toBe('node: 22\n');
+  });
+
+  it('rejects a {{#if}} on an unknown variable', () => {
+    expect(() => applyTemplate('{{#if nope}}\nx\n{{/if}}\n', {})).toThrow(TemplateRenderError);
+  });
+
+  it('rejects an unterminated {{#if}}', () => {
+    // Falls through to the scalar pass, where "#if on" is not a variable name.
+    expect(() => applyTemplate('{{#if on}}\nx\n', { on: 'true' })).toThrow(TemplateRenderError);
+  });
+
+  it('does not treat a GitHub expression inside a block as a template tag', () => {
+    const out = applyTemplate('{{#if on}}\nrun: ${{ github.sha }}\n{{/if}}\n', { on: 'true' });
+    expect(out).toBe('run: ${{ github.sha }}\n');
+  });
 });
 
 describe('resolveInputs', () => {

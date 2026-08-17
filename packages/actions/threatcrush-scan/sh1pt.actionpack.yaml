@@ -5,7 +5,7 @@ description: >-
   Scans pull requests for hardcoded credentials, injection, SSRF, unsafe
   deserialisation and dependency tampering, and uploads SARIF to the Security
   tab.
-version: 2.0.0
+version: 2.0.1
 publisher: profullstack
 visibility: public
 license: MIT
@@ -32,7 +32,7 @@ inputs:
       that fails without a full toolchain.
   threatcrushPackageSpec:
     type: string
-    default: '@profullstack/threatcrush@0.11.2'
+    default: '@profullstack/threatcrush@0.11.3'
     description: >-
       npm spec used to install the CLI. Pinned, not `@latest`: a scanner that
       runs on every pull request is a dependency, and `@latest` means one bad
@@ -42,7 +42,7 @@ inputs:
       version that was checked first.
   threatcrushIntegrity:
     type: string
-    default: 'sha512-8N3jqCQixK0Onc+/bvuJaNCSvGZlJYZcSAGsd1nEfRZ4kOu1Ifom7Bd1t2muYJAmAxBTPmz1iseWSay/0gg3Gw=='
+    default: 'sha512-lxWvTtLDgckiWlRB3wMSoBNfMZ/3ao0CcmwETGyKclc+5NMU5Pl0jXSr0h+QrTtfxh7TNStk4ZgP5h8xbEvIWw=='
     description: >-
       Subresource-integrity hash of the tarball named by threatcrushPackageSpec,
       in npm's own `sha512-<base64>` form. The workflow downloads, hashes and

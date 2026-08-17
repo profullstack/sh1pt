@@ -5,7 +5,7 @@ description: >-
   Scans pull requests for hardcoded credentials, injection, SSRF, unsafe
   deserialisation and dependency tampering, and uploads SARIF to the Security
   tab.
-version: 1.7.0
+version: 2.0.0
 publisher: profullstack
 visibility: public
 license: MIT
@@ -74,17 +74,15 @@ inputs:
       and the SARIF artifact instead. That is the configuration for a
       repository that wants the scan without granting a third-party CLI any
       write scope, which is a substantial part of what reviewers decline on.
-  extraPermissions:
-    type: string
-    default: "  pull-requests: write\n  security-events: write"
-    description: >-
-      The permission lines added beneath `contents: read`, computed from
-      uploadSarif and commentOnPr rather than set by hand. Two spaces of
-      indentation per line; empty when neither output is enabled.
-
-      An input rather than a fixed block because a workflow that asks for a
-      write scope it will not use cannot argue it is least-privilege, and the
-      two scopes here only exist to serve features a consumer can switch off.
+  # No input controls the `permissions:` block. Each write scope is emitted by
+  # the output that needs it — `pull-requests: write` from commentOnPr,
+  # `security-events: write` from uploadSarif — so the block cannot drift out of
+  # step with what the workflow actually does. It used to be an `extraPermissions`
+  # string the caller assembled by hand, which made "least privilege" a thing a
+  # caller had to remember rather than a property of the template.
+  #
+  # Omitted, not disabled: with both outputs off the rendered file has no write
+  # scope and no step that would use one.
   failOn:
     type: string
     default: ''

@@ -17,7 +17,33 @@ sh1pt actions install threatcrush-scan --repo owner/name --pr
 | `threatcrushPackageSpec` | `@profullstack/threatcrush@0.11.2` | npm spec used to install the CLI. Pinned rather than `@latest` so one bad publish cannot break every consumer at once; bump it in a pack release. |
 | `threatcrushIntegrity` | *(sha512 of 0.11.2)* | SRI hash of that tarball. The workflow downloads, hashes and compares before installing, and refuses to install on a mismatch. Bump it with the spec — read it from `npm view <spec> dist.integrity`. Empty skips the check. |
 | `failOn` | *(empty)* | Comma-separated severities that fail the job, e.g. `critical,high`. Empty is report-only. |
-| `uploadSarif` | `true` | Upload to the Security tab. |
+| `uploadSarif` | `true` | Upload to the Security tab. Emits `security-events: write`. |
+| `commentOnPr` | `true` | Post the report as a pull request comment. Emits `pull-requests: write`. |
+
+## Least privilege is a property of the file, not a condition inside it
+
+Set `uploadSarif` and `commentOnPr` both to `false` and the rendered workflow
+asks for `contents: read` and nothing else. The findings go to the job summary
+and the SARIF artifact, neither of which needs a write scope.
+
+The two steps that would use those scopes are **not present** in that render —
+not shipped-and-disabled. This is the difference the pack cares about: a
+disabled Security-tab upload still asks a maintainer to read an upload, reason
+about what it mutates, and take on trust that the condition guarding it is
+correct. Dead surface in a security-sensitive file is surface all the same, and
+a reviewer counting what they are being asked to trust counts it.
+
+Each scope is emitted by the output that needs it, so the `permissions:` block
+cannot drift out of step with what the workflow actually does. It used to be a
+single hand-assembled `extraPermissions` string, which made least privilege
+something a caller had to remember rather than something the template
+guaranteed.
+
+There is a second reason to prefer this shape on a first install, and it is not
+about trust: **fork pull requests get a read-only `GITHUB_TOKEN`**. The comment
+and the Security-tab upload are the outputs GitHub downgrades, so the richest
+reporting is least reliable exactly where an external scan is most useful. The
+job summary and the artifact work the same on every pull request.
 
 ## Pinned means pinned — including for fixes
 

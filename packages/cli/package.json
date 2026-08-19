@@ -19,6 +19,9 @@
     "devtools"
   ],
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "bin": {
     "sh1pt": "./bin/sh1pt.js"
   },

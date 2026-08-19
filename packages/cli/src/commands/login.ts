@@ -15,7 +15,7 @@ import {
 // the user approves on the page (or until the code expires).
 export const loginCmd = new Command('login')
   .description('Pair this CLI with your sh1pt.com account')
-  .option('--no-browser', 'do not auto-open the verification URL', false)
+  .option('--no-browser', 'do not auto-open the verification URL')
   .action(async (opts: { browser: boolean }) => {
     const existing = await readCredentials();
     if (existing) {

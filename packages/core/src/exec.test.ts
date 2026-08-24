@@ -41,6 +41,20 @@ describe('exec', () => {
       'quoted "value"',
     ]);
   });
+
+  it('falls back to the last stdout line in the failure message when stderr is empty', async () => {
+    await expect(exec('sh', ['-c', 'echo useful-diagnostic-on-stdout; exit 3'], {
+      log: () => {},
+      throwOnNonZero: true,
+    })).rejects.toThrow('failed (exit 3): useful-diagnostic-on-stdout');
+  });
+
+  it('prefers the last non-empty stderr line in the failure message', async () => {
+    await expect(exec('sh', ['-c', 'echo noisy >&2; echo real-error >&2; exit 2'], {
+      log: () => {},
+      throwOnNonZero: true,
+    })).rejects.toThrow('failed (exit 2): real-error');
+  });
 });
 
 describe('ensureCli', () => {

@@ -72,7 +72,11 @@ export async function exec(cmd: string, args: string[], opts: ExecOptions): Prom
     child.on('close', (exitCode) => {
       const result: ExecResult = { exitCode: exitCode ?? -1, stdout, stderr };
       if (throwOnNonZero && result.exitCode !== 0) {
-        const tail = stderr.trim().split('\n').pop() ?? stdout.trim().split('\n').pop() ?? '';
+        // Prefer the last non-empty stderr line; fall back to stdout. Note
+        // `''.trim().split('\n').pop()` returns '' (not undefined), so a plain
+        // ??-chain never reaches the stdout fallback when stderr is empty.
+        const lastLine = (s: string) => s.trim().split('\n').filter(Boolean).pop() ?? '';
+        const tail = lastLine(stderr) || lastLine(stdout);
         reject(new Error(`${cmd} ${args.join(' ')} failed (exit ${result.exitCode}): ${tail}`));
       } else {
         resolve(result);

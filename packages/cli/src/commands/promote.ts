@@ -829,9 +829,32 @@ function inferMediaKind(file: string): 'image' | 'video' | 'gif' {
 }
 
 export function parseSchedule(value: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:\d{2})$/.exec(value);
+  if (!match) {
+    throw new InvalidArgumentError('must be a valid ISO timestamp with a timezone');
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+  const second = Number(match[6]);
+  const timezone = match[7]!;
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const timezoneParts = timezone === 'Z' ? undefined : /^([+-])(\d{2}):(\d{2})$/.exec(timezone);
+
+  if (
+    month < 1 || month > 12 || day < 1 || day > daysInMonth
+    || hour > 23 || minute > 59 || second > 59
+    || (timezoneParts && (Number(timezoneParts[2]) > 23 || Number(timezoneParts[3]) > 59))
+  ) {
+    throw new InvalidArgumentError('must be a valid ISO timestamp with a timezone');
+  }
+
   const schedule = new Date(value);
   if (Number.isNaN(schedule.getTime())) {
-    throw new InvalidArgumentError('must be a valid ISO timestamp');
+    throw new InvalidArgumentError('must be a valid ISO timestamp with a timezone');
   }
   return schedule;
 }

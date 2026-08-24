@@ -109,4 +109,63 @@ describe('normalize', () => {
     });
     expect(ir.operations[0]?.id).toBe('deleteFooId');
   });
+
+  it('operation-level parameters override path-level ones with the same name+in', () => {
+    const ir = normalize({
+      openapi: '3.0.0',
+      info: { title: 'Override', version: '1' },
+      paths: {
+        '/pets/{petId}': {
+          parameters: [
+            { name: 'petId', in: 'path', required: true, schema: { type: 'string' } },
+            { name: 'verbose', in: 'query', schema: { type: 'boolean' } },
+          ],
+          get: {
+            operationId: 'getPet',
+            parameters: [
+              {
+                name: 'petId',
+                in: 'path',
+                required: true,
+                description: 'more specific override',
+                schema: { type: 'string', minLength: 1 },
+              },
+            ],
+            responses: { '200': { description: 'ok' } },
+          },
+        },
+      },
+    });
+
+    const params = ir.operations[0]!.parameters;
+    // The path-level petId must be replaced, not duplicated alongside the op-level one.
+    expect(params.filter((p) => p.name === 'petId')).toHaveLength(1);
+    expect(params.find((p) => p.name === 'petId')?.description).toBe('more specific override');
+    // Path-level parameters not overridden by the operation are kept.
+    expect(params.some((p) => p.name === 'verbose')).toBe(true);
+  });
+
+  it('resolves $ref path parameters before applying the same name+in override rule', () => {
+    const ir = normalize({
+      openapi: '3.0.0',
+      info: { title: 'RefOverride', version: '1' },
+      paths: {
+        '/pets/{petId}': {
+          parameters: [{ $ref: '#/components/parameters/PetId' }],
+          get: {
+            operationId: 'getPet',
+            parameters: [{ name: 'petId', in: 'path', required: true, schema: { type: 'string' } }],
+            responses: { '200': { description: 'ok' } },
+          },
+        },
+      },
+      components: {
+        parameters: {
+          PetId: { name: 'petId', in: 'path', required: true, schema: { type: 'string' } },
+        },
+      },
+    });
+
+    expect(ir.operations[0]!.parameters.filter((p) => p.name === 'petId')).toHaveLength(1);
+  });
 });

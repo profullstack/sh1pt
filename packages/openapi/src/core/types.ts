@@ -3,7 +3,7 @@
 // keep JSON Schema as a pass-through `unknown` to avoid reimplementing it;
 // generators that need richer typing can walk it themselves.
 
-export type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'head' | 'options';
+export type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'head' | 'options' | 'trace';
 
 export interface Parameter {
   name: string;

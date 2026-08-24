@@ -8,7 +8,9 @@ import type {
   SecurityScheme,
 } from './types.js';
 
-const METHODS: HttpMethod[] = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options'];
+// `trace` is part of the OpenAPI 3 Operations Object — without it, trace
+// operations are silently dropped from the IR and every generator output.
+const METHODS: HttpMethod[] = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options', 'trace'];
 
 // Walks a parsed OpenAPI 3.x document and produces our internal IR.
 // $ref resolution is intentionally shallow: we only resolve refs that point

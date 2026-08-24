@@ -36,6 +36,41 @@ describe('parsePaymentsSummary', () => {
     expect(parsePaymentsSummary('export default defineConfig({ name: "demo" })')).toBeUndefined();
   });
 
+  it('ignores payments-shaped examples inside comments', () => {
+    const source = `
+      export default defineConfig({
+        // payments: { providers: { fake: { use: 'payment-fake' } } }
+        /*
+          payments: {
+            defaultProvider: 'payment-commented',
+            providers: { commented: { use: 'payment-commented' } },
+          },
+        */
+        name: 'demo',
+      });
+    `;
+
+    expect(parsePaymentsSummary(source)).toBeUndefined();
+  });
+
+  it('does not let a commented example shadow the real payments block', () => {
+    const summary = parsePaymentsSummary(`
+      export default defineConfig({
+        // payments: { providers: { fake: { use: 'payment-fake' } } }
+        payments: {
+          defaultProvider: 'coinpay',
+          providers: {
+            coinpay: { use: 'payment-coinpay' },
+          },
+        },
+      });
+    `);
+
+    expect(summary?.providers).toEqual([
+      { key: 'coinpay', use: 'payment-coinpay', enabled: true, isDefault: true },
+    ]);
+  });
+
   it('extracts payments when config object keys are quoted', () => {
     const summary = parsePaymentsSummary(`
       export default defineConfig({

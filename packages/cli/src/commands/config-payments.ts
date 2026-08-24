@@ -13,7 +13,8 @@ export type PaymentsSummary = {
 };
 
 export function parsePaymentsSummary(source: string, path = 'sh1pt.config.ts'): PaymentsSummary | undefined {
-  const payments = readObjectBody(source, 'payments');
+  const uncommented = maskComments(source);
+  const payments = readObjectBody(uncommented, 'payments');
   if (!payments) return undefined;
   const providers = readObjectBody(payments, 'providers');
   const defaultProvider = readStringProperty(payments, 'defaultProvider');
@@ -29,6 +30,64 @@ export function parsePaymentsSummary(source: string, path = 'sh1pt.config.ts'): 
       return { key, use, enabled, isDefault: use === defaultProvider || key === defaultProvider };
     }),
   };
+}
+
+function maskComments(source: string): string {
+  let result = '';
+  let quote: '"' | "'" | '`' | undefined;
+
+  for (let i = 0; i < source.length; i += 1) {
+    const ch = source[i]!;
+    const next = source[i + 1];
+
+    if (quote) {
+      result += ch;
+      if (ch === quote && !isEscaped(source, i)) quote = undefined;
+      continue;
+    }
+
+    if (ch === '"' || ch === "'" || ch === '`') {
+      quote = ch;
+      result += ch;
+      continue;
+    }
+
+    if (ch === '/' && next === '/') {
+      result += '  ';
+      i += 2;
+      while (i < source.length && source[i] !== '\n' && source[i] !== '\r') {
+        result += ' ';
+        i += 1;
+      }
+      if (i < source.length) result += source[i];
+      continue;
+    }
+
+    if (ch === '/' && next === '*') {
+      result += '  ';
+      i += 2;
+      while (i < source.length) {
+        if (source[i] === '*' && source[i + 1] === '/') {
+          result += '  ';
+          i += 1;
+          break;
+        }
+        result += source[i] === '\n' || source[i] === '\r' ? source[i] : ' ';
+        i += 1;
+      }
+      continue;
+    }
+
+    result += ch;
+  }
+
+  return result;
+}
+
+function isEscaped(source: string, index: number): boolean {
+  let slashCount = 0;
+  for (let i = index - 1; i >= 0 && source[i] === '\\'; i -= 1) slashCount += 1;
+  return slashCount % 2 === 1;
 }
 
 function readObjectBody(source: string, property: string): string | undefined {

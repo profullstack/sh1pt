@@ -106,7 +106,9 @@ describe('Safari extension build planning', () => {
         data: [{ id: 'app-123', attributes: { name: 'Safe Extension' } }],
       }), { status: 200 }))
       .mockResolvedValueOnce(new Response('{}', { status: 201 }));
-    const artifact = '/tmp/release $(touch should-not-run).pkg';
+    const uploadDir = await mkdtemp(join(tmpdir(), 'sh1pt-safari-upload-'));
+    tempDirs.push(uploadDir);
+    const artifact = join(uploadDir, 'release $(touch should-not-run).pkg');
     const appleId = 'publisher+$(touch should-not-run)@example.com';
 
     await adapter.ship(fakeShipContext({

@@ -50,9 +50,14 @@ export async function writeCredentials(creds: Credentials): Promise<void> {
   // Atomic write: write to a tmp file then rename, so a crash mid-write
   // never leaves credentials.json truncated/corrupt. Mirrors writeVault() in
   // local-vault.ts which holds equally sensitive data.
-  const tmp = `${path}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(creds, null, 2) + '\n', { encoding: 'utf8', mode: 0o600 });
-  await fs.rename(tmp, path);
+  const tmp = `${path}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
+  try {
+    await fs.writeFile(tmp, JSON.stringify(creds, null, 2) + '\n', { encoding: 'utf8', mode: 0o600 });
+    await fs.rename(tmp, path);
+  } catch (error) {
+    await fs.unlink(tmp).catch(() => {});
+    throw error;
+  }
   // rename(2) preserves the source mode, but if the destination pre-existed
   // at a looser mode (e.g. 0644 from an older sh1pt build), the resulting
   // file keeps that loose mode. Explicitly tighten after rename.

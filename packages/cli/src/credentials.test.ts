@@ -1,7 +1,8 @@
-import { homedir } from 'node:os';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { configDir } from './credentials.js';
+import { configDir, credentialsPath, writeCredentials } from './credentials.js';
 
 const ORIGINAL_XDG_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_HOME = process.env.HOME;
@@ -27,5 +28,26 @@ describe('configDir', () => {
     delete process.env.HOME;
 
     expect(configDir()).toBe(join(homedir() || '.', '.config', 'sh1pt'));
+  });
+});
+
+describe('writeCredentials', () => {
+  it('supports concurrent atomic writes without sharing a temporary file', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'sh1pt-credentials-'));
+    process.env.XDG_CONFIG_HOME = root;
+
+    try {
+      const credentials = Array.from({ length: 20 }, (_, index) => ({
+        access_token: `access-${index}`,
+        refresh_token: `refresh-${index}`,
+      }));
+
+      await expect(Promise.all(credentials.map(writeCredentials))).resolves.toHaveLength(20);
+
+      const saved = JSON.parse(await readFile(credentialsPath(), 'utf8'));
+      expect(credentials).toContainEqual(saved);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });

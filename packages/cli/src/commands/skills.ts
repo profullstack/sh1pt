@@ -92,7 +92,9 @@ export function titleFromSlug(slug: string): string {
 function q(s: string): string { return JSON.stringify(s); }
 async function exists(path: string): Promise<boolean> { try { await access(path); return true; } catch { return false; } }
 function frontmatterValue(text: string, key: string): string | undefined {
-  const m = text.match(new RegExp(`^${key}:\\s*["']?([^"'\\n]+)["']?\\s*$`, 'm'));
+  const frontmatter = text.match(/^(?:\uFEFF)?---[ \t]*(?:\r?\n|\r)([\s\S]*?)(?:\r?\n|\r)---[ \t]*(?:(?:\r?\n|\r)|$)/)?.[1];
+  if (frontmatter === undefined) return undefined;
+  const m = frontmatter.match(new RegExp(`^${key}:\\s*["']?([^"'\\n]+)["']?\\s*$`, 'm'));
   return m?.[1]?.trim();
 }
 async function inferFromSkill(file: string): Promise<Partial<SkillManifest>> {

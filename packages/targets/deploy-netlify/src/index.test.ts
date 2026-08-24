@@ -2,12 +2,26 @@ import { fakeBuildContext, fakeShipContext, smokeTest } from '@profullstack/sh1p
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { execMock } = vi.hoisted(() => ({
+  execMock: vi.fn(),
+}));
+
+vi.mock('@profullstack/sh1pt-core', async () => ({
+  ...(await vi.importActual<typeof import('@profullstack/sh1pt-core')>('@profullstack/sh1pt-core')),
+  exec: execMock,
+}));
+
 import adapter from './index.js';
 
 smokeTest(adapter, { idPrefix: 'deploy', requireKind: true });
 
 const tempDirs: string[] = [];
+
+beforeEach(() => {
+  execMock.mockReset();
+});
 
 afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
@@ -95,5 +109,22 @@ describe('Netlify deployment target', () => {
     }) as any, {
       siteId: 'site-123',
     })).rejects.toThrow('NETLIFY_AUTH_TOKEN not in vault');
+  });
+
+  it('passes the Netlify token through the child environment, not argv', async () => {
+    execMock.mockResolvedValue({ exitCode: 0, stdout: '{"deploy_id":"deploy-1"}', stderr: '' });
+
+    await adapter.ship(fakeShipContext({
+      dryRun: false,
+      secret: (key: string) => key === 'NETLIFY_AUTH_TOKEN' ? 'netlify-secret-token' : undefined,
+    }) as any, {
+      siteId: 'site-1',
+    });
+
+    const [bin, args, options] = execMock.mock.calls[0] ?? [];
+    expect(bin).toBe('npx');
+    expect(args).not.toContain('netlify-secret-token');
+    expect(args).not.toContain('--auth');
+    expect(options.env.NETLIFY_AUTH_TOKEN).toBe('netlify-secret-token');
   });
 });

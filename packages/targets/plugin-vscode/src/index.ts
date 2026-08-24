@@ -97,7 +97,8 @@ export default defineTarget<Config>({
       throw new Error('VSCE_TOKEN not set. Run: sh1pt secret set VSCE_TOKEN <pat>');
     }
 
-    await exec('npx', ['--yes', 'vsce', 'publish', '--pat', token, '--packagePath', ctx.artifact], {
+    await exec('npx', ['--yes', 'vsce', 'publish', '--packagePath', ctx.artifact], {
+      env: { VSCE_PAT: token },
       log: ctx.log,
       throwOnNonZero: true,
     });

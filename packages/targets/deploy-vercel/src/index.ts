@@ -42,13 +42,12 @@ function deployDir(ctx: { projectDir: string }, config: Config): string {
   return isAbsolute(config.dir) ? config.dir : join(ctx.projectDir, config.dir);
 }
 
-function deployArgs(ctx: { channel: string; projectDir: string }, config: Config, token?: string): string[] {
+function deployArgs(ctx: { channel: string; projectDir: string }, config: Config): string[] {
   config = normalizedConfig(config);
   const prod = config.prod ?? ctx.channel === 'stable';
   const args = ['--yes', 'vercel', 'deploy', deployDir(ctx, config), '--yes'];
   if (prod) args.push('--prod');
   if (config.org) args.push('--scope', config.org);
-  if (token) args.push('--token', token);
   return args;
 }
 
@@ -91,7 +90,7 @@ export default defineTarget<Config>({
       throw new Error('VERCEL_TOKEN not in vault — run: sh1pt secret set VERCEL_TOKEN <token>');
     }
 
-    const result = await exec('npx', deployArgs(ctx, config, token), {
+    const result = await exec('npx', deployArgs(ctx, config), {
       cwd: ctx.projectDir,
       env: { ...ctx.env, VERCEL_TOKEN: token },
       log: ctx.log,

@@ -2,12 +2,26 @@ import { fakeBuildContext, fakeShipContext, smokeTest } from '@profullstack/sh1p
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { execMock } = vi.hoisted(() => ({
+  execMock: vi.fn(),
+}));
+
+vi.mock('@profullstack/sh1pt-core', async () => ({
+  ...(await vi.importActual<typeof import('@profullstack/sh1pt-core')>('@profullstack/sh1pt-core')),
+  exec: execMock,
+}));
+
 import adapter from './index.js';
 
 smokeTest(adapter, { idPrefix: 'deploy', requireKind: true });
 
 const tempDirs: string[] = [];
+
+beforeEach(() => {
+  execMock.mockReset();
+});
 
 afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
@@ -89,5 +103,23 @@ describe('Vercel deployment target', () => {
     }) as any, {
       project: 'myapp',
     })).rejects.toThrow('VERCEL_TOKEN not in vault');
+  });
+
+  it('passes the Vercel token through the child environment, not argv', async () => {
+    execMock.mockResolvedValue({ exitCode: 0, stdout: 'https://myapp.vercel.app\n', stderr: '' });
+
+    await adapter.ship(fakeShipContext({
+      channel: 'stable',
+      dryRun: false,
+      secret: (key: string) => key === 'VERCEL_TOKEN' ? 'vercel-secret-token' : undefined,
+    }) as any, {
+      project: 'myapp',
+    });
+
+    const [bin, args, options] = execMock.mock.calls[0] ?? [];
+    expect(bin).toBe('npx');
+    expect(args).not.toContain('vercel-secret-token');
+    expect(args).not.toContain('--token');
+    expect(options.env.VERCEL_TOKEN).toBe('vercel-secret-token');
   });
 });

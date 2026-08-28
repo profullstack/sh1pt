@@ -31,4 +31,22 @@ describe('sdk-pypi target adapter', () => {
     expect(secret).not.toHaveBeenCalled();
     expect(execMock).not.toHaveBeenCalled();
   });
+
+  it('passes PyPI credentials through the child environment, not argv', async () => {
+    execMock.mockResolvedValue({ exitCode: 0, stdout: 'uploaded', stderr: '' });
+
+    await adapter.ship(fakeShipContext({
+      dryRun: false,
+      secret: (key: string) => key === 'PYPI_TOKEN' ? 'pypi-secret-token' : undefined,
+    }) as any, {});
+
+    const [bin, args, options] = execMock.mock.calls[0] ?? [];
+    expect(bin).toBe('twine');
+    expect(args).not.toContain('pypi-secret-token');
+    expect(args).not.toContain('--password');
+    expect(options.env).toMatchObject({
+      TWINE_USERNAME: '__token__',
+      TWINE_PASSWORD: 'pypi-secret-token',
+    });
+  });
 });

@@ -55,12 +55,18 @@ export default defineTarget<Config>({
       [
         'upload',
         ...repoFlag,
-        '--username', '__token__',
-        '--password', token,
         '--non-interactive',
         `${ctx.artifact}/*`,
       ],
-      { log: ctx.log, throwOnNonZero: true }
+      {
+        env: {
+          ...ctx.env,
+          TWINE_USERNAME: '__token__',
+          TWINE_PASSWORD: token,
+        },
+        log: ctx.log,
+        throwOnNonZero: true,
+      }
     );
 
     return {

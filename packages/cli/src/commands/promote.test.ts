@@ -14,9 +14,17 @@ import {
 describe('promote schedule option parser', () => {
   it('parses a valid ISO timestamp', () => {
     expect(parseSchedule('2026-08-01T18:30:00Z').toISOString()).toBe('2026-08-01T18:30:00.000Z');
+    expect(parseSchedule('2026-08-01T18:30:00+08:00').toISOString()).toBe('2026-08-01T10:30:00.000Z');
   });
 
-  it.each(['not-a-date', '2026-99-99T18:30:00Z', ''])('rejects invalid timestamp %j', (value) => {
+  it.each([
+    'not-a-date',
+    '2026-99-99T18:30:00Z',
+    '2026-02-30T18:30:00Z',
+    '2026-08-01T18:30:00',
+    '2026-08-01T25:00:00Z',
+    '',
+  ])('rejects invalid or timezone-ambiguous timestamp %j', (value) => {
     expect(() => parseSchedule(value)).toThrow('valid ISO timestamp');
   });
 });

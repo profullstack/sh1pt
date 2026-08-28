@@ -51,14 +51,13 @@ function configPath(ctx: { projectDir: string }, config: Config): string | undef
   return isAbsolute(config.config) ? config.config : join(ctx.projectDir, config.config);
 }
 
-function deployArgs(ctx: { projectDir: string }, config: Config, token?: string): string[] {
+function deployArgs(ctx: { projectDir: string }, config: Config): string[] {
   config = normalizedConfig(config);
   const args = ['--yes', 'firebase-tools', 'deploy', '--project', config.projectId, '--json'];
   if (config.only?.length) args.push('--only', config.only.join(','));
   const firebaseConfig = configPath(ctx, config);
   if (firebaseConfig) args.push('--config', firebaseConfig);
   if (config.message) args.push('--message', config.message);
-  if (token) args.push('--token', token);
   return args;
 }
 
@@ -109,7 +108,7 @@ export default defineTarget<Config>({
       throw new Error('FIREBASE_TOKEN not in vault - run: sh1pt secret set FIREBASE_TOKEN <token>');
     }
 
-    const result = await exec('npx', deployArgs(ctx, config, token), {
+    const result = await exec('npx', deployArgs(ctx, config), {
       cwd: ctx.projectDir,
       env: { ...ctx.env, FIREBASE_TOKEN: token },
       log: ctx.log,

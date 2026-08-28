@@ -109,4 +109,30 @@ describe('plugin-vscode target adapter', () => {
 
     expect(execMock).not.toHaveBeenCalled();
   });
+
+  it('passes the marketplace PAT through the child environment instead of argv', async () => {
+    execMock.mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' });
+    const token = 'secret-marketplace-pat';
+    const ctx = fakeShipContext({
+      artifact: '/repo/.sh1pt/out/sample-extension-1.2.3.vsix',
+      version: '1.2.3',
+      dryRun: false,
+      secret: (key: string) => key === 'VSCE_TOKEN' ? token : undefined,
+    });
+
+    await adapter.ship(ctx as any, sampleConfig);
+
+    expect(execMock).toHaveBeenCalledWith('npx', [
+      '--yes',
+      'vsce',
+      'publish',
+      '--packagePath',
+      '/repo/.sh1pt/out/sample-extension-1.2.3.vsix',
+    ], {
+      env: { VSCE_PAT: token },
+      log: ctx.log,
+      throwOnNonZero: true,
+    });
+    expect(execMock.mock.calls[0]?.[1]).not.toContain(token);
+  });
 });

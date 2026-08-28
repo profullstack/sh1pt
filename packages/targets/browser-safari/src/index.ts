@@ -1,5 +1,5 @@
 import { defineTarget, manualSetup } from '@profullstack/sh1pt-core';
-import { execFileSync, execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { createSign } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -266,24 +266,24 @@ export default defineTarget<Config>({
       ctx.log('✓ app store version created');
     }
 
-    // Step 3: Upload the build archive using xcrun altool
+    // Step 3: Upload the build archive using xcrun altool. Keep every value in
+    // argv so paths and credentials are never interpreted by a shell.
     ctx.log('uploading archive with xcrun altool...');
     try {
-      execSync(
-        `xcrun altool --upload-app -f "${ctx.artifact}" ` +
-        `-u "${appleId}" -p "@env:APP_STORE_CONNECT_PRIVATE_KEY" ` +
-        `--type macos --output-format json`,
-        { stdio: 'pipe', timeout: 600_000 },
-      );
-    } catch {
-      ctx.log('altool upload failed, trying notarytool...', 'warn');
-      execSync(
-        `xcrun notarytool submit "${ctx.artifact}" ` +
-        `--key-id "${keyId}" --issuer "${issuerId}" ` +
-        `--private-key <(echo "${privateKey}") ` +
-        `--wait --output-format json`,
-        { stdio: 'pipe', timeout: 600_000 },
-      );
+      execFileSync('xcrun', [
+        'altool', '--upload-app', '-f', ctx.artifact,
+        '-u', appleId, '-p', '@env:APP_STORE_CONNECT_PRIVATE_KEY',
+        '--type', 'macos', '--output-format', 'json',
+      ], {
+        stdio: 'pipe',
+        timeout: 600_000,
+        env: { ...process.env, APP_STORE_CONNECT_PRIVATE_KEY: privateKey },
+      });
+    } catch (error) {
+      // notarytool notarizes Developer ID artifacts; it does not upload App
+      // Store builds. Treat an altool failure as a failed upload instead of
+      // reporting a successful but unrelated notarization.
+      throw new Error('App Store upload failed: xcrun altool did not complete successfully', { cause: error });
     }
 
     ctx.log('✓ build uploaded to App Store Connect');

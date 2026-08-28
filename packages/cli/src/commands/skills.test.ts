@@ -211,6 +211,33 @@ describe('skills new command', () => {
     expect(stdout.join('\n')).toContain('wrote');
   });
 
+  it('does not infer metadata from frontmatter-shaped text in the Markdown body', async () => {
+    const skillDir = join(tempDir, 'plain-skill');
+    mkdirSync(skillDir, { recursive: true });
+    const skillFile = join(skillDir, 'SKILL.md');
+    writeFileSync(skillFile, [
+      '# Plain Skill',
+      '',
+      'Example configuration:',
+      '',
+      'name: body-example',
+      'description: This belongs to the example, not skill metadata',
+      '',
+    ].join('\n'));
+    const out = join(tempDir, 'plain-skill.json');
+    const newCmd = skillsCmd.commands.find((c) => c.name() === 'new')!;
+
+    await newCmd.parseAsync([
+      '--skill-file', skillFile,
+      '--out', out,
+    ], { from: 'user' });
+
+    const manifest = JSON.parse(readFileSync(out, 'utf8'));
+    expect(manifest.name).toBe('plain-skill');
+    expect(manifest.title).toBe('plain-skill');
+    expect(manifest.description).toBe('Agent skill: plain-skill');
+  });
+
   it.each(['-5', '1.9', '5abc', '1e2', '0x10', '+5', `${Number.MAX_SAFE_INTEGER + 1}`])(
     'rejects invalid listing price %s before writing a manifest',
     async (price) => {

@@ -42,7 +42,7 @@ function deployDir(ctx: { projectDir: string }, config: Config): string {
   return isAbsolute(config.dir) ? config.dir : join(ctx.projectDir, config.dir);
 }
 
-function deployArgs(ctx: { channel: string; projectDir: string; version: string }, config: Config, token?: string): string[] {
+function deployArgs(ctx: { channel: string; projectDir: string; version: string }, config: Config): string[] {
   config = normalizedConfig(config);
   const prod = config.prod ?? ctx.channel === 'stable';
   const args = ['--yes', 'netlify-cli', 'deploy', '--json', '--dir', deployDir(ctx, config)];
@@ -50,7 +50,6 @@ function deployArgs(ctx: { channel: string; projectDir: string; version: string 
   if (config.siteId) args.push('--site', config.siteId);
   if (config.message) args.push('--message', config.message);
   else args.push('--message', `sh1pt ${ctx.version}`);
-  if (token) args.push('--auth', token);
   return args;
 }
 
@@ -106,7 +105,7 @@ export default defineTarget<Config>({
       throw new Error('NETLIFY_AUTH_TOKEN not in vault — run: sh1pt secret set NETLIFY_AUTH_TOKEN <token>');
     }
 
-    const result = await exec('npx', deployArgs(ctx, config, token), {
+    const result = await exec('npx', deployArgs(ctx, config), {
       cwd: ctx.projectDir,
       env: { ...ctx.env, NETLIFY_AUTH_TOKEN: token },
       log: ctx.log,

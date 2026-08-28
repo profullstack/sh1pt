@@ -56,11 +56,22 @@ function toOperation(
   root: Record<string, unknown>,
 ): Operation {
   const opParams = (op.parameters ?? []) as unknown[];
-  const rawParams = [...pathLevelParams, ...opParams];
-  const parameters = rawParams
+
+  // OpenAPI spec: an operation-level parameter with the same `name` + `in`
+  // as a path-level one REPLACES it (it may override description, schema,
+  // required, …). Concatenating both produced duplicated parameters, which
+  // leaked into generated docs (duplicate table rows), MCP input schemas,
+  // and — worst case — TS SDKs with duplicate function arguments
+  // (`async getPet(petId: string, petId: string, …)`), which do not compile.
+  const resolvedPathParams = pathLevelParams
     .map((p) => resolveRef(p, root) as Record<string, unknown> | undefined)
     .filter((p): p is Record<string, unknown> => !!p)
-    .map(toParameter);
+    .filter((p) => !opOverrides(opParams, root, p));
+  const resolvedOpParams = opParams
+    .map((p) => resolveRef(p, root) as Record<string, unknown> | undefined)
+    .filter((p): p is Record<string, unknown> => !!p);
+
+  const parameters = [...resolvedPathParams, ...resolvedOpParams].map(toParameter);
 
   return {
     id: typeof op.operationId === 'string' ? op.operationId : autoId(method, path),
@@ -74,6 +85,20 @@ function toOperation(
     responses: toResponses(op.responses, root),
     deprecated: op.deprecated === true,
   };
+}
+
+// True when the operation declares its own parameter with the same
+// name + location, which per the OpenAPI spec overrides `candidate`.
+function opOverrides(
+  opParams: unknown[],
+  root: Record<string, unknown>,
+  candidate: Record<string, unknown>,
+): boolean {
+  return opParams.some((raw) => {
+    const p = resolveRef(raw, root) as Record<string, unknown> | undefined;
+    if (!p) return false;
+    return p.name === candidate.name && (p.in ?? 'query') === (candidate.in ?? 'query');
+  });
 }
 
 function toParameter(p: Record<string, unknown>): Parameter {

@@ -36,10 +36,10 @@ export default defineSocial<Config>({
   label: 'Spotify',
   requires: { maxBodyChars: 300, maxHashtags: 0, hashtagsInBody: true },
 
-  async connect(ctx) {
+  async connect(ctx, config) {
     const token = ctx.secret('SPOTIFY_ACCESS_TOKEN');
     if (!token) throw new Error('SPOTIFY_ACCESS_TOKEN not in vault');
-    const data = await spotifyFetch<SpotifyUserResponse>(token, '/me');
+    const data = await spotifyFetch<SpotifyUserResponse>(token, '/me', config);
     if (!data.id) throw new Error('Spotify profile response did not include a user id');
     return { accountId: data.id };
   },

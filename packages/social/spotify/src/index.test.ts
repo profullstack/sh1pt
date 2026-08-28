@@ -30,6 +30,21 @@ describe('social-spotify playlist publishing', () => {
     });
   });
 
+  it('uses the configured API base URL when connecting', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ id: 'spotify_user_123' }),
+    } as Response);
+
+    await adapter.connect(
+      fakeConnectContext({ SPOTIFY_ACCESS_TOKEN: 'spotify-token' }),
+      { baseUrl: 'https://spotify-proxy.example/v1/' },
+    );
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://spotify-proxy.example/v1/me');
+  });
+
   it('creates a public playlist and appends normalized Spotify items', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce({

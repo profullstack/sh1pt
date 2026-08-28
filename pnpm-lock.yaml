@@ -901,6 +901,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/cloud/pulsedmedia:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/cloud/railway:
     dependencies:
       '@profullstack/sh1pt-core':

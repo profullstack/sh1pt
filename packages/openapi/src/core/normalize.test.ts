@@ -101,6 +101,19 @@ describe('normalize', () => {
     expect(ir.operations[0]?.responses[0]?.contentType).toBe('application/json');
   });
 
+  it('keeps trace operations instead of silently dropping them', () => {
+    const ir = normalize({
+      openapi: '3.0.0',
+      info: { title: 'Trace', version: '1' },
+      paths: {
+        '/debug': { trace: { operationId: 'traceDebug', responses: { '200': { description: 'ok' } } } },
+      },
+    });
+    expect(ir.operations).toHaveLength(1);
+    expect(ir.operations[0]?.method).toBe('trace');
+    expect(ir.operations[0]?.id).toBe('traceDebug');
+  });
+
   it('auto-generates operationId when missing', () => {
     const ir = normalize({
       openapi: '3.0.0',

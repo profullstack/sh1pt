@@ -698,7 +698,7 @@ scaleCmd
 scaleCmd
   .command('rollout')
   .description('Stage a new version across the fleet (canary / blue-green / rolling)')
-  .requiredOption('--version <id>', 'version identifier to deploy (e.g. v2.1.0)')
+  .option('--version <id>', 'version identifier to deploy (e.g. v2.1.0)')
   .option('--strategy <kind>', 'canary | blue-green | rolling', 'canary')
   .option('--percent <n>', 'canary only — start at N% of traffic', parsePercentage, 5)
   .option('--dry-run', 'show the plan without modifying state')

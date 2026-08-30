@@ -14,12 +14,33 @@ import { parsePositiveSafeInteger, parseQuietHours } from './iterate-options.js'
 // Shared utilities
 // ---------------------------------------------------------------------------
 
-/** Atomic write: write to .tmp then rename — same pattern as goals. */
-async function atomicWrite(file: string, data: unknown): Promise<void> {
+const atomicWriteQueues = new Map<string, Promise<void>>();
+
+/** Atomic write: write to a unique .tmp then rename. */
+async function atomicWriteOnce(file: string, data: unknown): Promise<void> {
   await fs.mkdir(path.dirname(file), { recursive: true, mode: 0o700 });
-  const tmp = `${file}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(data, null, 2) + '\n', { mode: 0o600 });
-  await fs.rename(tmp, file);
+  const tmp = `${file}.${process.pid}.${randomBytes(6).toString('hex')}.tmp`;
+  try {
+    await fs.writeFile(tmp, JSON.stringify(data, null, 2) + '\n', { mode: 0o600 });
+    await fs.rename(tmp, file);
+  } catch (err) {
+    await fs.unlink(tmp).catch(() => {});
+    throw err;
+  }
+}
+
+export function atomicWrite(file: string, data: unknown): Promise<void> {
+  const previous = atomicWriteQueues.get(file) ?? Promise.resolve();
+  const result = previous.then(() => atomicWriteOnce(file, data));
+  const tail = result.then(
+    () => {},
+    () => {},
+  );
+  atomicWriteQueues.set(file, tail);
+  void tail.then(() => {
+    if (atomicWriteQueues.get(file) === tail) atomicWriteQueues.delete(file);
+  });
+  return result;
 }
 
 /** Generic JSON loader with ENOENT handling. */

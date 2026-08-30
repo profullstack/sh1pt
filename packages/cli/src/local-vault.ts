@@ -40,6 +40,13 @@ interface LocalVault {
   secrets: Record<string, string>;
 }
 
+export function hasLoosePosixPermissions(
+  mode: number,
+  platform: NodeJS.Platform = process.platform,
+): boolean {
+  return platform !== 'win32' && (mode & 0o077) !== 0;
+}
+
 export function localVaultPath(): string {
   return path.join(configDir(), 'secrets.json');
 }
@@ -60,7 +67,7 @@ export function loadLocalVaultSync(): Map<string, string> {
   const file = localVaultPath();
   try {
     const stat = statSync(file);
-    if ((stat.mode & 0o077) !== 0) {
+    if (hasLoosePosixPermissions(stat.mode)) {
       console.warn(
         `⚠ ${file} has loose permissions (mode ${(stat.mode & 0o777).toString(8)}). ` +
         `Run: chmod 600 "${file}"`,

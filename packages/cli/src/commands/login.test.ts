@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loginCmd } from './login.js';
+import { browserOpenCommand, loginCmd } from './login.js';
 
 // Regression guard for the `--no-browser` flag.
 //
@@ -25,5 +25,21 @@ describe('login command --no-browser option', () => {
   it('sets browser to false when --no-browser is passed', () => {
     loginCmd.parseOptions(['--no-browser']);
     expect(loginCmd.opts().browser).toBe(false);
+  });
+});
+
+describe('browser open command', () => {
+  const url = 'https://sh1pt.com/cli/pair?code=abc&redirect=/done';
+
+  it('passes the complete URL directly to the Windows shell opener', () => {
+    expect(browserOpenCommand(url, 'win32')).toEqual({
+      command: 'explorer.exe',
+      args: [url],
+    });
+  });
+
+  it('keeps the native macOS and Linux openers', () => {
+    expect(browserOpenCommand(url, 'darwin')).toEqual({ command: 'open', args: [url] });
+    expect(browserOpenCommand(url, 'linux')).toEqual({ command: 'xdg-open', args: [url] });
   });
 });

@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, writeFileSync, rmSync, existsSync, readFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync, existsSync, readFileSync, mkdirSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
@@ -411,6 +412,55 @@ describe('auto-scale rules', () => {
       if (previousUserProfile === undefined) delete process.env.USERPROFILE;
       else process.env.USERPROFILE = previousUserProfile;
     }
+  });
+});
+
+describe('DNS JSON mode', () => {
+  it('persists DNS config when --json is used without --dry-run', () => {
+    const dir = makeTempDir();
+    const stateDir = join(dir, '.sh1pt');
+    mkdirSync(stateDir, { recursive: true });
+    const statePath = join(stateDir, 'credentials.json');
+    writeFileSync(statePath, JSON.stringify({
+      apiKey: 'preserve-me',
+      instances: [
+        {
+          id: 'inst-0001',
+          provider: 'aws',
+          status: 'running',
+          publicIp: '203.0.113.10',
+          createdAt: '',
+          hourlyRate: 0.1,
+        },
+      ],
+      lastUpdated: '',
+    }));
+
+    const scaleModule = new URL('./scale.ts', import.meta.url).href;
+    const runDns = [
+      `import { scaleCmd } from ${JSON.stringify(scaleModule)};`,
+      `await scaleCmd.parseAsync(['node', 'sh1pt', 'dns', '--provider', 'dns-cloudflare', '--domain', 'api.example.com', '--json']);`,
+    ].join('\n');
+    const result = spawnSync(
+      process.execPath,
+      ['--import', 'tsx', '--input-type=module', '--eval', runDns],
+      {
+        env: { ...process.env, HOME: dir, USERPROFILE: dir },
+        encoding: 'utf8',
+      },
+    );
+
+    expect(result.status, result.stderr).toBe(0);
+    const output = JSON.parse(result.stdout);
+    expect(output.recordCount).toBe(1);
+
+    const saved = JSON.parse(readFileSync(statePath, 'utf-8'));
+    expect(saved.apiKey).toBe('preserve-me');
+    expect(saved.dns).toMatchObject({
+      domain: 'api.example.com',
+      provider: 'dns-cloudflare',
+      ips: ['203.0.113.10'],
+    });
   });
 });
 

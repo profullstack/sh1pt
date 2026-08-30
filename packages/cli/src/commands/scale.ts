@@ -643,30 +643,31 @@ scaleCmd
       records,
     };
 
-    if (opts.json) {
-      console.log(JSON.stringify(summary, null, 2));
-      return;
-    }
+    if (!opts.json) {
+      console.log(kleur.bold('\n🌐 DNS Round-Robin Plan'));
+      console.log(kleur.dim('─'.repeat(56)));
+      console.log(`${kleur.cyan('Domain:'.padEnd(20))} ${opts.domain}`);
+      console.log(`${kleur.cyan('DNS Provider:'.padEnd(20))} ${opts.provider}`);
+      console.log(`${kleur.cyan('TTL:'.padEnd(20))} ${opts.ttl}s`);
+      if (opts.proxied) {
+        console.log(`${kleur.cyan('Proxied:'.padEnd(20))} ${kleur.yellow('yes (Cloudflare edge)')}`);
+      }
+      console.log(`${kleur.cyan('Records:'.padEnd(20))} ${records.length} A record(s)`);
+      console.log(kleur.dim('─'.repeat(56)));
 
-    console.log(kleur.bold('\n🌐 DNS Round-Robin Plan'));
-    console.log(kleur.dim('─'.repeat(56)));
-    console.log(`${kleur.cyan('Domain:'.padEnd(20))} ${opts.domain}`);
-    console.log(`${kleur.cyan('DNS Provider:'.padEnd(20))} ${opts.provider}`);
-    console.log(`${kleur.cyan('TTL:'.padEnd(20))} ${opts.ttl}s`);
-    if (opts.proxied) {
-      console.log(`${kleur.cyan('Proxied:'.padEnd(20))} ${kleur.yellow('yes (Cloudflare edge)')}`);
-    }
-    console.log(`${kleur.cyan('Records:'.padEnd(20))} ${records.length} A record(s)`);
-    console.log(kleur.dim('─'.repeat(56)));
+      for (const rec of records) {
+        console.log(`  ${kleur.green('A')}   ${rec.name.padEnd(30)} → ${rec.value}  ${kleur.dim(`(inst: ${rec.instanceId}, ${rec.provider})`)}`);
+      }
 
-    for (const rec of records) {
-      console.log(`  ${kleur.green('A')}   ${rec.name.padEnd(30)} → ${rec.value}  ${kleur.dim(`(inst: ${rec.instanceId}, ${rec.provider})`)}`);
+      console.log(kleur.dim('─'.repeat(56)));
     }
-
-    console.log(kleur.dim('─'.repeat(56)));
 
     if (opts.dryRun) {
-      console.log(kleur.dim('Dry-run — no DNS changes made.'));
+      if (opts.json) {
+        console.log(JSON.stringify(summary, null, 2));
+      } else {
+        console.log(kleur.dim('Dry-run — no DNS changes made.'));
+      }
       return;
     }
 
@@ -691,6 +692,11 @@ scaleCmd
     const dir = dirname(credsPath);
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
     writeFileSync(credsPath, JSON.stringify(creds, null, 2));
+
+    if (opts.json) {
+      console.log(JSON.stringify(summary, null, 2));
+      return;
+    }
 
     console.log(kleur.green(`✅ DNS round-robin configured for ${opts.domain} with ${records.length} A record(s).`));
     console.log(kleur.dim(`DNS provider: ${opts.provider}`));

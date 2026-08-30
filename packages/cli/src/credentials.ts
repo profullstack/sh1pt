@@ -12,6 +12,7 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 const FILE_NAME = 'credentials.json';
+let credentialsWriteQueue: Promise<void> = Promise.resolve();
 
 export interface Credentials {
   access_token: string;
@@ -43,7 +44,16 @@ export async function readCredentials(): Promise<Credentials | null> {
   }
 }
 
-export async function writeCredentials(creds: Credentials): Promise<void> {
+export function writeCredentials(creds: Credentials): Promise<void> {
+  // Concurrent renames to the same destination can fail with EPERM on Windows,
+  // even when every writer uses its own temporary file. Keep the atomic
+  // tmp+rename operation, but serialize replacements within this process.
+  const write = credentialsWriteQueue.then(() => writeCredentialsAtomic(creds));
+  credentialsWriteQueue = write.catch(() => {});
+  return write;
+}
+
+async function writeCredentialsAtomic(creds: Credentials): Promise<void> {
   const path = credentialsPath();
   // Mode 0o700 on the directory — match local-vault.ts writeVault pattern.
   await fs.mkdir(dirname(path), { recursive: true, mode: 0o700 });

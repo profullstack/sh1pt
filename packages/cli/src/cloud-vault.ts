@@ -78,6 +78,45 @@ async function getOrInitKdf(): Promise<{ salt: Uint8Array; ops: number; mem: num
   throw new Error(`vault/keys failed: ${get.res.status} ${detail}`);
 }
 
+// Resolves the vault passphrase without touching sodium or the network, so it can be
+// unit-tested on its own. Order: SH1PT_VAULT_PASSPHRASE env var, then an interactive
+// prompt — but only when stdin is a TTY.
+//
+// `prompts` reads keystrokes from stdin. When stdin is not a TTY (CI, `< /dev/null`,
+// a piped script) it never receives input that resolves or cancels the prompt, and
+// once nothing else is keeping the event loop alive Node exits on its own — abandoning
+// the still-pending `await prompts(...)` before the "no passphrase entered" guard below
+// (added for the cancelled-prompt case) ever runs. That left non-interactive cloud vault
+// access (encrypt on write, decrypt on read) hanging indefinitely instead of failing with
+// a message. Fail fast instead; SH1PT_VAULT_PASSPHRASE is the non-interactive escape
+// hatch (an env var, not a flag, so the passphrase never lands in shell history or `ps`).
+export async function resolveVaultPassphrase(isFirstRun: boolean): Promise<string> {
+  let passphrase: string | undefined = process.env.SH1PT_VAULT_PASSPHRASE;
+  if (!passphrase) {
+    if (!process.stdin.isTTY) {
+      throw new Error(
+        'No vault passphrase available — no TTY to prompt for one (CI or a piped script?). Set SH1PT_VAULT_PASSPHRASE to run non-interactively.',
+      );
+    }
+    const answer = await prompts({
+      type: 'password',
+      name: 'p',
+      message: isFirstRun
+        ? 'Set a vault passphrase (will be required to read your secrets — no recovery if lost):'
+        : 'Vault passphrase:',
+      validate: (v: string) => (v && v.length >= 8) || 'Passphrase must be at least 8 characters.',
+    });
+    passphrase = answer.p;
+  }
+  if (!passphrase) {
+    throw new Error('No passphrase entered.');
+  }
+  if (passphrase.length < 8) {
+    throw new Error('Passphrase must be at least 8 characters.');
+  }
+  return passphrase;
+}
+
 // Derive (and cache) the XSalsa20 key. Prompts for a passphrase on
 // first call; subsequent calls in the same process reuse the derived
 // key in memory.
@@ -87,22 +126,12 @@ export async function getVaultKey(): Promise<Uint8Array> {
   const kdf = await getOrInitKdf();
 
   const isFirstRun = await isFirstRunForUser();
-  const passphrase = await prompts({
-    type: 'password',
-    name: 'p',
-    message: isFirstRun
-      ? 'Set a vault passphrase (will be required to read your secrets — no recovery if lost):'
-      : 'Vault passphrase:',
-    validate: (v: string) => (v && v.length >= 8) || 'Passphrase must be at least 8 characters.',
-  });
-  if (!passphrase.p) {
-    throw new Error('No passphrase entered.');
-  }
+  const passphrase = await resolveVaultPassphrase(isFirstRun);
 
   console.log(kleur.dim('  deriving key (Argon2id)…'));
   const key = sodium.crypto_pwhash(
     sodium.crypto_secretbox_KEYBYTES,
-    passphrase.p,
+    passphrase,
     kdf.salt,
     kdf.ops,
     kdf.mem,

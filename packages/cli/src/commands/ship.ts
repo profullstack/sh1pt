@@ -73,6 +73,7 @@ export const shipCmd = new Command('ship')
 shipCmd
   .command('init')
   .description('Scaffold sh1pt.config.ts in the current project')
+  .option('--name <name>', 'Project name — skips the interactive prompt')
   .action(initAction);
 
 shipCmd

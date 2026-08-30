@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, writeFileSync, rmSync, existsSync, readFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync, existsSync, readFileSync, mkdirSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
@@ -260,6 +261,45 @@ describe('scale command registration', () => {
     const version = rollout?.options.find(option => option.long === '--version');
 
     expect(version?.mandatory).toBe(false);
+  });
+});
+
+describe('scale down JSON mode', () => {
+  it('updates fleet state when --json is used without --dry-run', () => {
+    const dir = makeTempDir();
+    const stateDir = join(dir, '.sh1pt');
+    mkdirSync(stateDir, { recursive: true });
+    const statePath = join(stateDir, 'credentials.json');
+    writeFileSync(statePath, JSON.stringify({
+      apiKey: 'preserve-me',
+      instances: [
+        { id: 'inst-0001', provider: 'aws', status: 'running', createdAt: '', hourlyRate: 0.1 },
+        { id: 'inst-0002', provider: 'aws', status: 'running', createdAt: '', hourlyRate: 0.2 },
+      ],
+      lastUpdated: '',
+    }));
+
+    const scaleModule = new URL('./scale.ts', import.meta.url).href;
+    const runScaleDown = [
+      `import { scaleCmd } from ${JSON.stringify(scaleModule)};`,
+      `await scaleCmd.parseAsync(['node', 'sh1pt', 'down', '--instances', '1', '--json']);`,
+    ].join('\n');
+    const result = spawnSync(
+      process.execPath,
+      ['--import', 'tsx', '--input-type=module', '--eval', runScaleDown],
+      {
+        env: { ...process.env, HOME: dir, USERPROFILE: dir },
+        encoding: 'utf8',
+      },
+    );
+
+    expect(result.status, result.stderr).toBe(0);
+    const output = JSON.parse(result.stdout);
+    expect(output.removed).toHaveLength(1);
+
+    const saved = JSON.parse(readFileSync(statePath, 'utf-8'));
+    expect(saved.apiKey).toBe('preserve-me');
+    expect(saved.instances.map((instance: FleetEntry) => instance.id)).toEqual(['inst-0002']);
   });
 });
 

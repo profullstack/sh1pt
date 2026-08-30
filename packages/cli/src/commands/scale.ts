@@ -410,50 +410,58 @@ scaleCmd
     const removedHourly = toRemove.reduce((sum, i) => sum + i.hourlyRate, 0);
     const newHourly = currentHourly - removedHourly;
 
-    if (opts.json) {
-      console.log(JSON.stringify({
-        removed: toRemove.map(i => ({
-          id: i.id,
-          provider: i.provider,
-          status: i.status,
-          publicIp: i.publicIp,
-          hourlyRate: i.hourlyRate,
-        })),
-        fleet: {
-          instances: fleet.instances.length - removeCount,
-          hourly: newHourly,
-        },
-      }, null, 2));
-      return;
-    }
+    const result = {
+      removed: toRemove.map(i => ({
+        id: i.id,
+        provider: i.provider,
+        status: i.status,
+        publicIp: i.publicIp,
+        hourlyRate: i.hourlyRate,
+      })),
+      fleet: {
+        instances: fleet.instances.length - removeCount,
+        hourly: newHourly,
+      },
+    };
 
     // Human-readable output
-    console.log(kleur.bold('\n📉 Scale Down Plan'));
-    console.log(kleur.dim('─'.repeat(52)));
-    console.log(`${kleur.cyan('Removing:'.padEnd(20))} ${removeCount} instance(s)`);
-    if (opts.provider) {
-      console.log(`${kleur.cyan('Provider filter:'.padEnd(20))} ${opts.provider}`);
-    }
-    console.log(`${kleur.cyan('Current hourly:'.padEnd(20))} $${currentHourly.toFixed(3)}/hr`);
-    console.log(`${kleur.cyan('Savings:'.padEnd(20))} $${removedHourly.toFixed(3)}/hr ($${(removedHourly * 730).toFixed(2)}/mo)`);
-    console.log(`${kleur.cyan('Projected hourly:'.padEnd(20))} $${newHourly.toFixed(3)}/hr`);
+    if (!opts.json) {
+      console.log(kleur.bold('\n📉 Scale Down Plan'));
+      console.log(kleur.dim('─'.repeat(52)));
+      console.log(`${kleur.cyan('Removing:'.padEnd(20))} ${removeCount} instance(s)`);
+      if (opts.provider) {
+        console.log(`${kleur.cyan('Provider filter:'.padEnd(20))} ${opts.provider}`);
+      }
+      console.log(`${kleur.cyan('Current hourly:'.padEnd(20))} $${currentHourly.toFixed(3)}/hr`);
+      console.log(`${kleur.cyan('Savings:'.padEnd(20))} $${removedHourly.toFixed(3)}/hr ($${(removedHourly * 730).toFixed(2)}/mo)`);
+      console.log(`${kleur.cyan('Projected hourly:'.padEnd(20))} $${newHourly.toFixed(3)}/hr`);
 
-    console.log(kleur.dim('─'.repeat(52)));
-    console.log(kleur.bold('Instances being torn down:'));
-    for (const inst of toRemove) {
-      const statusIcon = inst.status === 'failed' ? kleur.red('✖') : inst.status === 'stopped' ? kleur.yellow('■') : kleur.green('●');
-      console.log(`  ${statusIcon} ${inst.id} ${kleur.dim(`(${inst.provider})`)} ${inst.publicIp ?? 'no IP'} $${inst.hourlyRate.toFixed(3)}/hr`);
+      console.log(kleur.dim('─'.repeat(52)));
+      console.log(kleur.bold('Instances being torn down:'));
+      for (const inst of toRemove) {
+        const statusIcon = inst.status === 'failed' ? kleur.red('✖') : inst.status === 'stopped' ? kleur.yellow('■') : kleur.green('●');
+        console.log(`  ${statusIcon} ${inst.id} ${kleur.dim(`(${inst.provider})`)} ${inst.publicIp ?? 'no IP'} $${inst.hourlyRate.toFixed(3)}/hr`);
+      }
+      console.log(kleur.dim('─'.repeat(52)));
     }
-    console.log(kleur.dim('─'.repeat(52)));
 
     if (opts.dryRun) {
-      console.log(kleur.dim('Dry-run — no changes made.'));
+      if (opts.json) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        console.log(kleur.dim('Dry-run — no changes made.'));
+      }
       return;
     }
 
     // Execute: remove instances from fleet
     fleet.instances = fleet.instances.filter(i => !removedIds.has(i.id));
     saveFleet(fleet);
+
+    if (opts.json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
 
     console.log(kleur.green(`✅ ${removeCount} instance(s) torn down.`));
     console.log(kleur.dim(`Remaining fleet: ${fleet.instances.length} instance(s), $${newHourly.toFixed(3)}/hr`));

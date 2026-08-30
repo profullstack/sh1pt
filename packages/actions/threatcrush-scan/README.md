@@ -14,8 +14,8 @@ sh1pt actions install threatcrush-scan --repo owner/name --pr
 | --- | --- | --- |
 | `scanPath` | `.` | Path to scan, relative to the repository root. |
 | `nodeVersion` | `20` | See *Node 20, deliberately*, below. |
-| `threatcrushPackageSpec` | `@profullstack/threatcrush@0.11.3` | npm spec used to install the CLI. Pinned rather than `@latest` so one bad publish cannot break every consumer at once; bump it in a pack release. |
-| `threatcrushIntegrity` | *(sha512 of 0.11.3)* | SRI hash of that tarball. The workflow downloads, hashes and compares before installing, and refuses to install on a mismatch. Bump it with the spec — read it from `npm view <spec> dist.integrity`. Empty skips the check. |
+| `threatcrushPackageSpec` | `@profullstack/threatcrush@0.11.5` | npm spec used to install the CLI. Pinned rather than `@latest` so one bad publish cannot break every consumer at once; bump it in a pack release. |
+| `threatcrushIntegrity` | *(sha512 of 0.11.5)* | SRI hash of that tarball. The workflow downloads, hashes and compares before installing, and refuses to install on a mismatch. Bump it with the spec — read it from `npm view <spec> dist.integrity`. Empty skips the check. |
 | `failOn` | *(empty)* | Comma-separated severities that fail the job, e.g. `critical,high`. Empty is report-only. |
 | `uploadSarif` | `true` | Upload to the Security tab. Emits `security-events: write`. |
 | `commentOnPr` | `true` | Post the report as a pull request comment. Emits `pull-requests: write`. |

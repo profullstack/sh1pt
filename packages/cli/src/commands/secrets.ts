@@ -28,6 +28,7 @@ import {
 interface ScopeOpts {
   local?: boolean;
   cloud?: boolean;
+  json?: boolean;
 }
 
 export const secretsCmd = new Command('secret')
@@ -115,29 +116,41 @@ secretsCmd
   .description('List secret keys (never values)')
   .option('--local', 'list only the local vault')
   .option('--cloud', 'list only the cloud vault')
+  .option('--json', 'emit machine-readable JSON')
   .action(async (opts: ScopeOpts) => {
     const showLocal = !opts.cloud;
     const showCloud = opts.cloud || (!opts.local && (await isSignedIn()));
+    const output: {
+      local?: Array<{ key: string }>;
+      cloud?: Array<{ key: string; updated_at: string }>;
+    } = {};
 
     if (showLocal) {
       const entries = await listSecretsLocal();
-      console.log(kleur.bold(`local (${localVaultPath()})`));
-      if (entries.length === 0) {
-        console.log(kleur.dim('  (empty)'));
-      } else {
-        for (const e of entries) console.log(`  ${kleur.cyan(e.key)}`);
+      output.local = entries;
+      if (!opts.json) {
+        console.log(kleur.bold(`local (${localVaultPath()})`));
+        if (entries.length === 0) {
+          console.log(kleur.dim('  (empty)'));
+        } else {
+          for (const e of entries) console.log(`  ${kleur.cyan(e.key)}`);
+        }
       }
     }
     if (showCloud) {
-      if (showLocal) console.log();
-      console.log(kleur.bold('cloud (sh1pt.com vault)'));
       const entries = await listSecretsFromCloud();
-      if (entries.length === 0) {
-        console.log(kleur.dim('  (empty)'));
-      } else {
-        for (const e of entries) console.log(`  ${kleur.cyan(e.key)}  ${kleur.dim(e.updated_at)}`);
+      output.cloud = entries;
+      if (!opts.json) {
+        if (showLocal) console.log();
+        console.log(kleur.bold('cloud (sh1pt.com vault)'));
+        if (entries.length === 0) {
+          console.log(kleur.dim('  (empty)'));
+        } else {
+          for (const e of entries) console.log(`  ${kleur.cyan(e.key)}  ${kleur.dim(e.updated_at)}`);
+        }
       }
     }
+    if (opts.json) console.log(JSON.stringify(output, null, 2));
   });
 
 secretsCmd

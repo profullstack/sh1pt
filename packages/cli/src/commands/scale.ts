@@ -222,6 +222,22 @@ export function rollbackPlanIps(fleet: FleetState, target: RolloutRecord): strin
     .map(i => i.publicIp || i.privateIp || '?.?.?.?');
 }
 
+/** Apply the recorded rollout's state transition when rolling it back. */
+export function applyRollback(fleet: FleetState, target: RolloutRecord): void {
+  for (const inst of fleet.instances) {
+    if (target.newInstanceIds.includes(inst.id)) {
+      inst.status = 'stopped';
+    }
+  }
+  if (target.strategy === 'blue-green') {
+    for (const inst of fleet.instances) {
+      if (target.oldInstanceIds.includes(inst.id)) {
+        inst.status = 'running';
+      }
+    }
+  }
+}
+
 export const scaleCmd = new Command('scale')
   .description('Provision + scale cloud infra. DNS round-robin, rollouts, rightsizing — all the capacity ops.')
   .option('--from <input>', 'existing live url, repo, or local path to probe + propose scaling for')
@@ -746,20 +762,7 @@ scaleCmd
         console.log(kleur.dim('Dry-run — no changes made.'));
         return;
       }
-      // Mark new instances as stopped, set status
-      for (const inst of fleet.instances) {
-        if (target.newInstanceIds.includes(inst.id)) {
-          inst.status = 'stopped';
-        }
-      }
-      if (opts.strategy === 'blue-green') {
-        // Reactivate old instances
-        for (const inst of fleet.instances) {
-          if (target.oldInstanceIds.includes(inst.id)) {
-            inst.status = 'running';
-          }
-        }
-      }
+      applyRollback(fleet, target);
       saveFleet(fleet);
       target.status = 'rolled-back';
       target.completedAt = new Date().toISOString();

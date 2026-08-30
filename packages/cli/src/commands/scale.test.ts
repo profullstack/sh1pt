@@ -17,6 +17,7 @@ import {
   parsePercentage,
   aggregateFleetCosts,
   rollbackPlanIps,
+  applyRollback,
 } from './scale.js';
 
 // Helper to create a temp dir and override CREDS_FILE path
@@ -426,5 +427,55 @@ describe('rollbackPlanIps', () => {
       instances: [{ id: 'inst-0001', provider: 'aws', status: 'stopped', createdAt: '', hourlyRate: 0.1 }],
     };
     expect(rollbackPlanIps(fleetNoIp, rollout)).toEqual(['?.?.?.?']);
+  });
+});
+
+describe('applyRollback', () => {
+  it('reactivates the old fleet for the recorded blue-green strategy', () => {
+    const fleet: FleetState = {
+      instances: [
+        { id: 'inst-old', provider: 'aws', status: 'stopped', createdAt: '', hourlyRate: 0.1 },
+        { id: 'inst-new', provider: 'aws', status: 'running', createdAt: '', hourlyRate: 0.1 },
+      ],
+      lastUpdated: '',
+    };
+    const rollout: RolloutRecord = {
+      id: 'roll-blue-green',
+      version: 'v2',
+      strategy: 'blue-green',
+      status: 'completed',
+      startedAt: '2026-08-08T00:00:00.000Z',
+      newInstanceIds: ['inst-new'],
+      oldInstanceIds: ['inst-old'],
+    };
+
+    applyRollback(fleet, rollout);
+
+    expect(fleet.instances.find(i => i.id === 'inst-new')?.status).toBe('stopped');
+    expect(fleet.instances.find(i => i.id === 'inst-old')?.status).toBe('running');
+  });
+
+  it('leaves old instances unchanged for non-blue-green rollouts', () => {
+    const fleet: FleetState = {
+      instances: [
+        { id: 'inst-old', provider: 'aws', status: 'stopped', createdAt: '', hourlyRate: 0.1 },
+        { id: 'inst-new', provider: 'aws', status: 'running', createdAt: '', hourlyRate: 0.1 },
+      ],
+      lastUpdated: '',
+    };
+    const rollout: RolloutRecord = {
+      id: 'roll-canary',
+      version: 'v2',
+      strategy: 'canary',
+      status: 'completed',
+      startedAt: '2026-08-08T00:00:00.000Z',
+      newInstanceIds: ['inst-new'],
+      oldInstanceIds: ['inst-old'],
+    };
+
+    applyRollback(fleet, rollout);
+
+    expect(fleet.instances.find(i => i.id === 'inst-new')?.status).toBe('stopped');
+    expect(fleet.instances.find(i => i.id === 'inst-old')?.status).toBe('stopped');
   });
 });

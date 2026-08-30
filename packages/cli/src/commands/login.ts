@@ -97,14 +97,21 @@ export const logoutCmd = new Command('logout')
     console.log(kleur.dim('signed out — credentials cleared.'));
   });
 
-function tryOpenBrowser(url: string): void {
+export function browserOpenCommand(
+  url: string,
+  platform: NodeJS.Platform = process.platform,
+): { command: string; args: string[] } {
   const cmd =
-    process.platform === 'darwin' ? 'open' :
-    process.platform === 'win32'  ? 'cmd' :
+    platform === 'darwin' ? 'open' :
+    platform === 'win32'  ? 'explorer.exe' :
     'xdg-open';
-  const args = process.platform === 'win32' ? ['/c', 'start', '', url] : [url];
+  return { command: cmd, args: [url] };
+}
+
+function tryOpenBrowser(url: string): void {
+  const { command, args } = browserOpenCommand(url);
   try {
-    const child = spawn(cmd, args, { stdio: 'ignore', detached: true });
+    const child = spawn(command, args, { stdio: 'ignore', detached: true });
     child.unref();
   } catch {
     // Headless or no browser available — the URL is already printed,

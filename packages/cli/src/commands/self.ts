@@ -59,13 +59,24 @@ export const removeCmd = new Command('remove')
 
     let deleteConfig = false;
     if (!opts.keepConfig) {
-      const { confirm } = await prompts({
-        type: 'confirm',
-        name: 'confirm',
-        message: 'Also delete ~/.config/sh1pt/ (adapter configs + stored secrets)?',
-        initial: false,
-      });
-      deleteConfig = Boolean(confirm);
+      if (!process.stdin.isTTY) {
+        // `prompts` reads keystrokes from stdin. When stdin is not a TTY (CI, `< /dev/null`,
+        // a piped uninstall script) it never receives input that resolves or cancels the
+        // prompt, and once nothing else is keeping the event loop alive Node exits on its
+        // own — abandoning the still-pending `await prompts(...)` below *before* `run(argv)`
+        // further down ever executes. `sh1pt remove` used to silently not uninstall anything
+        // at all in that case, while still exiting 0. Skip the prompt and keep its safe
+        // default (`initial: false`) instead of hanging in front of the actual uninstall.
+        console.log(kleur.dim('No TTY detected — keeping ~/.config/sh1pt/ (run interactively, or pass --keep-config, to silence this note).'));
+      } else {
+        const { confirm } = await prompts({
+          type: 'confirm',
+          name: 'confirm',
+          message: 'Also delete ~/.config/sh1pt/ (adapter configs + stored secrets)?',
+          initial: false,
+        });
+        deleteConfig = Boolean(confirm);
+      }
     }
 
     const code = run(argv);

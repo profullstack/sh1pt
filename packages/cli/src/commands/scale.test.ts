@@ -253,6 +253,13 @@ describe('scale command registration', () => {
     expect(subcommands).toContain('cost');
     expect(subcommands).toContain('status');
   });
+
+  it('does not require --version for rollout status or rollback modes', () => {
+    const rollout = scaleCmd.commands.find(command => command.name() === 'rollout');
+    const version = rollout?.options.find(option => option.long === '--version');
+
+    expect(version?.mandatory).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------

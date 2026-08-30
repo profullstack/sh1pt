@@ -390,6 +390,28 @@ describe('auto-scale rules', () => {
     expect(rules.targetCpuPercent).toBe(65);
     expect(rules.cooldownSeconds).toBe(300);
   });
+
+  it('persists rules when --json is used without --dry-run', async () => {
+    const dir = makeTempDir();
+    const previousHome = process.env.HOME;
+    const previousUserProfile = process.env.USERPROFILE;
+    process.env.HOME = dir;
+    process.env.USERPROFILE = dir;
+
+    try {
+      const auto = scaleCmd.commands.find(command => command.name() === 'auto');
+      await auto?.parseAsync(['--min', '2', '--max', '4', '--json'], { from: 'user' });
+
+      const saved = JSON.parse(readFileSync(join(dir, '.sh1pt', 'auto-scale.json'), 'utf-8'));
+      expect(saved.minInstances).toBe(2);
+      expect(saved.maxInstances).toBe(4);
+    } finally {
+      if (previousHome === undefined) delete process.env.HOME;
+      else process.env.HOME = previousHome;
+      if (previousUserProfile === undefined) delete process.env.USERPROFILE;
+      else process.env.USERPROFILE = previousUserProfile;
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------

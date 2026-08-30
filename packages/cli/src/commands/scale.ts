@@ -559,25 +559,27 @@ scaleCmd
       updatedAt: new Date().toISOString(),
     };
 
-    if (opts.json) {
-      console.log(JSON.stringify({ rules }, null, 2));
-      return;
+    if (!opts.json) {
+      console.log(kleur.bold('\n📊 Auto-Scale Rules'));
+      console.log(kleur.dim('─'.repeat(52)));
+      console.log(`${kleur.cyan('Min instances:'.padEnd(20))} ${min}`);
+      console.log(`${kleur.cyan('Max instances:'.padEnd(20))} ${max}`);
+      console.log(`${kleur.cyan('Target CPU:'.padEnd(20))} ${targetCpu}%`);
+      console.log(`${kleur.cyan('Cooldown:'.padEnd(20))} ${cooldown}s (${(cooldown / 60).toFixed(1)} min)`);
+      console.log(kleur.dim('─'.repeat(52)));
     }
 
-    console.log(kleur.bold('\n📊 Auto-Scale Rules'));
-    console.log(kleur.dim('─'.repeat(52)));
-    console.log(`${kleur.cyan('Min instances:'.padEnd(20))} ${min}`);
-    console.log(`${kleur.cyan('Max instances:'.padEnd(20))} ${max}`);
-    console.log(`${kleur.cyan('Target CPU:'.padEnd(20))} ${targetCpu}%`);
-    console.log(`${kleur.cyan('Cooldown:'.padEnd(20))} ${cooldown}s (${(cooldown / 60).toFixed(1)} min)`);
-    console.log(kleur.dim('─'.repeat(52)));
-
     if (opts.dryRun) {
-      console.log(kleur.dim('Dry-run — rules not saved.'));
+      if (opts.json) console.log(JSON.stringify({ rules }, null, 2));
+      else console.log(kleur.dim('Dry-run — rules not saved.'));
       return;
     }
 
     saveAutoScaleRules(rules);
+    if (opts.json) {
+      console.log(JSON.stringify({ rules }, null, 2));
+      return;
+    }
     console.log(kleur.green('✅ Auto-scale rules saved.'));
     console.log(kleur.dim(`Config file: ${AUTO_SCALE_FILE}`));
     console.log(kleur.dim('sh1pt cloud will poll metrics and scale up/down based on these rules.'));

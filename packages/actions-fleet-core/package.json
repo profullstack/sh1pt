@@ -1,6 +1,6 @@
 {
   "name": "@profullstack/sh1pt-actions-fleet-core",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "description": "Action-pack schema, validator, deterministic renderer, and catalog loader for sh1pt Actions Fleet.",
   "license": "MIT",
   "repository": {

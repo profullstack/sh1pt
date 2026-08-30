@@ -1,6 +1,6 @@
 {
   "name": "@profullstack/sh1pt-action-packs",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "description": "Built-in sh1pt actions and workflow templates for the Actions Store.",
   "license": "MIT",
   "repository": {

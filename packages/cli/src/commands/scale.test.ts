@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, writeFileSync, rmSync, existsSync, readFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync, existsSync, readFileSync, mkdirSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
@@ -323,6 +324,45 @@ describe('rollout strategies use getNextId correctly', () => {
 
     expect(newIds).toHaveLength(batchSize);
     expect(newIds[0]).toBe('inst-0007');
+  });
+
+  it('assigns unique IDs to every instance created by a blue-green rollout', () => {
+    const dir = makeTempDir();
+    const stateDir = join(dir, '.sh1pt');
+    mkdirSync(stateDir, { recursive: true });
+    const statePath = join(stateDir, 'credentials.json');
+    writeFileSync(statePath, JSON.stringify({
+      apiKey: 'preserve-me',
+      instances: Array.from({ length: 3 }, (_, index) => ({
+        id: `inst-${String(index + 1).padStart(4, '0')}`,
+        provider: 'aws',
+        status: 'running',
+        createdAt: '',
+        hourlyRate: 0.1,
+      })),
+      lastUpdated: '',
+    }));
+
+    const scaleModule = new URL('./scale.ts', import.meta.url).href;
+    const runRollout = [
+      `import { scaleCmd } from ${JSON.stringify(scaleModule)};`,
+      `await scaleCmd.parseAsync(['node', 'sh1pt', 'rollout', '--version', 'v2', '--strategy', 'blue-green']);`,
+    ].join('\n');
+    const result = spawnSync(
+      process.execPath,
+      ['--import', 'tsx', '--input-type=module', '--eval', runRollout],
+      {
+        env: { ...process.env, HOME: dir, USERPROFILE: dir },
+        encoding: 'utf8',
+      },
+    );
+
+    expect(result.status, result.stderr).toBe(0);
+    const saved = JSON.parse(readFileSync(statePath, 'utf-8'));
+    expect(saved.apiKey).toBe('preserve-me');
+    expect(saved.instances.slice(3).map((instance: FleetEntry) => instance.id)).toEqual([
+      'inst-0004', 'inst-0005', 'inst-0006',
+    ]);
   });
 });
 

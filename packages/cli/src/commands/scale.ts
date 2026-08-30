@@ -820,7 +820,7 @@ scaleCmd
     const newInstances: FleetEntry[] = [];
     for (let i = 0; i < newInstanceCount; i++) {
       newInstances.push({
-        id: getNextId(fleet.instances),
+        id: getNextId([...fleet.instances, ...newInstances]),
         provider: running.length > 0 ? running[0]!.provider : 'digitalocean',
         status: 'running',
         publicIp: `10.${base}.${1 + Math.floor(Math.random() * 254)}.${1 + Math.floor(Math.random() * 254)}`,

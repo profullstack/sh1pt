@@ -216,12 +216,13 @@ function targetEntriesFromSource(source: string, configPath: string): Record<str
 }
 
 function findTargetsObject(source: string): { open: number; close: number } | undefined {
-  const targets = /targets\s*:\s*{/.exec(source);
+  const structural = maskStringsAndComments(source);
+  const targets = /targets\s*:\s*{/.exec(structural);
   if (!targets) return undefined;
   const open = targets.index + targets[0].lastIndexOf('{');
   let depth = 0;
-  for (let i = open; i < source.length; i++) {
-    const char = source[i];
+  for (let i = open; i < structural.length; i++) {
+    const char = structural[i];
     if (char === '{') depth++;
     if (char === '}') {
       depth--;
@@ -229,6 +230,64 @@ function findTargetsObject(source: string): { open: number; close: number } | un
     }
   }
   return undefined;
+}
+
+function maskStringsAndComments(source: string): string {
+  const masked = source.split('');
+  let quote: '"' | "'" | '`' | undefined;
+
+  for (let i = 0; i < source.length; i++) {
+    const char = source[i]!;
+    const next = source[i + 1];
+
+    if (quote) {
+      if (char !== '\n' && char !== '\r') masked[i] = ' ';
+      if (char === quote && !isEscapedAt(source, i)) quote = undefined;
+      continue;
+    }
+
+    if (char === '"' || char === "'" || char === '`') {
+      quote = char;
+      masked[i] = ' ';
+      continue;
+    }
+
+    if (char === '/' && next === '/') {
+      masked[i] = ' ';
+      masked[i + 1] = ' ';
+      i += 2;
+      while (i < source.length && source[i] !== '\n' && source[i] !== '\r') {
+        masked[i] = ' ';
+        i++;
+      }
+      i--;
+      continue;
+    }
+
+    if (char === '/' && next === '*') {
+      masked[i] = ' ';
+      masked[i + 1] = ' ';
+      i += 2;
+      while (i < source.length) {
+        if (source[i] === '*' && source[i + 1] === '/') {
+          masked[i] = ' ';
+          masked[i + 1] = ' ';
+          i++;
+          break;
+        }
+        if (source[i] !== '\n' && source[i] !== '\r') masked[i] = ' ';
+        i++;
+      }
+    }
+  }
+
+  return masked.join('');
+}
+
+function isEscapedAt(source: string, index: number): boolean {
+  let slashCount = 0;
+  for (let i = index - 1; i >= 0 && source[i] === '\\'; i--) slashCount++;
+  return slashCount % 2 === 1;
 }
 
 function targetPropertyPattern(id: string): RegExp {

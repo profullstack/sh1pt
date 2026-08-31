@@ -82,6 +82,29 @@ export default defineConfig({
     expect(config).toContain('"deploy-vercel": { use: "deploy-vercel", config: {} },');
   });
 
+  it('adds a target after entries whose config strings contain braces', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'sh1pt-target-add-braces-'));
+    const file = join(dir, 'sh1pt.config.ts');
+    await writeFile(file, `export default {
+  name: 'demo',
+  version: '0.0.0',
+  targets: {
+    "deploy-netlify": {
+      use: "deploy-netlify",
+      config: { successMessage: "deployed }" },
+    },
+  },
+};
+`);
+
+    addTargetToConfig(file, 'deploy-vercel');
+
+    const config = await readFile(file, 'utf8');
+    const manifest = await loadManifest(file);
+    expect(config).toContain('"deploy-vercel": { use: "deploy-vercel", config: {} },');
+    expect(manifest.targets).toHaveProperty('deploy-vercel');
+  });
+
   it('removes target entries that were added by the CLI', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'sh1pt-target-remove-'));
     const file = join(dir, 'sh1pt.config.ts');

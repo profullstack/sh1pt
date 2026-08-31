@@ -109,4 +109,25 @@ describe('parsePaymentsSummary', () => {
 
     expect(summary?.platformFeeBps).toBeUndefined();
   });
+
+  it('does not treat longer config property names as provider fields', () => {
+    const summary = parsePaymentsSummary(`
+      export default defineConfig({
+        payments: {
+          defaultProvider: 'coinpay',
+          providers: {
+            coinpay: {
+              config: { reuse: 'payment-wrong', notenabled: false },
+              use: 'payment-coinpay',
+              enabled: true,
+            },
+          },
+        },
+      });
+    `);
+
+    expect(summary?.providers).toEqual([
+      { key: 'coinpay', use: 'payment-coinpay', enabled: true, isDefault: true },
+    ]);
+  });
 });

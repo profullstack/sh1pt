@@ -142,18 +142,22 @@ function findMatchingBrace(source: string, open: number): number {
 }
 
 function readStringProperty(source: string, key: string): string | undefined {
-  const match = new RegExp(`${propertyKeyPattern(key)}\\s*:\\s*['"]([^'"]+)['"]`).exec(source);
+  const match = new RegExp(`${propertyEntryPattern(key)}\\s*:\\s*['"]([^'"]+)['"]`).exec(source);
   return match?.[1];
 }
 
 function readNumberProperty(source: string, key: string): number | undefined {
-  const match = new RegExp(`${propertyKeyPattern(key)}\\s*:\\s*(\\d+)\\s*(?=,|})`).exec(source);
+  const match = new RegExp(`${propertyEntryPattern(key)}\\s*:\\s*(\\d+)\\s*(?=,|})`).exec(source);
   return match?.[1] ? Number(match[1]) : undefined;
 }
 
 function readBooleanProperty(source: string, key: string): boolean | undefined {
-  const match = new RegExp(`${propertyKeyPattern(key)}\\s*:\\s*(true|false)`).exec(source);
+  const match = new RegExp(`${propertyEntryPattern(key)}\\s*:\\s*(true|false)`).exec(source);
   return match?.[1] === undefined ? undefined : match[1] === 'true';
+}
+
+function propertyEntryPattern(key: string): string {
+  return `(?:^|[,{\\s])${propertyKeyPattern(key)}`;
 }
 
 function propertyKeyPattern(key: string): string {

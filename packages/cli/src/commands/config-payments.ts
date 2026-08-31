@@ -123,9 +123,8 @@ function findMatchingBrace(source: string, open: number): number {
   let quote: '"' | "'" | '`' | undefined;
   for (let i = open; i < source.length; i += 1) {
     const ch = source[i];
-    const prev = source[i - 1];
     if (quote) {
-      if (ch === quote && prev !== '\\') quote = undefined;
+      if (ch === quote && !isEscaped(source, i)) quote = undefined;
       continue;
     }
     if (ch === '"' || ch === "'" || ch === '`') {

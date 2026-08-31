@@ -109,4 +109,26 @@ describe('parsePaymentsSummary', () => {
 
     expect(summary?.platformFeeBps).toBeUndefined();
   });
+
+  it('parses providers after a string ending with an escaped backslash', () => {
+    const summary = parsePaymentsSummary(`
+      export default defineConfig({
+        payments: {
+          defaultProvider: 'stripe',
+          providers: {
+            coinpay: {
+              use: 'payment-coinpay',
+              config: { outputDirectory: 'C:\\\\payments\\\\' },
+            },
+            stripe: { use: 'payment-stripe' },
+          },
+        },
+      });
+    `);
+
+    expect(summary?.providers).toEqual([
+      { key: 'coinpay', use: 'payment-coinpay', enabled: true, isDefault: false },
+      { key: 'stripe', use: 'payment-stripe', enabled: true, isDefault: true },
+    ]);
+  });
 });

@@ -28,6 +28,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { openSession, type Session } from './session.js';
+import * as amo from './recipes/amo-appeal.js';
 import * as cws from './recipes/chrome-web-store.js';
 import * as google from './recipes/google-cloud-oauth.js';
 import * as meta from './recipes/meta-app.js';
@@ -46,6 +47,11 @@ export interface RunOptions {
   item?: string;
   listing?: string;
   publisher?: string;
+  /** AMO: the add-on id or slug, the decision id, and the appeal text. */
+  addon?: string;
+  decision?: string;
+  reason?: string;
+  reasonFile?: string;
   owner?: string;
   repo?: string;
   workflow?: string;
@@ -102,6 +108,37 @@ async function runGoogle(session: Session, action: string, options: RunOptions):
     default:
       throw new Error(`Unknown action "${action}" for google-cloud-oauth.`);
   }
+}
+
+/**
+ * `status` deliberately needs no browser and no credentials: AMO answers 401 to
+ * an unauthenticated read of a Mozilla-disabled add-on but still returns the
+ * disable flags in the body, so the cheapest correct check is a plain fetch. It
+ * runs before any sign-in for that reason.
+ */
+async function runAmo(session: Session, action: string, options: RunOptions): Promise<unknown> {
+  if (action === 'status') {
+    return await amo.readAddonState(need(options.addon, '--addon (numeric id or slug)'));
+  }
+
+  if (action !== 'appeal') throw new Error(`Unknown action "${action}" for amo-appeal.`);
+
+  const reason = options.reasonFile
+    ? readFileSync(options.reasonFile, 'utf8')
+    : need(options.reason, '--reason (or --reason-file, the appeal text)');
+
+  if (!(await amo.isSignedIn(session))) {
+    throw new Error(
+      'This profile is not signed in to addons.mozilla.org. Sign in once with --headed, then re-run: ' +
+        'an appeal is attributed to the account that files it, so it is not something to do with a shared token.',
+    );
+  }
+
+  return await amo.submitAppeal(session, {
+    decisionCinderId: need(options.decision, '--decision (the id from the reviewer email)'),
+    reason,
+    email: process.env.AMO_ACCOUNT_EMAIL,
+  });
 }
 
 /**
@@ -222,6 +259,8 @@ export async function runRecipe(recipe: string, action: string, options: RunOpti
 
   try {
     switch (recipe) {
+      case 'amo-appeal':
+        return await runAmo(session, action, options);
       case 'chrome-web-store':
         return await runChromeWebStore(session, action, options);
       case 'google-cloud-oauth':
@@ -279,6 +318,10 @@ export function parse(argv: string[]): { recipe: string; action: string; options
     else if (flag === '--repo') (options.repo = value), (i += 1);
     else if (flag === '--workflow') (options.workflow = value), (i += 1);
     else if (flag === '--environment') (options.environment = value), (i += 1);
+    else if (flag === '--addon') (options.addon = value), (i += 1);
+    else if (flag === '--decision') (options.decision = value), (i += 1);
+    else if (flag === '--reason') (options.reason = value), (i += 1);
+    else if (flag === '--reason-file') (options.reasonFile = value), (i += 1);
     else if (flag === '--item') (options.item = value), (i += 1);
     else if (flag === '--listing') (options.listing = value), (i += 1);
     else if (flag === '--publisher') (options.publisher = value), (i += 1);

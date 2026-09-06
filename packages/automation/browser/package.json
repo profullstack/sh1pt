@@ -1,0 +1,65 @@
+{
+  "name": "@profullstack/sh1pt-automation-browser",
+  "version": "0.1.15",
+  "description": "Reusable Playwright recipes for the console chores that have no API: OAuth consent screens, app review settings, redirect URIs.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./run": "./src/run.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@profullstack/sh1pt-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "playwright": "^1.47.0"
+  },
+  "peerDependenciesMeta": {
+    "playwright": {
+      "optional": true
+    }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/profullstack/sh1pt.git",
+    "directory": "packages/automation/browser"
+  },
+  "homepage": "https://sh1pt.com",
+  "bugs": "https://github.com/profullstack/sh1pt/issues",
+  "keywords": [
+    "playwright",
+    "automation",
+    "oauth",
+    "google-cloud",
+    "recipes"
+  ],
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./run": {
+        "types": "./dist/run.d.ts",
+        "import": "./dist/run.js",
+        "default": "./dist/run.js"
+      }
+    }
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
+  }
+}

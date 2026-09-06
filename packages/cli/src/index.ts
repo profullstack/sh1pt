@@ -20,6 +20,7 @@ import { deployCmd } from './commands/deploy.js';
 import { openapiCmd } from './commands/openapi.js';
 import { runsCmd } from './commands/runs.js';
 import { logicsrcCmd } from './commands/logicsrc.js';
+import { browserCmd } from './commands/browser.js';
 
 const program = new Command();
 
@@ -58,6 +59,7 @@ program.addCommand(agentsCmd);      // agents   · generate/run/talk with AI cod
 program.addCommand(deployCmd);      // deploy   · provision cloud infrastructure
 program.addCommand(openapiCmd);     // openapi  · spec → SDK + MCP server + docs site (Stainless-style)
 program.addCommand(logicsrcCmd);    // logicsrc · LogicSRC OpenSpec-only workflows
+program.addCommand(browserCmd);     // browser  · console chores with no CLI or API, driven in a real browser
 
 // Self-management — sh1pt update / upgrade / remove / uninstall.
 program.addCommand(updateCmd);

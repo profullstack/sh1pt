@@ -606,6 +606,16 @@ importers:
         specifier: ^3.23.8
         version: 3.25.76
 
+  packages/automation/browser:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+    devDependencies:
+      playwright:
+        specifier: ^1.47.0
+        version: 1.60.0
+
   packages/automation/stagehand:
     dependencies:
       '@browserbasehq/stagehand':
@@ -803,6 +813,9 @@ importers:
       '@profullstack/sh1pt-actions-fleet-core':
         specifier: workspace:^
         version: link:../actions-fleet-core
+      '@profullstack/sh1pt-automation-browser':
+        specifier: workspace:^
+        version: link:../automation/browser
       '@profullstack/sh1pt-core':
         specifier: workspace:^
         version: link:../core

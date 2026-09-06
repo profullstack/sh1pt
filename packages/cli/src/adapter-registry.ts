@@ -53,8 +53,8 @@ export const CATEGORIES: readonly AdapterCategory[] = [
   {
     id: 'automation',
     pkgPrefix: '@profullstack/sh1pt-automation',
-    description: 'AI browser automation — Stagehand (Browserbase) and friends',
-    adapters: ['stagehand'],
+    description: 'Browser automation — Playwright recipes for console-only settings, and Stagehand',
+    adapters: ['browser', 'stagehand'],
   },
   {
     id: 'bots',

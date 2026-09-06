@@ -57,8 +57,26 @@ describe('the recipe registry', () => {
     const gemEntry = RECIPES.find((r) => r.id === 'rubygems-trusted-publisher');
     expect(pypiEntry?.profile).toBe('pypi');
     expect(gemEntry?.profile).toBe('rubygems');
-    // A shared profile would sign one registry out when the other signs in.
-    expect(new Set(RECIPES.map((r) => r.profile)).size).toBe(RECIPES.length);
+    // A shared profile would sign one registry out when the other signs in —
+    // but that is a fact about distinct identity providers, not about recipes.
+    // Recipes that talk to the SAME provider (the Google Cloud console and the
+    // Chrome Web Store console are both signed in as one Google account) should
+    // share, or the second one forces a redundant sign-in to the same place.
+    // So: no profile may be shared by two different providers.
+    const PROVIDER_FAMILIES: Record<string, string[]> = {
+      google: ['google-cloud-oauth', 'chrome-web-store'],
+    };
+    const owners = new Map<string, Set<string>>();
+    for (const recipe of RECIPES) {
+      const family =
+        Object.entries(PROVIDER_FAMILIES).find(([, ids]) => ids.includes(recipe.id))?.[0] ?? recipe.id;
+      const seen = owners.get(recipe.profile) ?? new Set<string>();
+      seen.add(family);
+      owners.set(recipe.profile, seen);
+    }
+    for (const [profile, families] of owners) {
+      expect(`${profile}: ${[...families].join(', ')}`).toBe(`${profile}: ${[...families][0]}`);
+    }
   });
 
   it('lists both actions on each', () => {

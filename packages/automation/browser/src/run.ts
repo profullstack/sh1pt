@@ -26,7 +26,9 @@
  * and a question into its artifacts directory, and waits for the answer file,
  * rather than failing. With one it is unattended.
  */
+import { readFileSync } from 'node:fs';
 import { openSession, type Session } from './session.js';
+import * as cws from './recipes/chrome-web-store.js';
 import * as google from './recipes/google-cloud-oauth.js';
 import * as meta from './recipes/meta-app.js';
 import * as pypi from './recipes/pypi-trusted-publisher.js';
@@ -40,6 +42,10 @@ export interface RunOptions {
   redirectUri?: string;
   /** Package, project or gem name for the trusted-publisher recipes. */
   packageName?: string;
+  /** Chrome Web Store item id, and the path to its store-listing.json. */
+  item?: string;
+  listing?: string;
+  publisher?: string;
   owner?: string;
   repo?: string;
   workflow?: string;
@@ -95,6 +101,47 @@ async function runGoogle(session: Session, action: string, options: RunOptions):
       };
     default:
       throw new Error(`Unknown action "${action}" for google-cloud-oauth.`);
+  }
+}
+
+/**
+ * The Web Store console is a Google property, so this shares the `google`
+ * profile rather than opening a second sign-in for the same account.
+ */
+async function runChromeWebStore(session: Session, action: string, options: RunOptions): Promise<unknown> {
+  if (!(await cws.isSignedIn(session))) {
+    const email = process.env.GOOGLE_ACCOUNT_EMAIL;
+    const password = process.env.GOOGLE_ACCOUNT_PASSWORD;
+    if (!email || !password) {
+      throw new Error(
+        'This profile is not signed in to the Chrome Web Store console. Set GOOGLE_ACCOUNT_EMAIL and ' +
+          'GOOGLE_ACCOUNT_PASSWORD, or sign in once with --headed on a machine with a display.',
+      );
+    }
+    await google.signIn(session, { email, password });
+  }
+
+  const target = {
+    itemId: cws.assertItemId(need(options.item, '--item (the 32-character extension id)')),
+    publisherId: options.publisher,
+  };
+
+  switch (action) {
+    case 'status':
+      return {
+        item: target.itemId,
+        editUrl: cws.itemEditUrl(target),
+        publicUrl: cws.publicListingUrl(target.itemId),
+      };
+    case 'unpublish':
+      return await cws.unpublish(session, target);
+    case 'fill-listing': {
+      const path = need(options.listing, '--listing (path to store-listing.json)');
+      const listing = cws.prepareListing(JSON.parse(readFileSync(path, 'utf8')));
+      return await cws.fillListing(session, target, listing);
+    }
+    default:
+      throw new Error(`Unknown action "${action}" for chrome-web-store.`);
   }
 }
 
@@ -175,6 +222,8 @@ export async function runRecipe(recipe: string, action: string, options: RunOpti
 
   try {
     switch (recipe) {
+      case 'chrome-web-store':
+        return await runChromeWebStore(session, action, options);
       case 'google-cloud-oauth':
         return await runGoogle(session, action, options);
       case 'pypi-trusted-publisher':
@@ -230,6 +279,9 @@ export function parse(argv: string[]): { recipe: string; action: string; options
     else if (flag === '--repo') (options.repo = value), (i += 1);
     else if (flag === '--workflow') (options.workflow = value), (i += 1);
     else if (flag === '--environment') (options.environment = value), (i += 1);
+    else if (flag === '--item') (options.item = value), (i += 1);
+    else if (flag === '--listing') (options.listing = value), (i += 1);
+    else if (flag === '--publisher') (options.publisher = value), (i += 1);
     else if (flag === '--profile') (options.profile = value), (i += 1);
     else if (flag === '--channel') (options.channel = value as RunOptions['channel']), (i += 1);
     else if (flag === '--headed') options.headed = true;

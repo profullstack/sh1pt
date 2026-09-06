@@ -1,6 +1,11 @@
 /**
- * The runnable half: `sh1pt browser <recipe> <action>` dispatches here, and
- * it also runs directly with tsx during development.
+ * The runnable half: `sh1pt browser <recipe> <action>` dispatches here.
+ *
+ * No `import.meta` and no top-level side effect lives in this file: the
+ * standalone entry is `main.ts`. Vite's SSR transform chokes on
+ * "Cannot split a chunk that has already been edited" when a module a test
+ * imports carries `import.meta` past a certain size, and a test importing
+ * `parse`/`profileFor` from here is exactly that case.
  *
  *   tsx src/run.ts google-cloud-oauth status         --project 330436882816
  *   tsx src/run.ts google-cloud-oauth add-test-users --project 330436882816 --email a@b.com
@@ -230,17 +235,4 @@ export function parse(argv: string[]): { recipe: string; action: string; options
     else if (flag === '--headed') options.headed = true;
   }
   return { recipe, action, options };
-}
-
-const isMain = process.argv[1] && import.meta.url === `file://${process.argv[1]}`;
-if (isMain) {
-  const { recipe, action, options } = parse(process.argv.slice(2));
-  runRecipe(recipe, action, options)
-    .then((result) => {
-      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-    })
-    .catch((error: Error) => {
-      process.stderr.write(`${error.message}\n`);
-      process.exitCode = 1;
-    });
 }

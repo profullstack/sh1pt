@@ -23,6 +23,7 @@ export {
 export { base32Decode, secondsRemaining, totp, twoFactorCode, type TotpOptions } from './totp.js';
 
 export * as googleCloudOAuth from './recipes/google-cloud-oauth.js';
+export * as metaApp from './recipes/meta-app.js';
 export * as pypiTrustedPublisher from './recipes/pypi-trusted-publisher.js';
 export * as rubygemsTrustedPublisher from './recipes/rubygems-trusted-publisher.js';
 
@@ -59,5 +60,13 @@ export const RECIPES: RecipeInfo[] = [
       'trusted publishers live under the profile, with no API and no `gem` command; a pending one publishes a new gem with no key at all.',
     profile: 'rubygems',
     actions: ['list', 'add-pending'],
+  },
+  {
+    id: 'meta-app',
+    label: 'Meta — app settings',
+    because:
+      "Meta's app-settings API refuses with (#10) until 'Allow API Access to App Settings' is ticked, and that tick is console-only.",
+    profile: 'facebook',
+    actions: ['status', 'add-redirect-uri'],
   },
 ];

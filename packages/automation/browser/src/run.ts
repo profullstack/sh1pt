@@ -23,6 +23,7 @@
  */
 import { openSession, type Session } from './session.js';
 import * as google from './recipes/google-cloud-oauth.js';
+import * as meta from './recipes/meta-app.js';
 import * as pypi from './recipes/pypi-trusted-publisher.js';
 import * as rubygems from './recipes/rubygems-trusted-publisher.js';
 import { RECIPES } from './index.js';
@@ -175,11 +176,36 @@ export async function runRecipe(recipe: string, action: string, options: RunOpti
         return await runPypi(session, action, options);
       case 'rubygems-trusted-publisher':
         return await runRubygems(session, action, options);
+      case 'meta-app':
+        return await runMeta(session, action, options);
       default:
         throw new Error(`Unknown recipe "${recipe}".`);
     }
   } finally {
     await session.close();
+  }
+}
+
+/**
+ * Meta's half. The app id rides in on `--client`, since that is what Meta
+ * calls it everywhere, and the account comes from FB_EMAIL / FB_PASSWORD.
+ */
+async function runMeta(session: Session, action: string, options: RunOptions): Promise<unknown> {
+  const email = process.env.FB_EMAIL;
+  const password = process.env.FB_PASSWORD;
+  if (!(await meta.isSignedIn(session))) {
+    if (!email || !password) throw new Error('This profile is not signed in. Set FB_EMAIL and FB_PASSWORD.');
+    await meta.signIn(session, { email, password });
+  }
+
+  const app = need(options.clientId, '--client (the Meta app id)');
+  switch (action) {
+    case 'status':
+      return await meta.status(session, app);
+    case 'add-redirect-uri':
+      return { added: await meta.addRedirectUri(session, app, need(options.redirectUri, '--uri')) };
+    default:
+      throw new Error(`Unknown action "${action}" for meta-app.`);
   }
 }
 

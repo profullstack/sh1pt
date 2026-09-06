@@ -56,6 +56,43 @@ These have real CLIs and map directly to existing or planned adapter surfaces.
 | Stagehand (Browserbase) | `npx @browserbasehq/stagehand` | `automation/stagehand` | Exists. AI browser automation — local Chromium or Browserbase cloud. |
 | OpenAPI → SDK/MCP/docs | `sh1pt openapi <sdk\|mcp\|docs\|all>` | built into the CLI (`packages/openapi`) | Stainless-style spec-driven generator. No external CLI needed. |
 
+## When there is no CLI and no API: browser recipes
+
+Some settings have no door but the console. Google's OAuth consent screen is
+the standard example: `gcloud` covers the rest of Google Cloud, but test
+users, publishing status and a client's redirect URIs exist only as pages. An
+app left in Testing with no test users answers every sign-in with
+`Error 403: access_denied`, and nothing on the command line can change that.
+
+`packages/automation/browser` holds those as typed, reusable recipes, driven
+with Playwright against a **persistent profile**: sign in once, and every
+later run is unattended. `sh1pt browser list` prints what is on the shelf.
+
+```bash
+sh1pt browser list
+sh1pt browser google-cloud-oauth status --project 1234567890
+sh1pt browser google-cloud-oauth add-test-users --project 1234567890 --email you@example.com
+sh1pt browser google-cloud-oauth publish --project 1234567890
+sh1pt browser google-cloud-oauth add-redirect-uri --project 1234567890 --client abc --uri https://example.com/api/v1/google/oauth/callback
+```
+
+| Surface | Why a browser | Recipe |
+|---|---|---|
+| Google Cloud OAuth consent screen | No API for test users, publishing status or client redirect URIs | `google-cloud-oauth` |
+
+Three things make the difference between a recipe that works and one that
+gets blocked, and they are all in `session.ts`:
+
+1. **A real Chrome, in *new* headless mode.** Playwright's `headless: true`
+   asks for the old headless binary, which sign-in pages recognise and refuse.
+2. **A desktop user agent.** New headless still says `HeadlessChrome`, and
+   Google downgrades that to a stripped flow that will not accept a password.
+3. **A virtual authenticator.** With no authenticator, a passkey prompt never
+   settles, the page sits on "Verifying it's you…", and even its own
+   "Try another way" button does nothing. Chrome's DevTools virtual
+   authenticator makes the request fail the way an empty security key would,
+   so the site offers the password fallback.
+
 ## Adapter rule
 
 When a vendor has a mature CLI, prefer a thin adapter over the CLI first:

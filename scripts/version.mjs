@@ -2,7 +2,7 @@
 // Lockstep-bump every published sh1pt package:
 //   @profullstack/sh1pt-core, sh1pt-openapi, sh1pt-actions-fleet-core,
 //   sh1pt-action-packs, sh1pt-secrets-env-updater, sh1pt-policy,
-//   sh1pt (the cli)
+//   sh1pt-automation-browser, sh1pt (the cli)
 //
 // The cli depends on all of the others, and pnpm rewrites `workspace:` to a
 // real range at publish time. Anything the cli depends on therefore has to be
@@ -32,6 +32,7 @@ const PACKAGES = [
   'packages/actions',
   'packages/secrets/env-updater',
   'packages/policy',
+  'packages/automation/browser',
   'packages/cli',
 ];
 const arg = process.argv[2] ?? 'patch';

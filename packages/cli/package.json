@@ -44,6 +44,7 @@
   "dependencies": {
     "@profullstack/sh1pt-action-packs": "workspace:^",
     "@profullstack/sh1pt-actions-fleet-core": "workspace:^",
+    "@profullstack/sh1pt-automation-browser": "workspace:^",
     "@profullstack/sh1pt-core": "workspace:^",
     "@profullstack/sh1pt-openapi": "workspace:^",
     "@profullstack/sh1pt-policy": "workspace:^",

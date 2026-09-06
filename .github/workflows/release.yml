@@ -24,7 +24,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # The cli depends on the six packages below it, and pnpm rewrites
+      # The cli depends on the seven packages below it, and pnpm rewrites
       # `workspace:` to a real range on publish — so every one of them has to
       # reach the registry or `npm i @profullstack/sh1pt` 404s on a dep.
       # Keep this list in step with PACKAGES in scripts/version.mjs.
@@ -36,6 +36,7 @@ jobs:
           --filter @profullstack/sh1pt-action-packs
           --filter @profullstack/sh1pt-secrets-env-updater
           --filter @profullstack/sh1pt-policy
+          --filter @profullstack/sh1pt-automation-browser
           --filter @profullstack/sh1pt
           build
 
@@ -66,6 +67,11 @@ jobs:
 
       - name: Publish @profullstack/sh1pt-policy
         run: pnpm --filter @profullstack/sh1pt-policy publish --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @profullstack/sh1pt-automation-browser
+        run: pnpm --filter @profullstack/sh1pt-automation-browser publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

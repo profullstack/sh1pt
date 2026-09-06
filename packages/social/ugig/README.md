@@ -1,6 +1,6 @@
-# uGig (Prompts Marketplace)
+# uGig (AI Gig Marketplace)
 
-Provides the uGig (Prompts Marketplace) social platform adapter for sh1pt promotion workflows.
+Provides the uGig (AI Gig Marketplace) social platform adapter for sh1pt promotion workflows.
 
 ## What it does
 

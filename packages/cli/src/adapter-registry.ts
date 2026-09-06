@@ -137,8 +137,8 @@ export const CATEGORIES: readonly AdapterCategory[] = [
   {
     id: 'payments',
     pkgPrefix: '@profullstack/sh1pt-payment',
-    description: 'Payment providers — CoinPay default, Stripe/PayPal/WorldRemit',
-    adapters: ['coinpay', 'paypal', 'stripe', 'worldremit'],
+    description: 'Payment providers — CoinPay default, Stripe/PayPal, TransFi/WorldRemit payouts',
+    adapters: ['coinpay', 'paypal', 'stripe', 'transfi', 'worldremit'],
   },
   {
     id: 'promo',

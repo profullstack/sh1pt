@@ -66,7 +66,7 @@ paymentsCmd
 
 paymentsCmd
   .command('add <provider>')
-  .description('Enable a provider (e.g. payment-coinpay, payment-stripe, payment-paypal, payment-worldremit)')
+  .description('Enable a provider (e.g. payment-coinpay, payment-stripe, payment-paypal, payment-transfi, payment-worldremit)')
   .option('--default', 'also set as defaultProvider')
   .action((provider: string, opts: { default?: boolean }) => {
     console.log(kleur.cyan(`[stub] config payments add ${provider}${opts.default ? ' (as default)' : ''}`));

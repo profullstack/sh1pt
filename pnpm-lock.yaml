@@ -1229,6 +1229,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/payments/bitnob:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/payments/coinpay:
     dependencies:
       '@profullstack/sh1pt-core':

@@ -74,11 +74,22 @@ sh1pt browser google-cloud-oauth status --project 1234567890
 sh1pt browser google-cloud-oauth add-test-users --project 1234567890 --email you@example.com
 sh1pt browser google-cloud-oauth publish --project 1234567890
 sh1pt browser google-cloud-oauth add-redirect-uri --project 1234567890 --client abc --uri https://example.com/api/v1/google/oauth/callback
+
+sh1pt browser pypi-trusted-publisher add-pending --package my-lib --owner me --repo my-repo --workflow release.yml
+sh1pt browser rubygems-trusted-publisher add-pending --package my-gem --owner me --repo my-repo --workflow release.yml
 ```
 
 | Surface | Why a browser | Recipe |
 |---|---|---|
 | Google Cloud OAuth consent screen | No API for test users, publishing status or client redirect URIs | `google-cloud-oauth` |
+| PyPI trusted publishers | The upload API publishes packages, not account settings; a pending publisher is the only way to ship a new project with no token | `pypi-trusted-publisher` |
+| RubyGems trusted publishers | Publishers live under the profile, with no API and no `gem` command | `rubygems-trusted-publisher` |
+
+Both registries require two-factor on any account that can publish, so the
+recipes generate the code from a base32 seed (`PYPI_TOTP_SECRET`,
+`RUBYGEMS_TOTP_SECRET`) when one is set, and otherwise park and ask for it.
+`add-pending` is idempotent: it reads the existing list first and reports
+`alreadyPresent` rather than creating a duplicate.
 
 Three things make the difference between a recipe that works and one that
 gets blocked, and they are all in `session.ts`:

@@ -26,7 +26,10 @@
  * and a question into its artifacts directory, and waits for the answer file,
  * rather than failing. With one it is unattended.
  */
+import { readFileSync } from 'node:fs';
 import { openSession, type Session } from './session.js';
+import * as amo from './recipes/amo-appeal.js';
+import * as cws from './recipes/chrome-web-store.js';
 import * as google from './recipes/google-cloud-oauth.js';
 import * as meta from './recipes/meta-app.js';
 import * as pypi from './recipes/pypi-trusted-publisher.js';
@@ -40,6 +43,15 @@ export interface RunOptions {
   redirectUri?: string;
   /** Package, project or gem name for the trusted-publisher recipes. */
   packageName?: string;
+  /** Chrome Web Store item id, and the path to its store-listing.json. */
+  item?: string;
+  listing?: string;
+  publisher?: string;
+  /** AMO: the add-on id or slug, the decision id, and the appeal text. */
+  addon?: string;
+  decision?: string;
+  reason?: string;
+  reasonFile?: string;
   owner?: string;
   repo?: string;
   workflow?: string;
@@ -95,6 +107,78 @@ async function runGoogle(session: Session, action: string, options: RunOptions):
       };
     default:
       throw new Error(`Unknown action "${action}" for google-cloud-oauth.`);
+  }
+}
+
+/**
+ * `status` deliberately needs no browser and no credentials: AMO answers 401 to
+ * an unauthenticated read of a Mozilla-disabled add-on but still returns the
+ * disable flags in the body, so the cheapest correct check is a plain fetch. It
+ * runs before any sign-in for that reason.
+ */
+async function runAmo(session: Session, action: string, options: RunOptions): Promise<unknown> {
+  if (action === 'status') {
+    return await amo.readAddonState(need(options.addon, '--addon (numeric id or slug)'));
+  }
+
+  if (action !== 'appeal') throw new Error(`Unknown action "${action}" for amo-appeal.`);
+
+  const reason = options.reasonFile
+    ? readFileSync(options.reasonFile, 'utf8')
+    : need(options.reason, '--reason (or --reason-file, the appeal text)');
+
+  if (!(await amo.isSignedIn(session))) {
+    throw new Error(
+      'This profile is not signed in to addons.mozilla.org. Sign in once with --headed, then re-run: ' +
+        'an appeal is attributed to the account that files it, so it is not something to do with a shared token.',
+    );
+  }
+
+  return await amo.submitAppeal(session, {
+    decisionCinderId: need(options.decision, '--decision (the id from the reviewer email)'),
+    reason,
+    email: process.env.AMO_ACCOUNT_EMAIL,
+  });
+}
+
+/**
+ * The Web Store console is a Google property, so this shares the `google`
+ * profile rather than opening a second sign-in for the same account.
+ */
+async function runChromeWebStore(session: Session, action: string, options: RunOptions): Promise<unknown> {
+  if (!(await cws.isSignedIn(session))) {
+    const email = process.env.GOOGLE_ACCOUNT_EMAIL;
+    const password = process.env.GOOGLE_ACCOUNT_PASSWORD;
+    if (!email || !password) {
+      throw new Error(
+        'This profile is not signed in to the Chrome Web Store console. Set GOOGLE_ACCOUNT_EMAIL and ' +
+          'GOOGLE_ACCOUNT_PASSWORD, or sign in once with --headed on a machine with a display.',
+      );
+    }
+    await google.signIn(session, { email, password });
+  }
+
+  const target = {
+    itemId: cws.assertItemId(need(options.item, '--item (the 32-character extension id)')),
+    publisherId: options.publisher,
+  };
+
+  switch (action) {
+    case 'status':
+      return {
+        item: target.itemId,
+        editUrl: cws.itemEditUrl(target),
+        publicUrl: cws.publicListingUrl(target.itemId),
+      };
+    case 'unpublish':
+      return await cws.unpublish(session, target);
+    case 'fill-listing': {
+      const path = need(options.listing, '--listing (path to store-listing.json)');
+      const listing = cws.prepareListing(JSON.parse(readFileSync(path, 'utf8')));
+      return await cws.fillListing(session, target, listing);
+    }
+    default:
+      throw new Error(`Unknown action "${action}" for chrome-web-store.`);
   }
 }
 
@@ -175,6 +259,10 @@ export async function runRecipe(recipe: string, action: string, options: RunOpti
 
   try {
     switch (recipe) {
+      case 'amo-appeal':
+        return await runAmo(session, action, options);
+      case 'chrome-web-store':
+        return await runChromeWebStore(session, action, options);
       case 'google-cloud-oauth':
         return await runGoogle(session, action, options);
       case 'pypi-trusted-publisher':
@@ -230,6 +318,13 @@ export function parse(argv: string[]): { recipe: string; action: string; options
     else if (flag === '--repo') (options.repo = value), (i += 1);
     else if (flag === '--workflow') (options.workflow = value), (i += 1);
     else if (flag === '--environment') (options.environment = value), (i += 1);
+    else if (flag === '--addon') (options.addon = value), (i += 1);
+    else if (flag === '--decision') (options.decision = value), (i += 1);
+    else if (flag === '--reason') (options.reason = value), (i += 1);
+    else if (flag === '--reason-file') (options.reasonFile = value), (i += 1);
+    else if (flag === '--item') (options.item = value), (i += 1);
+    else if (flag === '--listing') (options.listing = value), (i += 1);
+    else if (flag === '--publisher') (options.publisher = value), (i += 1);
     else if (flag === '--profile') (options.profile = value), (i += 1);
     else if (flag === '--channel') (options.channel = value as RunOptions['channel']), (i += 1);
     else if (flag === '--headed') options.headed = true;

@@ -22,6 +22,8 @@ export {
 
 export { base32Decode, secondsRemaining, totp, twoFactorCode, type TotpOptions } from './totp.js';
 
+export * as amoAppeal from './recipes/amo-appeal.js';
+export * as chromeWebStore from './recipes/chrome-web-store.js';
 export * as googleCloudOAuth from './recipes/google-cloud-oauth.js';
 export * as metaApp from './recipes/meta-app.js';
 export * as pypiTrustedPublisher from './recipes/pypi-trusted-publisher.js';
@@ -60,6 +62,22 @@ export const RECIPES: RecipeInfo[] = [
       'trusted publishers live under the profile, with no API and no `gem` command; a pending one publishes a new gem with no key at all.',
     profile: 'rubygems',
     actions: ['list', 'add-pending'],
+  },
+  {
+    id: 'amo-appeal',
+    label: 'addons.mozilla.org — appeal a reviewer decision',
+    because:
+      'a Mozilla-disabled add-on 403s every write, listing-only PATCHes included; no API lifts the block and only an appeal, decided by a human, does.',
+    profile: 'mozilla',
+    actions: ['status', 'appeal'],
+  },
+  {
+    id: 'chrome-web-store',
+    label: 'Chrome Web Store — listing and publish conditions',
+    because:
+      'the Publish API only uploads and publishes; the ten conditions it checks — privacy answers, category, language, description, assets — and unpublishing itself are all dashboard-only.',
+    profile: 'google',
+    actions: ['status', 'unpublish', 'fill-listing'],
   },
   {
     id: 'meta-app',

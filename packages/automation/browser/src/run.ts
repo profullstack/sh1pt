@@ -1,6 +1,11 @@
 /**
- * The runnable half: `sh1pt browser <recipe> <action>` dispatches here, and
- * it also runs directly with tsx during development.
+ * The runnable half: `sh1pt browser <recipe> <action>` dispatches here.
+ *
+ * No `import.meta` and no top-level side effect lives in this file: the
+ * standalone entry is `main.ts`. Vite's SSR transform chokes on
+ * "Cannot split a chunk that has already been edited" when a module a test
+ * imports carries `import.meta` past a certain size, and a test importing
+ * `parse`/`profileFor` from here is exactly that case.
  *
  *   tsx src/run.ts google-cloud-oauth status         --project 330436882816
  *   tsx src/run.ts google-cloud-oauth add-test-users --project 330436882816 --email a@b.com
@@ -23,6 +28,7 @@
  */
 import { openSession, type Session } from './session.js';
 import * as google from './recipes/google-cloud-oauth.js';
+import * as meta from './recipes/meta-app.js';
 import * as pypi from './recipes/pypi-trusted-publisher.js';
 import * as rubygems from './recipes/rubygems-trusted-publisher.js';
 import { RECIPES } from './index.js';
@@ -175,11 +181,36 @@ export async function runRecipe(recipe: string, action: string, options: RunOpti
         return await runPypi(session, action, options);
       case 'rubygems-trusted-publisher':
         return await runRubygems(session, action, options);
+      case 'meta-app':
+        return await runMeta(session, action, options);
       default:
         throw new Error(`Unknown recipe "${recipe}".`);
     }
   } finally {
     await session.close();
+  }
+}
+
+/**
+ * Meta's half. The app id rides in on `--client`, since that is what Meta
+ * calls it everywhere, and the account comes from FB_EMAIL / FB_PASSWORD.
+ */
+async function runMeta(session: Session, action: string, options: RunOptions): Promise<unknown> {
+  const email = process.env.FB_EMAIL;
+  const password = process.env.FB_PASSWORD;
+  if (!(await meta.isSignedIn(session))) {
+    if (!email || !password) throw new Error('This profile is not signed in. Set FB_EMAIL and FB_PASSWORD.');
+    await meta.signIn(session, { email, password });
+  }
+
+  const app = need(options.clientId, '--client (the Meta app id)');
+  switch (action) {
+    case 'status':
+      return await meta.status(session, app);
+    case 'add-redirect-uri':
+      return { added: await meta.addRedirectUri(session, app, need(options.redirectUri, '--uri')) };
+    default:
+      throw new Error(`Unknown action "${action}" for meta-app.`);
   }
 }
 
@@ -204,17 +235,4 @@ export function parse(argv: string[]): { recipe: string; action: string; options
     else if (flag === '--headed') options.headed = true;
   }
   return { recipe, action, options };
-}
-
-const isMain = process.argv[1] && import.meta.url === `file://${process.argv[1]}`;
-if (isMain) {
-  const { recipe, action, options } = parse(process.argv.slice(2));
-  runRecipe(recipe, action, options)
-    .then((result) => {
-      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-    })
-    .catch((error: Error) => {
-      process.stderr.write(`${error.message}\n`);
-      process.exitCode = 1;
-    });
 }

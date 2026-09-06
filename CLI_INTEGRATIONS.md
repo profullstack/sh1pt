@@ -77,13 +77,24 @@ sh1pt browser google-cloud-oauth add-redirect-uri --project 1234567890 --client 
 
 sh1pt browser pypi-trusted-publisher add-pending --package my-lib --owner me --repo my-repo --workflow release.yml
 sh1pt browser rubygems-trusted-publisher add-pending --package my-gem --owner me --repo my-repo --workflow release.yml
+
+sh1pt browser meta-app status --client 1234567890
+sh1pt browser meta-app add-redirect-uri --client 1234567890 --uri https://example.com/api/v1/facebook/oauth/callback
 ```
+
+Meta answers an account that does not own the app by redirecting every
+`/apps/<id>/…` URL to the developer home page, so `meta-app` checks it can
+administer the app before touching anything and fails loudly rather than
+reporting a success it did not achieve. Its second factor defaults to
+WhatsApp; the recipe switches to the emailed code, which an agent with
+mailbox access can fetch, so no phone is in the loop.
 
 | Surface | Why a browser | Recipe |
 |---|---|---|
 | Google Cloud OAuth consent screen | No API for test users, publishing status or client redirect URIs | `google-cloud-oauth` |
 | PyPI trusted publishers | The upload API publishes packages, not account settings; a pending publisher is the only way to ship a new project with no token | `pypi-trusted-publisher` |
 | RubyGems trusted publishers | Publishers live under the profile, with no API and no `gem` command | `rubygems-trusted-publisher` |
+| Meta app settings | The app-settings API answers `(#10)` until "Allow API Access to App Settings" is ticked, and that tick is console-only | `meta-app` |
 
 Both registries require two-factor on any account that can publish, so the
 recipes generate the code from a base32 seed (`PYPI_TOTP_SECRET`,

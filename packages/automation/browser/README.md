@@ -21,6 +21,57 @@ sh1pt browser google-cloud-oauth publish --project 1234567890
 `playwright` is an optional peer dependency; install it where you run the
 recipes.
 
+## Trusted publishers
+
+PyPI and RubyGems let a GitHub workflow publish with no long-lived token, and
+neither exposes that setting to an API. PyPI's upload API publishes packages
+rather than account settings; RubyGems keeps publishers under the profile and
+`gem` has no command for them. Both are therefore browser work.
+
+The form worth automating is the **pending** publisher. It names a package
+that does not exist yet and brings it into being on the first publish, so a
+brand-new project ships without a token ever being minted. Registering four
+of them by hand across two registries is exactly the chore this package is
+for.
+
+```bash
+sh1pt browser pypi-trusted-publisher add-pending \
+  --package profullstack-x402-gateway --owner profullstack \
+  --repo x402-ports --workflow release-python.yml
+
+sh1pt browser rubygems-trusted-publisher add-pending \
+  --package x402-gateway --owner profullstack \
+  --repo x402-ports --workflow release-ruby.yml
+
+sh1pt browser pypi-trusted-publisher list
+```
+
+Both actions are idempotent: `add-pending` reads the existing list first and
+returns `{ "added": false, "alreadyPresent": true }` rather than creating a
+duplicate, so a fleet script can call it unconditionally.
+
+**Leave `--environment` off** unless the workflow declares a GitHub
+environment. Both registries match it exactly, so a value set against a
+workflow that has none rejects every publish. The recipes always write the
+field, empty included, so a stale value cannot survive an edit.
+
+Credentials come from the environment, never from flags, so nothing lands in
+shell history:
+
+| Variable | Used for |
+| --- | --- |
+| `PYPI_USERNAME`, `PYPI_PASSWORD` | PyPI sign-in |
+| `PYPI_TOTP_SECRET` | optional; the base32 seed, for an unattended run |
+| `RUBYGEMS_USERNAME`, `RUBYGEMS_PASSWORD` | RubyGems sign-in |
+| `RUBYGEMS_TOTP_SECRET` | optional; same |
+
+Both registries require two-factor on any account that can publish. With a
+seed the run is unattended. Without one it parks on `session.ask()` and waits
+for you to write the code into the answer file it names, which is worth having
+because a seed is not always available. A security key instead of an
+authenticator cannot be driven headlessly at all, and the PyPI recipe says so
+rather than hanging.
+
 ## The profile is the point
 
 The clicking is easy. The sign-in is not: providers challenge a fresh browser

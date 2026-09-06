@@ -1,6 +1,6 @@
 {
   "name": "@profullstack/sh1pt-automation-browser",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Reusable Playwright recipes for the console chores that have no API: OAuth consent screens, app review settings, redirect URIs.",
   "type": "module",
   "main": "./src/index.ts",

@@ -34,12 +34,22 @@ const bodyLines = async (session: Session): Promise<string[]> =>
     .map((line: string) => line.trim())
     .filter(Boolean);
 
-/** True when the profile already carries a signed-in Facebook session. */
+/**
+ * True when the profile already carries a signed-in Facebook session.
+ *
+ * Test for the positive. A signed-out browser asking for `/me` is bounced to
+ * `facebook.com/` — a URL with no "login" in it — so "not on a login page"
+ * reports a fresh profile as signed in, the sign-in is skipped, and every
+ * later step quietly runs as nobody. Require landing on a profile path with
+ * no login form on it.
+ */
 export async function isSignedIn(session: Session): Promise<boolean> {
   const { page } = session;
   await page.goto('https://www.facebook.com/me', { waitUntil: 'domcontentloaded' });
   await page.waitForLoadState('networkidle').catch(() => undefined);
-  return !/login|checkpoint|two_step/.test(page.url());
+  if (/login|checkpoint|two_step|recover/.test(page.url())) return false;
+  if (await page.locator('#email, input[name="email"]').first().isVisible().catch(() => false)) return false;
+  return /^https:\/\/(www\.)?facebook\.com\/[^/?#]+/.test(page.url());
 }
 
 export async function signIn(session: Session, options: MetaSignInOptions): Promise<void> {
@@ -63,6 +73,7 @@ export async function signIn(session: Session, options: MetaSignInOptions): Prom
   for (let i = 0; i < 10; i += 1) {
     await page.waitForLoadState('networkidle').catch(() => undefined);
     await page.waitForTimeout(4000);
+    if (process.env.SH1PT_BROWSER_DEBUG) process.stderr.write(`[meta] check ${i}: ${page.url().slice(0, 90)}\n`);
     if (/codesubmit|two_step|checkpoint/.test(page.url())) break;
   }
 
@@ -84,6 +95,11 @@ export async function signIn(session: Session, options: MetaSignInOptions): Prom
   while (Date.now() < deadline) {
     await page.waitForLoadState('networkidle').catch(() => undefined);
     const url = page.url();
+    // Without this a stuck run is completely silent for the whole timeout,
+    // and every wall Meta puts up looks identical from the outside.
+    if (process.env.SH1PT_BROWSER_DEBUG) {
+      process.stderr.write(`[meta] ${url.slice(0, 100)}\n[meta]   ${(await bodyLines(session)).slice(0, 6).join(' | ').slice(0, 220)}\n`);
+    }
     if (/facebook\.com\/?$/.test(url) && !/login|checkpoint|codesubmit|two_step/.test(url)) return;
 
     const codeBox = page

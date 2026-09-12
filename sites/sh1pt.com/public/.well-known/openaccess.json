@@ -1,0 +1,29 @@
+{
+  "openaccess": "0.1",
+  "name": "sh1pt",
+  "url": "https://sh1pt.com",
+  "operator": "https://logicsrc.com/.well-known/openprofile.md",
+  "redirect_uris": [
+    "https://sh1pt.com/api/v1/openaccess/callback"
+  ],
+  "jwks": {
+    "keys": [
+      {
+        "kty": "OKP",
+        "crv": "Ed25519",
+        "kid": "OMol0fXYUm3u",
+        "x": "UoH_xDnnyaMFUVaMdxFHw5sW5w97LYYxdaMaEQPvTZs",
+        "alg": "EdDSA",
+        "use": "sig"
+      }
+    ]
+  },
+  "scopes": {},
+  "honours": [
+    "profullstack.com/all-access"
+  ],
+  "webhooks": "https://sh1pt.com/api/v1/openaccess/events",
+  "hubs": [
+    "https://openaccess.logicsrc.com"
+  ]
+}

@@ -16,6 +16,8 @@ import { x402Proxy } from "@profullstack/x402-gateway/next";
 const env = (name: string) => process.env[name];
 
 export const gateway = createGateway({
+  // Hubs read the OpenAccess descriptor with no cookie and no browser headers.
+  openPaths: ['/.well-known/openaccess.json'],
   siteUrl: env("SITE_URL") || env("NEXT_PUBLIC_SITE_URL") || "https://sh1pt.com",
   siteName: "sh1pt",
   coinpay: { apiKey: env("COINPAY_X402_KEY") },

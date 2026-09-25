@@ -110,7 +110,7 @@ line to copy rather than a thing to remember.
   "to": {
     "host": "dev2.example.com",
     "user": "anthony",
-    "postgres": [{ "name": "postgres", "url": "postgres://app:pw@127.0.0.1:5432/app" }]
+    "postgres": [{ "name": "postgres", "url": "postgres://app@127.0.0.1:5432/app" }]
   }
 }
 ```

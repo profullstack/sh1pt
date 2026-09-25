@@ -45,7 +45,7 @@ const resource = (id: string, kind: ResourceKind = 'postgres'): Resource => ({
   kind,
   id,
   name: id,
-  connection: { url: secret('postgres://u:p@h/d') },
+  connection: { url: secret('postgres://u@h/d') },
 });
 
 const target = (supports: ResourceKind[] = ['postgres', 'object-storage', 'cron']): Platform => ({

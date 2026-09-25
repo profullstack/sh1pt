@@ -1,3 +1,4 @@
+import { quoteIdent, quoteLiteral } from '../transforms.js';
 import type { Artifact, Engine, EngineContext, Resource, VerifyResult } from '../types.js';
 
 /**
@@ -216,36 +217,63 @@ export const postgresEngine: Engine = {
 
     if (ctx.dryRun) return [{ resourceId: from.id, kind: 'postgres', path }];
 
-    // Find tables that actually have the timestamp column rather than assuming
-    // a schema. A table without one cannot be delta'd and is reported.
+    /*
+     * Find tables that actually have the timestamp column rather than assuming
+     * a schema. A table without one cannot be delta'd and is reported.
+     *
+     * Schema and table come back as separate fields rather than pre-joined
+     * with a dot, so each can be quoted independently below. Joining them here
+     * would make `public.user` a string that cannot be quoted correctly —
+     * quoting the whole thing gives `"public.user"`, a single identifier with
+     * a dot in its name, which is a different table that does not exist.
+     */
     const found = await ctx.exec(
       'psql',
       [
         '--tuples-only',
         '--no-align',
+        '--field-separator=|',
         '--command',
-        `select table_schema||'.'||table_name from information_schema.columns
-           where column_name = '${columns}'
+        `select table_schema, table_name from information_schema.columns
+           where column_name = ${quoteLiteral(columns)}
              and table_schema not in ('pg_catalog','information_schema')
-           order by 1`,
+           order by 1, 2`,
       ],
       { env: pgEnv(from) },
     );
 
-    const tables = found.stdout.split('\n').map((l) => l.trim()).filter(Boolean);
+    const tables = found.stdout
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => {
+        const [schema, table] = l.split('|');
+        return schema && table ? { schema, table } : undefined;
+      })
+      .filter((t): t is { schema: string; table: string } => Boolean(t));
+
     if (!tables.length) {
       ctx.log(`no table has a '${columns}' column; nothing can be delta-synced`, 'warn');
       return [];
     }
 
     const artifacts: Artifact[] = [];
-    for (const table of tables) {
-      const out = `${from.id}/delta-${table.replace(/[^\w]/g, '_')}.csv`;
+    for (const { schema, table } of tables) {
+      const label = `${schema}.${table}`;
+      const out = `${from.id}/delta-${label.replace(/[^\w]/g, '_')}.csv`;
+      /*
+       * Every identifier is quoted. These names come from information_schema
+       * so they are real tables rather than attacker input, but a table called
+       * `user` or `order` is a reserved word and an unquoted reference to it is
+       * a syntax error partway through a cutover — and a name containing a
+       * quote or a space simply does not parse. Quoting costs nothing and
+       * removes the class.
+       */
       await ctx.exec(
         'psql',
         [
           '--command',
-          `\\copy (select * from ${table} where ${columns} > '${since.toISOString()}') to '${ctx.staging.dir}/${out}' with csv header`,
+          `\\copy (select * from ${quoteIdent(schema)}.${quoteIdent(table)} where ${quoteIdent(columns)} > ${quoteLiteral(since.toISOString())}) to ${quoteLiteral(`${ctx.staging.dir}/${out}`)} with csv header`,
         ],
         { env: pgEnv(from) },
       );
@@ -253,7 +281,7 @@ export const postgresEngine: Engine = {
         resourceId: from.id,
         kind: 'postgres',
         path: out,
-        metadata: { table, mode: 'delta-csv' },
+        metadata: { table: label, mode: 'delta-csv' },
       };
       await ctx.staging.record(artifact);
       artifacts.push(artifact);

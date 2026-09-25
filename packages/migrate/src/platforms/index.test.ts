@@ -69,9 +69,9 @@ describe('compatibleKinds is what makes direction a non-question', () => {
 
 describe('railway connection discovery', () => {
   it('classifies by scheme, not by variable name', () => {
-    expect(classifyConnection('postgresql://u:p@h/d')).toBe('postgres');
-    expect(classifyConnection('postgres://u:p@h/d')).toBe('postgres');
-    expect(classifyConnection('mysql://u:p@h/d')).toBe('mysql');
+    expect(classifyConnection('postgresql://u@h/d')).toBe('postgres');
+    expect(classifyConnection('postgres://u@h/d')).toBe('postgres');
+    expect(classifyConnection('mysql://u@h/d')).toBe('mysql');
     expect(classifyConnection('redis://h:6379')).toBe('redis');
     expect(classifyConnection('rediss://h:6379')).toBe('redis');
     expect(classifyConnection('libsql://x.turso.io')).toBe('sqlite');
@@ -85,7 +85,7 @@ describe('railway connection discovery', () => {
   it('finds a database under a non-standard variable name', () => {
     const found = connectionsFromVariables([
       { name: 'NODE_ENV', value: 'production' },
-      { name: 'PG_URI', value: 'postgres://u:p@h/d' },
+      { name: 'PG_URI', value: 'postgres://u@h/d' },
     ]);
     expect(found).toHaveLength(1);
     expect(found[0]?.kind).toBe('postgres');
@@ -93,9 +93,9 @@ describe('railway connection discovery', () => {
 
   it('moves a database once even when several services share it', () => {
     const found = connectionsFromVariables([
-      { name: 'DATABASE_URL', value: 'postgres://u:p@h/d' },
-      { name: 'DATABASE_URL', value: 'postgres://u:p@h/d' },
-      { name: 'PG_URL', value: 'postgres://u:p@h/d' },
+      { name: 'DATABASE_URL', value: 'postgres://u@h/d' },
+      { name: 'DATABASE_URL', value: 'postgres://u@h/d' },
+      { name: 'PG_URL', value: 'postgres://u@h/d' },
     ]);
     expect(found).toHaveLength(1);
   });
@@ -163,7 +163,7 @@ describe('ssh', () => {
     const inv = await sshPlatform.inventory(ctx(), {
       host: 'dev2.example.com',
       user: 'anthony',
-      postgres: [{ name: 'app', url: 'postgres://u:p@localhost/app' }],
+      postgres: [{ name: 'app', url: 'postgres://u@localhost/app' }],
       files: [{ name: 'www', path: '/home/anthony/www' }],
     });
     expect(inv.resources.map((r) => r.kind).sort()).toEqual(['files', 'postgres']);
@@ -191,7 +191,7 @@ describe('ssh', () => {
     const out = await sshPlatform.provision(
       ctx(),
       { kind: 'postgres', id: 'pg', name: 'app', connection: {} },
-      { host: 'h', postgres: [{ name: 'app', url: 'postgres://u:p@localhost/app' }] },
+      { host: 'h', postgres: [{ name: 'app', url: 'postgres://u@localhost/app' }] },
     );
     expect(out.connection.url?.reveal()).toContain('localhost/app');
   });

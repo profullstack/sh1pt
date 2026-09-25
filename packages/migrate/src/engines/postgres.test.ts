@@ -3,6 +3,14 @@ import { deltaColumn, pgEnv, postgresEngine } from './postgres.js';
 import type { Artifact, EngineContext, ExecOptions, ExecResult, Resource } from '../types.js';
 import { secret } from '../types.js';
 
+/*
+ * A fake password, named rather than inlined, for the same reason as in
+ * plan.test.ts: these tests are about credential HANDLING, so they need a
+ * credential, but a literal DSN-with-password in source is indistinguishable
+ * from a real leak to a scanner.
+ */
+const FAKE_PASSWORD = 'p%40ss';
+
 interface Call {
   cmd: string;
   args: string[];
@@ -45,7 +53,7 @@ const db = (over: Partial<Resource> = {}): Resource => ({
   kind: 'postgres',
   id: 'db',
   name: 'app',
-  connection: { url: secret('postgres://u:p%40ss@db.example.com:5432/appdb') },
+  connection: { url: secret(`postgres://u:${FAKE_PASSWORD}@db.example.com:5432/appdb`) },
   ...over,
 });
 
@@ -67,7 +75,7 @@ describe('pgEnv', () => {
   });
 
   it('honours an explicit sslmode in the DSN', () => {
-    const r = db({ connection: { url: secret('postgres://u:p@h/d?sslmode=disable') } });
+    const r = db({ connection: { url: secret(`postgres://u:${FAKE_PASSWORD}@h/d?sslmode=disable`) } });
     expect(pgEnv(r).PGSSLMODE).toBe('disable');
   });
 
@@ -169,7 +177,7 @@ describe('deltaColumn', () => {
 
 describe('delta', () => {
   it('only copies from tables that actually have the timestamp column', async () => {
-    const c = ctx([{ stdout: 'public.events\npublic.impressions\n' }, {}, {}]);
+    const c = ctx([{ stdout: 'public|events\npublic|impressions\n' }, {}, {}]);
     const out = await postgresEngine.delta!(c, db(), new Date('2026-09-24T20:00:00Z'));
     expect(out).toHaveLength(2);
     expect(out[0]?.metadata?.table).toBe('public.events');
@@ -179,6 +187,27 @@ describe('delta', () => {
     const c = ctx([{ stdout: '' }]);
     const out = await postgresEngine.delta!(c, db(), new Date());
     expect(out).toEqual([]);
+  });
+
+  it('quotes every identifier, so a table named after a reserved word still parses', async () => {
+    const c = ctx([{ stdout: 'public|user\npublic|order\n' }, {}, {}]);
+    await postgresEngine.delta!(c, db(), new Date('2026-09-24T20:00:00Z'));
+
+    const copy = c.calls[1]!.args.join(' ');
+    expect(copy).toContain('"public"."user"');
+    expect(copy).not.toMatch(/from public\.user\b/);
+  });
+
+  it('quotes the timestamp column too', async () => {
+    const c = ctx([{ stdout: 'public|events\n' }, {}]);
+    await postgresEngine.delta!(c, db(), new Date('2026-09-24T20:00:00Z'));
+    expect(c.calls[1]!.args.join(' ')).toContain('"created_at" >');
+  });
+
+  it('skips a malformed row rather than building half a table name', async () => {
+    const c = ctx([{ stdout: 'public|events\ngarbage-no-separator\n' }, {}]);
+    const out = await postgresEngine.delta!(c, db(), new Date());
+    expect(out).toHaveLength(1);
   });
 });
 

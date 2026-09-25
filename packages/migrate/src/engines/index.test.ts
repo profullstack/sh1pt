@@ -117,7 +117,7 @@ describe('redis', () => {
     kind: 'redis',
     id: 'r',
     name: 'cache',
-    connection: { url: secret('redis://:pw@h:6379') },
+    connection: { url: secret('redis://h:6379') },
     ...over,
   });
 

@@ -246,8 +246,17 @@ export interface Engine {
   requires: string[];
   /** Read the source into staging. */
   export(ctx: EngineContext, from: Resource): Promise<Artifact[]>;
-  /** Write staged artifacts into the target. */
-  import(ctx: EngineContext, to: Resource, artifacts: Artifact[]): Promise<void>;
+  /**
+   * Write staged artifacts into the target.
+   *
+   * `from` is the source resource, passed because not every engine stages the
+   * bytes themselves. Object storage is the case that forces it: pulling ten
+   * gigabytes down and pushing them back up doubles the transfer for no
+   * benefit, so its export writes only a manifest and its import runs a
+   * remote-to-remote copy, which means it still needs to know where the
+   * objects came from.
+   */
+  import(ctx: EngineContext, to: Resource, artifacts: Artifact[], from?: Resource): Promise<void>;
   /**
    * Re-read only what changed since a timestamp. This is what makes a cutover
    * short: the bulk copy happens while the source is live, and only the delta

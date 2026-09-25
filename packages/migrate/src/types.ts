@@ -224,6 +224,17 @@ export interface ExecOptions {
   /** Fail the step if the command exits non-zero. Default true. */
   check?: boolean;
   timeoutMs?: number;
+  /**
+   * Send stdout to this absolute path instead of buffering it.
+   *
+   * Some tools only dump to stdout — `sqlite3 .dump`, `turso db shell .dump` —
+   * and a multi-gigabyte dump must not be held in a string. Expressed as an
+   * option rather than a shell redirect because `exec` runs without a shell,
+   * so `>` would be passed to the program as a literal argument.
+   */
+  stdoutFile?: string;
+  /** Feed this file to stdin. The load half of the same problem. */
+  stdinFile?: string;
 }
 
 export interface ExecResult {

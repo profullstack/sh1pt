@@ -1,0 +1,1 @@
+docker build /home/anthony/src/profullstack/sh1pt/.claude/worktrees/dev2-sh1pt.com-pohvos28 -f /home/anthony/src/profullstack/sh1pt/.claude/worktrees/dev2-sh1pt.com-pohvos28/.nixpacks/Dockerfile -t 6e86fa36-3d05-42cd-8e44-5b78b757adfe --build-arg CI=true --build-arg NIXPACKS_METADATA=node --build-arg NODE_ENV=production --build-arg NPM_CONFIG_PRODUCTION=false

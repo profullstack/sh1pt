@@ -819,6 +819,9 @@ importers:
       '@profullstack/sh1pt-core':
         specifier: workspace:^
         version: link:../core
+      '@profullstack/sh1pt-migrate':
+        specifier: workspace:*
+        version: link:../migrate
       '@profullstack/sh1pt-openapi':
         specifier: workspace:^
         version: link:../openapi

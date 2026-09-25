@@ -1,7 +1,7 @@
 {
   "name": "@profullstack/sh1pt",
   "version": "0.3.4",
-  "description": "One codebase → every store, registry, CDN, and channel. Build. Promote. Scale. Iterate.",
+  "description": "One codebase \u2192 every store, registry, CDN, and channel. Build. Promote. Scale. Iterate.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -46,6 +46,7 @@
     "@profullstack/sh1pt-actions-fleet-core": "workspace:^",
     "@profullstack/sh1pt-automation-browser": "workspace:^",
     "@profullstack/sh1pt-core": "workspace:^",
+    "@profullstack/sh1pt-migrate": "workspace:*",
     "@profullstack/sh1pt-openapi": "workspace:^",
     "@profullstack/sh1pt-policy": "workspace:^",
     "@profullstack/sh1pt-secrets-env-updater": "workspace:^",

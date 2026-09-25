@@ -29,6 +29,7 @@ export * from './exec.js';
 export { ENGINES, engineFor, requiredBinaries } from './engines/index.js';
 export {
   filesEngine,
+  mysqlEngine,
   objectStorageEngine,
   postgresEngine,
   redisEngine,

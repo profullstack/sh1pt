@@ -1,5 +1,6 @@
 import type { Engine, ResourceKind } from '../types.js';
 import { filesEngine } from './files.js';
+import { mysqlEngine } from './mysql.js';
 import { objectStorageEngine } from './object-storage.js';
 import { postgresEngine } from './postgres.js';
 import { redisEngine } from './redis.js';
@@ -14,6 +15,7 @@ import { sqliteEngine } from './sqlite.js';
  */
 export const ENGINES: ReadonlyMap<ResourceKind, Engine> = new Map<ResourceKind, Engine>([
   ['postgres', postgresEngine],
+  ['mysql', mysqlEngine],
   ['sqlite', sqliteEngine],
   ['redis', redisEngine],
   ['object-storage', objectStorageEngine],
@@ -33,4 +35,4 @@ export function requiredBinaries(kinds: ResourceKind[]): string[] {
   return [...out].sort();
 }
 
-export { filesEngine, objectStorageEngine, postgresEngine, redisEngine, sqliteEngine };
+export { filesEngine, mysqlEngine, objectStorageEngine, postgresEngine, redisEngine, sqliteEngine };

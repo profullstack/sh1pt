@@ -24,6 +24,7 @@ export interface SshConfig {
   sshPort?: string;
   /** Databases reachable from this box, usually on loopback. */
   postgres?: Array<{ name: string; url: string }>;
+  mysql?: Array<{ name: string; url: string }>;
   sqlite?: Array<{ name: string; path: string }>;
   redis?: Array<{ name: string; url: string; dataDir?: string }>;
   /** Directories to move: volumes, docroots, upload trees. */
@@ -43,7 +44,7 @@ export const sshPlatform: Platform<SshConfig> = {
   id: 'ssh',
   label: 'dedicated / VPS over ssh',
   role: 'both',
-  supports: ['postgres', 'sqlite', 'redis', 'files', 'object-storage'],
+  supports: ['postgres', 'mysql', 'sqlite', 'redis', 'files', 'object-storage'],
 
   async inventory(ctx: PlatformContext, config: SshConfig): Promise<Inventory> {
     if (!config.host) throw new Error('ssh platform needs a host');
@@ -55,6 +56,15 @@ export const sshPlatform: Platform<SshConfig> = {
       resources.push({
         kind: 'postgres',
         id: `pg-${db.name}`,
+        name: db.name,
+        connection: { url: secret(db.url) },
+      });
+    }
+
+    for (const db of config.mysql ?? []) {
+      resources.push({
+        kind: 'mysql',
+        id: `mysql-${db.name}`,
         name: db.name,
         connection: { url: secret(db.url) },
       });
@@ -135,6 +145,10 @@ export const sshPlatform: Platform<SshConfig> = {
       switch (resource.kind) {
         case 'postgres': {
           const db = config.postgres?.find((d) => d.name === resource.name) ?? config.postgres?.[0];
+          return db ? { url: secret(db.url) } : undefined;
+        }
+        case 'mysql': {
+          const db = config.mysql?.find((d) => d.name === resource.name) ?? config.mysql?.[0];
           return db ? { url: secret(db.url) } : undefined;
         }
         case 'sqlite': {

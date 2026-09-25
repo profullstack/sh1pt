@@ -52,6 +52,11 @@ describe('compatibleKinds is what makes direction a non-question', () => {
     expect(compatibleKinds('ssh', 'supabase')).toContain('postgres');
   });
 
+  it('moves MySQL off PlanetScale onto a box, which is the get-off-the-cloud case', () => {
+    expect(compatibleKinds('planetscale', 'ssh')).toEqual(['mysql']);
+    expect(compatibleKinds('ssh', 'planetscale')).toEqual(['mysql']);
+  });
+
   it('pairs Turso with a box over sqlite, both ways', () => {
     expect(compatibleKinds('turso', 'ssh')).toEqual(['sqlite']);
     expect(compatibleKinds('ssh', 'turso')).toEqual(['sqlite']);

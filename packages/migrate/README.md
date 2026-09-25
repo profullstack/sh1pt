@@ -122,6 +122,7 @@ Secrets are read from the environment where a platform names one
 ## What it needs installed
 
 Per engine, checked before anything runs: `pg_dump`/`pg_restore`/`psql`,
+`mysqldump`/`mysql`,
 `sqlite3`, `redis-cli`, `rclone`, `rsync`.
 
 ## Known limits

@@ -1,35 +1,49 @@
-FROM ghcr.io/railwayapp/nixpacks:ubuntu-1745885067
+# dev2 builds this file (cli-tools dev2/dev2-site: compose builds .nixpacks/Dockerfile from the
+# repo root). nixpacks' generated Dockerfile cannot build sh1pt.com: it installs the whole
+# 555-package workspace on node 18 and never builds the workspace packages the site
+# depends on (@profullstack/sh1pt-action-packs, ...). This is sites/sh1pt.com/Dockerfile,
+# the one Railway built; keep the two in sync.
 
-ENTRYPOINT ["/bin/bash", "-l", "-c"]
-WORKDIR /app/
+# syntax=docker/dockerfile:1.6
+# Dockerfile for sh1pt.com — built from the monorepo root.
+# Reason for existing: Railpack's auto-generated COPY-per-workspace-package
+# exceeds BuildKit's mount-options length limit (~344 workspace packages).
+# A single bulk COPY sidesteps that.
 
+FROM node:20-bookworm-slim AS build
 
-COPY .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix
-RUN nix-env -if .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix && nix-collect-garbage -d
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN npm install -g pnpm@9.12.0
 
+WORKDIR /app
 
-ARG CI NIXPACKS_METADATA NODE_ENV NPM_CONFIG_PRODUCTION
-ENV CI=$CI NIXPACKS_METADATA=$NIXPACKS_METADATA NODE_ENV=$NODE_ENV NPM_CONFIG_PRODUCTION=$NPM_CONFIG_PRODUCTION
+COPY . .
 
-# setup phase
-# noop
+# Replace the workspace file with a minimal one covering only sh1pt-dot-com's
+# transitive closure. Otherwise pnpm scans all 555 workspace packages, which
+# OOMs the build container.
+RUN printf 'packages:\n  - sites/sh1pt.com\n  - packages/core\n  - packages/cli\n  - packages/policy\n  - packages/openapi\n  - packages/actions-fleet-core\n  - packages/actions\n  - packages/automation/browser\n  - packages/secrets/env-updater\n' > pnpm-workspace.yaml
 
-# install phase
-ENV NIXPACKS_PATH=/app/node_modules/.bin:$NIXPACKS_PATH
-COPY . /app/.
-RUN --mount=type=cache,id=xrMbq0WIzsA-/root/local/share/pnpm/store/v3,target=/root/.local/share/pnpm/store/v3 npm install -g corepack@0.24.1 && corepack enable
-RUN --mount=type=cache,id=xrMbq0WIzsA-/root/local/share/pnpm/store/v3,target=/root/.local/share/pnpm/store/v3 pnpm i --frozen-lockfile
+# Next probes the app env file during build. Railway injects real values at
+# runtime, so an empty file keeps container builds deterministic.
+RUN touch sites/sh1pt.com/.env
 
-# build phase
-COPY . /app/.
-RUN --mount=type=cache,id=xrMbq0WIzsA-boilerplates/next-plugin-store/next/cache,target=/app/boilerplates/next-plugin-store/.next/cache --mount=type=cache,id=xrMbq0WIzsA-boilerplates/next-supabase/next/cache,target=/app/boilerplates/next-supabase/.next/cache --mount=type=cache,id=xrMbq0WIzsA-boilerplates/perry-hono-supabase/apps/web/next/cache,target=/app/boilerplates/perry-hono-supabase/apps/web/.next/cache --mount=type=cache,id=xrMbq0WIzsA-node_modules/cache,target=/app/node_modules/.cache --mount=type=cache,id=xrMbq0WIzsA-sites/sh1ptcom/next/cache,target=/app/sites/sh1pt.com/.next/cache pnpm run build
+RUN pnpm --filter sh1pt-dot-com... install --frozen-lockfile=false
+RUN pnpm --filter sh1pt-dot-com^... --if-present build
+RUN pnpm --filter sh1pt-dot-com build
 
+FROM node:20-bookworm-slim AS runner
 
-RUN printf '\nPATH=/app/node_modules/.bin:$PATH' >> /root/.profile
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+ENV NODE_ENV=production
+RUN npm install -g pnpm@9.12.0
 
+WORKDIR /app
 
-# start
-COPY . /app
+COPY --from=build --chown=node:node /app /app
 
-CMD ["pnpm run start"]
-
+EXPOSE 8080
+USER node
+CMD ["sh", "-c", "cd sites/sh1pt.com && exec node node_modules/next/dist/bin/next start -p ${PORT:-8080} -H 0.0.0.0"]

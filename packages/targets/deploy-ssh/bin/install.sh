@@ -252,7 +252,12 @@ phase_setup() {
         command -v curl >/dev/null || apt_install curl
         command -v unzip >/dev/null || apt_install unzip
         log "installing bun for $(id -un)"
-        curl -fsSL https://bun.sh/install | bash >/dev/null
+        # Download in full first: a pipe would run a script cut off mid-transfer.
+        local installer
+        installer="$(mktemp)"
+        curl -fsSL --retry 3 -o "$installer" https://bun.sh/install || { rm -f "$installer"; die "could not download the bun installer"; }
+        bash "$installer" >/dev/null
+        rm -f "$installer"
       fi ;;
     node)
       command -v node >/dev/null || die "node is not installed (RUNTIME=node); install Node 22+ first" ;;

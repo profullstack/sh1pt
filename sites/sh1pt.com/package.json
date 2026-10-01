@@ -2,11 +2,11 @@
   "name": "sh1pt-dot-com",
   "version": "0.1.0",
   "private": true,
-  "description": "sh1pt.com — marketing site + waitlist + investor page",
+  "description": "sh1pt.com \u2014 marketing site + waitlist + investor page",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start -p ${PORT:-8080} -H 0.0.0.0",
+    "dev": "bun --bun next dev",
+    "build": "bun --bun next build",
+    "start": "bun --bun next start -p ${PORT:-8080} -H 0.0.0.0",
     "ship": "sh1pt promote ship",
     "ship:beta": "sh1pt promote ship --channel beta"
   },

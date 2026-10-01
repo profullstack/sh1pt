@@ -331,6 +331,7 @@ sh1pt openapi sdk <spec>                            generate a TS SDK from an Op
 sh1pt openapi mcp <spec>                            generate an MCP server (one tool per op)
 sh1pt openapi docs <spec>                           generate a markdown docs site
 sh1pt openapi all <spec>                            all three, in parallel
+sh1pt openapi diff <base> <head>                    exit 1 if head breaks clients of base (origin/main:openapi.yaml works)
 
 sh1pt automation stagehand setup                    AI browser automation (Browserbase, local Chromium)
 

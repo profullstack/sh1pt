@@ -20,6 +20,9 @@
   ],
   "type": "module",
   "main": "./dist/index.js",
+  "bin": {
+    "sh1pt-openapi": "./dist/bin.js"
+  },
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {

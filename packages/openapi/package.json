@@ -1,7 +1,7 @@
 {
   "name": "@profullstack/sh1pt-openapi",
   "version": "0.3.4",
-  "description": "OpenAPI loader/IR + generators for SDKs, MCP servers, and docs sites.",
+  "description": "OpenAPI loader/IR + generators for SDKs, MCP servers, and docs sites, plus a breaking-change diff.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -41,6 +41,10 @@
     "./gen-docs": {
       "types": "./dist/gen-docs/index.d.ts",
       "import": "./dist/gen-docs/index.js"
+    },
+    "./diff": {
+      "types": "./dist/diff/index.d.ts",
+      "import": "./dist/diff/index.js"
     }
   },
   "files": [

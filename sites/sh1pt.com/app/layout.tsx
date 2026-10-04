@@ -4,7 +4,6 @@ import './globals.css';
 import NavLink from './components/NavLink';
 import RobautoPixel from './components/RobautoPixel';
 import CrawlproofStats from './components/CrawlproofStats';
-import { FeedbackWidget } from '@profullstack/stack/feedback';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import Script from "next/script";
 
@@ -92,7 +91,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           </nav>
         </footer>
         <CrawlproofStats />
-      <FeedbackWidget property="sh1pt.com" />
       <Script src="https://crawlproof.com/ad.js" strategy="afterInteractive" />
       </body>
     </html>

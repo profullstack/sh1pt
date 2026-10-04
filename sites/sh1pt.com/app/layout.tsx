@@ -85,6 +85,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <div style={{ marginTop: '0.5rem' }}>
             <a href="/blog">Blog</a> · <a href="/investors">Investors</a> · <a href="/deck">Deck</a> · <a href="/waitlist">Waitlist</a> · <a href="https://github.com/profullstack/sh1pt">Source</a> · <a href="https://vu1nz.com" target="_blank" rel="noopener noreferrer">vu1nz.com partner</a>
           </div>
+          <nav className="webring" aria-label="Profullstack webring" style={{ marginTop: '0.5rem', display: 'flex', gap: '0.75rem' }}>
+            <a href="https://rssamplifier.com/ring/profullstack/previous?from=https%3A%2F%2Fsh1pt.com%2F" rel="prev">{"<<"}</a>
+            <a href="https://rssamplifier.com/ring/profullstack">Profullstack</a>
+            <a href="https://rssamplifier.com/ring/profullstack/next?from=https%3A%2F%2Fsh1pt.com%2F" rel="next">{">>"}</a>
+          </nav>
         </footer>
         <CrawlproofStats />
       <FeedbackWidget property="sh1pt.com" />

@@ -2,6 +2,9 @@ import { gate } from "@/lib/crawl-gateway";
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  // The status page's health check is never gated or redirected.
+  if (request.nextUrl.pathname === '/api/health') return NextResponse.next();
+
   // Crawl gateway first: AI training crawlers get 402 Payment Required (or the
   // sales page at /crawl) unless they present a paid pass. People, Googlebot
   // and retrieval crawlers fall through to everything below.

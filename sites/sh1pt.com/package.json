@@ -15,6 +15,7 @@
     "@opentelemetry/resources": "^2.7.1",
     "@opentelemetry/sdk-logs": "^0.218.0",
     "@profullstack/autoblog": "github:profullstack/autoblog#75e54af",
+    "@profullstack/footer": "latest",
     "@profullstack/sh1pt-action-packs": "workspace:^",
     "@profullstack/sh1pt-actions-fleet-core": "workspace:^",
     "@profullstack/stack": "^0.1.3",

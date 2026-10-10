@@ -6,6 +6,7 @@ import RobautoPixel from './components/RobautoPixel';
 import CrawlproofStats from './components/CrawlproofStats';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import Script from "next/script";
+import { Footer } from '@profullstack/footer/react';
 
 export const metadata = {
   title: 'sh1pt — Build. Promote. Scale. Iterate…',
@@ -79,18 +80,18 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           </nav>
         </header>
         {children}
-        <footer className="container" style={{ padding: '3rem 1.5rem', color: 'var(--muted)', fontSize: '0.9rem' }}>
-          <div>© 2026 Profullstack, Inc. — sh1pt is MIT-licensed.</div>
-          <div style={{ marginTop: '0.5rem' }}>
-            <a href="/blog">Blog</a> · <a href="/investors">Investors</a> · <a href="/deck">Deck</a> · <a href="/waitlist">Waitlist</a> · <a href="https://github.com/profullstack/sh1pt">Source</a> · <a href="https://vu1nz.com" target="_blank" rel="noopener noreferrer">vu1nz.com partner</a>
-          </div>
-          <nav className="webring" aria-label="Profullstack webring" style={{ marginTop: '0.5rem', display: 'flex', gap: '0.75rem' }}>
-            <a href="https://rssamplifier.com/ring/profullstack/previous?from=https%3A%2F%2Fsh1pt.com%2F" rel="prev">{"<<"}</a>
-            <a href="https://rssamplifier.com/ring/profullstack">Profullstack</a>
-            <a href="https://rssamplifier.com/ring/profullstack/next?from=https%3A%2F%2Fsh1pt.com%2F" rel="next">{">>"}</a>
-            <a href="https://rssamplifier.com/ring/profullstack/random?from=https%3A%2F%2Fsh1pt.com%2F" title="Random site" aria-label="Random site">{"⚄"}</a>
-          </nav>
-        </footer>
+        <Footer
+          site="https://sh1pt.com/"
+          tagline="sh1pt is MIT-licensed."
+          links={[
+            { label: 'Blog', href: '/blog' },
+            { label: 'Investors', href: '/investors' },
+            { label: 'Deck', href: '/deck' },
+            { label: 'Waitlist', href: '/waitlist' },
+            { label: 'Source', href: 'https://github.com/profullstack/sh1pt' },
+            { label: 'vu1nz.com partner', href: 'https://vu1nz.com', rel: 'noopener noreferrer' },
+          ]}
+        />
         <CrawlproofStats />
       <Script src="https://crawlproof.com/ad.js" strategy="afterInteractive" />
       </body>

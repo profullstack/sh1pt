@@ -4232,6 +4232,9 @@ importers:
       '@profullstack/autoblog':
         specifier: github:profullstack/autoblog#75e54af
         version: https://codeload.github.com/profullstack/autoblog/tar.gz/75e54af
+      '@profullstack/footer':
+        specifier: latest
+        version: 0.2.1(react@19.2.5)
       '@profullstack/sh1pt-action-packs':
         specifier: workspace:^
         version: link:../../packages/actions
@@ -5129,6 +5132,16 @@ packages:
 
   '@profullstack/emailer@1.0.1':
     resolution: {integrity: sha512-/uhHJJGH+1xSSz3mJn6X+m6aruYjMD3JOaRp/d4R/YWlzpy07H9z0/JUleIyRyBPNmaANSIwjTZ7aVjaukOEpg==}
+
+  '@profullstack/footer@0.2.1':
+    resolution: {integrity: sha512-KHmKVwrlzCBrSAAJ4zobNFCxTg8VF0gvNMeAut00dX3+gbWCtk6eOwIR2AaqEC7smj6Aio6cIexzt/dUnv1McA==}
+    engines: {node: '>=18'}
+    hasBin: true
+    peerDependencies:
+      react: '>=18'
+    peerDependenciesMeta:
+      react:
+        optional: true
 
   '@profullstack/keys@0.1.0':
     resolution: {integrity: sha512-Vys47LvS5ivhdZu4SYOxh9Le3DEmWhjP0+CtrU45RhXAbY0ZFG/2Dk9V1bIIUGDp8UWMJqctvUD21JrNjfh04w==}
@@ -8620,6 +8633,10 @@ snapshots:
   '@profullstack/autoblog@https://codeload.github.com/profullstack/autoblog/tar.gz/75e54af': {}
 
   '@profullstack/emailer@1.0.1': {}
+
+  '@profullstack/footer@0.2.1(react@19.2.5)':
+    optionalDependencies:
+      react: 19.2.5
 
   '@profullstack/keys@0.1.0': {}
 

@@ -6,7 +6,7 @@ import RobautoPixel from './components/RobautoPixel';
 import CrawlproofStats from './components/CrawlproofStats';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import Script from "next/script";
-import { Footer } from '@profullstack/footer/react';
+import PitFooter from './components/PitFooter';
 
 export const metadata = {
   title: 'sh1pt — Build. Promote. Scale. Iterate…',
@@ -80,20 +80,18 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           </nav>
         </header>
         {children}
-        <Footer
-          site="https://sh1pt.com/"
-          tagline="sh1pt is MIT-licensed."
-          links={[
-            { label: 'Blog', href: '/blog' },
-            { label: 'Investors', href: '/investors' },
-            { label: 'Deck', href: '/deck' },
-            { label: 'Waitlist', href: '/waitlist' },
-            { label: 'Source', href: 'https://github.com/profullstack/sh1pt' },
-            { label: 'vu1nz.com partner', href: 'https://vu1nz.com', rel: 'noopener noreferrer' },
-          ]}
-        />
+        <footer className="site-footer">
+          <div className="container">
+            <span>&copy; {new Date().getFullYear()} <a href="https://profullstack.com/">Profullstack, Inc.</a> · MIT licensed</span>
+            <a href="/docs">Docs</a>
+            <a href="/blog">Blog</a>
+            <a href="/investors">Investors</a>
+            <a href="https://github.com/profullstack/sh1pt">GitHub</a>
+          </div>
+        </footer>
         <CrawlproofStats />
-      <Script src="https://crawlproof.com/ad.js" strategy="afterInteractive" />
+        <Script src="https://crawlproof.com/ad.js" strategy="afterInteractive" />
+        <PitFooter />
       </body>
     </html>
   );

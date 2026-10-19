@@ -1,0 +1,1198 @@
+{
+  "schema_version": "1.0",
+  "schema_kind": "project-owned requirement traceability, not a LogicSRC or SimpleFIN protocol schema",
+  "prd": "prd/0001-automate-nonprofit-and-business-formation-with-simplefin-verified-accoun.md",
+  "prd_id": "0001",
+  "change": "add-entityctl-formation-simplefin",
+  "status": "Draft",
+  "requirements": [
+    {
+      "requirement_id": "R1",
+      "priority": "P0",
+      "capability": "entity-planning",
+      "spec": "specs/entity-planning/spec.md",
+      "requirement_title": "Extend entityctl rather than create a duplicate product.",
+      "scenario_ids": [
+        "R1-S1",
+        "R1-S2"
+      ],
+      "task_ids": [
+        "1.1"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R2",
+      "priority": "P0",
+      "capability": "entity-planning",
+      "spec": "specs/entity-planning/spec.md",
+      "requirement_title": "Model legal structure independently from tax and banking status.",
+      "scenario_ids": [
+        "R2-S1",
+        "R2-S2"
+      ],
+      "task_ids": [
+        "2.1",
+        "2.2",
+        "12.2"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R3",
+      "priority": "P0",
+      "capability": "entity-planning",
+      "spec": "specs/entity-planning/spec.md",
+      "requirement_title": "Collect operating jurisdictions instead of guessing a cheap formation state.",
+      "scenario_ids": [
+        "R3-S1",
+        "R3-S2"
+      ],
+      "task_ids": [
+        "3.1",
+        "12.4"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R4",
+      "priority": "P0",
+      "capability": "entity-planning",
+      "spec": "specs/entity-planning/spec.md",
+      "requirement_title": "Publish operation-specific jurisdiction support.",
+      "scenario_ids": [
+        "R4-S1",
+        "R4-S2"
+      ],
+      "task_ids": [
+        "3.2",
+        "12.4"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R5",
+      "priority": "P0",
+      "capability": "entity-planning",
+      "spec": "specs/entity-planning/spec.md",
+      "requirement_title": "Version and explain every plan.",
+      "scenario_ids": [
+        "R5-S1",
+        "R5-S2"
+      ],
+      "task_ids": [
+        "3.3",
+        "3.4"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R6",
+      "priority": "P0",
+      "capability": "entity-planning",
+      "spec": "specs/entity-planning/spec.md",
+      "requirement_title": "Define completion by requested tracks.",
+      "scenario_ids": [
+        "R6-S1",
+        "R6-S2"
+      ],
+      "task_ids": [
+        "3.5",
+        "12.6"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R7",
+      "priority": "P0",
+      "capability": "nonprofit-formation",
+      "spec": "specs/nonprofit-formation/spec.md",
+      "requirement_title": "Provide a genuinely free nonprofit software tier.",
+      "scenario_ids": [
+        "R7-S1",
+        "R7-S2"
+      ],
+      "task_ids": [
+        "4.1",
+        "12.1"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R8",
+      "priority": "P0",
+      "capability": "nonprofit-formation",
+      "spec": "specs/nonprofit-formation/spec.md",
+      "requirement_title": "Separate nonprofit incorporation from federal and state exemption.",
+      "scenario_ids": [
+        "R8-S1",
+        "R8-S2"
+      ],
+      "task_ids": [
+        "4.2",
+        "12.1"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R9",
+      "priority": "P0",
+      "capability": "nonprofit-formation",
+      "spec": "specs/nonprofit-formation/spec.md",
+      "requirement_title": "Apply the complete 1023-EZ eligibility screen.",
+      "scenario_ids": [
+        "R9-S1",
+        "R9-S2"
+      ],
+      "task_ids": [
+        "4.3",
+        "12.1"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R10",
+      "priority": "P0",
+      "capability": "nonprofit-formation",
+      "spec": "specs/nonprofit-formation/spec.md",
+      "requirement_title": "Record legitimate nonprofit governance and authority.",
+      "scenario_ids": [
+        "R10-S1",
+        "R10-S2"
+      ],
+      "task_ids": [
+        "4.4",
+        "12.1"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R11",
+      "priority": "P0",
+      "capability": "business-tax-elections",
+      "spec": "specs/business-tax-elections/spec.md",
+      "requirement_title": "Check S-election eligibility before offering submission.",
+      "scenario_ids": [
+        "R11-S1",
+        "R11-S2"
+      ],
+      "task_ids": [
+        "4.5",
+        "12.2",
+        "12.3"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R12",
+      "priority": "P0",
+      "capability": "business-tax-elections",
+      "spec": "specs/business-tax-elections/spec.md",
+      "requirement_title": "Coordinate EIN applications with authority and duplicate protection.",
+      "scenario_ids": [
+        "R12-S1",
+        "R12-S2"
+      ],
+      "task_ids": [
+        "4.6",
+        "12.1",
+        "12.2"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R13",
+      "priority": "P0",
+      "capability": "business-tax-elections",
+      "spec": "specs/business-tax-elections/spec.md",
+      "requirement_title": "Track election deadlines, signatures, and acceptance.",
+      "scenario_ids": [
+        "R13-S1",
+        "R13-S2"
+      ],
+      "task_ids": [
+        "4.7",
+        "12.2"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R14",
+      "priority": "P0",
+      "capability": "filing-orchestration",
+      "spec": "specs/filing-orchestration/spec.md",
+      "requirement_title": "Use explicit filing modes with honest human handoffs.",
+      "scenario_ids": [
+        "R14-S1",
+        "R14-S2"
+      ],
+      "task_ids": [
+        "5.1",
+        "12.1"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R15",
+      "priority": "P0",
+      "capability": "filing-orchestration",
+      "spec": "specs/filing-orchestration/spec.md",
+      "requirement_title": "Separate provider capabilities from marketing claims.",
+      "scenario_ids": [
+        "R15-S1",
+        "R15-S2"
+      ],
+      "task_ids": [
+        "5.2"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R16",
+      "priority": "P0",
+      "capability": "filing-orchestration",
+      "spec": "specs/filing-orchestration/spec.md",
+      "requirement_title": "Require an itemized, approved quote.",
+      "scenario_ids": [
+        "R16-S1",
+        "R16-S2"
+      ],
+      "task_ids": [
+        "2.8",
+        "12.9"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R17",
+      "priority": "P0",
+      "capability": "filing-orchestration",
+      "spec": "specs/filing-orchestration/spec.md",
+      "requirement_title": "Enforce action-specific authorization.",
+      "scenario_ids": [
+        "R17-S1",
+        "R17-S2"
+      ],
+      "task_ids": [
+        "2.9",
+        "12.3",
+        "12.9"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R18",
+      "priority": "P0",
+      "capability": "filing-orchestration",
+      "spec": "specs/filing-orchestration/spec.md",
+      "requirement_title": "Prevent duplicate filings and charges across retries.",
+      "scenario_ids": [
+        "R18-S1",
+        "R18-S2"
+      ],
+      "task_ids": [
+        "2.10",
+        "2.11",
+        "12.9"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R19",
+      "priority": "P0",
+      "capability": "filing-orchestration",
+      "spec": "specs/filing-orchestration/spec.md",
+      "requirement_title": "Persist documentary proof and realistic cancellation states.",
+      "scenario_ids": [
+        "R19-S1",
+        "R19-S2"
+      ],
+      "task_ids": [
+        "2.12",
+        "12.1",
+        "12.9"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R20",
+      "priority": "P0",
+      "capability": "simplefin-product-eligibility",
+      "spec": "specs/simplefin-product-eligibility/spec.md",
+      "requirement_title": "Make SimpleFIN a non-bypassable financial-product gate.",
+      "scenario_ids": [
+        "R20-S1",
+        "R20-S2"
+      ],
+      "task_ids": [
+        "6.1",
+        "12.5"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R21",
+      "priority": "P0",
+      "capability": "simplefin-product-eligibility",
+      "spec": "specs/simplefin-product-eligibility/spec.md",
+      "requirement_title": "Verify the specific product, legal profile, and connection route.",
+      "scenario_ids": [
+        "R21-S1",
+        "R21-S2"
+      ],
+      "task_ids": [
+        "6.2",
+        "12.5",
+        "12.8"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R22",
+      "priority": "P0",
+      "capability": "simplefin-product-eligibility",
+      "spec": "specs/simplefin-product-eligibility/spec.md",
+      "requirement_title": "Maintain evidence-backed qualification states.",
+      "scenario_ids": [
+        "R22-S1",
+        "R22-S2"
+      ],
+      "task_ids": [
+        "6.3",
+        "12.5"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R23",
+      "priority": "P0",
+      "capability": "simplefin-product-eligibility",
+      "spec": "specs/simplefin-product-eligibility/spec.md",
+      "requirement_title": "Test account-type data requirements explicitly.",
+      "scenario_ids": [
+        "R23-S1",
+        "R23-S2"
+      ],
+      "task_ids": [
+        "6.4",
+        "12.5"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R24",
+      "priority": "P0",
+      "capability": "simplefin-product-eligibility",
+      "spec": "specs/simplefin-product-eligibility/spec.md",
+      "requirement_title": "Separate product qualification from a customer account check.",
+      "scenario_ids": [
+        "R24-S1",
+        "R24-S2"
+      ],
+      "task_ids": [
+        "6.5",
+        "12.6"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R25",
+      "priority": "P0",
+      "capability": "simplefin-product-eligibility",
+      "spec": "specs/simplefin-product-eligibility/spec.md",
+      "requirement_title": "Block incompatible products at the server as well as in the interface.",
+      "scenario_ids": [
+        "R25-S1",
+        "R25-S2"
+      ],
+      "task_ids": [
+        "6.6",
+        "12.5"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R26",
+      "priority": "P0",
+      "capability": "simplefin-product-eligibility",
+      "spec": "specs/simplefin-product-eligibility/spec.md",
+      "requirement_title": "Handle breakage without hiding it or moving money.",
+      "scenario_ids": [
+        "R26-S1",
+        "R26-S2"
+      ],
+      "task_ids": [
+        "6.7",
+        "12.6"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R27",
+      "priority": "P0",
+      "capability": "financial-onboarding",
+      "spec": "specs/financial-onboarding/spec.md",
+      "requirement_title": "Use authorized bank onboarding with accurate institution disclosure.",
+      "scenario_ids": [
+        "R27-S1",
+        "R27-S2"
+      ],
+      "task_ids": [
+        "8.1",
+        "12.6"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R28",
+      "priority": "P0",
+      "capability": "financial-onboarding",
+      "spec": "specs/financial-onboarding/spec.md",
+      "requirement_title": "Distinguish deposit, debit, charge, and revolving-credit products.",
+      "scenario_ids": [
+        "R28-S1",
+        "R28-S2"
+      ],
+      "task_ids": [
+        "8.2",
+        "12.5"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R29",
+      "priority": "P1",
+      "capability": "financial-onboarding",
+      "spec": "specs/financial-onboarding/spec.md",
+      "requirement_title": "Coordinate financing without promising credit.",
+      "scenario_ids": [
+        "R29-S1",
+        "R29-S2"
+      ],
+      "task_ids": [
+        "8.4"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R30",
+      "priority": "P0",
+      "capability": "financial-onboarding",
+      "spec": "specs/financial-onboarding/spec.md",
+      "requirement_title": "Keep financial data access separate from money movement.",
+      "scenario_ids": [
+        "R30-S1",
+        "R30-S2"
+      ],
+      "task_ids": [
+        "8.3"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R31",
+      "priority": "P0",
+      "capability": "simplefin-sync",
+      "spec": "specs/simplefin-sync/spec.md",
+      "requirement_title": "Provide v2-first, explicit version compatibility.",
+      "scenario_ids": [
+        "R31-S1",
+        "R31-S2"
+      ],
+      "task_ids": [
+        "7.1",
+        "12.7"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R32",
+      "priority": "P0",
+      "capability": "simplefin-sync",
+      "spec": "specs/simplefin-sync/spec.md",
+      "requirement_title": "Claim tokens securely and handle uncertain outcomes.",
+      "scenario_ids": [
+        "R32-S1",
+        "R32-S2"
+      ],
+      "task_ids": [
+        "7.2"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R33",
+      "priority": "P0",
+      "capability": "simplefin-sync",
+      "spec": "specs/simplefin-sync/spec.md",
+      "requirement_title": "Protect all financial connection URLs from SSRF.",
+      "scenario_ids": [
+        "R33-S1",
+        "R33-S2"
+      ],
+      "task_ids": [
+        "7.3"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R34",
+      "priority": "P0",
+      "capability": "simplefin-sync",
+      "spec": "specs/simplefin-sync/spec.md",
+      "requirement_title": "Keep account identity, ownership, and money semantics stable.",
+      "scenario_ids": [
+        "R34-S1",
+        "R34-S2"
+      ],
+      "task_ids": [
+        "7.4",
+        "7.5",
+        "12.8"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R35",
+      "priority": "P0",
+      "capability": "simplefin-sync",
+      "spec": "specs/simplefin-sync/spec.md",
+      "requirement_title": "Respect polling quotas and historical coverage.",
+      "scenario_ids": [
+        "R35-S1",
+        "R35-S2"
+      ],
+      "task_ids": [
+        "7.6",
+        "12.7"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R36",
+      "priority": "P0",
+      "capability": "simplefin-sync",
+      "spec": "specs/simplefin-sync/spec.md",
+      "requirement_title": "Reconcile transactions without duplication or invented completeness.",
+      "scenario_ids": [
+        "R36-S1",
+        "R36-S2"
+      ],
+      "task_ids": [
+        "7.7",
+        "12.7"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R37",
+      "priority": "P0",
+      "capability": "simplefin-sync",
+      "spec": "specs/simplefin-sync/spec.md",
+      "requirement_title": "Expose partial errors and freshness at account level.",
+      "scenario_ids": [
+        "R37-S1",
+        "R37-S2"
+      ],
+      "task_ids": [
+        "7.8",
+        "12.7"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R38",
+      "priority": "P0",
+      "capability": "simplefin-sync",
+      "spec": "specs/simplefin-sync/spec.md",
+      "requirement_title": "Treat credit details and statements as separately sourced capabilities.",
+      "scenario_ids": [
+        "R38-S1",
+        "R38-S2"
+      ],
+      "task_ids": [
+        "7.9",
+        "12.7"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R39",
+      "priority": "P0",
+      "capability": "entity-compliance",
+      "spec": "specs/entity-compliance/spec.md",
+      "requirement_title": "Maintain source-backed recurring obligations.",
+      "scenario_ids": [
+        "R39-S1",
+        "R39-S2"
+      ],
+      "task_ids": [
+        "9.1",
+        "12.4"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R40",
+      "priority": "P0",
+      "capability": "entity-compliance",
+      "spec": "specs/entity-compliance/spec.md",
+      "requirement_title": "Make reminders useful without unauthorized filings.",
+      "scenario_ids": [
+        "R40-S1",
+        "R40-S2"
+      ],
+      "task_ids": [
+        "9.2"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R41",
+      "priority": "P0",
+      "capability": "entity-compliance",
+      "spec": "specs/entity-compliance/spec.md",
+      "requirement_title": "Export records and continue after cancellation.",
+      "scenario_ids": [
+        "R41-S1",
+        "R41-S2"
+      ],
+      "task_ids": [
+        "9.3"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R42",
+      "priority": "P0",
+      "capability": "agent-api-surfaces",
+      "spec": "specs/agent-api-surfaces/spec.md",
+      "requirement_title": "Deliver matching mobile-first, desktop, and programmatic surfaces.",
+      "scenario_ids": [
+        "R42-S1",
+        "R42-S2"
+      ],
+      "task_ids": [
+        "10.1",
+        "10.2",
+        "10.3"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R43",
+      "priority": "P0",
+      "capability": "agent-api-surfaces",
+      "spec": "specs/agent-api-surfaces/spec.md",
+      "requirement_title": "Use scoped authorization and safe API contracts.",
+      "scenario_ids": [
+        "R43-S1",
+        "R43-S2"
+      ],
+      "task_ids": [
+        "2.3",
+        "12.8"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R44",
+      "priority": "P0",
+      "capability": "agent-api-surfaces",
+      "spec": "specs/agent-api-surfaces/spec.md",
+      "requirement_title": "Align LogicSRC contracts without inventing implementations.",
+      "scenario_ids": [
+        "R44-S1",
+        "R44-S2"
+      ],
+      "task_ids": [
+        "1.2"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R45",
+      "priority": "P0",
+      "capability": "security-audit",
+      "spec": "specs/security-audit/spec.md",
+      "requirement_title": "Enforce legal-entity and tenant isolation.",
+      "scenario_ids": [
+        "R45-S1",
+        "R45-S2"
+      ],
+      "task_ids": [
+        "2.4",
+        "2.5",
+        "12.8"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R46",
+      "priority": "P0",
+      "capability": "security-audit",
+      "spec": "specs/security-audit/spec.md",
+      "requirement_title": "Minimize and protect sensitive data.",
+      "scenario_ids": [
+        "R46-S1",
+        "R46-S2"
+      ],
+      "task_ids": [
+        "2.6",
+        "12.8"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R47",
+      "priority": "P0",
+      "capability": "security-audit",
+      "spec": "specs/security-audit/spec.md",
+      "requirement_title": "Keep AI assistance advisory and bound to evidence.",
+      "scenario_ids": [
+        "R47-S1",
+        "R47-S2"
+      ],
+      "task_ids": [
+        "2.7"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R48",
+      "priority": "P0",
+      "capability": "security-audit",
+      "spec": "specs/security-audit/spec.md",
+      "requirement_title": "Maintain tamper-evident audit records and safe payment boundaries.",
+      "scenario_ids": [
+        "R48-S1",
+        "R48-S2"
+      ],
+      "task_ids": [
+        "2.13",
+        "2.14",
+        "12.9"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R49",
+      "priority": "P0",
+      "capability": "security-audit",
+      "spec": "specs/security-audit/spec.md",
+      "requirement_title": "Gate production on legal, contractual, and security readiness.",
+      "scenario_ids": [
+        "R49-S1",
+        "R49-S2"
+      ],
+      "task_ids": [
+        "11.3"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R50",
+      "priority": "P0",
+      "capability": "pricing-entitlements",
+      "spec": "specs/pricing-entitlements/spec.md",
+      "requirement_title": "Make prices configurable and external costs explicit.",
+      "scenario_ids": [
+        "R50-S1",
+        "R50-S2"
+      ],
+      "task_ids": [
+        "10.4",
+        "12.5"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R51",
+      "priority": "P0",
+      "capability": "pricing-entitlements",
+      "spec": "specs/pricing-entitlements/spec.md",
+      "requirement_title": "Support customer-owned SimpleFIN access without reselling assumptions.",
+      "scenario_ids": [
+        "R51-S1",
+        "R51-S2"
+      ],
+      "task_ids": [
+        "10.5"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R52",
+      "priority": "P0",
+      "capability": "pricing-entitlements",
+      "spec": "specs/pricing-entitlements/spec.md",
+      "requirement_title": "Bound platform spending and subsidy exposure.",
+      "scenario_ids": [
+        "R52-S1",
+        "R52-S2"
+      ],
+      "task_ids": [
+        "10.6"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R53",
+      "priority": "P0",
+      "capability": "provider-operations",
+      "spec": "specs/provider-operations/spec.md",
+      "requirement_title": "Start with disabled vendor candidates and no invented compatibility.",
+      "scenario_ids": [
+        "R53-S1",
+        "R53-S2"
+      ],
+      "task_ids": [
+        "11.1"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R54",
+      "priority": "P0",
+      "capability": "provider-operations",
+      "spec": "specs/provider-operations/spec.md",
+      "requirement_title": "Expose kill switches and recoverable operator workflows.",
+      "scenario_ids": [
+        "R54-S1",
+        "R54-S2"
+      ],
+      "task_ids": [
+        "11.2",
+        "12.9"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R55",
+      "priority": "P0",
+      "capability": "provider-operations",
+      "spec": "specs/provider-operations/spec.md",
+      "requirement_title": "Test recovery, conformance, and irreversible-action safety.",
+      "scenario_ids": [
+        "R55-S1",
+        "R55-S2"
+      ],
+      "task_ids": [
+        "11.4",
+        "11.5",
+        "12.9"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    },
+    {
+      "requirement_id": "R56",
+      "priority": "P0",
+      "capability": "provider-operations",
+      "spec": "specs/provider-operations/spec.md",
+      "requirement_title": "Use phased release gates rather than unbounded launch promises.",
+      "scenario_ids": [
+        "R56-S1",
+        "R56-S2"
+      ],
+      "task_ids": [
+        "11.6"
+      ],
+      "software_test_status": "not_run",
+      "software_evidence_refs": [],
+      "production_evidence_status": "not_collected",
+      "production_evidence_refs": []
+    }
+  ],
+  "launch_journeys": [
+    {
+      "id": "J1",
+      "name": "Nonprofit incorporation and exemption",
+      "requirements": [
+        "R7",
+        "R8",
+        "R9",
+        "R10",
+        "R12",
+        "R14",
+        "R19"
+      ],
+      "task_id": "12.1",
+      "execution_status": "not_run",
+      "evidence_refs": []
+    },
+    {
+      "id": "J2",
+      "name": "Eligible business and S election",
+      "requirements": [
+        "R2",
+        "R11",
+        "R12",
+        "R13"
+      ],
+      "task_id": "12.2",
+      "execution_status": "not_run",
+      "evidence_refs": []
+    },
+    {
+      "id": "J3",
+      "name": "Ineligible owner",
+      "requirements": [
+        "R11",
+        "R17"
+      ],
+      "task_id": "12.3",
+      "execution_status": "not_run",
+      "evidence_refs": []
+    },
+    {
+      "id": "J4",
+      "name": "Multiple jurisdictions",
+      "requirements": [
+        "R3",
+        "R4",
+        "R39"
+      ],
+      "task_id": "12.4",
+      "execution_status": "not_run",
+      "evidence_refs": []
+    },
+    {
+      "id": "J5",
+      "name": "Unverified card blocked",
+      "requirements": [
+        "R20",
+        "R21",
+        "R22",
+        "R23",
+        "R25",
+        "R28",
+        "R50"
+      ],
+      "task_id": "12.5",
+      "execution_status": "not_run",
+      "evidence_refs": []
+    },
+    {
+      "id": "J6",
+      "name": "Opened account link failure",
+      "requirements": [
+        "R6",
+        "R24",
+        "R26",
+        "R27"
+      ],
+      "task_id": "12.6",
+      "execution_status": "not_run",
+      "evidence_refs": []
+    },
+    {
+      "id": "J7",
+      "name": "Partial sync warning",
+      "requirements": [
+        "R31",
+        "R35",
+        "R36",
+        "R37",
+        "R38"
+      ],
+      "task_id": "12.7",
+      "execution_status": "not_run",
+      "evidence_refs": []
+    },
+    {
+      "id": "J8",
+      "name": "Mixed personal and business connection",
+      "requirements": [
+        "R21",
+        "R34",
+        "R43",
+        "R45",
+        "R46"
+      ],
+      "task_id": "12.8",
+      "execution_status": "not_run",
+      "evidence_refs": []
+    },
+    {
+      "id": "J9",
+      "name": "Timeout after paid provider acceptance",
+      "requirements": [
+        "R16",
+        "R17",
+        "R18",
+        "R19",
+        "R48",
+        "R54",
+        "R55"
+      ],
+      "task_id": "12.9",
+      "execution_status": "not_run",
+      "evidence_refs": []
+    }
+  ]
+}

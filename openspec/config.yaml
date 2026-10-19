@@ -1,0 +1,14 @@
+schema: spec-driven
+
+context: |
+  sh1pt is a TypeScript ESM pnpm workspace. Entity operations belong to
+  packages/core/src/jurisdiction.ts, packages/entity/*, and the existing
+  sh1pt build entity CLI namespace. The Next.js app is sites/sh1pt.com;
+  packages/web is a stub. CoinPay in profullstack/coinpayportal owns finance
+  connections, imported accounts/transactions, secrets, and billing.
+  Authoritative application records require self-hosted PostgreSQL using
+  existing SQL migrations. Do not add SQLite, Turso, or libSQL.
+  PRDs use LogicSRC OpenPRD 0.3 in prd/. Historical docs/prd files remain.
+  Draft PRDs and OpenSpec changes are proposals, not activation authority.
+  No financial product is supported without current exact-profile SimpleFIN
+  evidence and a separate customer-account check. No mock certifies a bank.

@@ -48,6 +48,11 @@ mise run typecheck
 
 See [`CLI_INTEGRATIONS.md`](./CLI_INTEGRATIONS.md) for the CLI-backed integration backlog and install hints.
 
+Draft product proposals are indexed in [prd/README.md](./prd/README.md).
+The [entityctl formation and SimpleFIN change](./openspec/changes/add-entityctl-formation-simplefin/proposal.md)
+contains the proposed release scope, repository discovery, acceptance scenarios,
+and pending implementation tasks. See [PRD conventions](./docs/openprd.md) for validation.
+
 ### Partners
 
 - [vu1nz.com](https://vu1nz.com) — autonomous AI security scanner for web and repo assessment workflows.

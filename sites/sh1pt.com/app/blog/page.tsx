@@ -25,6 +25,8 @@ export default async function BlogIndexPage() {
         </p>
       </header>
 
+      <AdUnit />
+
       {posts.length === 0 ? (
         <p className="muted">No posts yet. Check back soon.</p>
       ) : (
@@ -86,7 +88,6 @@ export default async function BlogIndexPage() {
           ))}
         </ul>
       )}
-      <AdUnit />
     </main>
   );
 }

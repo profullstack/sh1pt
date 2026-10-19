@@ -18,6 +18,9 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Validate entityctl planning bundle
+        run: node scripts/validate-entityctl-spec.mjs
+
       - run: pnpm install --frozen-lockfile
 
       - name: Build workspace library packages

@@ -101,8 +101,3 @@ section:last-child { border-bottom: 0; }
   text-shadow: 0 0 24px rgba(194, 255, 61, 0.75), 0 0 4px rgba(194, 255, 61, 0.9);
   margin-left: 0.06em;
 }
-
-.site-footer { border-top: 1px solid var(--border, rgba(255,255,255,0.1)); margin-top: 3rem; font-size: 0.875rem; color: var(--muted); }
-.site-footer .container { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.5rem 1.25rem; padding-top: 1.5rem; padding-bottom: 1.5rem; }
-.site-footer a { color: inherit; text-decoration: none; }
-.site-footer a:hover, .site-footer a:focus-visible { color: var(--fg, #fff); text-decoration: underline; }

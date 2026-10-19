@@ -6,6 +6,7 @@ import RobautoPixel from './components/RobautoPixel';
 import CrawlproofStats from './components/CrawlproofStats';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import Script from "next/script";
+import { Footer } from '@profullstack/footer/react';
 import PitFooter from './components/PitFooter';
 
 export const metadata = {
@@ -80,15 +81,16 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           </nav>
         </header>
         {children}
-        <footer className="site-footer">
-          <div className="container">
-            <span>&copy; {new Date().getFullYear()} <a href="https://profullstack.com/">Profullstack, Inc.</a> · MIT licensed</span>
-            <a href="/docs">Docs</a>
-            <a href="/blog">Blog</a>
-            <a href="/investors">Investors</a>
-            <a href="https://github.com/profullstack/sh1pt">GitHub</a>
-          </div>
-        </footer>
+        <Footer
+          site="https://sh1pt.com/"
+          tagline="MIT licensed"
+          links={[
+            { label: 'Docs', href: '/docs' },
+            { label: 'Blog', href: '/blog' },
+            { label: 'Investors', href: '/investors' },
+            { label: 'GitHub', href: 'https://github.com/profullstack/sh1pt' },
+          ]}
+        />
         <CrawlproofStats />
         <Script src="https://crawlproof.com/ad.js" strategy="afterInteractive" />
         <PitFooter />

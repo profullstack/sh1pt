@@ -35,6 +35,12 @@ sh1pt run logs <run-id> -f`}</pre>
 
       <section>
         <div className="container">
+          <AdUnit />
+        </div>
+      </section>
+
+      <section>
+        <div className="container">
           <h2>The problem</h2>
           <p className="muted" style={{ maxWidth: 780 }}>
             Shipping an app today means learning 30 different dashboards. The App Store, Play Console, Chrome Web Store, Homebrew tap, npm, Docker Hub, Cloudflare Pages, Fly, Railway, TestFlight, Product Hunt, X, LinkedIn, Reddit, Google Ads, Meta Ads, TikTok Ads, Stripe, CoinPay, Printful for swag, Listen Notes for podcast pitches, Resend for cold email, GitHub for releases, Vercel for hosting, Supabase for auth... the list does not end.
@@ -168,12 +174,6 @@ sh1pt iterate     # observe metrics → agent proposes fixes → ship, on loop`}
           <p className="muted" style={{ maxWidth: 780 }}>
             <strong>$50 credit</strong> for every paying signup you bring. Tiered bonuses: <strong>+$150</strong> at 3 invites, <strong>+$600</strong> at 10, <strong>+$2000</strong> at 25. Your referral link lives on your dashboard after signup.
           </p>
-        </div>
-      </section>
-
-      <section>
-        <div className="container">
-          <AdUnit />
         </div>
       </section>
     </main>

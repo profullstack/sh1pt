@@ -53,6 +53,8 @@ export default async function BlogPostPage({
         {post.tags.length > 0 && ` · ${post.tags.join(', ')}`}
       </p>
 
+      <AdUnit />
+
       {post.image_url && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -80,7 +82,6 @@ export default async function BlogPostPage({
           {post.content_markdown ?? ''}
         </pre>
       )}
-      <AdUnit />
     </main>
   );
 }

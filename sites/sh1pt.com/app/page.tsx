@@ -1,5 +1,4 @@
 import CopyableCommand from './components/CopyableCommand';
-import AdUnit from './components/AdUnit';
 
 export default function Home() {
   return (
@@ -30,12 +29,6 @@ sh1pt build --cloud
 sh1pt promote ship --cloud --target appstore play npm docker
 sh1pt promote ship status
 sh1pt run logs <run-id> -f`}</pre>
-        </div>
-      </section>
-
-      <section>
-        <div className="container">
-          <AdUnit />
         </div>
       </section>
 

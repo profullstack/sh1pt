@@ -5,6 +5,16 @@ import AdUnit from '../../components/AdUnit';
 
 export const dynamic = 'force-dynamic';
 
+// Autoblog bodies can carry their own ad slot (a banner [data-cp-ad] div plus
+// the ad.js loader). The page already renders one low-profile AdUnit, so drop
+// any in-body units to keep it at one text_link line per page.
+function stripInlineAds(html: string): string {
+  return html
+    .replace(/<div\b[^>]*\bdata-cp-ad\b[^>]*>\s*<\/div>\s*/gi, '')
+    .replace(/<iframe\b[^>]*\/api\/ads\/frame[^>]*>\s*<\/iframe>\s*/gi, '')
+    .replace(/<script\b[^>]*crawlproof\.com\/ad\.js[^>]*>\s*<\/script>\s*/gi, '');
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -75,7 +85,7 @@ export default async function BlogPostPage({
           // content_html is rendered by the Crawlproof pipeline from
           // sanitized markdown; we trust it because only service-role
           // writes blog_posts and the source is authenticated by bearer.
-          dangerouslySetInnerHTML={{ __html: post.content_html }}
+          dangerouslySetInnerHTML={{ __html: stripInlineAds(post.content_html) }}
         />
       ) : (
         <pre style={{ marginTop: 32, whiteSpace: 'pre-wrap' }}>

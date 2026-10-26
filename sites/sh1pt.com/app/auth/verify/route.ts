@@ -3,6 +3,7 @@ import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { saveProfileFromMetadata } from '@/lib/profile';
 import { onSignedIn } from '@/lib/credits';
 import { INVITE_COOKIE } from '@/lib/invite-rules';
+import { safeNextPath } from '@/lib/safe-next';
 
 // /auth/verify — email links from Supabase email templates point here
 // instead of supabase.co/auth/v1/verify, so users never leave sh1pt.com.
@@ -58,9 +59,9 @@ export async function GET(request: NextRequest) {
     await onSignedIn(data.user.id, invite);
   }
 
-  // Only allow relative paths for `next` so nobody can use us as an
-  // open redirect to an external URL.
-  const safeNext = next.startsWith('/') ? next : '/dashboard';
+  // Same-origin paths only, so nobody can use us as an open redirect
+  // (`//evil`, `/\\evil` and `/<tab>/evil` all start with '/').
+  const safeNext = safeNextPath(next);
   const response = NextResponse.redirect(new URL(safeNext, origin));
   response.cookies.delete('sh1pt_ref');
   response.cookies.delete(INVITE_COOKIE);

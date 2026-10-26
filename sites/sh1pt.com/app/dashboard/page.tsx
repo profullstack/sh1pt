@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import { planFor } from '@/lib/credits';
+import { RedeemCodeForm } from './RedeemCodeForm';
 
 export const metadata = {
   title: 'sh1pt — dashboard',
@@ -10,7 +12,22 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic';
 
-export default async function Dashboard() {
+const INVITE_NOTICES: Record<string, string> = {
+  'accepted-granted': 'Invite accepted: you and your inviter each got 7 days of sh1pt Pro.',
+  'accepted-pending': 'Invite accepted. The Pro bonus lands once your email is confirmed.',
+  'accepted-denied': 'Invite accepted, but this sign-up does not qualify for the Pro bonus.',
+  already_invited: 'Your account has already joined on an invite.',
+  already_referred: 'Your account joined through a referral link, so it cannot also use an invite.',
+  not_new: 'Invites are for new accounts.',
+  invalid: 'That invite code is not valid.',
+  expired: 'That invite has expired.',
+  used: 'That invite has already been used.',
+  revoked: 'That invite was withdrawn.',
+  self: 'You cannot use your own invite.',
+};
+
+export default async function Dashboard({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const inviteNotice = INVITE_NOTICES[(await searchParams).invite ?? ''] ?? null;
   const supabase = await getSupabaseServerClient();
   let user = null;
   try {
@@ -49,6 +66,10 @@ export default async function Dashboard() {
         .in('installation_pk', installationIds)
     : { count: 0 };
   const installationCount = installationIds.length;
+  const plan = await planFor(user.id).catch((err) => {
+    console.error('[dashboard] plan', err);
+    return null;
+  });
 
   const h = await headers();
   const host = h.get('x-forwarded-host') ?? h.get('host');
@@ -75,6 +96,12 @@ export default async function Dashboard() {
             </form>
           </div>
 
+          {inviteNotice ? (
+            <div className="card" role="status" style={{ marginTop: '1.5rem' }}>
+              {inviteNotice}
+            </div>
+          ) : null}
+
           <div className="card" style={{ marginTop: '1.5rem' }}>
             <div className="muted" style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Your referral link
@@ -99,11 +126,20 @@ export default async function Dashboard() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               <div>
                 <div className="muted" style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Prepay
+                  Plan
                 </div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 500, marginTop: '0.25rem' }}>
                   {profile.prepaid ? '✓ Paid' : '$244/yr — price-locked for life'}
                 </div>
+                {plan && plan.daysLeft > 0 ? (
+                  <div className="muted" style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>
+                    sh1pt Pro until{' '}
+                    <strong style={{ color: 'var(--fg)' }}>
+                      {new Date(plan.proUntil as string).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })}
+                    </strong>{' '}
+                    ({plan.daysLeft} {plan.daysLeft === 1 ? 'day' : 'days'} left)
+                  </div>
+                ) : null}
               </div>
               <button className="btn" disabled={profile.prepaid} style={{ opacity: profile.prepaid ? 0.7 : 1 }}>
                 {profile.prepaid ? 'Receipt sent' : 'Checkout opens soon'}
@@ -114,6 +150,10 @@ export default async function Dashboard() {
                 CoinPay (BTC / ETH / USDC / SOL) or Stripe. We'll email you the moment the payment link goes live — $244/yr stays locked for 14 days from that email, refundable within 14 days if you change your mind.
               </p>
             ) : null}
+            <RedeemCodeForm />
+            <p className="muted" style={{ fontSize: '0.85rem', marginTop: '0.75rem', marginBottom: 0 }}>
+              Invite someone new: <Link href="/invites">your invites</Link> (3 per account, 7 days of Pro each side).
+            </p>
           </div>
 
           <div className="card" style={{ marginTop: '1rem' }}>

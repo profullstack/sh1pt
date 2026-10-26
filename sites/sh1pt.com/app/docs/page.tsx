@@ -476,6 +476,16 @@ export default function DocsPage() {
             description="Authenticate with sh1pt cloud (device-code flow). Token is written to ~/.sh1pt/credentials. Self-host core works without an account; cloud features need it."
             examples={[{ command: 'sh1pt login' }]}
           />
+          <CommandBlock
+            signature="sh1pt redeem <code>"
+            description="Redeem a credit code for days of sh1pt Pro (same as “Have a code?” on the dashboard). API: POST /api/v1/credits/redeem; GET /api/v1/credits shows your plan."
+            examples={[{ command: 'sh1pt redeem CR-XXXX-XXXX-XXXX-XXXX' }]}
+          />
+          <CommandBlock
+            signature="sh1pt invites [create | revoke <id>]"
+            description="Every account gets 3 invites from a week old. A new person who joins on one and confirms their email gets 7 days of Pro, and so do you. API: GET/POST /api/v1/invites, DELETE /api/v1/invites/<id>."
+            examples={[{ command: 'sh1pt invites' }, { command: 'sh1pt invites create --note "for Sam"' }]}
+          />
         </div>
       </section>
 

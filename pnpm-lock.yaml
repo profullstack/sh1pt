@@ -4235,6 +4235,9 @@ importers:
       '@opentelemetry/sdk-logs':
         specifier: ^3.0.0
         version: 3.0.0(@opentelemetry/api@1.10.0)
+      '@profullstack/affiliates':
+        specifier: 0.3.0
+        version: 0.3.0(react@19.3.1)
       '@profullstack/autoblog':
         specifier: github:profullstack/autoblog#75e54af
         version: https://codeload.github.com/profullstack/autoblog/tar.gz/75e54af
@@ -4244,6 +4247,9 @@ importers:
       '@profullstack/profile':
         specifier: 0.1.6
         version: 0.1.6(react@19.3.1)
+      '@profullstack/redeem-credits':
+        specifier: 0.2.0
+        version: 0.2.0
       '@profullstack/sh1pt-action-packs':
         specifier: workspace:^
         version: link:../../packages/actions
@@ -5019,6 +5025,11 @@ packages:
   '@posthog/types@1.416.1':
     resolution: {integrity: sha512-PG06HE2axHNyyZ9CKSSHKSW4pWfQwEtPA1dewFqIwggcIgk1BsQ+tHSNqvZz+IvE2WnBZ8OcOkF9SWI55VxQfA==}
 
+  '@profullstack/affiliates@0.3.0':
+    resolution: {integrity: sha512-bp0iREciWetDWrQYOsa6SJRTzviekKwgJQuATT7vql+4equu7pN76q8tb3SP1oBMczydsv6rYUMvPpS6+QT7yQ==}
+    engines: {node: '>=22.13'}
+    hasBin: true
+
   '@profullstack/autoblog@https://codeload.github.com/profullstack/autoblog/tar.gz/75e54af':
     resolution: {tarball: https://codeload.github.com/profullstack/autoblog/tar.gz/75e54af}
     version: 0.4.0
@@ -5060,6 +5071,11 @@ packages:
         optional: true
       react:
         optional: true
+
+  '@profullstack/redeem-credits@0.2.0':
+    resolution: {integrity: sha512-JLowb7mWYfouIK7O522tuPPhvLjQjhdEfm6g3xEYrlNLGzLhrIADDhrYldBlGHfiVBWUFX7wefLuCSLF9fnyog==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   '@profullstack/referrals@0.1.0':
     resolution: {integrity: sha512-u66SdBVpsv3kc0N+NWISPoYD5vjCERyv5wfD07iSkZwQeC2IA+ihX5jNA4e7Xr+Y4AUvxLycG+3b4VaROqzgRg==}
@@ -8826,6 +8842,12 @@ snapshots:
 
   '@posthog/types@1.416.1': {}
 
+  '@profullstack/affiliates@0.3.0(react@19.3.1)':
+    dependencies:
+      '@profullstack/referrals': 0.1.0(react@19.3.1)
+    transitivePeerDependencies:
+      - react
+
   '@profullstack/autoblog@https://codeload.github.com/profullstack/autoblog/tar.gz/75e54af': {}
 
   '@profullstack/emailer@1.0.3': {}
@@ -8841,6 +8863,8 @@ snapshots:
   '@profullstack/profile@0.1.6(react@19.3.1)':
     optionalDependencies:
       react: 19.3.1
+
+  '@profullstack/redeem-credits@0.2.0': {}
 
   '@profullstack/referrals@0.1.0(react@19.3.1)':
     optionalDependencies:

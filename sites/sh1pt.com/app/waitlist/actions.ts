@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { validateProfile } from '@profullstack/profile';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { profileMetadata } from '@/lib/profile';
+import { INVITE_COOKIE, looksLikeInviteCode } from '@/lib/invite-rules';
 
 const REF_COOKIE = 'sh1pt_ref';
 const SITE_ORIGIN = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://sh1pt.com';
@@ -17,12 +18,16 @@ export async function joinWaitlist(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
   const handle = String(formData.get('handle') ?? '').trim() || null;
 
-  // URL param wins, then the 90-day /r/<code> cookie, then null.
   const jar = await cookies();
-  const referredBy =
-    String(formData.get('referred_by') ?? '').trim() ||
-    jar.get(REF_COOKIE)?.value ||
-    null;
+  // An invite code (/i/<code>) rides along with the emailed sign-in link, so
+  // the invite still counts when the link is opened in another browser.
+  const inviteRaw = String(formData.get('invite') ?? '').trim() || jar.get(INVITE_COOKIE)?.value || '';
+  const invite = looksLikeInviteCode(inviteRaw) ? inviteRaw.slice(0, 64) : null;
+  // URL param wins, then the 90-day /r/<code> cookie, then null. An invite
+  // replaces the referral: one sign-up is credited to one program.
+  const referredBy = invite
+    ? null
+    : String(formData.get('referred_by') ?? '').trim() || jar.get(REF_COOKIE)?.value || null;
 
   if (!email || !email.includes('@')) {
     redirect('/waitlist?error=email');
@@ -53,6 +58,7 @@ export async function joinWaitlist(formData: FormData) {
       data: {
         handle: handle ?? undefined,
         referred_by: referredBy ?? undefined,
+        invite_code: invite ?? undefined,
         ...profileMetadata(check.profile),
       },
     },

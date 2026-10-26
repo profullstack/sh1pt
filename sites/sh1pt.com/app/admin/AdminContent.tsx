@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import GithubAppSection from './GithubAppSection';
+import CreditCodesSection from './CreditCodesSection';
 import type { GithubAppStatus } from '@/lib/github-app';
 
 type Integration = {
@@ -374,6 +375,8 @@ export default function AdminContent({ ghStatus }: { ghStatus: GithubAppStatus }
           </ul>
         )}
       </section>
+
+      <CreditCodesSection />
 
       <GithubAppSection status={ghStatus} />
 

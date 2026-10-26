@@ -1,8 +1,9 @@
 'use server';
 
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
+import { INVITE_COOKIE, looksLikeInviteCode } from '@/lib/invite-rules';
 
 // Sign-in = sign-up for magic links. signInWithOtp creates the auth.users
 // row on first use (which fires handle_new_user → profile row); for
@@ -18,6 +19,9 @@ export async function sendLoginLink(formData: FormData) {
 
   const supabase = await getSupabaseServerClient();
   const origin = await resolveOrigin();
+  // A pending /i/<code> invite rides along with the emailed link (used only
+  // if this email has no account yet; the callback accepts it).
+  const invite = (await cookies()).get(INVITE_COOKIE)?.value;
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
@@ -26,6 +30,7 @@ export async function sendLoginLink(formData: FormData) {
       // No extra metadata for pure sign-ins. If the email has no account
       // yet, the trigger still creates a profile row with a fresh
       // referral_code — they become a waitlist member too.
+      ...(invite && looksLikeInviteCode(invite) ? { data: { invite_code: invite.slice(0, 64) } } : {}),
     },
   });
 

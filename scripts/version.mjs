@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Lockstep-bump every published sh1pt package:
 //   @profullstack/sh1pt-core, sh1pt-openapi, sh1pt-actions-fleet-core,
-//   sh1pt-action-packs, sh1pt-secrets-env-updater, sh1pt-policy,
+//   sh1pt-migrate, sh1pt-action-packs, sh1pt-secrets-env-updater, sh1pt-policy,
 //   sh1pt-automation-browser, sh1pt (the cli)
 //
 // The cli depends on all of the others, and pnpm rewrites `workspace:` to a
@@ -27,6 +27,7 @@ const ROOT = resolve(fileURLToPath(import.meta.url), '..', '..');
 // Dependency order: dependencies before the packages that consume them.
 const PACKAGES = [
   'packages/core',
+  'packages/migrate',
   'packages/openapi',
   'packages/actions-fleet-core',
   'packages/actions',

@@ -38,7 +38,7 @@ export function profileMetadata(profile: Partial<ProfileFields>): Partial<Record
 // A failed save never blocks sign-in.
 export async function saveProfileFromMetadata(
   user: { id: string; email?: string | null; user_metadata?: Metadata },
-  store: Pick<ProfileStore, 'get' | 'save'> = profileStore(),
+  store?: Pick<ProfileStore, 'get' | 'save'>,
 ): Promise<boolean> {
   const meta = user.user_metadata ?? {};
   if (!meta.first_name && !meta.last_name) return false;
@@ -47,8 +47,9 @@ export async function saveProfileFromMetadata(
   const check = validateProfile(input);
   if (!check.ok) return false;
   try {
-    if (await store.get(user.id)) return false;
-    await store.save(user.id, check.profile);
+    const s = store ?? profileStore();
+    if (await s.get(user.id)) return false;
+    await s.save(user.id, check.profile);
     return true;
   } catch (e) {
     console.error('[profile] save from signup metadata failed', e);

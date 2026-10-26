@@ -30,7 +30,7 @@ export function register() {
     resource: resourceFromAttributes({
       'service.name': serviceName,
     }),
-    processors: [new SimpleLogRecordProcessor(exporter)],
+    processors: [new SimpleLogRecordProcessor({ exporter })],
   });
 
   globalThis.__posthogLoggerProvider = loggerProvider;

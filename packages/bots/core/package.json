@@ -9,7 +9,7 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "zod": "^3.24.0"
+    "zod": "^4.6.7"
   },
   "license": "MIT",
   "repository": {

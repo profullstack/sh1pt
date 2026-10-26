@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@profullstack/sh1pt-core": "workspace:*",
-    "posthog-js": "^1.381.0"
+    "posthog-js": "^1.438.23"
   },
   "license": "MIT",
   "repository": {

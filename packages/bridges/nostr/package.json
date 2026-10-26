@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@profullstack/sh1pt-core": "workspace:*",
-    "nostr-tools": "^2.23.5"
+    "nostr-tools": "^2.25.2"
   },
   "license": "MIT",
   "repository": {

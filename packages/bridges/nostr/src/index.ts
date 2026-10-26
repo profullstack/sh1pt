@@ -195,7 +195,7 @@ function normalizeRelayUrl(relay: string): URL {
 }
 
 function createPool(config: NostrBridgeConfig): NostrPoolLike {
-  return config.pool ?? new SimplePool({ enableReconnect: false });
+  return config.pool ?? (new SimplePool({ enableReconnect: false }) as unknown as NostrPoolLike);
 }
 
 function timestampFromNostr(createdAt: number): string {

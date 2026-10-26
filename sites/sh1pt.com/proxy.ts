@@ -1,7 +1,7 @@
 import { gate } from "@/lib/crawl-gateway";
 import { NextResponse, type NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // The status page's health check is never gated or redirected.
   if (request.nextUrl.pathname === '/api/health') return NextResponse.next();
 

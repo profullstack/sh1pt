@@ -142,7 +142,7 @@ async function createMedia(token: string, config: Config, media: MediaAttachment
 
 async function uploadMedia(token: string, config: Config, mediaId: string, media: LoadedMedia): Promise<void> {
   const form = new FormData();
-  form.append('file', new Blob([media.bytes], { type: media.mimeType }), media.fileName);
+  form.append('file', new Blob([media.bytes as Uint8Array<ArrayBuffer>], { type: media.mimeType }), media.fileName);
   const res = await fetch(`${adsBaseUrl(config)}/v1/media/${encodeURIComponent(mediaId)}/upload`, {
     method: 'POST',
     headers: { authorization: `Bearer ${token}` },

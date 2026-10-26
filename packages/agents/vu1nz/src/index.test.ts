@@ -13,7 +13,7 @@ describe("@profullstack/sh1pt-agent-vu1nz", () => {
     expect(typeof agent.run).toBe("function");
   });
 
-  it("passes contract tests", () => {
+  describe("passes contract tests", () => {
     contractTestAgent(agent, {
       sampleConfig: {
         repo: "owner/repo",

@@ -9,13 +9,13 @@
 # below runs on Node; Next builds with `bun --bun next build` and serves with
 # `bun --bun next start` on oven/bun.
 
-FROM oven/bun:1.4.0-slim AS bun
+FROM oven/bun:1.4.4-slim AS bun
 
 FROM node:20-bookworm-slim AS build
 
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
-RUN npm install -g pnpm@9.12.0
+RUN npm install -g pnpm@9.15.9
 COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
 
 WORKDIR /app
@@ -44,7 +44,7 @@ RUN pnpm --filter sh1pt-dot-com^... --if-present build
 # The site's build script is `bun --bun next build`: Next builds on Bun.
 RUN pnpm --filter sh1pt-dot-com build
 
-FROM oven/bun:1.4.0-slim AS runner
+FROM oven/bun:1.4.4-slim AS runner
 
 ENV NODE_ENV=production
 

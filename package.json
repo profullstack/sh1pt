@@ -2,8 +2,8 @@
   "name": "sh1pt",
   "version": "0.0.0",
   "private": true,
-  "description": "One codebase → every store, registry, CDN, and channel. AI agents tighten the loop.",
-  "packageManager": "pnpm@9.12.0",
+  "description": "One codebase \u2192 every store, registry, CDN, and channel. AI agents tighten the loop.",
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "build": "pnpm --filter sh1pt-dot-com build",
     "start": "pnpm --filter sh1pt-dot-com start",
@@ -24,13 +24,18 @@
     "publish:all": "pnpm publish:core && pnpm publish:policy && pnpm publish:cli"
   },
   "devDependencies": {
-    "typescript": "^5.6.3",
-    "tsx": "^4.19.1",
-    "vitest": "^2.1.4",
-    "@types/node": "^22.0.0"
+    "typescript": "^6.0.3",
+    "tsx": "^4.23.15",
+    "vitest": "^5.0.5",
+    "@types/node": "^26.6.5"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/profullstack/sh1pt.git"
+  },
+  "pnpm": {
+    "overrides": {
+      "semver@<5.7.2": "^5.7.2"
+    }
   }
 }

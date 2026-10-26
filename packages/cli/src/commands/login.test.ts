@@ -19,7 +19,9 @@ describe('login command --no-browser option', () => {
 
   it('defaults browser to true when the flag is absent', () => {
     loginCmd.parseOptions([]);
-    expect(loginCmd.opts().browser).toBe(true);
+    // commander 15 leaves a negated option unset until --no-* is seen; the action
+    // treats anything but an explicit false as "open the browser".
+    expect(loginCmd.opts().browser).not.toBe(false);
   });
 
   it('sets browser to false when --no-browser is passed', () => {

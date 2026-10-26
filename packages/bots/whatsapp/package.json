@@ -11,8 +11,8 @@
   "dependencies": {
     "@profullstack/sh1pt-bot-core": "workspace:*",
     "@profullstack/sh1pt-core": "workspace:*",
-    "baileys": "^6.10.0",
-    "zod": "^3.24.0"
+    "baileys": "^6.17.16",
+    "zod": "^4.6.7"
   },
   "license": "MIT",
   "repository": {

@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@profullstack/sh1pt-core": "workspace:*",
-    "webtorrent-cli": "^4.0.0"
+    "webtorrent-cli": "^6.0.1"
   },
   "license": "MIT",
   "repository": {

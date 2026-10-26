@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const targetSpecSchema = z.object({
   use: z.string(),
   enabled: z.boolean().default(true),
-  config: z.record(z.unknown()).default({}),
+  config: z.record(z.string(), z.unknown()).default({}),
   distribute: z.array(z.string()).optional(),
 });
 
@@ -13,7 +13,7 @@ export const creativeSchema = z.object({
   cta: z.string().optional(),
   image: z.string().optional(),
   video: z.string().optional(),
-  overrides: z.record(z.object({
+  overrides: z.record(z.string(), z.object({
     headline: z.string().optional(),
     description: z.string().optional(),
     cta: z.string().optional(),
@@ -25,11 +25,11 @@ export const creativeSchema = z.object({
 export const promoPlatformSpecSchema = z.object({
   use: z.string(),
   enabled: z.boolean().default(true),
-  config: z.record(z.unknown()).default({}),
+  config: z.record(z.string(), z.unknown()).default({}),
 });
 
 export const promoSchema = z.object({
-  platforms: z.record(promoPlatformSpecSchema).default({}),
+  platforms: z.record(z.string(), promoPlatformSpecSchema).default({}),
   defaultBudget: z.object({
     amount: z.number().positive(),
     currency: z.string().default('USD'),
@@ -53,17 +53,17 @@ export const manifestSchema = z.object({
   description: z.string().optional(),
   channels: z.array(z.string()).default(['stable', 'beta', 'canary']),
   recipe: z.string().optional(),                 // e.g. 'waitlist-crypto-investor'
-  recipeConfig: z.record(z.unknown()).optional(), // overrides for the recipe's defaults
-  targets: z.record(targetSpecSchema),
+  recipeConfig: z.record(z.string(), z.unknown()).optional(), // overrides for the recipe's defaults
+  targets: z.record(z.string(), targetSpecSchema),
   promo: promoSchema.optional(),
   // Payment providers — CoinPay default for crypto early-access; Stripe,
   // PayPal, WorldRemit, Wise, Lemon Squeezy, Polar are opt-in stubs.
   payments: z.object({
     defaultProvider: z.string().default('payment-coinpay'),
-    providers: z.record(z.object({
+    providers: z.record(z.string(), z.object({
       use: z.string(),
       enabled: z.boolean().default(true),
-      config: z.record(z.unknown()).default({}),
+      config: z.record(z.string(), z.unknown()).default({}),
     })).default({}),
     platformFeeBps: z.number().int().min(0).max(10_000).optional(),  // marketplaces
   }).optional(),

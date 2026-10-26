@@ -1,5 +1,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { createPublicKey, createVerify, type JsonWebKey } from "node:crypto";
+import { createPublicKey, createVerify, type webcrypto } from "node:crypto";
+
+type JsonWebKey = webcrypto.JsonWebKey;
 import {
   defineBot,
   tokenSetup,

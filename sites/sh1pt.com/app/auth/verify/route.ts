@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
+import { saveProfileFromMetadata } from '@/lib/profile';
 
 // /auth/verify — email links from Supabase email templates point here
 // instead of supabase.co/auth/v1/verify, so users never leave sh1pt.com.
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await getSupabaseServerClient();
-  const { error } = await supabase.auth.verifyOtp({
+  const { data, error } = await supabase.auth.verifyOtp({
     token_hash: tokenHash,
     type: typeParam as OtpType,
   });
@@ -44,6 +45,7 @@ export async function GET(request: NextRequest) {
     console.error('[auth/verify] verifyOtp error', error);
     return NextResponse.redirect(new URL('/waitlist?error=verify', origin));
   }
+  if (data.user) await saveProfileFromMetadata(data.user);
 
   // Only allow relative paths for `next` so nobody can use us as an
   // open redirect to an external URL.

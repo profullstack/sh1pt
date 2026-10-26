@@ -4235,6 +4235,9 @@ importers:
       '@profullstack/footer':
         specifier: latest
         version: 0.2.1(react@19.2.5)
+      '@profullstack/profile':
+        specifier: 0.1.3
+        version: 0.1.3(react@19.2.5)
       '@profullstack/sh1pt-action-packs':
         specifier: workspace:^
         version: link:../../packages/actions
@@ -5146,6 +5149,22 @@ packages:
   '@profullstack/keys@0.1.0':
     resolution: {integrity: sha512-Vys47LvS5ivhdZu4SYOxh9Le3DEmWhjP0+CtrU45RhXAbY0ZFG/2Dk9V1bIIUGDp8UWMJqctvUD21JrNjfh04w==}
     engines: {node: '>=20.11'}
+
+  '@profullstack/profile@0.1.3':
+    resolution: {integrity: sha512-P+VdOqCnNGWa5W8EGLU/ls3hwovRcY8bOBOhWZp3h23sW2LDMFyeWF/pUfO+iiYH3E2Tie2/9xyUnpO4ctwSHw==}
+    engines: {node: '>=20'}
+    hasBin: true
+    peerDependencies:
+      '@libsql/client': '>=0.6.0'
+      postgres: ^3.4.0
+      react: '>=18'
+    peerDependenciesMeta:
+      '@libsql/client':
+        optional: true
+      postgres:
+        optional: true
+      react:
+        optional: true
 
   '@profullstack/referrals@0.1.0':
     resolution: {integrity: sha512-u66SdBVpsv3kc0N+NWISPoYD5vjCERyv5wfD07iSkZwQeC2IA+ihX5jNA4e7Xr+Y4AUvxLycG+3b4VaROqzgRg==}
@@ -8639,6 +8658,10 @@ snapshots:
       react: 19.2.5
 
   '@profullstack/keys@0.1.0': {}
+
+  '@profullstack/profile@0.1.3(react@19.2.5)':
+    optionalDependencies:
+      react: 19.2.5
 
   '@profullstack/referrals@0.1.0(react@19.2.5)':
     optionalDependencies:

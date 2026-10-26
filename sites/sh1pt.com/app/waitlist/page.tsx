@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { joinWaitlist } from './actions';
+import { SignupProfileFields } from '../components/SignupProfileFields';
 
 export const metadata = {
   title: 'Join the sh1pt waitlist — $244/yr locked in',
@@ -38,6 +39,10 @@ async function WaitlistFields({ searchParams }: { searchParams: Promise<Record<s
   // the right inviter.
   const cookieRef = (await cookies()).get('sh1pt_ref')?.value;
   const referredBy = params.ref ?? cookieRef;
+  let profileErrors: Record<string, string> | undefined;
+  if (params.error === 'profile' && params.fields) {
+    try { profileErrors = JSON.parse(params.fields); } catch { profileErrors = undefined; }
+  }
   return (
     <div style={{ display: 'grid', gap: '0.75rem' }}>
       <label>
@@ -45,6 +50,7 @@ async function WaitlistFields({ searchParams }: { searchParams: Promise<Record<s
         <input name="email" type="email" required
           style={{ width: '100%', padding: '0.8rem', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--fg)' }} />
       </label>
+      <SignupProfileFields errors={profileErrors} />
       <label>
         <div className="muted" style={{ fontSize: '0.85rem' }}>Handle (optional)</div>
         <input name="handle" type="text" placeholder="@you on X / Bluesky"

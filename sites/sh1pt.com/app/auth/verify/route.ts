@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { saveProfileFromMetadata } from '@/lib/profile';
+import { onSignedIn } from '@/lib/credits';
+import { INVITE_COOKIE } from '@/lib/invite-rules';
 
 // /auth/verify — email links from Supabase email templates point here
 // instead of supabase.co/auth/v1/verify, so users never leave sh1pt.com.
@@ -45,13 +47,23 @@ export async function GET(request: NextRequest) {
     console.error('[auth/verify] verifyOtp error', error);
     return NextResponse.redirect(new URL('/waitlist?error=verify', origin));
   }
-  if (data.user) await saveProfileFromMetadata(data.user);
+  if (data.user) {
+    await saveProfileFromMetadata(data.user);
+    // Accept a pending invite (cookie from /i/<code>, or the code saved with
+    // the emailed link) and settle any invite bonus. Never blocks sign-in.
+    const meta = (data.user.user_metadata ?? {}) as { invite_code?: unknown };
+    const invite =
+      request.cookies.get(INVITE_COOKIE)?.value ||
+      (typeof meta.invite_code === 'string' ? meta.invite_code : null);
+    await onSignedIn(data.user.id, invite);
+  }
 
   // Only allow relative paths for `next` so nobody can use us as an
   // open redirect to an external URL.
   const safeNext = next.startsWith('/') ? next : '/dashboard';
   const response = NextResponse.redirect(new URL(safeNext, origin));
   response.cookies.delete('sh1pt_ref');
+  response.cookies.delete(INVITE_COOKIE);
   return response;
 }
 

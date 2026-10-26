@@ -9,6 +9,7 @@ import { iterateCmd } from './commands/iterate.js';
 import { shipCmd } from './commands/ship.js';
 import { initCmd } from './commands/init.js';
 import { loginCmd, logoutCmd } from './commands/login.js';
+import { redeemCmd, invitesCmd } from './commands/account.js';
 import { secretsCmd } from './commands/secrets.js';
 import { configCmd } from './commands/config.js';
 import { updateCmd, removeCmd } from './commands/self.js';
@@ -51,6 +52,8 @@ program.addCommand(initCmd);
 // Auth + config utilities — cross-cutting, kept top-level for convention.
 program.addCommand(loginCmd);
 program.addCommand(logoutCmd);
+program.addCommand(redeemCmd);         // redeem   · credit code -> days of sh1pt Pro
+program.addCommand(invitesCmd);        // invites  · 3 per account, Pro days both sides
 program.addCommand(secretsCmd);
 program.addCommand(configCmd);
 program.addCommand(runsCmd);           // run      · inspect sh1pt cloud runs/logs/status

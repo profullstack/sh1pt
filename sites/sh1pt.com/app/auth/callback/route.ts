@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
+import { saveProfileFromMetadata } from '@/lib/profile';
 
 // /auth/callback — terminates the magic-link flow. Supabase appends
 // either ?code=<auth-code> (PKCE) or #access_token=... (legacy hash
@@ -20,12 +21,13 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await getSupabaseServerClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
     console.error('[auth/callback] exchangeCodeForSession', error);
     return NextResponse.redirect(new URL('/waitlist?error=exchange', origin));
   }
+  if (data.user) await saveProfileFromMetadata(data.user);
 
   const response = NextResponse.redirect(new URL('/dashboard', origin));
   response.cookies.delete('sh1pt_ref');

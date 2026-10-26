@@ -101,3 +101,11 @@ section:last-child { border-bottom: 0; }
   text-shadow: 0 0 24px rgba(194, 255, 61, 0.75), 0 0 4px rgba(194, 255, 61, 0.9);
   margin-left: 0.06em;
 }
+
+/* @profullstack/profile signup fields: same look as the waitlist email input. */
+.pfs-profile { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 0.75rem; }
+.pfs-profile__row { display: grid; gap: 0.25rem; }
+.pfs-profile__row label { font-size: 0.85rem; color: var(--muted); }
+.pfs-profile__row input { width: 100%; padding: 0.8rem; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--fg); font: inherit; }
+.pfs-profile__optional { color: var(--muted); }
+.pfs-profile__error { margin: 0; font-size: 0.85rem; color: var(--danger); }

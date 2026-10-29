@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { joinWaitlist } from './actions';
 import { SignupProfileFields } from '../components/SignupProfileFields';
+import { CoinpaySignIn } from '../components/CoinpaySignIn';
 
 export const metadata = {
   title: 'Join the sh1pt waitlist — $244/yr locked in',
@@ -17,6 +18,7 @@ export default function Waitlist({ searchParams }: { searchParams: Promise<Recor
             Pay once at $244, every renewal stays at $244. At launch the price becomes $499/yr and there's no way back in.
             Prepay via CoinPay (crypto) or Stripe (card once live). Refundable within 14 days if we can't deliver.
           </p>
+          <CoinpaySignIn label="Sign up with CoinPay" />
           <form action={joinWaitlist}>
             <WaitlistFields searchParams={searchParams} />
             <button className="btn" type="submit" style={{ marginTop: '1rem', width: '100%' }}>

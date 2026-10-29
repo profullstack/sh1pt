@@ -118,6 +118,12 @@ export function bonusVerdict(input: {
   inviterBonusesLast30Days: number;
 }): { ok: true } | { ok: false; final: boolean; reason: string } {
   if (!input.inviteeConfirmed) return { ok: false, final: false, reason: 'email_not_confirmed' };
+  // An account a CoinPay login made sits on a placeholder address (confirmed
+  // only because it is ours): it has proven no mailbox, so it earns nothing.
+  // Same domain as PLACEHOLDER_EMAIL_DOMAIN in lib/coinpay-signin.ts.
+  if (input.inviteeEmail?.toLowerCase().endsWith('@coinpay-users.sh1pt.com')) {
+    return { ok: false, final: true, reason: 'no_proven_email' };
+  }
   if (isDisposableEmail(input.inviteeEmail)) return { ok: false, final: true, reason: 'disposable_email' };
   const a = mailboxKey(input.inviteeEmail);
   if (a && a === mailboxKey(input.inviterEmail)) return { ok: false, final: true, reason: 'same_mailbox' };

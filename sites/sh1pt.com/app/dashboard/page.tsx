@@ -5,6 +5,7 @@ import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { planFor } from '@/lib/credits';
 import { RedeemCodeForm } from './RedeemCodeForm';
+import { coinpayConfig, isPlaceholderEmail, supabaseCoinpayStore } from '@/lib/coinpay-signin';
 
 export const metadata = {
   title: 'sh1pt — dashboard',
@@ -26,8 +27,22 @@ const INVITE_NOTICES: Record<string, string> = {
   self: 'You cannot use your own invite.',
 };
 
+const COINPAY_NOTICES: Record<string, string> = {
+  welcome: 'Welcome. You signed in with CoinPay, which is how you get back in.',
+  connected: 'CoinPay connected. You can sign in with it from now on.',
+  disconnected: 'CoinPay disconnected.',
+  only_sign_in: 'CoinPay is the only way into this account, so it stays connected.',
+  linked_elsewhere: 'That CoinPay account is already connected to another sh1pt account.',
+  already_connected: 'This account is already connected to a different CoinPay account. Disconnect it first.',
+  not_signed_in: 'Sign in first, then connect CoinPay.',
+  cancelled: 'CoinPay was cancelled.',
+  failed: "CoinPay couldn't be reached. Try again.",
+};
+
 export default async function Dashboard({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
-  const inviteNotice = INVITE_NOTICES[(await searchParams).invite ?? ''] ?? null;
+  const params = await searchParams;
+  const inviteNotice = INVITE_NOTICES[params.invite ?? ''] ?? null;
+  const coinpayNotice = COINPAY_NOTICES[params.coinpay ?? ''] ?? null;
   const supabase = await getSupabaseServerClient();
   let user = null;
   try {
@@ -66,6 +81,12 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         .in('installation_pk', installationIds)
     : { count: 0 };
   const installationCount = installationIds.length;
+  // Sign in with CoinPay: connected or not, and whether it may be dropped.
+  const coinpayIdentity = await supabaseCoinpayStore(adminClient)
+    .identityByUser(user.id)
+    .catch(() => null);
+  const coinpayOnly = isPlaceholderEmail(user.email);
+  const coinpayAvailable = coinpayConfig() !== null;
   const plan = await planFor(user.id).catch((err) => {
     console.error('[dashboard] plan', err);
     return null;
@@ -87,13 +108,43 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <div>
               <h1 style={{ marginBottom: 0 }}>Your dashboard</h1>
               <div className="muted" style={{ fontSize: '0.9rem' }}>
-                Signed in as <strong style={{ color: 'var(--fg)' }}>{profile.email}</strong>
+                Signed in as <strong style={{ color: 'var(--fg)' }}>{coinpayOnly ? 'your CoinPay account' : profile.email}</strong>
                 {profile.handle ? ` · ${profile.handle}` : null}
               </div>
             </div>
             <form action="/auth/signout" method="post">
               <button className="btn secondary" type="submit" style={{ fontSize: '0.85rem' }}>Sign out</button>
             </form>
+          </div>
+
+          <div className="card" id="coinpay" style={{ marginTop: '1.5rem' }}>
+            <div className="muted" style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              CoinPay
+            </div>
+            {coinpayNotice ? <p role="status" style={{ marginTop: '0.5rem' }}>{coinpayNotice}</p> : null}
+            {coinpayIdentity ? (
+              <>
+                <p style={{ marginTop: '0.5rem' }}>
+                  Connected{coinpayIdentity.coinpay_email ? ` (${coinpayIdentity.coinpay_email})` : ''}. You can sign in with CoinPay.
+                </p>
+                {coinpayOnly ? (
+                  <p className="muted" style={{ fontSize: '0.85rem' }}>
+                    CoinPay is the only way into this account, so it can't be disconnected.
+                  </p>
+                ) : (
+                  <form action="/api/v1/coinpay/disconnect" method="post">
+                    <button className="btn secondary" type="submit" style={{ fontSize: '0.85rem' }}>Disconnect CoinPay</button>
+                  </form>
+                )}
+              </>
+            ) : coinpayAvailable ? (
+              <>
+                <p style={{ marginTop: '0.5rem' }}>Connect your CoinPay account to sign in with it.</p>
+                <a className="btn" href="/api/v1/coinpay/oauth/start?mode=connect">Connect CoinPay</a>
+              </>
+            ) : (
+              <p className="muted" style={{ marginTop: '0.5rem' }}>Sign in with CoinPay is not available right now.</p>
+            )}
           </div>
 
           {inviteNotice ? (

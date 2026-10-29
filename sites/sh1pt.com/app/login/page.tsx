@@ -1,4 +1,5 @@
 import { sendLoginLink } from './actions';
+import { CoinpaySignIn, coinpayLoginError } from '../components/CoinpaySignIn';
 
 export const metadata = {
   title: 'Sign in to sh1pt',
@@ -8,6 +9,7 @@ export const metadata = {
 export default async function Login({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const params = await searchParams;
   const error = params.error;
+  const coinpayError = coinpayLoginError(error);
 
   return (
     <main>
@@ -17,6 +19,8 @@ export default async function Login({ searchParams }: { searchParams: Promise<Re
           <p className="muted">
             Enter your email. We'll send a one-click magic link — no password to remember.
           </p>
+
+          <CoinpaySignIn next={params.next ?? '/dashboard'} />
 
           <form action={sendLoginLink} style={{ marginTop: '1.5rem' }}>
             <label>
@@ -36,6 +40,9 @@ export default async function Login({ searchParams }: { searchParams: Promise<Re
             </button>
           </form>
 
+          {coinpayError ? (
+            <p style={{ color: 'var(--warn, #ff6a3d)', fontSize: '0.9rem', marginTop: '1rem' }}>{coinpayError}</p>
+          ) : null}
           {error === 'email' ? (
             <p style={{ color: 'var(--warn, #ff6a3d)', fontSize: '0.9rem', marginTop: '1rem' }}>
               That email doesn't look right — try again.

@@ -1,3 +1,4 @@
+import PwaRegistration from './PwaRegistration';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 import './globals.css';
@@ -10,6 +11,7 @@ import { Footer } from '@profullstack/footer/react';
 import PitFooter from './components/PitFooter';
 
 export const metadata = {
+  manifest: '/manifest.webmanifest',
   title: 'sh1pt — Build. Promote. Scale. Iterate…',
   description:
     'One codebase → every store, registry, CDN, and channel. Ads on every network. Cloud infra on demand. AI agents tighten the loop.',
@@ -37,6 +39,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <PwaRegistration />
         <Suspense fallback={null}>
           <RobautoPixel />
         </Suspense>

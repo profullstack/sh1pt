@@ -39,7 +39,7 @@ function memoryStore(users: Record<string, string> = {}) {
       return identities.find((i) => i.user_id === userId) ?? null;
     },
     async link(row) {
-      if (identities.some((i) => i.coinpay_sub === row.coinpay_sub || i.user_id === row.user_id)) return 'conflict';
+      if (identities.some((i) => i.user_id === row.user_id)) return 'conflict';
       identities.push(row);
       return 'ok';
     },
@@ -87,7 +87,7 @@ describe('resolveCoinpayUser', () => {
     expect(first.ok && again.ok && again.userId === first.userId && again.action).toBe('login');
   });
 
-  it('connects only for a signed-in user, and a sub belongs to one account', async () => {
+  it('connects only for a signed-in user, and links one CoinPay identity to several accounts', async () => {
     const m = memoryStore({ alice: 'alice@example.com', bob: 'bob@example.com' });
     expect(await resolveCoinpayUser({ mode: 'connect', currentUserId: null, claims: claims('s1') }, m.store)).toMatchObject({
       ok: false,
@@ -99,9 +99,11 @@ describe('resolveCoinpayUser', () => {
       action: 'linked',
     });
     expect(await resolveCoinpayUser({ mode: 'connect', currentUserId: 'bob', claims: claims('s1') }, m.store)).toMatchObject({
-      ok: false,
-      code: 'linked_elsewhere',
+      ok: true,
+      userId: 'bob',
+      action: 'linked',
     });
+    expect(m.identities.filter((identity) => identity.coinpay_sub === 's1')).toHaveLength(2);
     expect(await resolveCoinpayUser({ mode: 'connect', currentUserId: 'alice', claims: claims('s2') }, m.store)).toMatchObject({
       ok: false,
       code: 'already_connected',

@@ -19,6 +19,7 @@
 // memory; supabaseCoinpayStore() is the real one (service role).
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { resolveCoinPayAccountLink } from '@profullstack/coinpay-onboard/identity';
 
 export const CALLBACK_PATH = '/api/v1/coinpay/oauth/callback';
 export const STATE_COOKIE = 'sh1pt_cp_state';
@@ -119,7 +120,7 @@ export async function takeCallback(
 
 export type Resolution =
   | { ok: true; userId: string; action: 'login' | 'created' | 'linked' }
-  | { ok: false; code: 'not_signed_in' | 'linked_elsewhere' | 'already_connected'; error: string };
+  | { ok: false; code: 'not_signed_in' | 'already_connected'; error: string };
 
 /**
  * Decide which sh1pt user a verified CoinPay sub belongs to. Never looks at the
@@ -137,11 +138,14 @@ export async function resolveCoinpayUser(
     if (!input.currentUserId) {
       return { ok: false, code: 'not_signed_in', error: 'Sign in to sh1pt first, then connect CoinPay from your dashboard.' };
     }
-    if (bound) {
-      if (bound.user_id === input.currentUserId) return { ok: true, userId: bound.user_id, action: 'linked' };
-      return { ok: false, code: 'linked_elsewhere', error: 'That CoinPay account is already connected to another sh1pt account.' };
-    }
-    if (await store.identityByUser(input.currentUserId)) {
+    const mine = await store.identityByUser(input.currentUserId);
+    const decision = resolveCoinPayAccountLink({
+      bindings: [bound, mine].filter((row): row is IdentityRow => row !== null).map((row) => ({ sub: row.coinpay_sub, userId: row.user_id })),
+      sub: claims.sub,
+      userId: input.currentUserId,
+    });
+    if (decision.kind === 'already_linked') return { ok: true, userId: input.currentUserId, action: 'linked' };
+    if (decision.kind === 'account_has_other_identity') {
       return {
         ok: false,
         code: 'already_connected',
@@ -155,9 +159,7 @@ export async function resolveCoinpayUser(
       coinpay_name: claims.name,
       created_via: 'connect',
     });
-    if (r === 'conflict') {
-      return { ok: false, code: 'linked_elsewhere', error: 'That CoinPay account was just connected elsewhere.' };
-    }
+    if (r === 'conflict') return { ok: false, code: 'already_connected', error: 'This sh1pt account already has a CoinPay identity connected.' };
     return { ok: true, userId: input.currentUserId, action: 'linked' };
   }
 
@@ -229,7 +231,7 @@ export function supabaseCoinpayStore(sb: SupabaseClient): CoinpayStore {
       return { verifier: row.verifier, nonce: row.nonce, mode: row.mode, next: row.next_path, linkUserId: row.link_user_id };
     },
     async identityBySub(sub) {
-      const r = await sb.from('coinpay_identities').select(cols).eq('coinpay_sub', sub).maybeSingle();
+      const r = await sb.from('coinpay_identities').select(cols).eq('coinpay_sub', sub).order('created_at', { ascending: true }).limit(1).maybeSingle();
       if (r.error) throw new Error(r.error.message);
       return (r.data as IdentityRow | null) ?? null;
     },

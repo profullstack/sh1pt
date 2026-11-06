@@ -39,7 +39,7 @@ export const CATEGORIES: readonly AdapterCategory[] = [
     adapters: [
       'ai21', 'aionlabs', 'akashml', 'alibaba-cloud', 'amazon-bedrock',
       'arcee', 'atlascloud', 'azure', 'baidu', 'baseten', 'cerebras',
-      'chutes', 'clarifai', 'claude', 'cloudflare', 'cohere', 'deepinfra',
+      'cheaperinference', 'chutes', 'clarifai', 'claude', 'cloudflare', 'cohere', 'deepinfra',
       'deepseek', 'featherless', 'fireworks', 'friendli', 'gemini',
       'gmicloud', 'google-vertex', 'groq', 'inception', 'inceptron',
       'infermatic', 'inflection', 'ionet', 'kimi', 'liquid', 'litellm', 'mancer',

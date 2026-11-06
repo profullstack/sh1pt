@@ -300,6 +300,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/ai/cheaperinference:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/ai/chutes:
     dependencies:
       '@profullstack/sh1pt-core':

@@ -294,6 +294,12 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
+  packages/ai/c0mpute:
+    dependencies:
+      '@profullstack/sh1pt-core':
+        specifier: workspace:*
+        version: link:../../core
+
   packages/ai/cerebras:
     dependencies:
       '@profullstack/sh1pt-core':
@@ -4245,14 +4251,14 @@ importers:
         specifier: 0.3.0
         version: 0.3.0(react@19.3.1)
       '@profullstack/autoblog':
-        specifier: github:profullstack/autoblog#75e54af
-        version: https://codeload.github.com/profullstack/autoblog/tar.gz/75e54af
+        specifier: 0.5.0
+        version: 0.5.0
       '@profullstack/coinpay-onboard':
         specifier: 0.4.0
         version: 0.4.0
       '@profullstack/footer':
         specifier: latest
-        version: 0.6.5(react@19.3.1)
+        version: 0.6.19(react@19.3.1)
       '@profullstack/profile':
         specifier: 0.1.6
         version: 0.1.6(react@19.3.1)
@@ -5039,9 +5045,13 @@ packages:
     engines: {node: '>=22.13'}
     hasBin: true
 
-  '@profullstack/autoblog@https://codeload.github.com/profullstack/autoblog/tar.gz/75e54af':
-    resolution: {tarball: https://codeload.github.com/profullstack/autoblog/tar.gz/75e54af}
-    version: 0.4.0
+  '@profullstack/ai-providers@0.1.0':
+    resolution: {integrity: sha512-vc7aFjozyiwIhREWLhB3xWpUPeGggM348ng5W6j4IA+gxYF3S7TNLoGWrF/ax2NttsK40C801CRkD9JSVA4aOg==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  '@profullstack/autoblog@0.5.0':
+    resolution: {integrity: sha512-KewpX0rM55o+7TMYeU35gqZceQFNF6zmo8zDoZRP5zoPU+XqTRcBlv6bZvl9oQHUXKXAsePJVNZKtDNhTrNEfw==}
     engines: {node: '>=18'}
 
   '@profullstack/coinpay-onboard@0.4.0':
@@ -5052,8 +5062,8 @@ packages:
   '@profullstack/emailer@1.0.3':
     resolution: {integrity: sha512-VyAtCcfnSI6LOwJvWogCr3ZNmEsaZw+iuWrqnosLsdcKsbRyCrCmXigMNZJZEjlgYlR+lK//PwNPG+xtCFvWAw==}
 
-  '@profullstack/footer@0.6.5':
-    resolution: {integrity: sha512-j1iyMVeCxseq4sRKn2b7YP7tpG0jqyKDKh/bsrOmdtprMLHIOoHA1xxhXnNOSSVBYi6WFrQy+6R86eJVhtY5ug==}
+  '@profullstack/footer@0.6.19':
+    resolution: {integrity: sha512-DAS2jHDJFnH1w6lDtYbEnvuV2n4NY2vrRwnUKeQPC+Nwfg1f2Me9ClZ6KlXs6Dv0pgJSg2ATLSX0hV+Mq7co3w==}
     engines: {node: '>=18'}
     hasBin: true
     peerDependencies:
@@ -8862,7 +8872,11 @@ snapshots:
     transitivePeerDependencies:
       - react
 
-  '@profullstack/autoblog@https://codeload.github.com/profullstack/autoblog/tar.gz/75e54af': {}
+  '@profullstack/ai-providers@0.1.0': {}
+
+  '@profullstack/autoblog@0.5.0':
+    dependencies:
+      '@profullstack/ai-providers': 0.1.0
 
   '@profullstack/coinpay-onboard@0.4.0':
     dependencies:
@@ -8874,7 +8888,7 @@ snapshots:
 
   '@profullstack/emailer@1.0.3': {}
 
-  '@profullstack/footer@0.6.5(react@19.3.1)':
+  '@profullstack/footer@0.6.19(react@19.3.1)':
     optionalDependencies:
       react: 19.3.1
 

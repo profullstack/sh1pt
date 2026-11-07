@@ -1053,7 +1053,7 @@ socialCmd
 // keyed off provider API keys held in the vault.
 const AI_PLATFORMS = [
   // Real integrations
-  'claude', 'openai', 'qwen', 'gemini',
+  'c0mpute', 'claude', 'openai', 'qwen', 'gemini',
   // BYOK stubs (OpenRouter-compatible providers — implementations land
   // case-by-case; setup() collects the API key into the vault today)
   'ai21', 'aionlabs', 'akashml', 'alibaba-cloud', 'amazon-bedrock', 'arcee',

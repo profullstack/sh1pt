@@ -17,7 +17,7 @@
     "@opentelemetry/sdk-logs": "^3.0.0",
     "@profullstack/affiliates": "0.3.0",
     "@profullstack/autoblog": "0.5.0",
-    "@profullstack/coinpay-onboard": "0.4.0",
+    "@profullstack/coinpay-onboard": "^0.5.0",
     "@profullstack/footer": "latest",
     "@profullstack/profile": "0.1.6",
     "@profullstack/redeem-credits": "0.2.0",

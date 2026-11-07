@@ -55,6 +55,8 @@ export interface ProfileInfo {
   referredBy: string | null;
   prepaid: boolean;
   proUntil: string | null;
+  /** Profullstack Pass end (lib/coinpay-pass.ts). */
+  passUntil?: string | null;
 }
 
 export interface BonusRow {
@@ -92,11 +94,16 @@ export function supabaseCreditDb(db: Db): CreditDb {
     async profile(userId) {
       const { data } = await db
         .from('profiles')
-        .select('referred_by, prepaid, pro_until')
+        .select('referred_by, prepaid, pro_until, coinpay_pass_until')
         .eq('user_id', userId)
-        .maybeSingle<{ referred_by: string | null; prepaid: boolean; pro_until: string | null }>();
+        .maybeSingle<{ referred_by: string | null; prepaid: boolean; pro_until: string | null; coinpay_pass_until: string | null }>();
       if (!data) return null;
-      return { referredBy: data.referred_by, prepaid: Boolean(data.prepaid), proUntil: data.pro_until };
+      return {
+        referredBy: data.referred_by,
+        prepaid: Boolean(data.prepaid),
+        proUntil: data.pro_until,
+        passUntil: data.coinpay_pass_until,
+      };
     },
     async grantProDays(userId, days, source) {
       const { data, error } = await db.rpc('grant_pro_days', { p_user_id: userId, p_days: days, p_source: source });
@@ -220,7 +227,10 @@ export async function planFor(userId: string, d: CreditDeps = getCreditDeps()): 
     console.error('[credits] sync failed', err);
   }
   const p = await d.db.profile(userId);
-  return planStatus({ prepaid: p?.prepaid ?? false, pro_until: p?.proUntil ?? null }, d.now());
+  return planStatus(
+    { prepaid: p?.prepaid ?? false, pro_until: p?.proUntil ?? null, coinpay_pass_until: p?.passUntil ?? null },
+    d.now(),
+  );
 }
 
 // ── Credit codes ─────────────────────────────────────────────────────────

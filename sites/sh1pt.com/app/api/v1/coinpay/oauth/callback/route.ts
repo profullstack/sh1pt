@@ -3,6 +3,7 @@ import { finishSignIn } from '@profullstack/coinpay-onboard/oauth';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { onSignedIn } from '@/lib/credits';
+import { recordCoinpayPass, supabasePassStore } from '@/lib/coinpay-pass';
 import {
   STATE_COOKIE,
   STATE_COOKIE_PATH,
@@ -55,6 +56,7 @@ export async function GET(request: NextRequest) {
   if (url.searchParams.get('error') || !code) return fail('cancelled');
 
   let claims;
+  let pass: Awaited<ReturnType<typeof finishSignIn>>['pass'] | null = null;
   try {
     const result = await finishSignIn({
       code,
@@ -64,6 +66,7 @@ export async function GET(request: NextRequest) {
       clientSecret: cfg.clientSecret,
       redirectUri: cfg.redirectUri,
     });
+    pass = result.pass;
     claims = { sub: result.sub, email: result.email, name: result.name };
   } catch (err) {
     console.error('[coinpay] sign-in failed', err instanceof Error ? err.message : err);
@@ -72,6 +75,10 @@ export async function GET(request: NextRequest) {
 
   const resolved = await resolveCoinpayUser({ mode: pending.mode, currentUserId, claims }, store);
   if (!resolved.ok) return fail(resolved.code);
+  // Profullstack Pass: Pro until it ends, on the account bound to this sub.
+  await recordCoinpayPass(supabasePassStore(admin), resolved.userId, pass).catch((err) =>
+    console.error('[coinpay] pass', err instanceof Error ? err.message : err),
+  );
   if (pending.mode === 'connect') return to('/dashboard?coinpay=connected#coinpay');
 
   const minted = await mintMagicLinkHash(admin, resolved.userId);

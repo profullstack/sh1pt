@@ -38,6 +38,16 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     <html lang="en">
+      <head>
+        {/* WebMCP (@profullstack/webmcp): site_info and open_page for the AI agent in the
+            visitor's browser. No-op where the browser has no WebMCP. */}
+        <script
+          type="module"
+          data-webmcp=""
+          src="https://cdn.jsdelivr.net/npm/@profullstack/webmcp@0/src/embed.js"
+          data-pages='{"docs":"/docs","getting_started":"/getting-started","blog":"/blog","dashboard":"/dashboard","waitlist":"/waitlist"}'
+        />
+      </head>
       <body>
         <PwaRegistration />
         <Suspense fallback={null}>

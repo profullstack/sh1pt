@@ -228,12 +228,6 @@ importers:
         specifier: workspace:*
         version: link:../../core
 
-  packages/agents/vu1nz:
-    dependencies:
-      '@profullstack/sh1pt-core':
-        specifier: workspace:*
-        version: link:../../core
-
   packages/ai/ai21:
     dependencies:
       '@profullstack/sh1pt-core':
@@ -1401,12 +1395,6 @@ importers:
         version: link:../../core
 
   packages/scanners/verification-layer:
-    dependencies:
-      '@profullstack/sh1pt-core':
-        specifier: workspace:*
-        version: link:../../core
-
-  packages/scanners/vu1nz:
     dependencies:
       '@profullstack/sh1pt-core':
         specifier: workspace:*

@@ -24,7 +24,7 @@
     "@profullstack/sh1pt-action-packs": "workspace:^",
     "@profullstack/sh1pt-actions-fleet-core": "workspace:^",
     "@profullstack/stack": "^0.5.0",
-    "@profullstack/x402-gateway": "^0.13.1",
+    "@profullstack/x402-gateway": "^0.18.4",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "next": "16.4.3",

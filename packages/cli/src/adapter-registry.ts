@@ -30,7 +30,7 @@ export const CATEGORIES: readonly AdapterCategory[] = [
     id: 'agents',
     pkgPrefix: '@profullstack/sh1pt-agent',
     description: 'AI coding CLIs — Claude Code, Codex, Qwen',
-    adapters: ['claude', 'codex', 'qwen', 'vu1nz'],
+    adapters: ['claude', 'codex', 'qwen'],
   },
   {
     id: 'ai',

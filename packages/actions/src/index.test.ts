@@ -22,15 +22,6 @@ describe('built-in packs', () => {
     expect(entry?.manifest.files[0]?.destination).toBe('.github/workflows/test.yml');
   });
 
-  it('loads the vu1nz-scan pack', async () => {
-    const catalog = await loadBuiltinPacks();
-    const entry = catalog.get('vu1nz-scan');
-    expect(entry).toBeDefined();
-    expect(entry?.manifest.name).toBe('vu1nz Security Scan');
-    expect(entry?.manifest.files[0]?.destination).toBe('.github/workflows/vu1nz-scan.yml');
-    expect(entry?.manifest.secrets[0]?.name).toBe('ENV_FILE');
-  });
-
   it('loads the threatcrush-scan pack', async () => {
     const catalog = await loadBuiltinPacks();
     const entry = catalog.get('threatcrush-scan');
@@ -146,24 +137,6 @@ describe('built-in packs', () => {
     // pnpm version comes from package.json's packageManager field, not a pinned input.
     expect(file?.content).not.toContain('version: 9.12.0');
     expect(file?.content).toContain('pnpm run --if-present test');
-    expect(file?.content).toContain('# Managed by sh1pt Actions Fleet');
-  });
-
-  it('renders vu1nz-scan with default inputs', async () => {
-    const catalog = await loadBuiltinPacks();
-    const entry = catalog.get('vu1nz-scan');
-    if (!entry) throw new Error('vu1nz-scan not in catalog');
-    const result = await renderPack({
-      packDir: entry.packDir,
-      manifest: entry.manifest,
-      inputs: {},
-    });
-    const file = result.files[0];
-    expect(file?.destination).toBe('.github/workflows/vu1nz-scan.yml');
-    expect(file?.content).toContain('python-version: "3.12"');
-    expect(file?.content).toContain('vu1nz review-pr main');
-    expect(file?.content).toContain('${{ secrets.ENV_FILE }}');
-    expect(file?.content).toContain('${{ github.repository }}');
     expect(file?.content).toContain('# Managed by sh1pt Actions Fleet');
   });
 

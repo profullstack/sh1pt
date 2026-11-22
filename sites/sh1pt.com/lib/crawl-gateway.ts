@@ -15,6 +15,19 @@ import { x402Proxy } from "@profullstack/x402-gateway/next";
  */
 const env = (name: string) => process.env[name];
 
+/**
+ * Names this app on the gateway's CoinPay calls (x402 verify/settle,
+ * checkout): every fleet app reaches CoinPay from one IP. 0.13.x has no
+ * userAgent option, so it goes in through the gateway's `fetch`.
+ */
+const APP_VERSION = env("npm_package_version");
+const COINPAY_UA = `sh1pt.com${APP_VERSION ? `/${APP_VERSION}` : ""} (+https://sh1pt.com)`;
+const coinpayFetch: typeof fetch = (input, init = {}) => {
+  const headers = new Headers(init.headers);
+  if (!headers.has("user-agent")) headers.set("user-agent", COINPAY_UA);
+  return fetch(input, { ...init, headers });
+};
+
 export const gateway = createGateway({
   // Hubs read the OpenAccess descriptor with no cookie and no browser headers.
   openPaths: ['/.well-known/openaccess.json'],
@@ -23,6 +36,7 @@ export const gateway = createGateway({
   coinpay: { apiKey: env("COINPAY_X402_KEY") },
   payTo: env("CRAWL_PAY_TO"),
   contact: "mailto:support@sh1pt.com",
+  fetch: coinpayFetch,
 });
 
 /** Resolves to a Response for a refused crawler, or undefined to carry on. */

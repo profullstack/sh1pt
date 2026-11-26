@@ -5,7 +5,7 @@ description: >-
   Scans pull requests for hardcoded credentials, injection, SSRF, unsafe
   deserialisation and dependency tampering, and uploads SARIF to the Security
   tab.
-version: 2.0.2
+version: 2.1.0
 publisher: profullstack
 visibility: public
 license: MIT
@@ -91,6 +91,20 @@ inputs:
       Empty means report-only, which is the right default for a first install:
       a repository with pre-existing findings should get a report, not a
       blocked pull request. Tighten it once the backlog is triaged.
+  blockDiffSecrets:
+    type: string
+    default: 'true'
+    enum:
+      - 'true'
+      - 'false'
+    description: >-
+      Fail the job when the pull request's own changed files add a credential:
+      a committed dotenv file holding real-looking values, or any `secret-*`
+      finding at level error. Independent of failOn and scoped to the diff, so
+      pre-existing findings elsewhere never block; only the new leak does.
+      On by default because a pushed secret is exposed the moment it is pushed
+      (crawlproof.com#160 committed a full production .env into a public repo
+      next to a report-only scan).
   uploadSarif:
     type: string
     default: 'true'
